@@ -67,6 +67,12 @@ class TagBoxWidget(TagBoxWidgetView):
         for entry_id in self.__entries:
             self.__driver.lib.remove_tags_from_entries(entry_id, tag.id)
 
+        group_by_tag_id = self.__driver.browsing_history.current.group_by_tag_id
+        if group_by_tag_id is not None:
+            relevant_tag_ids = self.__driver.lib.get_grouping_tag_ids(group_by_tag_id)
+            if tag.id in relevant_tag_ids:
+                self.__driver.update_browsing_state()
+
         self.on_update.emit()
 
     @override

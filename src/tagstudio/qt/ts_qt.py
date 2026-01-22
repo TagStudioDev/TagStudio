@@ -36,6 +36,8 @@ from PySide6.QtGui import (
     QIcon,
     QMouseEvent,
     QPalette,
+    QStandardItem,
+    QStandardItemModel,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -55,6 +57,7 @@ from tagstudio.core.library.alchemy.enums import (
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import FieldID
+from tagstudio.core.library.alchemy.grouping import GroupingCriteria, GroupingType
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -371,8 +374,7 @@ class QtDriver(DriverMixin, QObject):
         self.color_manager_panel = TagColorManager(self)
 
         # Initialize the Tag Search panel
-        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
-        self.add_tag_modal.tsp.set_driver(self)
+        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True, driver=self)
         self.add_tag_modal.tsp.tag_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
@@ -658,6 +660,16 @@ class QtDriver(DriverMixin, QObject):
             self.sorting_direction_callback
         )
 
+        # Group By Tag Dropdown
+        self.populate_group_by_tags()
+        self.main_window.group_by_tag_combobox.currentIndexChanged.connect(
+            self.group_by_tag_callback
+        )
+        # Handle clicks on multi-column child tags
+        self.main_window.group_by_tag_combobox.view().clicked.connect(
+            self._on_group_by_item_clicked
+        )
+
         # Thumbnail Size ComboBox
         self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
         self.main_window.thumb_size_combobox.currentIndexChanged.connect(
@@ -845,6 +857,7 @@ class QtDriver(DriverMixin, QObject):
                     set(panel.alias_names),
                     set(panel.alias_ids),
                 ),
+                self.populate_group_by_tags(),
                 self.modal.hide(),
             )
         )
@@ -880,6 +893,10 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
         self.emit_badge_signals(tag_ids)
+
+        # Refresh grouping if active
+        if self.browsing_history.current.grouping is not None:
+            self.update_browsing_state()
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -1164,7 +1181,14 @@ class QtDriver(DriverMixin, QObject):
         spacing_divisor: int = 10
         min_spacing: int = 12
 
-        self.update_thumbs()
+        # Recalculate grouping if active
+        grouped_result = None
+        if self.browsing_history.current.grouping:
+            grouped_result = self.lib.group_entries(
+                self.frame_content, self.browsing_history.current.grouping
+            )
+
+        self.update_thumbs(grouped_result)
         blank_icon: QIcon = QIcon()
         for it in self.main_window.thumb_layout._item_thumbs:
             it.thumb_button.setIcon(blank_icon)
@@ -1184,6 +1208,169 @@ class QtDriver(DriverMixin, QObject):
                 self.main_window.show_hidden_entries
             )
         )
+
+    def populate_group_by_tags(self, block_signals: bool = False):
+        """Populate the group-by dropdown with grouping options and tags.
+
+        Args:
+            block_signals: If True, block signals during population.
+        """
+        if block_signals:
+            self.main_window.group_by_tag_combobox.blockSignals(True)  # noqa: FBT003
+
+        model = QStandardItemModel()
+        num_columns = 4
+
+        # Display names for grouping types
+        grouping_display_names = {
+            GroupingType.NONE: "None",
+            GroupingType.FILETYPE: "By Filetype",
+            # Future grouping types will automatically appear here
+        }
+
+        # Add "None" option
+        none_item = QStandardItem(grouping_display_names[GroupingType.NONE])
+        none_item.setData(None, Qt.ItemDataRole.UserRole)
+        model.appendRow([none_item] + [QStandardItem() for _ in range(num_columns - 1)])
+
+        if not self.lib.library_dir:
+            self.main_window.group_by_tag_combobox.setModel(model)
+            self.main_window.group_by_tag_combobox.setCurrentIndex(0)
+            if block_signals:
+                self.main_window.group_by_tag_combobox.blockSignals(False)  # noqa: FBT003
+            return
+
+        # Add non-tag grouping options automatically
+        for grouping_type in GroupingType:
+            # Skip NONE (already added) and TAG (handled separately below)
+            if grouping_type in (GroupingType.NONE, GroupingType.TAG):
+                continue
+
+            display_name = grouping_display_names.get(
+                grouping_type, f"By {grouping_type.value.title()}"
+            )
+            item = QStandardItem(display_name)
+            criteria = GroupingCriteria(type=grouping_type)
+            item.setData(criteria, Qt.ItemDataRole.UserRole)
+            model.appendRow([item] + [QStandardItem() for _ in range(num_columns - 1)])
+
+        all_tags = self.lib.tags
+        root_tags = [tag for tag in all_tags if not tag.parent_tags]
+        child_tags = [tag for tag in all_tags if tag.parent_tags]
+
+        children_map: dict[int, list] = {}
+        for tag in child_tags:
+            for parent in tag.parent_tags:
+                if parent.id not in children_map:
+                    children_map[parent.id] = []
+                children_map[parent.id].append(tag)
+
+        for children in children_map.values():
+            children.sort(key=lambda t: t.name.lower())
+
+        root_tags.sort(key=lambda t: t.name.lower())
+
+        self.main_window.group_by_tag_combobox.setModel(model)
+        self.main_window.group_by_tag_combobox.setCurrentIndex(0)
+
+        view = self.main_window.group_by_tag_combobox.view()
+        current_row = 0
+
+        # Count non-tag grouping options (NONE + all others except TAG)
+        non_tag_grouping_count = sum(
+            1 for gt in GroupingType if gt not in (GroupingType.TAG,)
+        )
+
+        # Set spans for all non-tag grouping options
+        for _ in range(non_tag_grouping_count):
+            if hasattr(view, "setSpan"):
+                view.setSpan(current_row, 0, 1, num_columns)
+            current_row += 1
+
+        # Insert separator before tags
+        self.main_window.group_by_tag_combobox.insertSeparator(current_row)
+        current_row += 1
+
+        for tag in root_tags:
+            children = children_map.get(tag.id)
+
+            if children is None:
+                item = QStandardItem(tag.name)
+                tag_criteria = GroupingCriteria(type=GroupingType.TAG, value=tag.id)
+                item.setData(tag_criteria, Qt.ItemDataRole.UserRole)
+                model.appendRow([item] + [QStandardItem() for _ in range(num_columns - 1)])
+                view.setSpan(current_row, 0, 1, num_columns)
+                current_row += 1
+            else:
+                parent_item = QStandardItem(tag.name)
+                parent_criteria = GroupingCriteria(type=GroupingType.TAG, value=tag.id)
+                parent_item.setData(parent_criteria, Qt.ItemDataRole.UserRole)
+                model.appendRow([parent_item] + [QStandardItem() for _ in range(num_columns - 1)])
+                view.setSpan(current_row, 0, 1, num_columns)
+                current_row += 1
+
+                for i in range(0, len(children), num_columns):
+                    row_items = []
+                    children_in_row = 0
+
+                    for j in range(num_columns):
+                        if i + j < len(children):
+                            child = children[i + j]
+                            child_item = QStandardItem(f"  {child.name}")
+                            child_criteria = GroupingCriteria(type=GroupingType.TAG, value=child.id)
+                            child_item.setData(child_criteria, Qt.ItemDataRole.UserRole)
+                            row_items.append(child_item)
+                            children_in_row += 1
+                        else:
+                            empty_item = QStandardItem()
+                            empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
+                            row_items.append(empty_item)
+
+                    model.appendRow(row_items)
+
+                    if children_in_row == 1:
+                        view.setSpan(current_row, 0, 1, num_columns)
+
+                    current_row += 1
+
+        if hasattr(view, "resizeColumnsToContents"):
+            view.resizeColumnsToContents()
+
+            total_width = 0
+            for col in range(num_columns):
+                col_width = view.columnWidth(col)
+                # Handle Mock objects in tests
+                if isinstance(col_width, int):
+                    total_width += col_width
+
+            total_width += 4
+            view.setMinimumWidth(total_width)
+
+        if block_signals:
+            self.main_window.group_by_tag_combobox.blockSignals(False)  # noqa: FBT003
+
+    def _on_group_by_item_clicked(self, index):
+        """Handle clicks on group-by dropdown items (any column)."""
+        model = self.main_window.group_by_tag_combobox.model()
+        if model:
+            item = model.itemFromIndex(index)
+            if item:
+                criteria = item.data(Qt.ItemDataRole.UserRole)
+                if criteria is not None:
+                    # Find the correct combobox index for this criteria (accounting for separators)
+                    target_index = 0
+                    for i in range(self.main_window.group_by_tag_combobox.count()):
+                        if self.main_window.group_by_tag_combobox.itemData(i) == criteria:
+                            target_index = i
+                            break
+                    # Set the current index - let Qt handle popup closure automatically
+                    self.main_window.group_by_tag_combobox.setCurrentIndex(target_index)
+
+    def group_by_tag_callback(self):
+        """Handle grouping selection change."""
+        criteria = self.main_window.group_by_tag_combobox.currentData()
+        logger.info("Grouping Changed", criteria=criteria)
+        self.update_browsing_state(self.browsing_history.current.with_grouping(criteria))
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
@@ -1377,7 +1564,7 @@ class QtDriver(DriverMixin, QObject):
         if update_completion_list:
             self.main_window.search_field_completion_list.setStringList(completion_list)
 
-    def update_thumbs(self):
+    def update_thumbs(self, grouped_result=None):
         """Update search thumbnails."""
         with self.thumb_job_queue.mutex:
             # Cancels all thumb jobs waiting to be started
@@ -1385,7 +1572,7 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
 
-        self.main_window.thumb_layout.set_entries(self.frame_content)
+        self.main_window.thumb_layout.set_entries(self.frame_content, grouped_result)
         self.main_window.thumb_layout.update()
         self.main_window.update()
 
@@ -1437,6 +1624,10 @@ class QtDriver(DriverMixin, QObject):
                 self.main_window.thumb_layout.remove_tags(entry_ids, tag_ids)
                 self.lib.remove_tags_from_entries(entry_ids, tag_ids)
 
+        # Refresh grouping if active (only when tags are being added/removed)
+        if self.browsing_history.current.grouping is not None:
+            self.update_browsing_state()
+
     def update_browsing_state(self, state: BrowsingState | None = None) -> None:
         """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
         if not self.lib.library_dir:
@@ -1447,6 +1638,23 @@ class QtDriver(DriverMixin, QObject):
             self.browsing_history.push(state)
 
         self.main_window.search_field.setText(self.browsing_history.current.query or "")
+
+        # Sync group-by dropdown with browsing state
+        grouping = self.browsing_history.current.grouping
+        if grouping is None:
+            target_index = 0  # "None" option
+        else:
+            # Find the index of the grouping criteria in the dropdown
+            target_index = 0
+            for i in range(self.main_window.group_by_tag_combobox.count()):
+                if self.main_window.group_by_tag_combobox.itemData(i) == grouping:
+                    target_index = i
+                    break
+
+        # Block signals to avoid triggering callback during sync
+        self.main_window.group_by_tag_combobox.blockSignals(True)  # noqa: FBT003
+        self.main_window.group_by_tag_combobox.setCurrentIndex(target_index)
+        self.main_window.group_by_tag_combobox.blockSignals(False)  # noqa: FBT003
 
         # inform user about running search
         self.main_window.status_bar.showMessage(Translations["status.library_search_query"])
@@ -1469,9 +1677,16 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
+        # Group results if grouping is enabled
+        grouped_result = None
+        if self.browsing_history.current.grouping:
+            grouped_result = self.lib.group_entries(
+                results.ids, self.browsing_history.current.grouping
+            )
+
         # update page content
         self.frame_content = results.ids
-        self.update_thumbs()
+        self.update_thumbs(grouped_result=grouped_result)
 
         # update pagination
         if page_size > 0:
@@ -1654,6 +1869,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
         self.main_window.preview_panel.set_selection(self.selected)
+
+        # Populate group-by dropdown after library is loaded
+        self.populate_group_by_tags()
 
         # page (re)rendering, extract eventually
         initial_state = BrowsingState(

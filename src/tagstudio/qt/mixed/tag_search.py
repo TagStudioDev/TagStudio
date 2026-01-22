@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -50,8 +51,10 @@ class TagSearchModal(PanelModal):
         done_callback=None,
         save_callback=None,
         has_save=False,
+        driver: Union["QtDriver", None] = None,
     ):
         self.tsp = TagSearchPanel(library, exclude, is_tag_chooser)
+        self.tsp.driver = driver
         super().__init__(
             self.tsp,
             Translations["tag.add.plural"],
@@ -191,6 +194,11 @@ class TagSearchPanel(PanelWidget):
                 set(self.build_tag_modal.alias_ids),
             )
             self.add_tag_modal.hide()
+
+            # Refresh group-by dropdown if driver is available
+            # Block signals to prevent triggering browsing state update during tag creation
+            if self.driver:
+                self.driver.populate_group_by_tags(block_signals=True)
 
             self.tag_chosen.emit(tag.id)
             self.search_field.setText("")
@@ -374,7 +382,30 @@ class TagSearchPanel(PanelWidget):
                 self.search_field.selectAll()
 
     def delete_tag(self, tag: Tag):
-        pass
+        """Delete a tag from the library after confirmation."""
+        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
+            return
+
+        message_box = QMessageBox(
+            QMessageBox.Question,  # type: ignore
+            Translations["tag.remove"],
+            Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag)),
+            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+        )
+
+        result = message_box.exec()
+
+        if result != QMessageBox.Ok:  # type: ignore
+            return
+
+        self.lib.remove_tag(tag.id)
+
+        # Refresh group-by dropdown if driver is available
+        # Block signals to prevent triggering browsing state update during tag deletion
+        if self.driver:
+            self.driver.populate_group_by_tags(block_signals=True)
+
+        self.update_tags()
 
     def edit_tag(self, tag: Tag):
         # TODO: Move this to a top-level import

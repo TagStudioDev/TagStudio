@@ -32,6 +32,7 @@ GLOBAL_IGNORE = [
     ".Spotlight-V100",
     ".TemporaryItems",
     "desktop.ini",
+    "Thumbs.db",
     "System Volume Information",
     ".localized",
 ]
