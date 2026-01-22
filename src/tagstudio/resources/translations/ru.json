@@ -141,8 +141,6 @@
     "json_migration.heading.aliases": "Псевдонимы:",
     "json_migration.heading.colors": "Цвета:",
     "json_migration.heading.differ": "Несоответствие",
-    "json_migration.heading.extension_list_type": "Тип списка расширений:",
-    "json_migration.heading.file_extension_list": "Список расширений файлов:",
     "json_migration.heading.match": "Совпало",
     "json_migration.heading.names": "Имена:",
     "json_migration.heading.parent_tags": "Родительские теги:",

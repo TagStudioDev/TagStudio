@@ -128,7 +128,15 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 | Used From                                                               | Format | Location                                        |
 | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [#1139](https://github.com/TagStudioDev/TagStudio/pull/1139) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| [#1139](https://github.com/TagStudioDev/TagStudio/pull/1139)            | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Adds the `is_hidden` column to the `tags` table (default `0`). Used for excluding entries tagged with hidden tags from library searches.
 -   Sets the `is_hidden` field on the built-in Archived tag to `1`, to match the Archived tag now being hidden by default.
+
+#### Version 104
+
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [#1298](https://github.com/TagStudioDev/TagStudio/pull/1298)            | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+- Removes the `preferences` table, after migrating the contained extension list to the .ts_ignore file, if necessary.

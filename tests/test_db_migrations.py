@@ -46,9 +46,9 @@ def test_library_migrations(path: str):
     try:
         status = library.open_library(library_dir=temp_path)
         library.close()
-        shutil.rmtree(temp_path)
         assert status.success
     except Exception as e:
         library.close()
-        shutil.rmtree(temp_path)
         raise (e)
+    finally:
+        shutil.rmtree(temp_path)

@@ -6,9 +6,8 @@ from datetime import datetime as dt
 from pathlib import Path
 from typing import override
 
-from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.db import Base, PathType
@@ -325,16 +324,6 @@ def slugify_field_key(mapper, connection, target):  # pyright: ignore
         from tagstudio.core.library.alchemy.library import slugify
 
         target.key = slugify(target.tag)
-
-
-# NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-# and is set to be removed in a future release.
-@deprecated("Use `Version` for storing version, and `ts_ignore` system for file exclusion.")
-class Preferences(Base):
-    __tablename__ = "preferences"
-
-    key: Mapped[str] = mapped_column(primary_key=True)
-    value: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class Version(Base):

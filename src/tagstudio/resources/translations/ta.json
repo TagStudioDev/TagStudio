@@ -156,8 +156,6 @@
     "json_migration.heading.aliases": "மாற்றுப்பெயர்கள்:",
     "json_migration.heading.colors": "நிறங்கள்:",
     "json_migration.heading.differ": "முரண்பாடு",
-    "json_migration.heading.extension_list_type": "நீட்டிப்பு பட்டியல் வகை:",
-    "json_migration.heading.file_extension_list": "கோப்பு நீட்டிப்பு பட்டியல்:",
     "json_migration.heading.match": "பொருந்தியது",
     "json_migration.heading.names": "பெயர்கள்:",
     "json_migration.heading.parent_tags": "பெற்றோர் குறிச்சொற்கள்:",
