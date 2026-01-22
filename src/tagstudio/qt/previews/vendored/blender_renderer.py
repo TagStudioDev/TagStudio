@@ -32,7 +32,7 @@ from io import BufferedReader
 from PIL import Image, ImageOps
 
 
-def blend_extract_thumb(path):
+def blend_extract_thumb(path) -> tuple[bytes | None, int, int]:
     rend = b"REND"
     test = b"TEST"
 
@@ -97,8 +97,10 @@ def blend_extract_thumb(path):
     return image_buffer, x, y
 
 
-def blend_thumb(file_in):
+def blend_thumb(file_in) -> Image.Image | None:
     buf, width, height = blend_extract_thumb(file_in)
+    if buf is None:
+        return None
     image = Image.frombuffer(
         "RGBA",
         (width, height),
