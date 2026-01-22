@@ -899,6 +899,7 @@ class QtDriver(DriverMixin, QObject):
         deleted_count: int = 0
 
         selected = self.selected
+        library_dir = unwrap(self.lib.library_dir)
 
         if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
@@ -907,7 +908,7 @@ class QtDriver(DriverMixin, QObject):
                     origin_id_ = selected[0]
 
             pending.append((origin_id_, Path(origin_path)))
-        elif (len(selected) > 1) or (len(selected) <= 1):
+        else:
             for item in selected:
                 entry = self.lib.get_entry(item)
                 filepath: Path = entry.path
@@ -924,39 +925,30 @@ class QtDriver(DriverMixin, QObject):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
                         self.main_window.preview_panel.preview_thumb.media_player.stop()
-                    if delete_file(self.lib.library_dir / f):
-                        self.main_window.status_bar.showMessage(
-                            Translations.format(
-                                "status.deleting_file", i=i, count=len(pending), path=f
-                            )
-                        )
-                        self.main_window.status_bar.repaint()
-                        self.lib.remove_entries([e_id])
 
+                    msg = Translations.format(
+                        "status.deleting_file", i=i, count=len(pending), path=f
+                    )
+                    self.main_window.status_bar.showMessage(msg)
+                    self.main_window.status_bar.repaint()
+
+                    self.lib.remove_entries([e_id])
+                    if delete_file(library_dir / f):
                         deleted_count += 1
-                selected.clear()
-                self.clear_select_action_callback()
 
-        if deleted_count > 0:
-            self.update_browsing_state()
-            self.main_window.preview_panel.set_selection(selected)
+        self.clear_select_action_callback()
+        self.update_browsing_state()
 
-        if len(selected) <= 1 and deleted_count == 0:
-            self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
-        elif len(selected) <= 1 and deleted_count == 1:
-            self.main_window.status_bar.showMessage(
-                Translations.format("status.deleted_file_plural", count=deleted_count)
-            )
-        elif len(selected) > 1 and deleted_count == 0:
-            self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
-        elif len(selected) > 1 and deleted_count < len(selected):
-            self.main_window.status_bar.showMessage(
-                Translations.format("status.deleted_partial_warning", count=deleted_count)
-            )
-        elif len(selected) > 1 and deleted_count == len(selected):
-            self.main_window.status_bar.showMessage(
-                Translations.format("status.deleted_file_plural", count=deleted_count)
-            )
+        if deleted_count > 0 and deleted_count != len(pending):
+            msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
+        else:
+            index = min(deleted_count, 2)
+            msg = (
+                Translations["status.deleted_none"],
+                Translations["status.deleted_file_singular"],
+                Translations.format("status.deleted_file_plural", count=deleted_count),
+            )[index]
+        self.main_window.status_bar.showMessage(msg)
         self.main_window.status_bar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
