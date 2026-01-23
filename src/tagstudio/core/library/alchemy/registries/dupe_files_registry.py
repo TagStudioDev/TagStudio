@@ -4,7 +4,6 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
@@ -52,16 +51,12 @@ class DupeFilesRegistry:
                         # The file is not in the library directory
                         continue
 
-                    results = self.library.search_library(
-                        BrowsingState.from_path(path_relative), 500
-                    )
-                    entries = self.library.get_entries(results.ids)
-
-                    if not results:
+                    entry = self.library.get_entry_full_by_path(path_relative)
+                    if entry is None:
                         # file not in library
                         continue
 
-                    files.append(entries[0])
+                    files.append(entry)
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do

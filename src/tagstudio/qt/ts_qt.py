@@ -17,6 +17,7 @@ import re
 import sys
 import time
 from argparse import Namespace
+from collections import OrderedDict
 from pathlib import Path
 from queue import Queue
 from shutil import which
@@ -206,7 +207,8 @@ class QtDriver(DriverMixin, QObject):
         self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.frame_content: list[int] = []  # List of Entry IDs on the current page
+        self.frame_content: list[int] = []  # List of Entry IDs for the current query
+        self._selected: OrderedDict[int, None] = OrderedDict()
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -258,7 +260,13 @@ class QtDriver(DriverMixin, QObject):
 
     @property
     def selected(self) -> list[int]:
-        return list(self.main_window.thumb_layout._selected.keys())
+        return list(self._selected.keys())
+
+    @property
+    def last_selected(self) -> int | None:
+        if len(self._selected) == 0:
+            return None
+        return reversed(self._selected).__next__()
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -564,6 +572,16 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
+        def on_visible_changed(entry_id: int | None):
+            current = self.browsing_history.current
+            page_index = current.page_index
+            if entry_id is None:
+                current.page_positions.pop(page_index)
+            else:
+                current.page_positions[page_index] = entry_id
+
+        self.main_window.thumb_layout.visible_changed.connect(on_visible_changed)
+
         self.archived_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
@@ -758,6 +776,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setWindowTitle(self.base_title)
 
         self.frame_content.clear()
+        self._selected.clear()
         if self.color_manager_panel:
             self.color_manager_panel.reset()
 
@@ -852,7 +871,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_all_action_callback(self):
         """Set the selection to all visible items."""
-        self.main_window.thumb_layout.select_all()
+        self.select_all()
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -861,7 +880,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
-        self.main_window.thumb_layout.select_inverse()
+        self.select_inverse()
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -869,7 +888,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
 
     def clear_select_action_callback(self):
-        self.main_window.thumb_layout.clear_selected()
+        self.clear_selected()
 
         self.set_select_actions_visibility()
         self.set_clipboard_menu_viability()
@@ -1195,16 +1214,16 @@ class QtDriver(DriverMixin, QObject):
     def page_move(self, value: int, absolute=False) -> None:
         logger.info("page_move", value=value, absolute=absolute)
 
+        current = self.browsing_history.current
         if not absolute:
-            value += self.browsing_history.current.page_index
+            current.page_index += value
+        else:
+            current.page_index = value
+        current.page_index = clamp(current.page_index, 0, self.pages_count - 1)
 
-        self.browsing_history.push(
-            self.browsing_history.current.with_page_index(clamp(value, 0, self.pages_count - 1))
-        )
-
-        # TODO: Re-allow selecting entries across multiple pages at once.
-        # This works fine with additive selection but becomes a nightmare with bridging.
-
+        # TODO: The back mouse button will no longer move to the previous page and
+        # instead goto the previous query passing a new state to update_browsing_state
+        # will get this behaviour back but would mess with persisting page scroll positions
         self.update_browsing_state()
 
     def navigation_callback(self, delta: int) -> None:
@@ -1265,12 +1284,12 @@ class QtDriver(DriverMixin, QObject):
         """
         logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
         if append:
-            self.main_window.thumb_layout.select_entry(item_id)
+            self.select_entry(item_id)
         elif bridge:
-            self.main_window.thumb_layout.select_to_entry(item_id)
+            self.select_to_entry(item_id)
         else:
-            self.main_window.thumb_layout.clear_selected()
-            self.main_window.thumb_layout.select_entry(item_id)
+            self.clear_selected()
+            self.select_entry(item_id)
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -1385,7 +1404,14 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
 
-        self.main_window.thumb_layout.set_entries(self.frame_content)
+        page_size = (
+            len(self.frame_content) if self.settings.infinite_scroll else self.settings.page_size
+        )
+        page = self.browsing_history.current.page_index
+        start = page * page_size
+        end = min(start + page_size, len(self.frame_content))
+
+        self.main_window.thumb_layout.set_entries(self.frame_content[start:end])
         self.main_window.thumb_layout.update()
         self.main_window.update()
 
@@ -1400,8 +1426,11 @@ class QtDriver(DriverMixin, QObject):
             add_tags(bool): Flag determining if tags associated with the badges need to be added to
                 the items. Defaults to True.
         """
-        item_ids = self.selected if (not origin_id or origin_id in self.selected) else [origin_id]
-        pending_entries: dict[BadgeType, list[int]] = {}
+        entry_ids = (
+            set(self._selected.keys())
+            if (origin_id == 0 or origin_id in self._selected)
+            else {origin_id}
+        )
 
         logger.info(
             "[QtDriver][update_badges] Updating ItemThumb badges",
@@ -1410,12 +1439,9 @@ class QtDriver(DriverMixin, QObject):
             add_tags=add_tags,
         )
         for it in self.main_window.thumb_layout._item_thumbs:
-            if it.item_id in item_ids:
+            if it.item_id in entry_ids:
                 for badge_type, value in badge_values.items():
                     if add_tags:
-                        if not pending_entries.get(badge_type):
-                            pending_entries[badge_type] = []
-                        pending_entries[badge_type].append(it.item_id)
                         it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
                     it.assign_badge(badge_type, value)
 
@@ -1424,10 +1450,9 @@ class QtDriver(DriverMixin, QObject):
 
         logger.info(
             "[QtDriver][update_badges] Adding tags to updated entries",
-            pending_entries=pending_entries,
+            pending_entries=entry_ids,
         )
         for badge_type, value in badge_values.items():
-            entry_ids = pending_entries.get(badge_type, [])
             tag_ids = [BADGE_TAGS[badge_type]]
 
             if value:
@@ -1455,8 +1480,7 @@ class QtDriver(DriverMixin, QObject):
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
-        results = self.lib.search_library(self.browsing_history.current, page_size)
+        results = self.lib.search_library(self.browsing_history.current, page_size=0)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1471,9 +1495,17 @@ class QtDriver(DriverMixin, QObject):
 
         # update page content
         self.frame_content = results.ids
+        page_index = self.browsing_history.current.page_index
+        if state is None:
+            entry_id = self.browsing_history.current.page_positions.get(page_index)
+        else:
+            entry_id = self.last_selected
+        if entry_id is not None:
+            self.main_window.thumb_layout.scroll_to(entry_id)
         self.update_thumbs()
 
         # update pagination
+        page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
         if page_size > 0:
             self.pages_count = math.ceil(results.total_count / page_size)
         else:
@@ -1689,3 +1721,45 @@ class QtDriver(DriverMixin, QObject):
             event.accept()
         else:
             event.ignore()
+
+    def select_all(self):
+        self._selected = OrderedDict.fromkeys(self.frame_content)
+        self.main_window.thumb_layout.update_selected()
+
+    def select_inverse(self):
+        selected = OrderedDict()
+        for id in self.frame_content:
+            if id not in self._selected:
+                selected[id] = None
+
+        self._selected = selected
+        self.main_window.thumb_layout.update_selected()
+
+    def select_entry(self, entry_id: int):
+        if entry_id in self._selected:
+            self._selected.pop(entry_id)
+        else:
+            self._selected[entry_id] = None
+        self.main_window.thumb_layout.update_selected()
+
+    def select_to_entry(self, entry_id: int):
+        if len(self._selected) == 0:
+            self.select_entry(entry_id)
+            return
+        last_selected = reversed(self._selected).__next__()
+        start = self.frame_content.index(last_selected)
+        end = self.frame_content.index(entry_id)
+
+        if start > end:
+            end, start = start, end
+        else:
+            end += 1
+
+        for i in range(start, end):
+            entry_id = self.frame_content[i]
+            self._selected[entry_id] = None
+        self.main_window.thumb_layout.update_selected()
+
+    def clear_selected(self):
+        self._selected.clear()
+        self.main_window.thumb_layout.update_selected()
