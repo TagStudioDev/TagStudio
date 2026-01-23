@@ -4,9 +4,9 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
 
@@ -28,7 +28,7 @@ class DupeFilesRegistry:
         A duplicate file is defined as an identical or near-identical file as determined
         by a DupeGuru results file.
         """
-        library_dir = self.library.library_dir
+        library_dir = unwrap(self.library.library_dir)
         if not isinstance(results_filepath, Path):
             results_filepath = Path(results_filepath)
 
@@ -43,7 +43,7 @@ class DupeFilesRegistry:
             files: list[Entry] = []
             for element in group:
                 if element.tag == "file":
-                    file_path = Path(element.attrib.get("path"))
+                    file_path = Path(unwrap(element.attrib.get("path")))
 
                     try:
                         path_relative = file_path.relative_to(library_dir)
@@ -51,16 +51,12 @@ class DupeFilesRegistry:
                         # The file is not in the library directory
                         continue
 
-                    results = self.library.search_library(
-                        BrowsingState.from_path(path_relative), 500
-                    )
-                    entries = self.library.get_entries(results.ids)
-
-                    if not results:
+                    entry = self.library.get_entry_full_by_path(path_relative)
+                    if entry is None:
                         # file not in library
                         continue
 
-                    files.append(entries[0])
+                    files.append(entry)
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do
@@ -82,5 +78,5 @@ class DupeFilesRegistry:
         for i, entries in enumerate(self.groups):
             remove_ids = entries[1:]
             logger.info("Removing entries group", ids=remove_ids)
-            self.library.remove_entries(remove_ids)
+            self.library.remove_entries([e.id for e in remove_ids])
             yield i - 1  # The -1 waits for the next step to finish
