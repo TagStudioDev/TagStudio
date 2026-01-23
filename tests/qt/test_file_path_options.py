@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import os
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import patch
@@ -19,7 +18,7 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.controllers.preview_panel.preview_panel_controller import PreviewPanel
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -76,26 +75,15 @@ def test_file_path_display(
     # Apply the mock value
     entry = library.get_entry(2)
     assert isinstance(entry, Entry)
-    filename = entry.path
-    panel._file_attributes_widget.update_stats(filepath=unwrap(library.library_dir) / filename)  # pyright: ignore[reportPrivateUsage]
 
-    # Generate the expected file string.
-    # This is copied directly from the file_attributes.py file
-    # can be imported as a function in the future
+    file_name = entry.path
+    panel._file_attributes.update_file_path(unwrap(library.library_dir) / file_name)
+
     display_path: Path = expected_path(library)
-    file_str: str = ""
-    separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
-    for i, part in enumerate(display_path.parts):
-        part_ = part.strip(os.path.sep)
-        if i != len(display_path.parts) - 1:
-            file_str += f"{'\u200b'.join(part_)}{separator}</b>"
-        else:
-            if file_str != "":
-                file_str += "<br>"
-            file_str += f"<b>{'\u200b'.join(part_)}</b>"
+    path_string: str = panel._file_attributes.format_path(display_path)
 
     # Assert the file path is displayed correctly
-    assert panel._file_attributes_widget.file_label.text() == file_str  # pyright: ignore[reportPrivateUsage]
+    assert panel._file_attributes_widget.file_path_label.text() == path_string  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.mark.parametrize(
