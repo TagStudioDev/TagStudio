@@ -224,7 +224,7 @@
     "menu.file.open_create_library": "&Abrir/Crear biblioteca",
     "menu.file.open_library": "Abrir biblioteca",
     "menu.file.open_recent_library": "Abrir reciente",
-    "menu.file.refresh_directories": "&Actualizar directorios",
+    "menu.file.refresh_directories": "Actualizar directorios",
     "menu.file.save_backup": "&Guardar copia de seguridad de la biblioteca",
     "menu.file.save_library": "Guardar biblioteca",
     "menu.help": "&Ayuda",
