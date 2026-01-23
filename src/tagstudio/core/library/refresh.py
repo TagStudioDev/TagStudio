@@ -11,8 +11,6 @@ from pathlib import Path
 from time import time
 
 import structlog
-from sqlalchemy import update
-from sqlalchemy.orm import Session
 from wcmatch import glob
 
 from tagstudio.core.library.alchemy.library import Library
@@ -85,21 +83,21 @@ class RefreshTracker:
             new_paths.setdefault(name, []).append(path)
 
         fixed: list[tuple[int, Path, Path]] = []
-        with Session(self.library.engine) as session:
-            for (
-                path,
-                entry_id,
-            ) in self._missing_paths.items():
-                name = Path(path.name)
-                if name not in new_paths or len(new_paths[name]) != 1:
-                    continue
-                new_path = new_paths.pop(name)[0]
-                self._new_paths.remove(new_path)
+        for (
+            path,
+            entry_id,
+        ) in self._missing_paths.items():
+            name = Path(path.name)
+            if name not in new_paths or len(new_paths[name]) != 1:
+                continue
+            new_path = new_paths.pop(name)[0]
+            self._new_paths.remove(new_path)
 
-                stmt = update(Entry).where(Entry.id == entry_id).values(path=new_path)
-                session.execute(stmt)
-                fixed.append((entry_id, path, new_path))
-            session.commit()
+            fixed.append((entry_id, path, new_path))
+
+        paths = ((id, new_path) for (id, _path, new_path) in fixed)
+        if not self.library.update_entry_paths(paths):
+            return
 
         for entry_id, path, new_path in fixed:
             self._del_path(path)

@@ -1174,6 +1174,23 @@ class Library:
             session.commit()
         return True
 
+    def update_entry_paths(self, paths: Iterable[tuple[int, Path]]) -> bool:
+        """Set the path field of many entries.
+
+        Returns True if the action succeeded and False if any path already exists.
+        """
+        with Session(self.engine) as session:
+            for entry_id, new_path in paths:
+                stmt = update(Entry).where(Entry.id == entry_id).values(path=new_path)
+                session.execute(stmt)
+            try:
+                session.commit()
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return False
+        return True
+
     def remove_tag(self, tag_id: int) -> bool:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
