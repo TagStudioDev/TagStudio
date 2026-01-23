@@ -48,8 +48,12 @@ class LibraryScannerController(QWidget):
     def scan(self, on_finish=None):
         pw = ScanProgressWidget()
 
-        def default_on_finish():
-            if self.tracker.missing_files_count > 0:
+        def on_finish_():
+            self.driver.on_library_scan()
+
+            if on_finish is not None:
+                on_finish()
+            elif self.tracker.missing_files_count > 0:
                 self.open_unlinked_view()
             else:
                 self.save_new_files()
@@ -59,23 +63,35 @@ class LibraryScannerController(QWidget):
             pw,
             iterator=lambda: self.tracker.refresh_dir(library_dir),
             on_update=lambda i: pw.on_update(i),
-            on_finish=on_finish or default_on_finish,
+            on_finish=on_finish_,
         )
 
     def open_unlinked_view(self):
         self.unlinked_modal.show()
+
+    def fix_unlinked_entries(self):
+        self.tracker.fix_unlinked_entries()
+        self.driver.on_library_scan()
+
+    def remove_unlinked_entries(self):
+        self.tracker.remove_unlinked_entries()
+        self.driver.on_library_scan()
 
     def save_new_files(self):
         files_to_save = self.tracker.new_files_count
         if files_to_save == 0:
             return
 
+        def on_finish():
+            self.driver.on_library_scan()
+            self.driver.update_browsing_state()
+
         pw = SaveNewProgressWidget(files_to_save)
         self._progress_bar(
             pw,
             iterator=self.tracker.save_new_files,
             on_update=lambda i: pw.on_update(i),
-            on_finish=lambda: files_to_save and self.driver.update_browsing_state(),
+            on_finish=on_finish,
         )
 
 

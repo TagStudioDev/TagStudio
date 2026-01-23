@@ -1009,6 +1009,12 @@ class QtDriver(DriverMixin, QObject):
 
         return msg.exec()
 
+    def on_library_scan(self):
+        unlinked_entries = self.library_scanner.unlinked_entries_count
+        self.lib.unlinked_entries_count = unlinked_entries
+        if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
+            self.library_info_window.update_cleanup()
+
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
         if hasattr(self, "library_scanner"):

@@ -101,7 +101,7 @@ class RemoveUnlinkedEntriesModal(QWidget):
         )
         pw.show()
 
-        r = CustomRunnable(self.scanner.tracker.remove_unlinked_entries)
+        r = CustomRunnable(self.scanner.remove_unlinked_entries)
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (

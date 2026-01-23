@@ -77,7 +77,7 @@ class UnlinkedEntriesModal(QWidget):
         self.scanner.scan(on_finish=self.update_unlinked_count)
 
     def _on_auto_relink(self):
-        self.scanner.tracker.fix_unlinked_entries()
+        self.scanner.fix_unlinked_entries()
         self.update_unlinked_count()
 
     def _on_remove(self):
