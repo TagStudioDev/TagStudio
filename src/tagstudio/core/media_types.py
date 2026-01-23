@@ -291,7 +291,10 @@ class MediaCategories:
         ".woff2",
     }
     _IMAGE_ANIMATED_SET: set[str] = {
+        ".avif",
         ".apng",
+        ".png",
+        ".jxl",
         ".gif",
         ".webp",
     }
