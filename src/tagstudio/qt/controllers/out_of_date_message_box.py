@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import VERSION
 from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 
@@ -30,7 +31,7 @@ class OutOfDateMessageBox(QMessageBox):
 
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
-        latest_release_version = TagStudioCore.get_most_recent_release_version()
+        latest_release_version = unwrap(TagStudioCore.get_most_recent_release_version())
         status = Translations.format(
             "version_modal.status",
             installed_version=f"<span style='color:{red}'>{VERSION}</span>",
