@@ -39,12 +39,12 @@ class IgnoredRegistry:
         library_dir: Path = unwrap(self.lib.library_dir)
 
         for i, entry in enumerate(self.lib.all_entries()):
+            yield i
             if not Ignore.compiled_patterns:
                 # If the compiled_patterns has malfunctioned, don't consider that a false positive
                 yield i
             elif Ignore.compiled_patterns.match(library_dir / entry.path):
                 self.ignored_entries.append(entry)
-            yield i
 
     def remove_ignored_entries(self) -> None:
         self.lib.remove_entries(list(map(lambda ignored: ignored.id, self.ignored_entries)))
