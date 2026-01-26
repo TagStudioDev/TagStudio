@@ -22,21 +22,19 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
     # Given
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, exclude_mode)
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, [".md"])
-    registry = RefreshTracker(library=library)
-    library.included_files.clear()
+    tracker = RefreshTracker(library=library)
     (library_dir / "FOO.MD").touch()
 
     # Test if the single file was added
-    list(registry.refresh_dir(library_dir, force_internal_tools=True))
-    assert registry.files_not_in_library == [Path("FOO.MD")]
+    list(tracker.refresh_dir(library_dir, force_internal_tools=True))
+    assert tracker._new_paths == {Path("FOO.MD")}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_refresh_multi_byte_filenames(library: Library):
     library_dir = unwrap(library.library_dir)
     # Given
-    registry = RefreshTracker(library=library)
-    library.included_files.clear()
+    tracker = RefreshTracker(library=library)
     (library_dir / ".TagStudio").mkdir()
     (library_dir / "こんにちは.txt").touch()
     (library_dir / "em–dash.txt").touch()
@@ -44,8 +42,8 @@ def test_refresh_multi_byte_filenames(library: Library):
     (library_dir / "umlaute äöü.txt").touch()
 
     # Test if all files were added with their correct names and without exceptions
-    list(registry.refresh_dir(library_dir))
-    assert Path("こんにちは.txt") in registry.files_not_in_library
-    assert Path("em–dash.txt") in registry.files_not_in_library
-    assert Path("apostrophe’.txt") in registry.files_not_in_library
-    assert Path("umlaute äöü.txt") in registry.files_not_in_library
+    list(tracker.refresh_dir(library_dir))
+    assert Path("こんにちは.txt") in tracker._new_paths
+    assert Path("em–dash.txt") in tracker._new_paths
+    assert Path("apostrophe’.txt") in tracker._new_paths
+    assert Path("umlaute äöü.txt") in tracker._new_paths

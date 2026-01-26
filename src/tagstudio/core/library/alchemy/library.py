@@ -1006,6 +1006,10 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
+    def all_paths(self) -> Iterable[tuple[int, Path]]:
+        with Session(self.engine) as session:
+            return ((i, p) for i, p in session.execute(select(Entry.id, Entry.path)).all())
+
     def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
         with Session(self.engine) as session:
@@ -1168,6 +1172,23 @@ class Library:
 
             session.execute(update_stmt)
             session.commit()
+        return True
+
+    def update_entry_paths(self, paths: Iterable[tuple[int, Path]]) -> bool:
+        """Set the path field of many entries.
+
+        Returns True if the action succeeded and False if any path already exists.
+        """
+        with Session(self.engine) as session:
+            for entry_id, new_path in paths:
+                stmt = update(Entry).where(Entry.id == entry_id).values(path=new_path)
+                session.execute(stmt)
+            try:
+                session.commit()
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return False
         return True
 
     def remove_tag(self, tag_id: int) -> bool:
