@@ -1,9 +1,10 @@
 import math
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
-from PySide6.QtCore import QPoint, QRect, QSize
+from PySide6.QtCore import QPoint, QRect, QSize, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLayout, QLayoutItem, QScrollArea
 
@@ -19,6 +20,9 @@ if TYPE_CHECKING:
 
 
 class ThumbGridLayout(QLayout):
+    # Id of first visible entry
+    visible_changed = Signal(int)
+
     def __init__(self, driver: "QtDriver", scroll_area: QScrollArea) -> None:
         super().__init__(None)
         self.driver: QtDriver = driver
@@ -26,10 +30,6 @@ class ThumbGridLayout(QLayout):
 
         self._item_thumbs: list[ItemThumb] = []
         self._items: list[QLayoutItem] = []
-        # Entry.id -> _entry_ids[index]
-        self._selected: dict[int, int] = {}
-        # _entry_ids[index]
-        self._last_selected: int | None = None
 
         self._entry_ids: list[int] = []
         self._entries: dict[int, Entry] = {}
@@ -47,11 +47,13 @@ class ThumbGridLayout(QLayout):
         # _entry_ids[StartIndex:EndIndex]
         self._last_page_update: tuple[int, int] | None = None
 
+        self._scroll_to: int | None = None
+
+    def scroll_to(self, entry_id: int):
+        self._scroll_to = entry_id
+
     def set_entries(self, entry_ids: list[int]):
         self.scroll_area.verticalScrollBar().setValue(0)
-
-        self._selected.clear()
-        self._last_selected = None
 
         self._entry_ids = entry_ids
         self._entries.clear()
@@ -83,90 +85,20 @@ class ThumbGridLayout(QLayout):
 
         self._last_page_update = None
 
-    def select_all(self):
-        self._selected.clear()
-        for index, id in enumerate(self._entry_ids):
-            self._selected[id] = index
-            self._last_selected = index
+    def update_selected(self):
+        for item_thumb in self._item_thumbs:
+            value = item_thumb.item_id in self.driver._selected
+            item_thumb.thumb_button.set_selected(value)
 
-        for entry_id in self._entry_items:
-            self._set_selected(entry_id)
-
-    def select_inverse(self):
-        selected = {}
-        for index, id in enumerate(self._entry_ids):
-            if id not in self._selected:
-                selected[id] = index
-                self._last_selected = index
-
-        for id in self._selected:
-            if id not in selected:
-                self._set_selected(id, value=False)
-        for id in selected:
-            self._set_selected(id)
-
-        self._selected = selected
-
-    def select_entry(self, entry_id: int):
-        if entry_id in self._selected:
-            index = self._selected.pop(entry_id)
-            if index == self._last_selected:
-                self._last_selected = None
-            self._set_selected(entry_id, value=False)
-        else:
-            try:
-                index = self._entry_ids.index(entry_id)
-            except ValueError:
-                index = -1
-
-            self._selected[entry_id] = index
-            self._last_selected = index
-            self._set_selected(entry_id)
-
-    def select_to_entry(self, entry_id: int):
-        index = self._entry_ids.index(entry_id)
-        if len(self._selected) == 0:
-            self.select_entry(entry_id)
-            return
-        if self._last_selected is None:
-            self._last_selected = min(self._selected.values(), key=lambda i: abs(index - i))
-
-        start = self._last_selected
-        self._last_selected = index
-
-        if start > index:
-            index, start = start, index
-        else:
-            index += 1
-
-        for i in range(start, index):
-            entry_id = self._entry_ids[i]
-            self._selected[entry_id] = i
-            self._set_selected(entry_id)
-
-    def clear_selected(self):
-        for entry_id in self._entry_items:
-            self._set_selected(entry_id, value=False)
-
-        self._selected.clear()
-        self._last_selected = None
-
-    def _set_selected(self, entry_id: int, value: bool = True):
-        if entry_id not in self._entry_items:
-            return
-        index = self._entry_items[entry_id]
-        if index < len(self._item_thumbs):
-            self._item_thumbs[index].thumb_button.set_selected(value)
-
-    def add_tags(self, entry_ids: list[int], tag_ids: list[int]):
+    def add_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
         for tag_id in tag_ids:
             self._tag_entries.setdefault(tag_id, set()).update(entry_ids)
 
-    def remove_tags(self, entry_ids: list[int], tag_ids: list[int]):
+    def remove_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
         for tag_id in tag_ids:
             self._tag_entries.setdefault(tag_id, set()).difference_update(entry_ids)
 
-    def _fetch_entries(self, ids: list[int]):
+    def _fetch_entries(self, ids: Iterable[int]):
         ids = [id for id in ids if id not in self._entries]
         entries = self.driver.lib.get_entries(ids)
         for entry in entries:
@@ -263,11 +195,23 @@ class ThumbGridLayout(QLayout):
         per_row, width_offset, height_offset = self._size(rect.right())
         view_height = self.parentWidget().parentWidget().height()
         offset = self.scroll_area.verticalScrollBar().value()
+        if self._scroll_to is not None:
+            try:
+                index = self._entry_ids.index(self._scroll_to)
+                value = (index // per_row) * height_offset
+                self.scroll_area.verticalScrollBar().setMaximum(value)
+                self.scroll_area.verticalScrollBar().setSliderPosition(value)
+                offset = value
+            except ValueError:
+                pass
+            self._scroll_to = None
 
         visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
         offset = int(offset / height_offset)
         start = offset * per_row
         end = start + (visible_rows * per_row)
+
+        self.visible_changed.emit(self._entry_ids[start])
 
         # Load closest off screen rows
         start -= per_row * 3
@@ -363,7 +307,7 @@ class ThumbGridLayout(QLayout):
             entry_id = self._entry_ids[i]
             item_index = self._entry_items[entry_id]
             item_thumb = self._item_thumbs[item_index]
-            item_thumb.thumb_button.set_selected(entry_id in self._selected)
+            item_thumb.thumb_button.set_selected(entry_id in self.driver._selected)
 
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry_id in self._tag_entries[TAG_ARCHIVED])
             item_thumb.assign_badge(BadgeType.FAVORITE, entry_id in self._tag_entries[TAG_FAVORITE])
@@ -383,7 +327,7 @@ class ThumbGridLayout(QLayout):
     @override
     def itemAt(self, index: int) -> QLayoutItem:
         if index >= len(self._items):
-            return None
+            return None  # pyright: ignore[reportReturnType]
         return self._items[index]
 
     @override

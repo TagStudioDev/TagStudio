@@ -43,6 +43,7 @@ jobs:
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
             libyaml-dev \
+            ripgrep \
             x11-utils
 
       - name: Execute pytest
