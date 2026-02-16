@@ -92,6 +92,7 @@ from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.mixed.tag_database import TagDatabasePanel
 from tagstudio.qt.mixed.tag_search import TagSearchModal
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.thumb_sizes import THUMB_SIZES
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
@@ -493,18 +494,18 @@ class QtDriver(DriverMixin, QObject):
         )
 
         def on_decrease_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
-            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+            new_val = self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(THUMB_SIZES):
+                self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(new_val)
 
         self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
             on_decrease_thumbnail_size_action
         )
 
         def on_increase_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
+            new_val = self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex() - 1
             if not new_val < 0:
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+                self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(new_val)
 
         self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
             on_increase_thumbnail_size_action
@@ -570,7 +571,7 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        self.main_window.search_field.textChanged.connect(self.update_completions_list)
+        self.main_window.search_bar.search_field.textChanged.connect(self.update_completions_list)
 
         def on_visible_changed(entry_id: int | None):
             current = self.browsing_history.current
@@ -646,7 +647,7 @@ class QtDriver(DriverMixin, QObject):
         def _update_browsing_state():
             try:
                 self.update_browsing_state(
-                    BrowsingState.from_search_query(self.main_window.search_field.text())
+                    BrowsingState.from_search_query(self.main_window.search_bar.search_field.text())
                     .with_sorting_mode(self.main_window.sorting_mode)
                     .with_sorting_direction(self.main_window.sorting_direction)
                     .with_show_hidden_entries(self.main_window.show_hidden_entries)
@@ -654,42 +655,42 @@ class QtDriver(DriverMixin, QObject):
             except ParsingError as e:
                 self.main_window.status_bar.showMessage(
                     f"{Translations['status.results.invalid_syntax']} "
-                    f'"{self.main_window.search_field.text()}"'
+                    f'"{self.main_window.search_bar.search_field.text()}"'
                 )
                 logger.error("[QtDriver] Could not update BrowsingState", error=e)
 
         # Search Button
-        self.main_window.search_button.clicked.connect(_update_browsing_state)
+        self.main_window.search_bar.search_button.clicked.connect(_update_browsing_state)
 
         # Search Field
-        self.main_window.search_field.returnPressed.connect(_update_browsing_state)
+        self.main_window.search_bar.search_field.returnPressed.connect(_update_browsing_state)
 
         # Sorting Dropdowns
-        self.main_window.sorting_mode_combobox.setCurrentIndex(
+        self.main_window.content_display_toolbar.sorting_mode_combobox.setCurrentIndex(
             list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
         )
-        self.main_window.sorting_mode_combobox.currentIndexChanged.connect(
+        self.main_window.content_display_toolbar.sorting_mode_combobox.currentIndexChanged.connect(
             self.sorting_mode_callback
         )
 
-        self.main_window.sorting_direction_combobox.currentIndexChanged.connect(
+        self.main_window.content_display_toolbar.sorting_direction_combobox.currentIndexChanged.connect(
             self.sorting_direction_callback
         )
 
         # Thumbnail Size ComboBox
-        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-        self.main_window.thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
+        self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        self.main_window.content_display_toolbar.thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex())
         )
 
         # Exclude hidden entries checkbox
-        self.main_window.show_hidden_entries_checkbox.setChecked(False)  # Default: No
-        self.main_window.show_hidden_entries_checkbox.stateChanged.connect(
+        self.main_window.content_display_toolbar.show_hidden_entries_checkbox.setChecked(False)  # Default: No
+        self.main_window.content_display_toolbar.show_hidden_entries_checkbox.stateChanged.connect(
             self.show_hidden_entries_callback
         )
 
-        self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
-        self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
+        self.main_window.search_bar.back_button.clicked.connect(lambda: self.navigation_callback(-1))
+        self.main_window.search_bar.forward_button.clicked.connect(lambda: self.navigation_callback(1))
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
@@ -760,7 +761,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Reset library state
         self.main_window.preview_panel.set_selection(self.selected)
-        self.main_window.search_field.setText("")
+        self.main_window.search_bar.search_field.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
         self.__reset_navigation()
@@ -1341,7 +1342,7 @@ class QtDriver(DriverMixin, QObject):
                 "tag_id:",
                 "special:untagged",
             ]
-            self.main_window.search_field_completion_list.setStringList(completion_list)
+            self.main_window.search_bar.search_field_completion_list.setStringList(completion_list)
 
         if not matches:
             return
@@ -1390,11 +1391,11 @@ class QtDriver(DriverMixin, QObject):
             )
 
         update_completion_list: bool = (
-            completion_list != self.main_window.search_field_completion_list.stringList()
-            or self.main_window.search_field_completion_list == []
+            completion_list != self.main_window.search_bar.search_field_completion_list.stringList()
+            or self.main_window.search_bar.search_field_completion_list == []
         )
         if update_completion_list:
-            self.main_window.search_field_completion_list.setStringList(completion_list)
+            self.main_window.search_bar.search_field_completion_list.setStringList(completion_list)
 
     def update_thumbs(self):
         """Update search thumbnails."""
@@ -1471,7 +1472,7 @@ class QtDriver(DriverMixin, QObject):
         if state:
             self.browsing_history.push(state)
 
-        self.main_window.search_field.setText(self.browsing_history.current.query or "")
+        self.main_window.search_bar.search_field.setText(self.browsing_history.current.query or "")
 
         # inform user about running search
         self.main_window.status_bar.showMessage(Translations["status.library_search_query"])
