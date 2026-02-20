@@ -70,7 +70,7 @@ class TagSearchPanel(PanelWidget):
     is_tag_chooser: bool
     exclude: list[int]
 
-    _limit_items: list[int | str] = [25, 50, 100, 250, 500, Translations["tag.all_tags"]]
+    _limit_items: list[int | str] = [25, 50, 100, 250, 500]
     _default_limit_idx: int = 0  # 50 Tag Limit (Default)
     cur_limit_idx: int = _default_limit_idx
     tag_limit: int | str = _limit_items[_default_limit_idx]
@@ -105,6 +105,7 @@ class TagSearchPanel(PanelWidget):
         self.limit_combobox = QComboBox()
         self.limit_combobox.setEditable(False)
         self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
+        self.limit_combobox.addItem(Translations["tag.all_tags"])
         self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)
         self.limit_combobox.currentIndexChanged.connect(self.update_limit)
         self.previous_limit: int = (

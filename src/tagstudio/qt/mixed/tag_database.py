@@ -60,15 +60,20 @@ class TagDatabasePanel(TagSearchPanel):
             return
 
         message_box = QMessageBox(
-            QMessageBox.Question,  # type: ignore
+            QMessageBox.Warning,  # type: ignore
             Translations["tag.remove"],
             Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag)),
-            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+        )
+        message_box.addButton(QMessageBox.StandardButton.Discard).setText(
+            Translations["generic.remove"]
+        )
+        message_box.addButton(QMessageBox.StandardButton.Cancel).setText(
+            Translations["generic.cancel"]
         )
 
         result = message_box.exec()
 
-        if result != QMessageBox.Ok:  # type: ignore
+        if result != QMessageBox.StandardButton.Discard:
             return
 
         self.lib.remove_tag(tag.id)
