@@ -4,10 +4,13 @@
 
 
 import enum
+import mimetypes
 import shutil
+import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
+import requests
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
@@ -100,21 +103,28 @@ class DropImportModal(QWidget):
         self.dirs_in_root: list[Path] = []
         self.duplicate_files: list[Path] = []
 
-        self.collect_files_to_import(urls)
+        files: list[Path] = []
+
+        self.temp_dirs: list[tempfile.TemporaryDirectory] = []
+        for url in urls:
+            if url.scheme() in ("http", "https"):
+                if (file := self.save_web_file(url)) is not None:
+                    files.append(file)
+            elif url.isLocalFile():
+                files.append(Path(url.toLocalFile()))
+            else:
+                logger.warning("Unsupported URL scheme", url=url.toString(), scheme=url.scheme())
+
+        self.collect_local_files_to_import(files)
 
         if len(self.duplicate_files) > 0:
             self.ask_duplicates_choice()
         else:
             self.begin_transfer()
 
-    def collect_files_to_import(self, urls: list[QUrl]):
+    def collect_local_files_to_import(self, files: list[Path]):
         """Collect one or more files from drop event urls."""
-        for url in urls:
-            if not url.isLocalFile():
-                continue
-
-            file = Path(url.toLocalFile())
-
+        for file in files:
             if file.is_dir():
                 for f in file.glob("**/*"):
                     if f.is_dir():
@@ -187,7 +197,14 @@ class DropImportModal(QWidget):
             displayed_text,
             self.driver.add_new_files_callback,
             self.deleteLater,
+            self.cleanup_temp_dirs,
         )
+
+    def cleanup_temp_dirs(self):
+        """Cleanup all temporary directories created for downloaded files."""
+        for temp_dir in self.temp_dirs:
+            temp_dir.cleanup()
+        self.temp_dirs.clear()
 
     def copy_files(self):
         """Copy files from original location to the library directory."""
@@ -215,6 +232,49 @@ class DropImportModal(QWidget):
 
             file_count += 1
             yield [file_count, duplicated_files_progress]
+
+    def save_web_file(self, url: QUrl) -> Path | None:
+        with requests.get(url.toString(), stream=True) as response:
+            if not response.ok:
+                logger.error(
+                    "Failed to download URL", url=url.toString(), status_code=response.status_code
+                )
+                return None
+
+            cd = response.headers.get("Content-Disposition")
+            if cd is None or not (cd.startswith("attachment;") or cd.startswith("inline;")):
+                logger.error("URL does not point to a downloadable file", url=url.toString())
+                return None
+
+            # Save in separate temp dirs to avoid filename conflicts, since those are
+            # managed later by `self.ask_duplicates_choice()`.
+            temp_dir = tempfile.TemporaryDirectory()
+
+            if "filename=" in cd:
+                fname = cd.split("filename=")[-1].split(";")[0].strip('"')
+                logger.info("Filename from Content-Disposition header", filename=fname)
+            else:
+                to_guess = response.headers.get("Content-Type", "application/octet-stream")
+                ext = mimetypes.guess_extension(to_guess)
+                if ext is None:
+                    logger.warning(
+                        "Could not determine file extension for URL",
+                        url=url.toString(),
+                        content_type=to_guess,
+                    )
+                    ext = ".bin"
+                fname = f"downloaded_file_{len(self.temp_dirs)}{ext}"
+                logger.info("Filename not available, using generated filename", filename=fname)
+
+            out_path = Path(temp_dir.name) / fname
+            logger.info("Downloading file from URL", url=url.toString(), output_path=str(out_path))
+            with open(out_path, "wb") as fd:
+                for chunk in response.iter_content(chunk_size=8192):
+                    fd.write(chunk)
+
+            self.temp_dirs.append(temp_dir)
+
+            return out_path
 
     def _get_relative_path(self, path: Path) -> Path:
         for dir in self.dirs_in_root:
