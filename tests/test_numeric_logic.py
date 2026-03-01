@@ -1,3 +1,11 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+# NOTE: This file contains necessary use of deprecated first-party code until that
+# code is removed in a future version (prefs).
+# pyright: reportDeprecated=false
+
 from pathlib import Path
 
 from tagstudio.core.library.alchemy.fields import NumericField
