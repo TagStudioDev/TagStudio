@@ -306,13 +306,13 @@ class QtDriver(DriverMixin, QObject):
             sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
-        if self.settings.theme == Theme.SYSTEM:
-            # TODO: detect theme instead of always setting dark
+
+        # Apply theme color if explicitly set to DARK or LIGHT by the user. 
+        # For SYSTEM, we let Qt decide based on OS theme.
+        if self.settings.theme == Theme.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        else:
-            self.app.styleHints().setColorScheme(
-                Qt.ColorScheme.Dark if self.settings.theme == Theme.DARK else Qt.ColorScheme.Light
-            )
+        elif self.settings.theme == Theme.LIGHT:
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
