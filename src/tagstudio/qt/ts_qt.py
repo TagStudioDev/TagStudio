@@ -307,7 +307,7 @@ class QtDriver(DriverMixin, QObject):
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
 
-        # Apply theme color if explicitly set to DARK or LIGHT by the user. 
+        # Apply theme color if explicitly set to DARK or LIGHT by the user.
         # For SYSTEM, we let Qt decide based on OS theme.
         if self.settings.theme == Theme.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
