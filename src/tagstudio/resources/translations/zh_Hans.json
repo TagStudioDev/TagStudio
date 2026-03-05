@@ -94,6 +94,7 @@
     "file.open_location.mac": "在 Finder 中显示",
     "file.open_location.windows": "在资源管理器中展示",
     "file.path": "文件路径",
+    "file.size": "文件大小",
     "folders_to_tags.close_all": "关闭全部",
     "folders_to_tags.converting": "正在将文件夹转换为标签",
     "folders_to_tags.description": "根据你的文件夹结构创建标签并应用在项目上。\n 下方的结构图将会显示所创建的所有标签及其对应的应用项目。",

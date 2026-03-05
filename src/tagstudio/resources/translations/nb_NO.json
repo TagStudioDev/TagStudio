@@ -94,6 +94,7 @@
     "file.open_location.mac": "Åpne i Finder",
     "file.open_location.windows": "Vis i Filutforsker",
     "file.path": "Filbane",
+    "file.size": "Filstørrelse",
     "folders_to_tags.close_all": "Lukk Alle",
     "folders_to_tags.converting": "Konverterer mapper til etiketter",
     "folders_to_tags.description": "Lager etiketter basert på din filsturktur og legger dem til dine oppføringer.\n Strukturen viser alle de etikettene som vil bli lagd og hvilke oppføringer de vil bli lagt til på.",

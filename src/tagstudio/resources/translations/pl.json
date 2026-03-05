@@ -86,6 +86,7 @@
     "file.open_location.mac": "Pokaż plik w Finderze",
     "file.open_location.windows": "Pokaż plik w Eksploratorze plików",
     "file.path": "Ścieżka Pliku",
+    "file.size": "Rozmiar Pliku",
     "folders_to_tags.close_all": "Zamknij wszystko",
     "folders_to_tags.converting": "Konwertowanie folderów na tagi",
     "folders_to_tags.description": "Tworzy tagi na podstawie struktury folderów i stosuje je do wpisów.\n Poniższa struktura przedstawia wszystkie utworzone tagi i wpisy, do których zostaną one zastosowane.",

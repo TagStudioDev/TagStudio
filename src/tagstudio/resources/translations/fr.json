@@ -97,6 +97,7 @@
     "file.open_location.mac": "Montrer dans le Finder",
     "file.open_location.windows": "Montrer dans l'explorateur de Fichiers",
     "file.path": "Chemin du Fichier",
+    "file.size": "Taille du Fichier",
     "folders_to_tags.close_all": "Tout Fermer",
     "folders_to_tags.converting": "Conversion des dossiers en Tags",
     "folders_to_tags.description": "Créé des Tags basés sur votre arborescence de dossier et les applique à vos entrées.\nLa structure ci-dessous affiche tous les labels qui seront créés et à quelles entrées ils seront appliqués.",

@@ -97,6 +97,7 @@
     "file.open_location.mac": "Finder で見る",
     "file.open_location.windows": "エクスプローラーで表示する",
     "file.path": "ファイル パス",
+    "file.size": "ファイルサイズ",
     "folders_to_tags.close_all": "すべて閉じる",
     "folders_to_tags.converting": "フォルダーをタグに変換",
     "folders_to_tags.description": "フォルダー構造に基づいてタグを作成し、エントリに適用します。\n以下の構造は、作成されるすべてのタグと、それらが適用されるエントリを示しています。",

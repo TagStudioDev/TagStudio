@@ -97,6 +97,7 @@
     "file.open_location.mac": "Abrir en el Finder",
     "file.open_location.windows": "Abrir en el Explorador",
     "file.path": "Ruta de archivo",
+    "file.size": "Tamaño de archivo",
     "folders_to_tags.close_all": "Cerrar todo",
     "folders_to_tags.converting": "Convertir carpetas en etiquetas",
     "folders_to_tags.description": "Crea etiquetas basadas en su estructura de carpetas y las aplica a sus entradas.\nLa siguiente estructura muestra todas las etiquetas que se crearán y a qué entradas se aplicarán.",

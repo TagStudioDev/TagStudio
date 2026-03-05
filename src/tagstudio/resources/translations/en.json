@@ -97,6 +97,7 @@
     "file.open_location.mac": "Reveal in Finder",
     "file.open_location.windows": "Show in File Explorer",
     "file.path": "File Path",
+    "file.size": "File Size",
     "folders_to_tags.close_all": "Close All",
     "folders_to_tags.converting": "Converting folders to Tags",
     "folders_to_tags.description": "Creates tags based on your folder structure and applies them to your entries.\n The structure below shows all the tags that will be created and what entries they will be applied to.",

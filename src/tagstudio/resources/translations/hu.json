@@ -97,6 +97,7 @@
     "file.open_location.mac": "Megnyitás Finderben",
     "file.open_location.windows": "Megnyitás Intézőben",
     "file.path": "Elérési út",
+    "file.size": "Fájlméret",
     "folders_to_tags.close_all": "Az összes ö&sszecsukása",
     "folders_to_tags.converting": "Mappák címkékké alakítása",
     "folders_to_tags.description": "Címkék automatikus létrehozása a létező mappastruktúra alapján.\nAz alábbi mappafán megtekintheti a létrehozandó címkéket, és hogy mely elemekre lesznek alkalmazva.",

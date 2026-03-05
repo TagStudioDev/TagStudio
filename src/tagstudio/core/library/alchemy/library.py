@@ -1053,16 +1053,19 @@ class Library:
 
             statement = statement.distinct(Entry.id)
 
+            is_size_sort = search.sorting_mode == SortingModeEnum.SIZE
+
             sort_on: ColumnExpressionArgument = Entry.id
-            match search.sorting_mode:
-                case SortingModeEnum.DATE_ADDED:
-                    sort_on = Entry.id
-                case SortingModeEnum.FILE_NAME:
-                    sort_on = func.lower(Entry.filename)
-                case SortingModeEnum.PATH:
-                    sort_on = func.lower(Entry.path)
-                case SortingModeEnum.RANDOM:
-                    sort_on = func.sin(Entry.id * search.random_seed)
+            if not is_size_sort:
+                match search.sorting_mode:
+                    case SortingModeEnum.DATE_ADDED:
+                        sort_on = Entry.id
+                    case SortingModeEnum.FILE_NAME:
+                        sort_on = func.lower(Entry.filename)
+                    case SortingModeEnum.PATH:
+                        sort_on = func.lower(Entry.path)
+                    case SortingModeEnum.RANDOM:
+                        sort_on = func.sin(Entry.id * search.random_seed)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
 
@@ -1086,6 +1089,9 @@ class Library:
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
+            if is_size_sort:
+                ids = self._sort_ids_by_file_size(ids, search.ascending)
+
             res = SearchResult(
                 total_count=total_count,
                 ids=ids,
@@ -1094,6 +1100,42 @@ class Library:
             session.expunge_all()
 
             return res
+
+    def _sort_ids_by_file_size(self, ids: list[int], ascending: bool) -> list[int]:
+        """Sort entry IDs by their file size on disk.
+
+        Entries whose files cannot be stat-ed (unlinked or missing) are
+        assigned a sentinel size of -1 and sort to the low end.
+
+        Args:
+            ids: Entry IDs to sort.
+            ascending: If True, sort smallest first.
+
+        Returns:
+            The same IDs re-ordered by file size.
+        """
+        if not ids:
+            return ids
+
+        library_dir = unwrap(self.library_dir)
+
+        with Session(unwrap(self.engine)) as session:
+            rows = session.execute(
+                select(Entry.id, Entry.path).where(Entry.id.in_(ids))
+            ).fetchall()
+
+        id_to_path: dict[int, Path] = {row[0]: row[1] for row in rows}
+
+        def get_size(entry_id: int) -> int:
+            path = id_to_path.get(entry_id)
+            if path is None:
+                return -1
+            try:
+                return (library_dir / path).stat().st_size
+            except OSError:
+                return -1
+
+        return sorted(ids, key=get_size, reverse=not ascending)
 
     def search_tags(self, name: str | None, limit: int = 100) -> list[set[Tag]]:
         """Return a list of Tag records matching the query."""
