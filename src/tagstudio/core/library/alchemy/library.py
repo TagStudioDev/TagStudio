@@ -1031,8 +1031,6 @@ class Library:
         with Session(unwrap(self.engine), expire_on_commit=False) as session:
             is_size_sort = search.sorting_mode == SortingModeEnum.SIZE
 
-            # Size sorting requires all IDs to rank correctly; bypass SQL pagination
-            # and slice the page manually after the Python sort.
             if page_size and not is_size_sort:
                 statement = (
                     select(Entry.id, func.count().over())
