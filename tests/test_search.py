@@ -224,7 +224,12 @@ def test_sort_by_size_descending():
             assert entry is not None
             sizes.append((unwrap(lib.library_dir) / entry.path).stat().st_size)
 
-        assert sizes == sorted(sizes, reverse=True), f"Expected descending order, got sizes: {sizes}"
+        assert (
+            sizes == sorted(sizes, reverse=True)
+        ), (
+            f"Expected descending order, "
+            f"got sizes: {sizes}"
+        )
     finally:
         tmp.cleanup()
 
