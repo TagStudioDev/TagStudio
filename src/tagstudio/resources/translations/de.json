@@ -97,7 +97,6 @@
     "file.open_location.mac": "In Finder anzeigen",
     "file.open_location.windows": "Im Explorer anzeigen",
     "file.path": "Dateipfad",
-    "file.size": "Dateigröße",
     "folders_to_tags.close_all": "Alle schließen",
     "folders_to_tags.converting": "Wandele Ordner zu Tags um",
     "folders_to_tags.description": "Erstellt Tags basierend auf der Verzeichnisstruktur und wendet sie auf die Einträge an.\nDer folgende Verzeichnisbaum zeigt welche Tags erstellt werden würden und auf welche Einträge sie angewendet werden würden.",

@@ -84,7 +84,6 @@
     "file.open_location.mac": "Mostrar no Finder",
     "file.open_location.windows": "Mostrar no Explorador de Ficheiros",
     "file.path": "Caminho do ficheiro",
-    "file.size": "Tamanho do ficheiro",
     "folders_to_tags.close_all": "Fechar Tudo",
     "folders_to_tags.converting": "A converter pastas para Tags",
     "folders_to_tags.description": "Cria tags com base na sua estrutura de pastas e aplica-as aos seus registos\nA estrutura abaixo mostra todas as tags que serão criadas e em quais elementos serão aplicadas.",

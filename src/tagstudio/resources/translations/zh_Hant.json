@@ -97,7 +97,6 @@
     "file.open_location.mac": "在 Finder 中顯示",
     "file.open_location.windows": "在檔案總管中顯示",
     "file.path": "檔案路徑",
-    "file.size": "檔案大小",
     "folders_to_tags.close_all": "關閉全部",
     "folders_to_tags.converting": "正在轉換資料夾為標籤",
     "folders_to_tags.description": "根據資料夾結構建立標籤並套用到您的項目上。\n以下結構顯示了所有將被建立的標籤和這些標籤會被套用到哪些項目上。",

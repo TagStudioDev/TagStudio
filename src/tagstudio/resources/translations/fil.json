@@ -86,7 +86,6 @@
     "file.open_location.mac": "Ipakita sa Finder",
     "file.open_location.windows": "Ipakita sa File Explorer",
     "file.path": "Path ng File",
-    "file.size": "Laki ng File",
     "folders_to_tags.close_all": "Isara Lahat",
     "folders_to_tags.converting": "Kino-convert ang mga folder sa Tag",
     "folders_to_tags.description": "Gumawa ng mga tag base sa iyong estruktura ng folder at ia-apply sa iyong mga entry.\nAng istraktura sa ibaba ay pinapakita ang lahat ng mga tag na gagawin at anong mga entry ang ia-apply sa.",

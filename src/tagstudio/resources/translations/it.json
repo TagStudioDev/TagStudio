@@ -97,7 +97,6 @@
     "file.open_location.mac": "Mostra nel Finder",
     "file.open_location.windows": "Mostra in File Explorer",
     "file.path": "Percorso del File",
-    "file.size": "Dimensione del File",
     "folders_to_tags.close_all": "Chiudi Tutto",
     "folders_to_tags.converting": "Conversione delle cartelle in Etichette",
     "folders_to_tags.description": "Crea Etichette basate sulla struttura delle tue cartelle e le applica alle tue voci.\nLa struttura riportata di seguito mostra tutte le etichette che verranno create ed a che voci verranno applicate.",

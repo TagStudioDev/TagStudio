@@ -1029,7 +1029,11 @@ class Library:
         assert self.library_dir
 
         with Session(unwrap(self.engine), expire_on_commit=False) as session:
-            if page_size:
+            is_size_sort = search.sorting_mode == SortingModeEnum.SIZE
+
+            # Size sorting requires all IDs to rank correctly; bypass SQL pagination
+            # and slice the page manually after the Python sort.
+            if page_size and not is_size_sort:
                 statement = (
                     select(Entry.id, func.count().over())
                     .offset(search.page_index * page_size)
@@ -1053,8 +1057,6 @@ class Library:
 
             statement = statement.distinct(Entry.id)
 
-            is_size_sort = search.sorting_mode == SortingModeEnum.SIZE
-
             sort_on: ColumnExpressionArgument = Entry.id
             if not is_size_sort:
                 match search.sorting_mode:
@@ -1076,7 +1078,7 @@ class Library:
             )
 
             start_time = time.time()
-            if page_size:
+            if page_size and not is_size_sort:
                 rows = session.execute(statement).fetchall()
                 ids = []
                 total_count = 0
@@ -1091,6 +1093,9 @@ class Library:
 
             if is_size_sort:
                 ids = self._sort_ids_by_file_size(ids, search.ascending)
+                if page_size:
+                    start = search.page_index * page_size
+                    ids = ids[start : start + page_size]
 
             res = SearchResult(
                 total_count=total_count,

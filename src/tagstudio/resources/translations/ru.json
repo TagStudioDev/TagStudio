@@ -87,7 +87,6 @@
     "file.open_location.mac": "Показать в Finder",
     "file.open_location.windows": "Открыть в проводнике",
     "file.path": "Путь до файла",
-    "file.size": "Размер файла",
     "folders_to_tags.close_all": "Закрыть всё",
     "folders_to_tags.converting": "Конвертировать папки в теги",
     "folders_to_tags.description": "Создаёт теги для записей согласно имеющейся иерархии папок.\nВнизу указаны все теги, которые будут созданы, а также записи к которым они будут применены.",
