@@ -132,6 +132,10 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
+    def refresh_selection(self, update_preview: bool = False) -> None:
+        """Refresh the current selection without requiring the caller to re-read it."""
+        self.set_selection(self._selected, update_preview=update_preview)
+
     def set_selection(self, selected: list[int], update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 

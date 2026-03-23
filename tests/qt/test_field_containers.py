@@ -7,6 +7,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -183,3 +184,26 @@ def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: 
                 assert container.title != "<h4>Tags</h4>"
             case _:
                 pass
+
+
+def test_multi_selection_mixed_section_resets_on_single_selection(
+    qt_driver: QtDriver, library: Library
+):
+    panel = PreviewPanel(library, qt_driver)
+    field_containers = panel.field_containers_widget
+
+    field_containers.update_from_entries([1, 2])
+
+    container_titles = [c.title for c in field_containers.containers]
+    assert f"<h4>{Translations['preview.partial_section']}</h4>" in container_titles
+    assert "<h4>Tags</h4>" in container_titles
+    assert "<h4>Title</h4>" in container_titles
+    assert [entry.id for entry in field_containers.cached_entries] == [1, 2]
+
+    field_containers.update_from_entry(1)
+
+    entry = unwrap(library.get_entry_full(1))
+    active_container_count = len(field_containers.get_tag_categories(entry.tags)) + len(entry.fields)
+    active_titles = [field_containers.containers[i].title for i in range(active_container_count)]
+    assert f"<h4>{Translations['preview.partial_section']}</h4>" not in active_titles
+    assert [cached_entry.id for cached_entry in field_containers.cached_entries] == [1]

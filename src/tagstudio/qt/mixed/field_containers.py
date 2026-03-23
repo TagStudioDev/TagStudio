@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QMessageBox,
     QScrollArea,
@@ -105,17 +106,22 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True):
         """Update tags and fields from a single Entry source."""
-        logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
-
-        entry = unwrap(self.lib.get_entry_full(entry_id))
-        self.cached_entries = [entry]
-        self.update_granular(entry.tags, entry.fields, update_badges)
+        self.update_from_selection(entry_id, update_badges)
 
     def update_from_entries(self, entry_ids: list[int], update_badges: bool = True):
         """Update tags and fields from multiple Entry sources, showing shared tags."""
-        logger.warning("[FieldContainers] Updating Multiple Selection", entry_ids=entry_ids)
+        self.update_from_selection(entry_ids, update_badges)
 
-        entries = list(self.lib.get_entries_full(entry_ids))
+    def update_from_selection(self, entry_ids: int | list[int], update_badges: bool = True):
+        """Update tags and fields from one or more Entry sources."""
+        entry_ids = [entry_ids] if isinstance(entry_ids, int) else list(entry_ids)
+        logger.warning("[FieldContainers] Updating Selection", entry_ids=entry_ids)
+
+        if len(entry_ids) == 1:
+            entries = [unwrap(self.lib.get_entry_full(entry_ids[0]))]
+        else:
+            entries = list(self.lib.get_entries_full(entry_ids))
+
         if not entries:
             self.cached_entries = []
             self.hide_containers()
@@ -123,40 +129,40 @@ class FieldContainers(QWidget):
 
         self.cached_entries = entries
 
+        if len(entries) == 1:
+            entry = entries[0]
+            self.update_granular(entry.tags, entry.fields, update_badges)
+            return
+
         shared_tags = self._get_shared_tags(entries)
+        mixed_tags = set().union(*(entry.tags for entry in entries)) - shared_tags
+        shared_fields, mixed_fields = self._split_fields(entries)
 
-        # Compute shared and mixed fields by type id and value.
-        all_fields_by_type: dict[int, list[BaseField]] = {}
-        for entry in entries:
-            for field in entry.fields:
-                all_fields_by_type.setdefault(field.type.id, []).append(field)
-
-        shared_fields: list[BaseField] = []
-        mixed_fields: list[BaseField] = []
-        for fields in all_fields_by_type.values():
-            if len(fields) == len(entries) and all(f.value == fields[0].value for f in fields):
-                shared_fields.append(fields[0])
-            else:
-                mixed_fields.append(fields[0])
-
-        all_fields: list[BaseField] = shared_fields + mixed_fields
-        mixed_field_type_ids: set[int] = {f.type.id for f in mixed_fields}
-
-        self.update_granular(
+        next_index = self.update_granular(
             shared_tags,
-            all_fields,
+            shared_fields,
             update_badges,
-            mixed_field_type_ids=mixed_field_type_ids if mixed_field_type_ids else None,
+            hide_leftovers=False,
         )
 
-        # Add a separate container for tags that aren't shared across all entries.
-        all_tags: set[Tag] = set()
-        for entry in entries:
-            all_tags.update(entry.tags)
-        mixed_tags: set[Tag] = all_tags - shared_tags
-        if mixed_tags:
-            index = len(self.containers)
-            self.write_tag_container(index, tags=mixed_tags, category_tag=None, is_mixed=True)
+        if mixed_tags or mixed_fields:
+            next_index = self.write_info_container(
+                next_index,
+                Translations["preview.partial_section"],
+                Translations["preview.partial_section_body"],
+            )
+
+            if mixed_tags:
+                categories = self.get_tag_categories(mixed_tags)
+                for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
+                    self.write_tag_container(next_index, tags=tags, category_tag=cat, is_mixed=True)
+                    next_index += 1
+
+            for field in mixed_fields:
+                self.write_container(next_index, field, is_mixed=True)
+                next_index += 1
+
+        self.hide_unused_containers(next_index)
 
     def _get_shared_tags(self, entries: list[Entry]) -> set[Tag]:
         """Get tags that are present in all entries."""
@@ -179,20 +185,38 @@ class FieldContainers(QWidget):
 
         for field in first_entry_fields:
             if all(
-                any(f.type.id == field.type.id and f.value == field.value for f in entry.fields)
+                any(f.type_key == field.type_key and f.value == field.value for f in entry.fields)
                 for entry in entries[1:]
             ):
                 shared_fields.append(field)
 
         return shared_fields
 
+    def _split_fields(self, entries: list[Entry]) -> tuple[list[BaseField], list[BaseField]]:
+        """Split fields into shared and mixed groups for a multi-selection."""
+        all_fields_by_type: dict[str, list[BaseField]] = {}
+        for entry in entries:
+            for field in entry.fields:
+                all_fields_by_type.setdefault(field.type_key, []).append(field)
+
+        shared_fields: list[BaseField] = []
+        mixed_fields: list[BaseField] = []
+        for fields in all_fields_by_type.values():
+            if len(fields) == len(entries) and all(f.value == fields[0].value for f in fields):
+                shared_fields.append(fields[0])
+            else:
+                mixed_fields.append(fields[0])
+
+        return shared_fields, mixed_fields
+
     def update_granular(
         self,
         entry_tags: set[Tag],
         entry_fields: list[BaseField],
         update_badges: bool = True,
-        mixed_field_type_ids: set[int] | None = None,
-    ):
+        *,
+        hide_leftovers: bool = True,
+    ) -> int:
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
         container_index = 0
@@ -210,14 +234,13 @@ class FieldContainers(QWidget):
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
-            is_mixed = mixed_field_type_ids is not None and field.type.id in mixed_field_type_ids
-            self.write_container(index, field, is_mixed=is_mixed)
+            self.write_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self.containers) > container_len:
-            for i, c in enumerate(self.containers):
-                if i > (container_len - 1):
-                    c.setHidden(True)
+        if hide_leftovers:
+            self.hide_unused_containers(container_len)
+
+        return container_len
 
     def update_toggled_tag(self, tag_id: int, toggle_value: bool):
         """Visually add or remove a tag from the item preview without needing to query the db."""
@@ -236,6 +259,12 @@ class FieldContainers(QWidget):
         """Hide all field and tag containers."""
         for c in self.containers:
             c.setHidden(True)
+
+    def hide_unused_containers(self, visible_count: int) -> None:
+        """Hide containers that are no longer part of the active selection view."""
+        for i, container in enumerate(self.containers):
+            if i >= visible_count:
+                container.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
         """Get a dictionary of category tags mapped to their respective tags.
@@ -320,6 +349,15 @@ class FieldContainers(QWidget):
         )
         self.driver.emit_badge_signals(tags, emit_on_absent=False)
 
+    def set_container_partial(self, container: FieldContainer, partial: bool) -> None:
+        """Apply a visual partial-selection treatment to a container."""
+        if partial:
+            effect = QGraphicsOpacityEffect(container)
+            effect.setOpacity(0.7)
+            container.setGraphicsEffect(effect)
+        else:
+            container.setGraphicsEffect(None)
+
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
 
@@ -337,6 +375,11 @@ class FieldContainers(QWidget):
             self.scroll_layout.addWidget(container)
         else:
             container = self.containers[index]
+
+        self.set_container_partial(container, is_mixed)
+        container.set_copy_callback()
+        container.set_edit_callback()
+        container.set_remove_callback()
 
         if field.type.type == FieldTypeEnum.TEXT_LINE:
             container.set_title(field.type.name)
@@ -478,6 +521,26 @@ class FieldContainers(QWidget):
 
         container.setHidden(False)
 
+    def write_info_container(self, index: int, title: str, text: str) -> int:
+        """Render a non-interactive informational container."""
+        logger.info("[FieldContainers][write_info_container]", index=index)
+        if len(self.containers) < (index + 1):
+            container = FieldContainer()
+            self.containers.append(container)
+            self.scroll_layout.addWidget(container)
+        else:
+            container = self.containers[index]
+
+        self.set_container_partial(container, False)
+        container.set_title(title)
+        container.set_inline(False)
+        container.set_inner_widget(TextWidget(title, text))
+        container.set_copy_callback()
+        container.set_edit_callback()
+        container.set_remove_callback()
+        container.setHidden(False)
+        return index + 1
+
     def write_tag_container(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
     ):
@@ -499,6 +562,7 @@ class FieldContainers(QWidget):
         else:
             container = self.containers[index]
 
+        self.set_container_partial(container, is_mixed)
         container.set_title("Tags" if not category_tag else category_tag.name)
         container.set_inline(False)
 
@@ -517,7 +581,6 @@ class FieldContainers(QWidget):
         # For mixed tag containers, mark the widget so it can gray out all tags.
         if is_mixed:
             inner_widget.set_mixed_only(True)
-            container.set_title(Translations["preview.partial_tags"])
         else:
             inner_widget.set_mixed_only(False)
 
