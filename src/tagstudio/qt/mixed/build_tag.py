@@ -180,7 +180,7 @@ class BuildTagPanel(PanelWidget):
         self.category_layout.setContentsMargins(0, 0, 0, 0)
         self.category_layout.setSpacing(0)
         self.category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.category_layout.addWidget(QLabel("Categories"))
+        self.category_layout.addWidget(QLabel(Translations["tag.categories"]))
 
         self.category_button_group = QButtonGroup(self)
         self.category_button_group.setExclusive(False)
@@ -501,7 +501,7 @@ class BuildTagPanel(PanelWidget):
         include_button = QRadioButton()
         include_button.setObjectName(f"categoryExclusionButton.{category.id}")
         include_button.setFixedSize(22, 22)
-        include_button.setToolTip("Show in category")
+        include_button.setToolTip(Translations["tag.categories.tooltip"])
         include_button.setStyleSheet(
             f"""
             QRadioButton{{

@@ -319,6 +319,8 @@
     "tag.add": "Add Tag",
     "tag.aliases": "Aliases",
     "tag.all_tags": "All Tags",
+    "tag.categories": "Categories",
+    "tag.categories.tooltip": "Show tag in this category",
     "tag.choose_color": "Choose Tag Color",
     "tag.color": "Color",
     "tag.confirm_delete": "Are you sure you want to delete the tag \"{tag_name}\"?",
