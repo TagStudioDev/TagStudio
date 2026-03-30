@@ -27,6 +27,10 @@ EMPTY_LIBRARIES = "empty_libraries"
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_8")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_9")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_100")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_101")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_102")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_103")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_104")),
     ],
 )
 def test_library_migrations(path: str):
@@ -51,4 +55,4 @@ def test_library_migrations(path: str):
     except Exception as e:
         library.close()
         shutil.rmtree(temp_path)
-        raise (e)
+        raise e
