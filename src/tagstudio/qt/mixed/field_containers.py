@@ -124,6 +124,7 @@ class FieldContainers(QWidget):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=cat, is_mixed=False
                 )
+
                 container_index += 1
                 container_len += 1
         if update_badges:
@@ -189,7 +190,7 @@ class FieldContainers(QWidget):
 
                 grandparent_tags: set[Tag] = set()
                 for parent_tag in parent_tags:
-                    if parent_tag in categories:
+                    if parent_tag in categories and parent_tag.id not in tag.exclusion_ids:
                         categories[parent_tag].add(tag)
                         has_category_parent = True
                     grandparent_tags.update(parent_tag.parent_tags)

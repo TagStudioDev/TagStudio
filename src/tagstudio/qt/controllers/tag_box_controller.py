@@ -87,6 +87,7 @@ class TagBoxWidget(TagBoxWidgetView):
                 parent_ids=set(build_tag_panel.parent_ids),
                 alias_names=set(build_tag_panel.alias_names),
                 alias_ids=set(build_tag_panel.alias_ids),
+                exclusion_ids=set(build_tag_panel.exclusion_ids),
             )
         )
         edit_modal.show()

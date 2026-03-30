@@ -19,7 +19,7 @@ from tagstudio.core.library.alchemy.fields import (
     DatetimeField,
     TextField,
 )
-from tagstudio.core.library.alchemy.joins import TagParent
+from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagParent
 
 
 class Namespace(Base):
@@ -107,6 +107,12 @@ class Tag(Base):
         back_populates="parent_tags",
     )
     disambiguation_id: Mapped[int | None]
+    category_exclusions: Mapped[set["Tag"]] = relationship(
+        secondary=CategoryExclusion.__tablename__,
+        primaryjoin="Tag.id == CategoryExclusion.tag_id",
+        secondaryjoin="Tag.id == CategoryExclusion.category_id",
+        back_populates="category_exclusions",
+    )
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -127,6 +133,10 @@ class Tag(Base):
     def alias_ids(self) -> list[int]:
         return [tag.id for tag in self.aliases]
 
+    @property
+    def exclusion_ids(self) -> list[int]:
+        return [tag.id for tag in self.category_exclusions]
+
     def __init__(
         self,
         name: str,
@@ -140,6 +150,7 @@ class Tag(Base):
         disambiguation_id: int | None = None,
         is_category: bool = False,
         is_hidden: bool = False,
+        category_exclusions: set["Tag"] | None = None,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -152,6 +163,7 @@ class Tag(Base):
         self.is_category = is_category
         self.is_hidden = is_hidden
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
+        self.category_exclusions = category_exclusions or set()
         super().__init__()
 
     @override

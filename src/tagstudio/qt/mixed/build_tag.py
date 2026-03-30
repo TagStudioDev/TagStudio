@@ -171,6 +171,34 @@ class BuildTagPanel(PanelWidget):
         self.add_tag_modal.tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
+        # Categories -----------------------------------------------------------
+        self.category_widget = QWidget()
+        self.category_widget.setMinimumHeight(128)
+
+        self.category_layout = QVBoxLayout(self.category_widget)
+        self.category_layout.setStretch(1, 1)
+        self.category_layout.setContentsMargins(0, 0, 0, 0)
+        self.category_layout.setSpacing(0)
+        self.category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.category_layout.addWidget(QLabel("Categories"))
+
+        self.category_button_group = QButtonGroup(self)
+        self.category_button_group.setExclusive(False)
+
+        self.category_scroll_contents = QWidget()
+
+        self.category_scroll_layout = QVBoxLayout(self.category_scroll_contents)
+        self.category_scroll_layout.setContentsMargins(6, 6, 6, 0)
+        self.category_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.category_scroll_area = QScrollArea()
+        self.category_scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.category_scroll_area.setWidgetResizable(True)
+        self.category_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.category_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.category_scroll_area.setWidget(self.category_scroll_contents)
+        self.category_layout.addWidget(self.category_scroll_area)
+
         # Color ----------------------------------------------------------------
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
@@ -218,30 +246,31 @@ class BuildTagPanel(PanelWidget):
         text_color: QColor = get_text_color(primary_color, highlight_color)
 
         self.cat_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            f"""
+            QCheckBox{{
+                background: rgba{primary_color.toTuple()};
+                color: rgba{text_color.toTuple()};
+                border-color: rgba{border_color.toTuple()};
+                border-radius: 6px;
+                border-style: solid;
+                border-width: 2px;
+            }}
+            QCheckBox::indicator{{
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                margin: 4px;
+            }}
+            QCheckBox::indicator:checked{{
+                background: rgba{text_color.toTuple()};
+            }}
+            QCheckBox::hover{{
+                border-color: rgba{highlight_color.toTuple()};
+            }}
+            QCheckBox::focus{{
+                border-color: rgba{highlight_color.toTuple()};
+                outline: none;
+            }}"""
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
@@ -258,30 +287,31 @@ class BuildTagPanel(PanelWidget):
         self.hidden_checkbox.setFixedSize(22, 22)
 
         self.hidden_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            f"""
+            QCheckBox{{
+                background: rgba{primary_color.toTuple()};
+                color: rgba{text_color.toTuple()};
+                border-color: rgba{border_color.toTuple()};
+                border-radius: 6px;
+                border-style: solid;
+                border-width: 2px;
+            }}
+            QCheckBox::indicator{{
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                margin: 4px;
+            }}
+            QCheckBox::indicator:checked{{
+                background: rgba{text_color.toTuple()};
+            }}
+            QCheckBox::hover{{
+                border-color: rgba{highlight_color.toTuple()};
+            }}
+            QCheckBox::focus{{
+                border-color: rgba{highlight_color.toTuple()};
+                outline: none;
+            }}"""
         )
         self.hidden_layout.addWidget(self.hidden_checkbox)
         self.hidden_layout.addWidget(self.hidden_title)
@@ -293,12 +323,14 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.aliases_table)
         self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
+        self.root_layout.addWidget(self.category_widget)
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
 
         self.parent_ids: set[int] = set()
+        self.exclusion_ids: set[int] = set()
         self.alias_ids: list[int] = []
         self.alias_names: list[str] = []
         self.new_alias_names: dict = {}
@@ -340,11 +372,13 @@ class BuildTagPanel(PanelWidget):
         logger.info("add_parent_tag_callback", tag_id=tag_id)
         self.parent_ids.add(tag_id)
         self.set_parent_tags()
+        self.set_categories(added_parent_id=tag_id)
 
     def remove_parent_tag_callback(self, tag_id: int):
         logger.info("remove_parent_tag_callback", tag_id=tag_id)
         self.parent_ids.remove(tag_id)
         self.set_parent_tags()
+        self.set_categories(removed_parent_id=tag_id)
 
     def add_alias_callback(self):
         logger.info("add_alias_callback")
@@ -374,6 +408,149 @@ class BuildTagPanel(PanelWidget):
             self.tag_color_namespace = None
             self.tag_color_slug = None
         self.color_button.set_tag_color_group(tag_color_group)
+
+    def set_categories(
+        self, added_parent_id: int | None = None, removed_parent_id: int | None = None
+    ):
+        while self.category_scroll_layout.itemAt(0):
+            self.category_scroll_layout.takeAt(0).widget().deleteLater()
+
+        c = QWidget()
+        layout = QVBoxLayout(c)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
+
+        if removed_parent_id is not None:
+            tags_by_category: dict[Tag, set[Tag]] = {}
+            hierarchy = set(self.lib.get_tag_hierarchy([self.tag.id]).values())
+            hierarchy.remove(self.tag)
+            for tag in hierarchy:
+                if self.__is_removed_parent(tag):
+                    continue
+                if tag.is_category:
+                    tags_by_category[tag] = set()
+            for tag in hierarchy:
+                if self.__is_removed_parent(tag):
+                    continue
+                for parent in self.lib.get_tag_hierarchy([tag.id]).values():
+                    if parent in tags_by_category:
+                        if tag == parent and parent.id not in self.parent_ids:
+                            continue
+                        tags_by_category[parent].add(tag)
+
+            for category, tags in tags_by_category.items():
+                if len(tags) == 0:
+                    continue
+
+                last_tab, next_tab, container = self.__build_category_row_widget(category)
+                layout.addWidget(container)
+                self.setTabOrder(last_tab, next_tab)
+        else:
+            tag_ids = [self.tag.id]
+            if added_parent_id is not None:
+                tag_ids.append(added_parent_id)
+
+            for tag in self.lib.get_tag_hierarchy(tag_ids).values():
+                if not tag.is_category:
+                    continue
+                last_tab, next_tab, container = self.__build_category_row_widget(tag)
+                layout.addWidget(container)
+                self.setTabOrder(last_tab, next_tab)
+        self.category_scroll_layout.addWidget(c)
+
+    def __is_removed_parent(self, tag: Tag) -> bool:
+        return tag in self.tag.parent_tags and tag.id not in self.parent_ids
+
+    def __build_category_row_widget(
+        self, category: Tag
+    ) -> tuple[QPushButton, QRadioButton, QWidget]:
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        # Init Colors
+        primary_color = get_primary_color(category)
+        border_color = (
+            get_border_color(primary_color)
+            if not (category.color and category.color.secondary and category.color.color_border)
+            else (QColor(category.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (category.color and category.color.secondary)
+            else QColor(category.color.secondary)
+        )
+        text_color: QColor
+        if category.color and category.color.secondary:
+            text_color = QColor(category.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
+
+        # Add Tag Widget
+        tag_widget = TagWidget(
+            category,
+            library=self.lib,
+            has_edit=True,
+            has_remove=False,
+        )
+        tag_widget.on_edit.connect(lambda c=category: TagSearchPanel(library=self.lib).edit_tag(c))
+        row.addWidget(tag_widget)
+
+        # Add Category Exclusion Tag Button
+        include_button = QRadioButton()
+        include_button.setObjectName(f"categoryExclusionButton.{category.id}")
+        include_button.setFixedSize(22, 22)
+        include_button.setToolTip("Show in category")
+        include_button.setStyleSheet(
+            f"""
+            QRadioButton{{
+                background: rgba{primary_color.toTuple()};
+                color: rgba{text_color.toTuple()};
+                border-color: rgba{border_color.toTuple()};
+                border-radius: 6px;
+                border-style: solid;
+                border-width: 2px;
+            }}
+            QRadioButton::indicator{{
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                margin: 4px;
+            }}
+            QRadioButton::indicator:checked{{
+                background: rgba{text_color.toTuple()};
+            }}
+            QRadioButton::hover{{
+                border-color: rgba{highlight_color.toTuple()};
+            }}
+            QRadioButton::pressed{{
+                background: rgba{border_color.toTuple()};
+                color: rgba{primary_color.toTuple()};
+                border-color: rgba{primary_color.toTuple()};
+            }}
+            QRadioButton::focus{{
+                border-color: rgba{highlight_color.toTuple()};
+                outline: none;
+            }}"""
+        )
+
+        include_button.clicked.connect(
+            lambda: self.update_category_exclusion(category, include_button.isChecked())
+        )
+        self.category_button_group.addButton(include_button)
+        if category.id not in self.exclusion_ids:
+            include_button.setChecked(True)
+
+        row.addWidget(include_button)
+
+        return tag_widget.bg_button, include_button, container
+
+    def update_category_exclusion(self, category: Tag, checked: bool) -> None:
+        if checked:
+            self.exclusion_ids.remove(category.id)
+        else:
+            self.exclusion_ids.add(category.id)
 
     def set_parent_tags(self):
         while self.parent_tags_scroll_layout.itemAt(0):
@@ -441,35 +618,36 @@ class BuildTagPanel(PanelWidget):
         disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
         disam_button.setStyleSheet(
-            f"QRadioButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QRadioButton::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QRadioButton::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::pressed{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"color: rgba{primary_color.toTuple()};"
-            f"border-color: rgba{primary_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            f"""
+            QRadioButton{{
+                background: rgba{primary_color.toTuple()};
+                color: rgba{text_color.toTuple()};
+                border-color: rgba{border_color.toTuple()};
+                border-radius: 6px;
+                border-style: solid;
+                border-width: 2px;
+            }}
+            QRadioButton::indicator{{
+                width: 10px;
+                height: 10px;
+                border-radius: 2px;
+                margin: 4px;
+            }}
+            QRadioButton::indicator:checked{{
+                background: rgba{text_color.toTuple()};
+            }}
+            QRadioButton::hover{{
+                border-color: rgba{highlight_color.toTuple()};
+            }}
+            QRadioButton::pressed{{
+                background: rgba{border_color.toTuple()};
+                color: rgba{primary_color.toTuple()};
+                border-color: rgba{primary_color.toTuple()};
+            }}
+            QRadioButton::focus{{
+                border-color: rgba{highlight_color.toTuple()};
+                outline: none;
+            }}"""
         )
 
         self.disam_button_group.addButton(disam_button)
@@ -574,6 +752,10 @@ class BuildTagPanel(PanelWidget):
         for parent_id in tag.parent_ids:
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
+
+        for exclusion_id in tag.exclusion_ids:
+            self.exclusion_ids.add(exclusion_id)
+        self.set_categories()
 
         try:
             self.tag_color_namespace = tag.color_namespace
