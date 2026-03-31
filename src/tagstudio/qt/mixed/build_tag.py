@@ -1,8 +1,6 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
-
 import sys
 from typing import cast, override
 
@@ -182,9 +180,6 @@ class BuildTagPanel(PanelWidget):
         self.category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.category_layout.addWidget(QLabel(Translations["tag.categories"]))
 
-        self.category_button_group = QButtonGroup(self)
-        self.category_button_group.setExclusive(False)
-
         self.category_scroll_contents = QWidget()
 
         self.category_scroll_layout = QVBoxLayout(self.category_scroll_contents)
@@ -246,31 +241,7 @@ class BuildTagPanel(PanelWidget):
         text_color: QColor = get_text_color(primary_color, highlight_color)
 
         self.cat_checkbox.setStyleSheet(
-            f"""
-            QCheckBox{{
-                background: rgba{primary_color.toTuple()};
-                color: rgba{text_color.toTuple()};
-                border-color: rgba{border_color.toTuple()};
-                border-radius: 6px;
-                border-style: solid;
-                border-width: 2px;
-            }}
-            QCheckBox::indicator{{
-                width: 10px;
-                height: 10px;
-                border-radius: 2px;
-                margin: 4px;
-            }}
-            QCheckBox::indicator:checked{{
-                background: rgba{text_color.toTuple()};
-            }}
-            QCheckBox::hover{{
-                border-color: rgba{highlight_color.toTuple()};
-            }}
-            QCheckBox::focus{{
-                border-color: rgba{highlight_color.toTuple()};
-                outline: none;
-            }}"""
+            self.__checkbox_stylesheet(primary_color, border_color, highlight_color, text_color)
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
@@ -287,31 +258,7 @@ class BuildTagPanel(PanelWidget):
         self.hidden_checkbox.setFixedSize(22, 22)
 
         self.hidden_checkbox.setStyleSheet(
-            f"""
-            QCheckBox{{
-                background: rgba{primary_color.toTuple()};
-                color: rgba{text_color.toTuple()};
-                border-color: rgba{border_color.toTuple()};
-                border-radius: 6px;
-                border-style: solid;
-                border-width: 2px;
-            }}
-            QCheckBox::indicator{{
-                width: 10px;
-                height: 10px;
-                border-radius: 2px;
-                margin: 4px;
-            }}
-            QCheckBox::indicator:checked{{
-                background: rgba{text_color.toTuple()};
-            }}
-            QCheckBox::hover{{
-                border-color: rgba{highlight_color.toTuple()};
-            }}
-            QCheckBox::focus{{
-                border-color: rgba{highlight_color.toTuple()};
-                outline: none;
-            }}"""
+            self.__checkbox_stylesheet(primary_color, border_color, highlight_color, text_color)
         )
         self.hidden_layout.addWidget(self.hidden_checkbox)
         self.hidden_layout.addWidget(self.hidden_title)
@@ -337,6 +284,60 @@ class BuildTagPanel(PanelWidget):
         self.new_item_id = sys.maxsize
 
         self.set_tag(tag or Tag(name=Translations["tag.new"]))
+
+    @staticmethod
+    def __checkbox_stylesheet(
+        primary_color: QColor, border_color: QColor, highlight_color: QColor, text_color: QColor
+    ) -> str:
+        return f"""
+                QCheckBox{{
+                    background: rgba{primary_color.toTuple()};
+                    color: rgba{text_color.toTuple()};
+                    border-color: rgba{border_color.toTuple()};
+                    border-radius: 6px;
+                    border-style: solid;
+                    border-width: 2px;
+                }}
+                QCheckBox::indicator{{
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 2px;
+                    margin: 4px;
+                }}
+                QCheckBox::indicator:checked{{
+                    background: rgba{text_color.toTuple()};
+                }}
+                QCheckBox::hover{{
+                    border-color: rgba{highlight_color.toTuple()};
+                }}
+                QCheckBox::focus{{
+                    border-color: rgba{highlight_color.toTuple()};
+                    outline: none;
+                }}"""
+
+    @staticmethod
+    def __tag_colors(tag: Tag) -> tuple[QColor, QColor, QColor, QColor]:
+        primary_color = get_primary_color(tag)
+
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
+            else (QColor(tag.color.secondary))
+        )
+
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
+
+        return primary_color, border_color, highlight_color, text_color
 
     def backspace(self):
         focused_widget = QApplication.focusWidget()
@@ -461,31 +462,11 @@ class BuildTagPanel(PanelWidget):
     def __is_removed_parent(self, tag: Tag) -> bool:
         return tag in self.tag.parent_tags and tag.id not in self.parent_ids
 
-    def __build_category_row_widget(
-        self, category: Tag
-    ) -> tuple[QPushButton, QRadioButton, QWidget]:
+    def __build_category_row_widget(self, category: Tag) -> tuple[QPushButton, QCheckBox, QWidget]:
         container = QWidget()
         row = QHBoxLayout(container)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
-
-        # Init Colors
-        primary_color = get_primary_color(category)
-        border_color = (
-            get_border_color(primary_color)
-            if not (category.color and category.color.secondary and category.color.color_border)
-            else (QColor(category.color.secondary))
-        )
-        highlight_color = get_highlight_color(
-            primary_color
-            if not (category.color and category.color.secondary)
-            else QColor(category.color.secondary)
-        )
-        text_color: QColor
-        if category.color and category.color.secondary:
-            text_color = QColor(category.color.secondary)
-        else:
-            text_color = get_text_color(primary_color, highlight_color)
 
         # Add Tag Widget
         tag_widget = TagWidget(
@@ -498,55 +479,22 @@ class BuildTagPanel(PanelWidget):
         row.addWidget(tag_widget)
 
         # Add Category Exclusion Tag Button
-        include_button = QRadioButton()
-        include_button.setObjectName(f"categoryExclusionButton.{category.id}")
-        include_button.setFixedSize(22, 22)
-        include_button.setToolTip(Translations["tag.categories.tooltip"])
-        include_button.setStyleSheet(
-            f"""
-            QRadioButton{{
-                background: rgba{primary_color.toTuple()};
-                color: rgba{text_color.toTuple()};
-                border-color: rgba{border_color.toTuple()};
-                border-radius: 6px;
-                border-style: solid;
-                border-width: 2px;
-            }}
-            QRadioButton::indicator{{
-                width: 10px;
-                height: 10px;
-                border-radius: 2px;
-                margin: 4px;
-            }}
-            QRadioButton::indicator:checked{{
-                background: rgba{text_color.toTuple()};
-            }}
-            QRadioButton::hover{{
-                border-color: rgba{highlight_color.toTuple()};
-            }}
-            QRadioButton::pressed{{
-                background: rgba{border_color.toTuple()};
-                color: rgba{primary_color.toTuple()};
-                border-color: rgba{primary_color.toTuple()};
-            }}
-            QRadioButton::focus{{
-                border-color: rgba{highlight_color.toTuple()};
-                outline: none;
-            }}"""
-        )
+        include_checkbox = QCheckBox()
+        include_checkbox.setFixedSize(22, 22)
+        include_checkbox.setToolTip(Translations["tag.categories.tooltip"])
+        include_checkbox.setStyleSheet(self.__checkbox_stylesheet(*self.__tag_colors(category)))
 
-        include_button.clicked.connect(
-            lambda: self.update_category_exclusion(category, include_button.isChecked())
-        )
-        self.category_button_group.addButton(include_button)
         if category.id not in self.exclusion_ids:
-            include_button.setChecked(True)
+            include_checkbox.setChecked(True)
+        include_checkbox.toggled.connect(
+            lambda checked: self.__update_category_exclusion(category, checked)
+        )
 
-        row.addWidget(include_button)
+        row.addWidget(include_checkbox)
 
-        return tag_widget.bg_button, include_button, container
+        return tag_widget.bg_button, include_checkbox, container
 
-    def update_category_exclusion(self, category: Tag, checked: bool) -> None:
+    def __update_category_exclusion(self, category: Tag, checked: bool) -> None:
         if checked:
             self.exclusion_ids.remove(category.id)
         else:
@@ -568,7 +516,7 @@ class BuildTagPanel(PanelWidget):
             if not tag:
                 continue
             is_disam = parent_id == self.disambiguation_id
-            last_tab, next_tab, container = self.__build_row_item_widget(tag, parent_id, is_disam)
+            last_tab, next_tab, container = self.__build_parent_row_widget(tag, parent_id, is_disam)
             layout.addWidget(container)
             # TODO: Disam buttons after the first currently can't be added due to this error:
             # QWidget::setTabOrder: 'first' and 'second' must be in the same window
@@ -577,29 +525,11 @@ class BuildTagPanel(PanelWidget):
         self.setTabOrder(next_tab, self.name_field)
         self.parent_tags_scroll_layout.addWidget(c)
 
-    def __build_row_item_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
+    def __build_parent_row_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
         container = QWidget()
         row = QHBoxLayout(container)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
-
-        # Init Colors
-        primary_color = get_primary_color(tag)
-        border_color = (
-            get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary and tag.color.color_border)
-            else (QColor(tag.color.secondary))
-        )
-        highlight_color = get_highlight_color(
-            primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
-        )
-        text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
-        else:
-            text_color = get_text_color(primary_color, highlight_color)
 
         # Add Tag Widget
         tag_widget = TagWidget(
@@ -611,6 +541,9 @@ class BuildTagPanel(PanelWidget):
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
         tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).edit_tag(t))
         row.addWidget(tag_widget)
+
+        # Init Colors
+        primary_color, border_color, highlight_color, text_color = self.__tag_colors(tag)
 
         # Add Disambiguation Tag Button
         disam_button = QRadioButton()
@@ -706,7 +639,7 @@ class BuildTagPanel(PanelWidget):
 
             alias_name = alias.name if alias else self.new_alias_names[alias_id]
 
-            # handel when an alias name changes
+            # handle when an alias name changes
             if alias_id in self.new_alias_names:
                 alias_name = self.new_alias_names[alias_id]
 
