@@ -272,7 +272,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.category_widget)
         self.root_layout.addWidget(self.color_widget)
-        self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
+        self.root_layout.addWidget(QLabel(f"<h3>{Translations['tag.properties']}</h3>"))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
 

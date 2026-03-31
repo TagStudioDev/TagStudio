@@ -335,6 +335,7 @@
     "tag.parent_tags.add": "Add Parent Tag(s)",
     "tag.parent_tags.description": "This tag can be treated as a substitute for any of these Parent Tags in searches.",
     "tag.parent_tags": "Parent Tags",
+    "tag.properties": "Properties",
     "tag.remove": "Remove Tag",
     "tag.search_for_tag": "Search for Tag",
     "tag.shorthand": "Shorthand",
