@@ -135,8 +135,8 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 #### Version 104
 
-| Used From | Format | Location                                        |
-|-----------|--------|-------------------------------------------------|
-| TBD       | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                    | Format | Location                                        |
+|--------------------------------------------------------------|--------|-------------------------------------------------|
+| [#1336](https://github.com/TagStudioDev/TagStudio/pull/1336) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 - Introduces the `category_exclusions` table. Used for excluding a tag from being displayed in a specific category
