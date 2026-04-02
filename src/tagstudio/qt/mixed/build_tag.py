@@ -447,9 +447,10 @@ class BuildTagPanel(PanelWidget):
                 layout.addWidget(container)
                 self.setTabOrder(last_tab, next_tab)
         else:
-            tag_ids = [self.tag.id]
+            tag_ids = {self.tag.id}
+            tag_ids.update(self.parent_ids)
             if added_parent_id is not None:
-                tag_ids.append(added_parent_id)
+                tag_ids.add(added_parent_id)
 
             for tag in self.lib.get_tag_hierarchy(tag_ids).values():
                 if not tag.is_category:

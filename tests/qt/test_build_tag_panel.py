@@ -361,8 +361,33 @@ def test_build_tag_panel_remove_duplicate_category_retained(
     assert tag_widget.tag == grandparent
 
 
-def __find_category_tag_widget(panel: BuildTagPanel) -> TagWidget | None:
-    item = panel.category_scroll_layout.itemAt(0)
+def test_build_tag_panel_new_tag_multiple_categories(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    parent = unwrap(library.add_tag(generate_tag("parent", id=123, is_category=True)))
+    other_parent = unwrap(library.add_tag(generate_tag("other_parent", id=124, is_category=True)))
+
+    panel: BuildTagPanel = BuildTagPanel(library)
+    qtbot.addWidget(panel)
+
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is None
+
+    panel.add_parent_tag_callback(parent.id)
+
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is not None
+    assert tag_widget.tag == parent
+
+    panel.add_parent_tag_callback(other_parent.id)
+
+    tag_widget = __find_category_tag_widget(panel, 1)
+    assert tag_widget is not None
+    assert tag_widget.tag == other_parent
+
+
+def __find_category_tag_widget(panel: BuildTagPanel, index: int = 0) -> TagWidget | None:
+    item = panel.category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
     while item is not None:
         if isinstance(item.widget(), TagWidget):
             break
