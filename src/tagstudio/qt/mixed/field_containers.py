@@ -124,7 +124,6 @@ class FieldContainers(QWidget):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=cat, is_mixed=False
                 )
-
                 container_index += 1
                 container_len += 1
         if update_badges:
