@@ -48,7 +48,7 @@ class TagDatabasePanel(TagSearchPanel):
                     parent_ids=panel.parent_ids,
                     alias_names=panel.alias_names,
                     alias_ids=panel.alias_ids,
-                    exclusion_ids=panel.exclusion_ids
+                    exclusion_ids=panel.exclusion_ids,
                 ),
                 self.modal.hide(),
                 self.update_tags(self.search_field.text()),
