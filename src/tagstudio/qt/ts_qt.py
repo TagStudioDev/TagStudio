@@ -863,6 +863,7 @@ class QtDriver(DriverMixin, QObject):
                     set(panel.parent_ids),
                     set(panel.alias_names),
                     set(panel.alias_ids),
+                    set(panel.exclusion_ids)
                 ),
                 self.modal.hide(),
             )

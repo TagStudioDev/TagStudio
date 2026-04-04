@@ -189,6 +189,7 @@ class TagSearchPanel(PanelWidget):
                 set(self.build_tag_modal.parent_ids),
                 set(self.build_tag_modal.alias_names),
                 set(self.build_tag_modal.alias_ids),
+                set(self.build_tag_modal.exclusion_ids)
             )
             self.add_tag_modal.hide()
 
