@@ -453,7 +453,7 @@ class BuildTagPanel(PanelWidget):
                 tag_ids.add(added_parent_id)
 
             for tag in self.lib.get_tag_hierarchy(tag_ids).values():
-                if not tag.is_category:
+                if not tag.is_category or tag == self.tag:
                     continue
                 last_tab, next_tab, container = self.__build_category_row_widget(tag)
                 layout.addWidget(container)

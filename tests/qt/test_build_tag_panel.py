@@ -386,6 +386,17 @@ def test_build_tag_panel_new_tag_multiple_categories(
     assert tag_widget.tag == other_parent
 
 
+def test_build_tag_panel_category_not_shown_for_self(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    library.add_tag(generate_tag("category", id=123, is_category=True))
+
+    panel: BuildTagPanel = BuildTagPanel(library)
+    qtbot.addWidget(panel)
+
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is None
+
 def __find_category_tag_widget(panel: BuildTagPanel, index: int = 0) -> TagWidget | None:
     item = panel.category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
     while item is not None:
