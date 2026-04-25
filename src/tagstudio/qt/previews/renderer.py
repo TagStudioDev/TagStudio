@@ -11,7 +11,6 @@ import os
 import sqlite3
 import struct
 import tarfile
-import xml.etree.ElementTree as ET
 import zipfile
 import zlib
 from copy import deepcopy
@@ -22,6 +21,7 @@ from warnings import catch_warnings
 from xml.etree.ElementTree import Element
 
 import cv2
+import defusedxml.ElementTree as ET  # noqa: N817
 import numpy as np
 import py7zr
 import py7zr.io

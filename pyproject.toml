@@ -11,6 +11,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "chardet~=5.2",
+    "defusedxml~=0.7",
     "ffmpeg-python~=0.2",
     "humanfriendly==10.*",
     "mutagen~=1.47",
