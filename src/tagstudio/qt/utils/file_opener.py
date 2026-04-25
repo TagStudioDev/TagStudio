@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import os
 import shutil
 import subprocess
 import sys
@@ -40,39 +41,24 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
         if sys.platform == "win32":
             normpath = str(Path(path).resolve())
             if file_manager:
-                command_name = "explorer"
-                command_arg = f'/select,"{normpath}"'
-
-                # For some reason, if the args are passed in a list, this will error when the
-                # path has spaces, even while surrounded in double quotes.
+                # /select, takes the path as a single comma-joined argument.
                 silent_popen(
-                    command_name + command_arg,
-                    shell=True,
+                    ["explorer", f"/select,{normpath}"],
                     close_fds=True,
                     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
                     | subprocess.CREATE_BREAKAWAY_FROM_JOB,
                 )
             else:
                 if windows_start_command:
-                    command_name = "start"
-                    # First parameter is for title, NOT filepath
-                    command_args = ["", normpath]
+                    # First "" is the start-command title slot, not the filepath.
                     subprocess.Popen(
-                        [command_name] + command_args,
-                        shell=True,
+                        ["cmd", "/c", "start", "", normpath],
                         close_fds=True,
                         creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
                         | subprocess.CREATE_BREAKAWAY_FROM_JOB,
                     )
                 else:
-                    command = f'"{normpath}"'
-                    silent_popen(
-                        command,
-                        shell=True,
-                        close_fds=True,
-                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                        | subprocess.CREATE_BREAKAWAY_FROM_JOB,
-                    )
+                    os.startfile(normpath)
         else:
             if sys.platform == "darwin":
                 command_name = "open"
