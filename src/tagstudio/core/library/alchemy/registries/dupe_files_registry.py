@@ -4,6 +4,7 @@ from pathlib import Path
 import defusedxml.ElementTree as ET  # noqa: N817
 import structlog
 
+from tagstudio.core.constants import DEFAULT_DUPE_RESULTS_MAX_MB
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
@@ -22,7 +23,11 @@ class DupeFilesRegistry:
     def groups_count(self) -> int:
         return len(self.groups)
 
-    def refresh_dupe_files(self, results_filepath: str | Path):
+    def refresh_dupe_files(
+        self,
+        results_filepath: str | Path,
+        max_bytes: int = DEFAULT_DUPE_RESULTS_MAX_MB * 1024 * 1024,
+    ):
         """Refresh the list of duplicate files.
 
         A duplicate file is defined as an identical or near-identical file as determined
@@ -34,6 +39,13 @@ class DupeFilesRegistry:
 
         if not results_filepath.is_file():
             raise ValueError("invalid file path")
+
+        # Guard ET.parse against a malicious or accidental over-large results file.
+        if results_filepath.stat().st_size > max_bytes:
+            raise ValueError(
+                f"dupe results file exceeds {max_bytes} byte limit "
+                f"(see Advanced settings to raise the cap)"
+            )
 
         self.groups.clear()
         tree = ET.parse(results_filepath)

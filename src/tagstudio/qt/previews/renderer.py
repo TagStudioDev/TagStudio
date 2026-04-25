@@ -894,8 +894,7 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @staticmethod
-    def _epub_cover(filepath: Path, ext: str) -> Image.Image | None:
+    def _epub_cover(self, filepath: Path, ext: str) -> Image.Image | None:
         """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
@@ -907,9 +906,15 @@ class ThumbRenderer(QObject):
             the first image found in the ePub file, or None by default.
         """
         im: Image.Image | None = None
+        max_bytes = self.driver.settings.comic_info_max_mb * 1024 * 1024
         try:
             with ThumbRenderer.__open_archive(filepath, ext) as archive:
                 if "ComicInfo.xml" in archive.namelist():
+                    size = ThumbRenderer.__archive_member_size(archive, "ComicInfo.xml")
+                    if size is not None and size > max_bytes:
+                        raise ValueError(
+                            f"ComicInfo.xml exceeds {max_bytes} byte limit"
+                        )
                     comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
                     im = ThumbRenderer.__cover_from_comic_info(archive, comic_info, "FrontCover")
                     if not im:
@@ -989,6 +994,19 @@ class ThumbRenderer(QObject):
         elif ext in {".cbt", ".tar", ".tgz"}:
             archiver = _TarFile
         return archiver(filepath, "r")
+
+    @staticmethod
+    def __archive_member_size(archive: _Archive, name: str) -> int | None:
+        """Uncompressed size of an archive member.
+
+        Returns None for archive types that already enforce their own per-member
+        cap (currently _SevenZipFile via BytesIOFactory(limit=...)).
+        """
+        if isinstance(archive, zipfile.ZipFile | rarfile.RarFile):
+            return archive.getinfo(name).file_size
+        if isinstance(archive, _TarFile):
+            return archive.tar.getmember(name).size
+        return None
 
     @staticmethod
     def __first_image(archive: _Archive) -> Image.Image | None:
@@ -1422,8 +1440,7 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    @staticmethod
-    def _mdp_thumb(filepath: Path) -> Image.Image | None:
+    def _mdp_thumb(self, filepath: Path) -> Image.Image | None:
         """Extract the thumbnail from a .mdp file.
 
         Args:
@@ -1433,6 +1450,7 @@ class ThumbRenderer(QObject):
             Image: The embedded thumbnail.
         """
         im: Image.Image | None = None
+        max_bytes = self.driver.settings.mdp_header_max_mb * 1024 * 1024
         try:
             with open(filepath, "rb") as f:
                 magic = struct.unpack("<7sx", f.read(8))[0]
@@ -1440,6 +1458,11 @@ class ThumbRenderer(QObject):
                     return im
 
                 bin_header = struct.unpack("<LLL", f.read(12))
+                if bin_header[1] > max_bytes:
+                    raise ValueError(
+                        f".mdp header exceeds {max_bytes} byte limit "
+                        f"(raise mdp_header_max_mb to render this file)"
+                    )
                 xml_header = ET.fromstring(f.read(bin_header[1]))
                 mdibin_count = len(xml_header.findall("./*Layer")) + 1
                 for _ in range(mdibin_count):
@@ -1464,8 +1487,7 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @staticmethod
-    def _pdn_thumb(filepath: Path) -> Image.Image | None:
+    def _pdn_thumb(self, filepath: Path) -> Image.Image | None:
         """Extract the base64-encoded thumbnail from a .pdn file header.
 
         Args:
@@ -1475,6 +1497,7 @@ class ThumbRenderer(QObject):
             Image: the decoded PNG thumbnail or None by default.
         """
         im: Image.Image | None = None
+        max_bytes = self.driver.settings.pdn_header_max_mb * 1024 * 1024
         with open(filepath, "rb") as f:
             try:
                 # First 4 bytes are the magic number
@@ -1483,6 +1506,11 @@ class ThumbRenderer(QObject):
 
                 # Header length is a little-endian 24-bit int
                 header_size = struct.unpack("<i", f.read(3) + b"\x00")[0]
+                if header_size > max_bytes:
+                    raise ValueError(
+                        f".pdn header exceeds {max_bytes} byte limit "
+                        f"(raise pdn_header_max_mb to render this file)"
+                    )
                 thumb_element = ET.fromstring(f.read(header_size)).find("./*thumb")
                 if thumb_element is None:
                     return im

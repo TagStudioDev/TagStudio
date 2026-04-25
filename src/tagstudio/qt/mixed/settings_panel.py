@@ -20,6 +20,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.core.constants import (
+    DEFAULT_COMIC_INFO_MAX_MB,
+    DEFAULT_DUPE_RESULTS_MAX_MB,
+    DEFAULT_MDP_HEADER_MAX_MB,
+    DEFAULT_PDN_HEADER_MAX_MB,
+)
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.qt.global_settings import (
     DEFAULT_THUMB_CACHE_SIZE,
@@ -101,6 +107,9 @@ class SettingsPanel(PanelWidget):
 
         self.__build_global_settings()
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
+
+        self.__build_advanced_settings()
+        self.tab_widget.addTab(self.advanced_settings_container, Translations["settings.advanced"])
 
         # self.__build_library_settings()
         # self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
@@ -282,6 +291,39 @@ class SettingsPanel(PanelWidget):
         todo_label = QLabel("TODO")
         form_layout.addRow(todo_label)
 
+    def __build_advanced_settings(self):
+        self.advanced_settings_container = QWidget()
+        form_layout = QFormLayout(self.advanced_settings_container)
+        form_layout.setContentsMargins(6, 6, 6, 6)
+
+        def add_mib_row(label_key: str, current: int) -> QLineEdit:
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(6)
+            edit = QLineEdit()
+            edit.setAlignment(Qt.AlignmentFlag.AlignRight)
+            edit.setValidator(QDoubleValidator(1, 1_000_000_000, 0))
+            edit.setText(str(current))
+            layout.addWidget(edit)
+            layout.setStretch(1, 2)
+            layout.addWidget(QLabel("MiB"))
+            form_layout.addRow(Translations[label_key], container)
+            return edit
+
+        self.dupe_results_max_mb_edit = add_mib_row(
+            "settings.dupe_results_max_mb.label", self.driver.settings.dupe_results_max_mb
+        )
+        self.comic_info_max_mb_edit = add_mib_row(
+            "settings.comic_info_max_mb.label", self.driver.settings.comic_info_max_mb
+        )
+        self.mdp_header_max_mb_edit = add_mib_row(
+            "settings.mdp_header_max_mb.label", self.driver.settings.mdp_header_max_mb
+        )
+        self.pdn_header_max_mb_edit = add_mib_row(
+            "settings.pdn_header_max_mb.label", self.driver.settings.pdn_header_max_mb
+        )
+
     def __get_language(self) -> str:
         return list(LANGUAGES.values())[self.language_combobox.currentIndex()]
 
@@ -305,6 +347,18 @@ class SettingsPanel(PanelWidget):
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
             "splash": self.splash_combobox.currentData(),
+            "dupe_results_max_mb": max(
+                int(self.dupe_results_max_mb_edit.text() or DEFAULT_DUPE_RESULTS_MAX_MB), 1
+            ),
+            "comic_info_max_mb": max(
+                int(self.comic_info_max_mb_edit.text() or DEFAULT_COMIC_INFO_MAX_MB), 1
+            ),
+            "mdp_header_max_mb": max(
+                int(self.mdp_header_max_mb_edit.text() or DEFAULT_MDP_HEADER_MAX_MB), 1
+            ),
+            "pdn_header_max_mb": max(
+                int(self.pdn_header_max_mb_edit.text() or DEFAULT_PDN_HEADER_MAX_MB), 1
+            ),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -325,6 +379,10 @@ class SettingsPanel(PanelWidget):
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
         driver.settings.splash = settings["splash"]
+        driver.settings.dupe_results_max_mb = settings["dupe_results_max_mb"]
+        driver.settings.comic_info_max_mb = settings["comic_info_max_mb"]
+        driver.settings.mdp_header_max_mb = settings["mdp_header_max_mb"]
+        driver.settings.pdn_header_max_mb = settings["pdn_header_max_mb"]
 
         driver.settings.save()
 
