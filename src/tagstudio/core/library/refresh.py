@@ -93,19 +93,16 @@ class RefreshTracker:
                 pattern_file.write("\n".join(ignore_patterns))
 
             result = silent_run(
-                " ".join(
-                    [
-                        "rg",
-                        "--files",
-                        "--follow",
-                        "--hidden",
-                        "--ignore-file",
-                        f'"{str(compiled_ignore_path)}"',
-                    ]
-                ),
+                [
+                    "rg",
+                    "--files",
+                    "--follow",
+                    "--hidden",
+                    "--ignore-file",
+                    str(compiled_ignore_path),
+                ],
                 cwd=library_dir,
                 capture_output=True,
-                shell=True,
                 encoding="UTF-8",
             )
             compiled_ignore_path.unlink()
