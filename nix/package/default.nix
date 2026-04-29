@@ -82,6 +82,7 @@ python3Packages.buildPythonApplication {
     "rarfile"
     "requests"
     "semver"
+    "send2trash"
     "structlog"
     "typing-extensions"
   ];
