@@ -613,7 +613,8 @@ class QtDriver(DriverMixin, QObject):
         if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
             FfmpegMissingMessageBox().show()
 
-        if is_version_outdated(VERSION, TagStudioCore.get_most_recent_release_version()):
+        latest_version = TagStudioCore.get_most_recent_release_version()
+        if latest_version and is_version_outdated(VERSION, latest_version):
             OutOfDateMessageBox().exec()
 
         self.app.exec()
