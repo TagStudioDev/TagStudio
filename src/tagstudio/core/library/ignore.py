@@ -14,7 +14,7 @@ from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
-PATH_GLOB_FLAGS = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE
+PATH_GLOB_FLAGS = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE | pathlib.NODIR
 
 
 GLOBAL_IGNORE = [
