@@ -4,6 +4,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
@@ -42,3 +44,14 @@ def test_refresh_dupe_files(library: Library):
         Path("foo.txt"),
         Path("foo/foo.txt"),
     ]
+
+
+def test_refresh_dupe_files_rejects_oversized(library: Library, tmp_path: Path):
+    library.library_dir = Path("/tmp/")
+    registry = DupeFilesRegistry(library=library)
+
+    too_big = tmp_path / "big.dupeguru"
+    too_big.write_bytes(b"x" * 200)
+
+    with pytest.raises(ValueError, match="exceeds 100 byte limit"):
+        registry.refresh_dupe_files(too_big, max_bytes=100)
