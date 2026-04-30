@@ -70,6 +70,7 @@ class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
     FILE_NAME = "generic.filename"
     PATH = "file.path"
+    SIZE = "file.size"
     RANDOM = "sorting.mode.random"
 
 
