@@ -898,7 +898,7 @@ class QtDriver(DriverMixin, QObject):
         selected: list[int] = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
-        self.emit_badge_signals(tag_ids)
+        self.emit_badge_signals(tag_ids, emit_on_absent=False)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
