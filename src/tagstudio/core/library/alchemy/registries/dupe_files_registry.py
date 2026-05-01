@@ -76,7 +76,7 @@ class DupeFilesRegistry:
         )
 
         for i, entries in enumerate(self.groups):
+            yield i
             remove_ids = entries[1:]
             logger.info("Removing entries group", ids=remove_ids)
             self.library.remove_entries([e.id for e in remove_ids])
-            yield i - 1  # The -1 waits for the next step to finish
