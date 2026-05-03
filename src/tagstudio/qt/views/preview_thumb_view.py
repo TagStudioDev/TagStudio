@@ -37,12 +37,14 @@ class PreviewThumbView(QWidget):
 
     __filepath: Path | None
     __rendered_res: tuple[int, int]
+    __render_cutoff: float
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
         self.__img_button_size = (266, 266)
         self.__image_ratio = 1.0
+        self.__render_cutoff = 0.0
 
         self.__image_layout = QStackedLayout(self)
         self.__image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -126,8 +128,11 @@ class PreviewThumbView(QWidget):
         self.__update_image_size((self.size().width(), self.size().height()))
 
     def __thumb_renderer_updated_callback(
-        self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
+        self, timestamp: float, img: QPixmap, _size: QSize, _path: Path
     ) -> None:
+        # Ignore outdated renders if a newer selection has been requested.
+        if timestamp < self.__render_cutoff:
+            return
         self.__button_wrapper.setIcon(img)
 
     def __thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
@@ -213,8 +218,11 @@ class PreviewThumbView(QWidget):
             math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
         )
 
+        timestamp = time.time()
+        self.__render_cutoff = timestamp
+
         self.__thumb_renderer.render(
-            time.time(),
+            timestamp,
             filepath,
             self.__rendered_res,
             self.devicePixelRatio(),

@@ -25,6 +25,7 @@ class TagBoxWidget(TagBoxWidgetView):
     on_update = Signal()
 
     __entries: list[int] = []
+    __mixed_only: bool = False
 
     def __init__(self, title: str, driver: "QtDriver"):
         super().__init__(title, driver)
@@ -32,6 +33,28 @@ class TagBoxWidget(TagBoxWidgetView):
 
     def set_entries(self, entries: list[int]) -> None:
         self.__entries = entries
+
+    def set_mixed_only(self, value: bool) -> None:
+        """If True, all tags in this widget are treated as partial-selection tags."""
+        self.__mixed_only = value
+
+    def set_tags(self, tags):  # type: ignore[override]
+        """Render tags; visually dim those that are not shared across entries."""
+        tags_ = list(tags)
+
+        # When mixed_only is set, all tags in this widget are considered partial.
+        partial_tag_ids: set[int] = set()
+        if not self.__mixed_only and self.__entries:
+            tag_ids = [t.id for t in tags_]
+            tag_entries = self.__driver.lib.get_tag_entries(tag_ids, self.__entries)
+            required = set(self.__entries)
+            for tag_id, entries in tag_entries.items():
+                if set(entries) < required:
+                    partial_tag_ids.add(tag_id)
+        elif self.__mixed_only:
+            partial_tag_ids = {tag.id for tag in tags_}
+
+        super().set_tags(tags_, partial_tag_ids=partial_tag_ids)
 
     @override
     def _on_click(self, tag: Tag) -> None:  # type: ignore[misc]
