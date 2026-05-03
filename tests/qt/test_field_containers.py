@@ -192,7 +192,9 @@ def test_multi_selection_mixed_section_resets_on_single_selection(
     panel = PreviewPanel(library, qt_driver)
     field_containers = panel.field_containers_widget
 
-    field_containers.update_from_entries([1, 2])
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.toggle_item_selection(2, append=True, bridge=False)
+    panel.set_selection(qt_driver.selected)
 
     container_titles = [c.title for c in field_containers.containers]
     assert f"<h4>{Translations['preview.partial_section']}</h4>" in container_titles
@@ -200,7 +202,9 @@ def test_multi_selection_mixed_section_resets_on_single_selection(
     assert "<h4>Title</h4>" in container_titles
     assert [entry.id for entry in field_containers.cached_entries] == [1, 2]
 
-    field_containers.update_from_entry(1)
+    # Switch back to single selection — the partial section should disappear
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    panel.set_selection(qt_driver.selected)
 
     entry = unwrap(library.get_entry_full(1))
     active_container_count = len(field_containers.get_tag_categories(entry.tags)) + len(entry.fields)

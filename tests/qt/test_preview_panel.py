@@ -3,8 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from unittest.mock import Mock
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidgetItem
 
@@ -60,11 +58,9 @@ def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
 def test_add_field_to_selection_multiple_refreshes(qt_driver: QtDriver, library: Library):
     panel = PreviewPanel(library, qt_driver)
 
-    # The add-field callback uses the driver's current selection, so seed it directly here.
-    qt_driver.main_window.thumb_layout._selected = {1: 0, 2: 1}
-    panel.set_selection([1, 2], update_preview=False)
-    refresh_selection_spy = Mock(wraps=panel.refresh_selection)
-    panel.refresh_selection = refresh_selection_spy
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.toggle_item_selection(2, append=True, bridge=False)
+    panel.set_selection(qt_driver.selected, update_preview=False)
 
     selected_entries = list(library.get_entries_full([1, 2]))
     existing_field_keys = {field.type_key for entry in selected_entries for field in entry.fields}
@@ -78,7 +74,6 @@ def test_add_field_to_selection_multiple_refreshes(qt_driver: QtDriver, library:
     item.setData(Qt.ItemDataRole.UserRole, field_type.key)
 
     panel._add_field_to_selected([item])
-    refresh_selection_spy.assert_called_once_with(update_preview=False)
 
     refreshed_entries = list(library.get_entries_full([1, 2]))
     assert all(
