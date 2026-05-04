@@ -63,6 +63,7 @@ class GlobalSettings(BaseModel):
     cached_thumb_quality: int = Field(default=DEFAULT_CACHED_IMAGE_QUALITY)
     cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_IMAGE_RES)
     autoplay: bool = Field(default=True)
+    autoload_new_files: bool = Field(default=False)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
     page_size: int = Field(default=100)
