@@ -57,11 +57,15 @@ def make_tables(engine: Engine) -> None:
                 conn.execute(
                     text(
                         "INSERT INTO tags "
-                        "(id, name, color_namespace, color_slug, is_category, is_hidden) VALUES "
-                        f"({RESERVED_TAG_END}, 'temp', NULL, NULL, false, false)"
-                    )
+                        "(id, name, color_namespace, color_slug, is_category, is_hidden) "
+                        "VALUES (:tag_id, 'temp', NULL, NULL, false, false)"
+                    ),
+                    {"tag_id": RESERVED_TAG_END},
                 )
-                conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+                conn.execute(
+                    text("DELETE FROM tags WHERE id = :tag_id"),
+                    {"tag_id": RESERVED_TAG_END},
+                )
                 conn.commit()
             except OperationalError as e:
                 logger.error("Could not initialize built-in tags", error=e)
