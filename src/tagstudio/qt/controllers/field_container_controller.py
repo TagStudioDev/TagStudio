@@ -31,13 +31,22 @@ class FieldContainer(FieldContainerView):
         self.remove.emit()
 
     def on_copy(self, callback: Callable[[], None] | None = None):
+        if callback is None:
+            return
+
         self.copy.connect(callback)
         self.copy_enabled = True
 
     def on_edit(self, callback: Callable[[], None] | None = None):
+        if callback is None:
+            return
+
         self.edit.connect(callback)
         self.edit_enabled = True
 
     def on_remove(self, callback: Callable[[], None] | None = None):
+        if callback is None:
+            return
+
         self.remove.connect(callback)
         self.remove_enabled = True

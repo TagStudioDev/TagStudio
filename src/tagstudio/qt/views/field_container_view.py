@@ -126,10 +126,12 @@ class FieldContainerView(QWidget):
         self.set_title(title)
         self.setStyleSheet(container_style)
 
+        self.__connect_callbacks()
+
     def __connect_callbacks(self):
-        self.copy_button.clicked.connect(self._copy_callback())
-        self.edit_button.clicked.connect(self._edit_callback())
-        self.remove_button.clicked.connect(self._remove_callback())
+        self.copy_button.clicked.connect(self._copy_callback)
+        self.edit_button.clicked.connect(self._edit_callback)
+        self.remove_button.clicked.connect(self._remove_callback)
 
     def _copy_callback(self):
         raise NotImplementedError()

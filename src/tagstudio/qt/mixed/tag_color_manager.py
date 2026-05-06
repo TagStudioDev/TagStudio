@@ -132,7 +132,7 @@ class TagColorManager(QWidget):
                 field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
                 field_container.set_inner_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
-                    field_container.set_remove_callback(
+                    field_container.on_remove(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
