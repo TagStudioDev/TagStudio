@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 from tagstudio.core.enums import Theme
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.controllers.field_container_controller import FieldWidget
+    from tagstudio.qt.views.field_widget_view import FieldWidgetView
 
 # TODO: reference a resources folder rather than path.parents[2]?
 clipboard_icon_128: Image.Image = Image.open(
@@ -144,7 +144,7 @@ class FieldContainerView(QWidget):
     def _remove_callback(self):
         raise NotImplementedError()
 
-    def set_inner_widget(self, widget: "FieldWidget") -> None:
+    def set_inner_widget(self, widget: "FieldWidgetView") -> None:
         if self.field_layout.itemAt(0):
             old: QWidget = self.field_layout.itemAt(0).widget()
             self.field_layout.removeWidget(old)
@@ -166,7 +166,7 @@ class FieldContainerView(QWidget):
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
-        # NOTE: You could pass the hover event to the FieldWidget if needed.
+        # NOTE: You could pass the hover event to the FieldWidgetView if needed.
         self.copy_button.setHidden(not self.copy_enabled)
         self.edit_button.setHidden(not self.edit_enabled)
         self.remove_button.setHidden(not self.remove_enabled)

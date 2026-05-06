@@ -7,10 +7,10 @@ import re
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
 
-from tagstudio.qt.controllers.field_container_controller import FieldWidget
+from tagstudio.qt.views.field_widget_view import FieldWidgetView
 
 
-class TextWidget(FieldWidget):
+class TextWidget(FieldWidgetView):
     def __init__(self, title, text: str) -> None:
         super().__init__(title)
         self.setObjectName("textBox")

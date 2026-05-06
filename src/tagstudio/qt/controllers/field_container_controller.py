@@ -7,7 +7,6 @@ from collections.abc import Callable
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget
 
 from tagstudio.qt.views.field_container_view import FieldContainerView
 
@@ -42,9 +41,3 @@ class FieldContainer(FieldContainerView):
     def on_remove(self, callback: Callable[[], None] | None = None):
         self.remove.connect(callback)
         self.remove_enabled = True
-
-
-class FieldWidget(QWidget):
-    def __init__(self, title: str) -> None:
-        super().__init__()
-        self.title: str = title
