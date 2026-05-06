@@ -1,0 +1,81 @@
+from enum import Enum
+
+import structlog
+from PySide6.QtCore import QAbstractItemModel, Signal
+
+from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget import (
+    DimensionPropertyWidget,
+)
+from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import (
+    DurationPropertyWidget,
+)
+from tagstudio.qt.views.preview_panel.attributes.extension_and_size_property_widget import (
+    ExtensionAndSizePropertyWidget,
+)
+from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
+from tagstudio.qt.views.preview_panel.attributes.font_family_property_widget import (
+    FontFamilyPropertyWidget,
+)
+
+logger = structlog.get_logger(__name__)
+
+
+class FilePropertyType(Enum):
+    EXTENSION_AND_SIZE = "extension_and_size", ExtensionAndSizePropertyWidget
+    DIMENSIONS = "dimensions", DimensionPropertyWidget
+    DURATION = "duration", DurationPropertyWidget
+    FONT_FAMILY = "font_family", FontFamilyPropertyWidget
+
+    def __init__(self, name: str, widget_class: type[FilePropertyWidget]):
+        self.__name = name
+        self.widget_class = widget_class
+
+
+class FileAttributesModel(QAbstractItemModel):
+    properties_changed: Signal = Signal(dict)
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.__property_widgets: dict[FilePropertyType, FilePropertyWidget] = {}
+
+    def get_properties(self) -> dict[FilePropertyType, FilePropertyWidget]:
+        """Returns a sorted dictionary of all file properties."""
+        return dict(
+            sorted(
+                self.__property_widgets.items(),
+                key=lambda item: list(FilePropertyType.__members__.values()).index(item[0]),
+            )
+        )
+
+    def get_property_index(self, property_type: FilePropertyType) -> int:
+        """Returns the sorted index of the given property type."""
+        for index, key in enumerate(self.get_properties()):
+            if property_type == key:
+                return index
+
+        return -1
+
+    def get_property_widget(self, property_type: FilePropertyType) -> FilePropertyWidget | None:
+        """Returns the widget for the given property type."""
+        if property_type in self.__property_widgets:
+            return self.__property_widgets[property_type]
+
+        return None
+
+    def set_property_widget(
+        self, property_type: FilePropertyType, widget: FilePropertyWidget
+    ) -> None:
+        """Sets the widget for the given property type."""
+        if property_type not in self.__property_widgets:
+            self.__property_widgets[property_type] = widget
+
+        self.properties_changed.emit(self.get_properties())
+
+    def delete_property(self, property_type: FilePropertyType) -> None:
+        """Removes the given property type."""
+        self.__property_widgets.pop(property_type, None)
+
+    def delete_properties(self) -> None:
+        """Removes all file properties."""
+        self.__property_widgets.clear()
