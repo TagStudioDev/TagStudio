@@ -21,6 +21,8 @@ logger = structlog.get_logger(__name__)
 
 
 class TagBoxWidgetView(FieldWidgetView):
+    """A widget that holds a list of tags."""
+
     def __init__(self, title: str, driver: "QtDriver") -> None:
         super().__init__(title)
         self.__lib: Library = driver.lib
@@ -31,6 +33,7 @@ class TagBoxWidgetView(FieldWidgetView):
         self.setLayout(self.__root_layout)
 
     def set_tags(self, tags: Iterable[Tag]) -> None:
+        """Sets the tags the tag box contains."""
         sorted_tags: list[Tag] = sorted(
             list(tags), key=lambda tag: self.__lib.tag_display_name(tag)
         )

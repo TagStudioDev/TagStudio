@@ -23,6 +23,8 @@ logger = structlog.get_logger(__name__)
 
 
 class TagColorBoxWidget(TagColorBoxWidgetView):
+    """A widget holding a list of tag colors."""
+
     updated = Signal()
 
     def __init__(
