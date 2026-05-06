@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 import structlog
+from PySide6.QtWidgets import QLayoutItem
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
@@ -20,11 +21,9 @@ logger = structlog.get_logger(__name__)
 
 
 class TagBoxWidgetView(FieldWidgetView):
-    __lib: Library
-
     def __init__(self, title: str, driver: "QtDriver") -> None:
         super().__init__(title)
-        self.__lib = driver.lib
+        self.__lib: Library = driver.lib
 
         self.__root_layout = FlowLayout()
         self.__root_layout.enable_grid_optimizations(value=False)
@@ -32,18 +31,22 @@ class TagBoxWidgetView(FieldWidgetView):
         self.setLayout(self.__root_layout)
 
     def set_tags(self, tags: Iterable[Tag]) -> None:
-        tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag))
+        sorted_tags: list[Tag] = sorted(
+            list(tags), key=lambda tag: self.__lib.tag_display_name(tag)
+        )
         logger.info("[TagBoxWidget] Tags:", tags=tags)
-        while self.__root_layout.itemAt(0):
-            self.__root_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
+        while self.__root_layout.itemAt(0) is not None:
+            tag_widget_item: QLayoutItem | None = self.__root_layout.takeAt(0)
+            if tag_widget_item is not None and isinstance(tag_widget_item, TagWidget):
+                tag_widget_item.deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
-        for tag in tags_:
-            tag_widget = TagWidget(tag, library=self.__lib, has_edit=True, has_remove=True)
+        for tag in sorted_tags:
+            tag_widget: TagWidget = TagWidget(
+                tag, library=self.__lib, has_edit=True, has_remove=True
+            )
 
             tag_widget.on_click.connect(lambda t=tag: self._on_click(t))
-
             tag_widget.on_remove.connect(lambda t=tag: self._on_remove(t))
-
             tag_widget.on_edit.connect(lambda t=tag: self._on_edit(t))
 
             tag_widget.search_for_tag_action.triggered.connect(

@@ -50,7 +50,7 @@ class FieldContainerView(QWidget):
         self.setObjectName("fieldContainer")
         self.title: str = title
         self.inline: bool = inline
-        button_size = 24
+        button_size: int = 24
 
         self.copy_enabled: bool = False
         self.edit_enabled: bool = False
@@ -128,18 +128,18 @@ class FieldContainerView(QWidget):
 
         self.__connect_callbacks()
 
-    def __connect_callbacks(self):
+    def __connect_callbacks(self) -> None:
         self.copy_button.clicked.connect(self._copy_callback)
         self.edit_button.clicked.connect(self._edit_callback)
         self.remove_button.clicked.connect(self._remove_callback)
 
-    def _copy_callback(self):
+    def _copy_callback(self) -> None:
         raise NotImplementedError()
 
-    def _edit_callback(self):
+    def _edit_callback(self) -> None:
         raise NotImplementedError()
 
-    def _remove_callback(self):
+    def _remove_callback(self) -> None:
         raise NotImplementedError()
 
     def set_inner_widget(self, widget: "FieldWidgetView") -> None:
@@ -156,7 +156,7 @@ class FieldContainerView(QWidget):
         return None
 
     def set_title(self, title: str) -> None:
-        self.title = self.title = f"<h4>{title}</h4>"
+        self.title = f"<h4>{title}</h4>"
         self.title_widget.setText(self.title)
 
     def set_inline(self, inline: bool) -> None:

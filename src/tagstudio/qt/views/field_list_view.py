@@ -7,12 +7,12 @@ from tagstudio.qt.controllers.field_container_controller import FieldContainer
 
 
 class FieldListView(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.field_containers: list[FieldContainer] = []
 
-        self.panel_bg_color = (
+        self.panel_bg_color: str = (
             Theme.COLOR_BG_DARK.value
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else Theme.COLOR_BG_LIGHT.value
@@ -53,12 +53,12 @@ class FieldListView(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(self.scroll_area)
 
-    def hide_all(self):
+    def hide_all(self) -> None:
         """Hide all field and tag containers."""
         for field_container in self.field_containers:
             field_container.setHidden(True)
 
-    def hide_after(self, after_index: int):
+    def hide_after(self, after_index: int) -> None:
         for index, field_container in enumerate(self.field_containers):
             if index >= after_index:
                 field_container.setHidden(True)

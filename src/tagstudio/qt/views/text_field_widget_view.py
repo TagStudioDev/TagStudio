@@ -27,13 +27,13 @@ class TextFieldWidget(FieldWidgetView):
         self.base_layout.addWidget(self.text_label)
         self.set_text(text)
 
-    def set_text(self, text: str):
+    def set_text(self, text: str) -> None:
         text = linkify(text)
         self.text_label.setText(text)
 
 
 # Regex from https://stackoverflow.com/a/6041965
-def linkify(text: str):
+def linkify(text: str) -> str:
     url_pattern = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#\-*]*[\w@?^=%&\/~+#\-*])"  # noqa: E501
     return re.sub(
         url_pattern,

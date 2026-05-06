@@ -7,7 +7,7 @@ import typing
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.models import TagColorGroup
@@ -35,16 +35,16 @@ class TagColorBoxWidget(TagColorBoxWidgetView):
         self.colors: list[TagColorGroup] = colors
         self.lib: Library = library
 
-        title = "" if not self.lib.engine else self.lib.get_namespace_name(group)
+        title: str = "" if not self.lib.engine else self.lib.get_namespace_name(group)
         super().__init__(title)
 
-        sorted_colors = sorted(
+        sorted_colors: list[TagColorGroup] = sorted(
             list(self.colors), key=lambda color: self.lib.get_namespace_name(color.namespace)
         )
-        is_mutable = not self.namespace.startswith(RESERVED_NAMESPACE_PREFIX)
+        is_mutable: bool = not self.namespace.startswith(RESERVED_NAMESPACE_PREFIX)
         self.set_colors(sorted_colors, is_mutable)
 
-    def _on_add_color(self):
+    def _on_add_color(self) -> None:
         self._on_edit_color(
             TagColorGroup(
                 slug="slug",
@@ -55,10 +55,10 @@ class TagColorBoxWidget(TagColorBoxWidgetView):
             )
         )
 
-    def _on_edit_color(self, color_group: TagColorGroup):
-        build_color_panel = BuildColorPanel(self.lib, color_group)
+    def _on_edit_color(self, color_group: TagColorGroup) -> None:
+        build_color_panel: BuildColorPanel = BuildColorPanel(self.lib, color_group)
 
-        edit_modal = PanelModal(
+        edit_modal: PanelModal = PanelModal(
             build_color_panel,
             "Edit Color",
             has_save=True,
@@ -69,20 +69,21 @@ class TagColorBoxWidget(TagColorBoxWidgetView):
         )
         edit_modal.show()
 
-    def _on_delete_color(self, color_group: TagColorGroup):
-        message_box = QMessageBox(
+    def _on_delete_color(self, color_group: TagColorGroup) -> None:
+        message_box: QMessageBox = QMessageBox(
             QMessageBox.Icon.Warning,
             Translations["color.delete"],
             Translations.format("color.confirm_delete", color_name=color_group.name),
         )
-        cancel_button = message_box.addButton(
+        cancel_button: QPushButton | None = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
         message_box.addButton(
             Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
         )
-        message_box.setEscapeButton(cancel_button)
-        result = message_box.exec_()
+        if cancel_button is not None:
+            message_box.setEscapeButton(cancel_button)
+        result: int = message_box.exec_()
         logger.info(QMessageBox.ButtonRole.DestructiveRole.value)
         if result != QMessageBox.ButtonRole.ActionRole.value:
             return

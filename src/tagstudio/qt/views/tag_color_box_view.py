@@ -24,7 +24,7 @@ class TagColorBoxWidgetView(FieldWidgetView):
 
         self.color_widgets: list[TagColorLabel] = []
 
-        self.add_button_stylesheet = (
+        self.add_button_stylesheet: str = (
             f"QPushButton{{"
             f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
             f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
@@ -61,16 +61,16 @@ class TagColorBoxWidgetView(FieldWidgetView):
 
         self.__connect_callbacks()
 
-    def __connect_callbacks(self):
+    def __connect_callbacks(self) -> None:
         self.__add_button.clicked.connect(self._on_add_color)
 
-    def set_colors(self, colors: Iterable[TagColorGroup], is_mutable: bool):
-        max_width = 60
+    def set_colors(self, colors: Iterable[TagColorGroup], is_mutable: bool) -> None:
+        max_width: int = 60
 
         self.remove_contents()
 
         for color in colors:
-            color_widget = self.add_color_widget(color, is_mutable)
+            color_widget: TagColorLabel = self.add_color_widget(color, is_mutable)
 
             color_widget.on_click.connect(lambda c=color: self._on_edit_color(c))
             color_widget.on_remove.connect(lambda c=color: self._on_delete_color(c))
@@ -85,30 +85,32 @@ class TagColorBoxWidgetView(FieldWidgetView):
         self.update_add_button(is_mutable)
 
     def add_color_widget(self, color: TagColorGroup, is_mutable: bool) -> TagColorLabel:
-        color_widget = TagColorLabel(color=color, has_edit=is_mutable, has_remove=is_mutable)
+        color_widget: TagColorLabel = TagColorLabel(
+            color=color, has_edit=is_mutable, has_remove=is_mutable
+        )
 
         self.color_widgets.append(color_widget)
         self.__root_layout.addWidget(color_widget)
 
         return color_widget
 
-    def remove_contents(self):
+    def remove_contents(self) -> None:
         while self.__root_layout.itemAt(0):
             unwrap(self.__root_layout.takeAt(0)).widget().deleteLater()
 
         self.color_widgets = []
 
-    def update_add_button(self, is_mutable: bool):
+    def update_add_button(self, is_mutable: bool) -> None:
         self.__add_button.setVisible(False)
         self.__root_layout.removeWidget(self.__add_button)
         self.__root_layout.addWidget(self.__add_button)
         self.__add_button.setVisible(is_mutable)
 
-    def _on_add_color(self):
+    def _on_add_color(self) -> None | NotImplementedError:
         return NotImplementedError()
 
-    def _on_edit_color(self, color_group: TagColorGroup):
+    def _on_edit_color(self, color_group: TagColorGroup) -> None | NotImplementedError:
         return NotImplementedError()
 
-    def _on_delete_color(self, color_group: TagColorGroup):
+    def _on_delete_color(self, color_group: TagColorGroup) -> None | NotImplementedError:
         return NotImplementedError()

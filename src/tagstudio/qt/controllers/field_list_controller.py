@@ -13,6 +13,8 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMessageBox,
+    QPushButton,
+    QWidget,
 )
 
 from tagstudio.core.library.alchemy.enums import FieldTypeEnum
@@ -22,7 +24,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.field_container_controller import FieldContainer
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
@@ -44,33 +46,33 @@ logger = structlog.get_logger(__name__)
 class FieldContainers(FieldListView):
     """The Preview Panel Widget."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
-        self.lib = library
+        self.lib: Library = library
         self.driver: QtDriver = driver
-        self.initialized = False
+        self.initialized: bool = False
         self.is_open: bool = False
 
-        self.__model = FieldListModel()
+        self.__model: FieldListModel = FieldListModel()
 
-    def update_from_entry(self, entry_id: int, update_badges: bool = True):
+    def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        entry = unwrap(self.lib.get_entry_full(entry_id))
+        entry: Entry = unwrap(self.lib.get_entry_full(entry_id))
         self.__model.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
         self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
-    ):
+    ) -> None:
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
-        container_index = 0
+        container_index: int = 0
         # Write tag container(s)
         if entry_tags:
-            categories = self.get_tag_categories(entry_tags)
+            categories: dict[Tag | None, set[Tag]] = self.get_tag_categories(entry_tags)
             for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=cat, is_mixed=False
@@ -87,10 +89,10 @@ class FieldContainers(FieldListView):
         # Hide leftover container(s)
         self.hide_after(container_len)
 
-    def update_toggled_tag(self, tag_id: int, toggle_value: bool):
+    def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
         """Visually add or remove a tag from the item preview without needing to query the db."""
-        entry = self.__model.cached_entries[0]
-        tag = self.lib.get_tag(tag_id)
+        entry: Entry = self.__model.cached_entries[0]
+        tag: Tag | None = self.lib.get_tag(tag_id)
         if not tag:
             return
         if toggle_value:
@@ -109,7 +111,7 @@ class FieldContainers(FieldListView):
         "Character" -> "Johnny Bravo",
         "TV" -> Johnny Bravo"
         """
-        loop_cutoff = 1024  # Used for stopping the while loop
+        loop_cutoff: int = 1024  # Used for stopping the while loop
 
         hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
         categories: dict[Tag | None, set[Tag]] = {None: set()}
@@ -119,10 +121,10 @@ class FieldContainers(FieldListView):
                 categories[tag] = set()
         for tag in tags:
             tag = hierarchy_tags[tag.id]
-            has_category_parent = False
-            parent_tags = tag.parent_tags
+            has_category_parent: bool = False
+            parent_tags: set[Tag] = tag.parent_tags
 
-            loop_counter = 0
+            loop_counter: int = 0
             while len(parent_tags) > 0:
                 # NOTE: This is for preventing infinite loops in the event a tag is parented
                 # to itself cyclically.
@@ -148,7 +150,7 @@ class FieldContainers(FieldListView):
     def remove_field_prompt(self, name: str) -> str:
         return Translations.format("library.field.confirm_remove", name=name)
 
-    def add_field_to_selected(self, field_list: list):
+    def add_field_to_selected(self, field_list: list) -> None:
         """Add list of entry fields to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
@@ -165,7 +167,7 @@ class FieldContainers(FieldListView):
                     field_id=field_item.data(Qt.ItemDataRole.UserRole),
                 )
 
-    def add_tags_to_selected(self, tags: int | list[int]):
+    def add_tags_to_selected(self, tags: int | list[int]) -> None:
         """Add list of tags to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
@@ -183,7 +185,7 @@ class FieldContainers(FieldListView):
         )
         self.driver.emit_badge_signals(tags, emit_on_absent=False)
 
-    def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
+    def write_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
         """Update/Create data for a FieldContainer.
 
         Args:
@@ -195,7 +197,7 @@ class FieldContainers(FieldListView):
         """
         logger.info("[FieldContainers][write_field_container]", index=index)
         if len(self.field_containers) < (index + 1):
-            container = FieldContainer()
+            container: FieldContainer = FieldContainer()
             self.field_containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
@@ -208,15 +210,15 @@ class FieldContainers(FieldListView):
             # Normalize line endings in any text content.
             if not is_mixed:
                 assert isinstance(field.value, str | type(None))
-                text = field.value or ""
+                text: str = field.value if isinstance(field.value, str) else ""
             else:
                 text = "<i>Mixed Data</i>"
 
-            title = f"{field.type.name} ({field.type.type.value})"
-            inner_widget = TextFieldWidget(title, text)
+            title: str = f"{field.type.name} ({field.type.type.value})"
+            inner_widget: TextFieldWidget = TextFieldWidget(title, text)
             container.set_inner_widget(inner_widget)
             if not is_mixed:
-                modal = PanelModal(
+                modal: PanelModal = PanelModal(
                     EditTextLine(field.value),
                     title=title,
                     window_title=f"Edit {field.type.type.value}",
@@ -248,7 +250,7 @@ class FieldContainers(FieldListView):
             # Normalize line endings in any text content.
             if not is_mixed:
                 assert isinstance(field.value, str | type(None))
-                text = (field.value or "").replace("\r", "\n")
+                text = (field.value if isinstance(field.value, str) else "").replace("\r", "\n")
             else:
                 text = "<i>Mixed Data</i>"
             title = f"{field.type.name} (Text Box)"
@@ -343,7 +345,7 @@ class FieldContainers(FieldListView):
 
     def write_tag_container(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
-    ):
+    ) -> None:
         """Update/Create tag data for a FieldContainer.
 
         Args:
@@ -356,7 +358,7 @@ class FieldContainers(FieldListView):
         """
         logger.info("[FieldContainers][write_tag_container]", index=index)
         if len(self.field_containers) < (index + 1):
-            container = FieldContainer()
+            container: FieldContainer = FieldContainer()
             self.field_containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
@@ -366,7 +368,7 @@ class FieldContainers(FieldListView):
         container.set_inline(False)
 
         if not is_mixed:
-            inner_widget = container.get_inner_widget()
+            inner_widget: QWidget | None = container.get_inner_widget()
 
             if isinstance(inner_widget, TagBoxWidget):
                 with catch_warnings(record=True):
@@ -377,7 +379,10 @@ class FieldContainers(FieldListView):
                     "Tags",
                     self.driver,
                 )
+                assert isinstance(inner_widget, TagBoxWidget)
+
                 container.set_inner_widget(inner_widget)
+
             inner_widget.set_entries([e.id for e in self.__model.cached_entries])
             inner_widget.set_tags(tags)
 
@@ -387,22 +392,22 @@ class FieldContainers(FieldListView):
                 )
             )
         else:
-            text = "<i>Mixed Data</i>"
-            inner_widget = TextFieldWidget("Mixed Tags", text)
-            container.set_inner_widget(inner_widget)
+            text: str = "<i>Mixed Data</i>"
+            mixed_tags_widget: TextFieldWidget = TextFieldWidget("Mixed Tags", text)
+            container.set_inner_widget(mixed_tags_widget)
 
         container.on_edit()
         container.on_remove()
         container.setHidden(False)
 
-    def remove_field(self, field: BaseField):
+    def remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
             "[FieldContainers] Removing Field",
             field=field,
             selected=[x.path for x in self.__model.cached_entries],
         )
-        entry_ids = [e.id for e in self.__model.cached_entries]
+        entry_ids: list[int] = [e.id for e in self.__model.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
     def update_field(self, field: BaseField, content: str) -> None:
@@ -412,7 +417,7 @@ class FieldContainers(FieldListView):
             TextField | DatetimeField,
         ), f"instance: {type(field)}"
 
-        entry_ids = [e.id for e in self.__model.cached_entries]
+        entry_ids: list[int] = [e.id for e in self.__model.cached_entries]
 
         assert entry_ids, "No entries selected"
         self.lib.update_entry_field(
@@ -422,15 +427,16 @@ class FieldContainers(FieldListView):
         )
 
     def remove_message_box(self, prompt: str, callback: Callable) -> None:
-        remove_mb = QMessageBox()
+        remove_mb: QMessageBox = QMessageBox()
         remove_mb.setText(prompt)
         remove_mb.setWindowTitle("Remove Field")
         remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton(
+        cancel_button: QPushButton | None = remove_mb.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
         )
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        remove_mb.setEscapeButton(cancel_button)
+        if cancel_button is not None:
+            remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
             callback()

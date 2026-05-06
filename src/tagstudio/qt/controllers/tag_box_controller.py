@@ -26,12 +26,12 @@ class TagBoxWidget(TagBoxWidgetView):
 
     __entries: list[int] = []
 
-    def __init__(self, title: str, driver: "QtDriver"):
+    def __init__(self, title: str, driver: "QtDriver") -> None:
         super().__init__(title, driver)
-        self.__driver = driver
+        self.__driver: QtDriver = driver
 
     def set_entries(self, entries: list[int]) -> None:
-        self.__entries = entries
+        self.__entries: list[int] = entries
 
     @override
     def _on_click(self, tag: Tag) -> None:  # type: ignore[misc]
@@ -47,8 +47,8 @@ class TagBoxWidget(TagBoxWidgetView):
                 #       than this string manipulation, but also much more complex,
                 #       due to needing to implement a visitor that turns an AST to a string
                 #       So if that exists when you read this, change the following accordingly.
-                current = self.__driver.browsing_history.current
-                suffix = unwrap(
+                current: BrowsingState = self.__driver.browsing_history.current
+                suffix: str = unwrap(
                     BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current).query
                 )
                 self.__driver.update_browsing_state(
@@ -71,9 +71,9 @@ class TagBoxWidget(TagBoxWidgetView):
 
     @override
     def _on_edit(self, tag: Tag) -> None:  # type: ignore[misc]
-        build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
+        build_tag_panel: BuildTagPanel = BuildTagPanel(self.__driver.lib, tag=tag)
 
-        edit_modal = PanelModal(
+        edit_modal: PanelModal = PanelModal(
             build_tag_panel,
             self.__driver.lib.tag_display_name(tag),
             "Edit Tag",
