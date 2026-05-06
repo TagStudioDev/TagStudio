@@ -10,19 +10,11 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QListWidgetItem,
     QMessageBox,
-    QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
 )
 
-from tagstudio.core.enums import Theme
+from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BaseFieldTemplate,
@@ -30,15 +22,17 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextWidget
+from tagstudio.qt.models.field_list_model import FieldListModel
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
+from tagstudio.qt.views.field_list_view import FieldListView
 from tagstudio.qt.views.panel_modal import PanelModal
 
 if typing.TYPE_CHECKING:
@@ -47,7 +41,7 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class FieldContainers(QWidget):
+class FieldContainers(FieldListView):
     """The Preview Panel Widget."""
 
     def __init__(self, library: Library, driver: "QtDriver"):
@@ -57,58 +51,15 @@ class FieldContainers(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.is_open: bool = False
-        self.common_fields: list = []
-        self.mixed_fields: list = []
-        self.cached_entries: list[Entry] = []
-        self.containers: list[FieldContainer] = []
 
-        self.panel_bg_color = (
-            Theme.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value
-        )
-
-        self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(0)
-
-        scroll_container: QWidget = QWidget()
-        scroll_container.setObjectName("entryScrollContainer")
-        scroll_container.setLayout(self.scroll_layout)
-
-        info_section = QWidget()
-        info_layout = QVBoxLayout(info_section)
-        info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setObjectName("entryScrollArea")
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-
-        # NOTE: I would rather have this style applied to the scroll_area
-        # background and NOT the scroll container background, so that the
-        # rounded corners are maintained when scrolling. I was unable to
-        # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(
-            f"QWidget#entryScrollContainer{{background:{self.panel_bg_color};border-radius:6px;}}"
-        )
-        self.scroll_area.setWidget(scroll_container)
-
-        root_layout = QHBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.addWidget(self.scroll_area)
+        self.__model = FieldListModel()
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
         entry = unwrap(self.lib.get_entry_full(entry_id))
-        self.cached_entries = [entry]
+        self.__model.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
@@ -134,14 +85,11 @@ class FieldContainers(QWidget):
             self.write_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self.containers) > container_len:
-            for i, c in enumerate(self.containers):
-                if i > (container_len - 1):
-                    c.setHidden(True)
+        self.hide_after(container_len)
 
     def update_toggled_tag(self, tag_id: int, toggle_value: bool):
         """Visually add or remove a tag from the item preview without needing to query the db."""
-        entry = self.cached_entries[0]
+        entry = self.__model.cached_entries[0]
         tag = self.lib.get_tag(tag_id)
         if not tag:
             return
@@ -151,11 +99,6 @@ class FieldContainers(QWidget):
             entry.tags.discard(tag)
 
         self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
-
-    def hide_containers(self):
-        """Hide all field and tag containers."""
-        for c in self.containers:
-            c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
         """Get a dictionary of category tags mapped to their respective tags.
@@ -255,12 +198,12 @@ class FieldContainers(QWidget):
             name=field.name,
             type=field.class_name,
         )
-        if len(self.containers) < (index + 1):
+        if len(self.field_containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self.field_containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self.field_containers[index]
 
         # Set field title
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
@@ -288,7 +231,7 @@ class FieldContainers(QWidget):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_text_field(field, content, is_multiline=False),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -302,7 +245,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(title),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -327,7 +270,7 @@ class FieldContainers(QWidget):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_text_field(field, content, is_multiline=True),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -337,7 +280,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -365,7 +308,7 @@ class FieldContainers(QWidget):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_datetime_field(field, content),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -376,7 +319,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.__model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -397,7 +340,7 @@ class FieldContainers(QWidget):
                     prompt=self.remove_field_prompt(field.name),
                     callback=lambda: (
                         self.remove_field(field),
-                        self.update_from_entry(self.cached_entries[0].id),
+                        self.update_from_entry(self.__model.cached_entries[0].id),
                     ),
                 )
             )
@@ -418,12 +361,12 @@ class FieldContainers(QWidget):
             If True, field is not present in all selected items.
         """
         logger.info("[FieldContainers][write_tag_container]", index=index)
-        if len(self.containers) < (index + 1):
+        if len(self.field_containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self.field_containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self.field_containers[index]
 
         container.set_title(
             "Tags" if not category_tag else category_tag.name
@@ -443,11 +386,13 @@ class FieldContainers(QWidget):
                     self.driver,
                 )
                 container.set_inner_widget(inner_widget)
-            inner_widget.set_entries([e.id for e in self.cached_entries])
+            inner_widget.set_entries([e.id for e in self.__model.cached_entries])
             inner_widget.set_tags(tags)
 
             inner_widget.on_update.connect(
-                lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
+                lambda: (
+                    self.update_from_entry(self.__model.cached_entries[0].id, update_badges=True)
+                )
             )
         else:
             text = "<i>Mixed Data</i>"
@@ -463,21 +408,21 @@ class FieldContainers(QWidget):
         logger.info(
             "[FieldContainers] Removing Field",
             field=field,
-            selected=[x.path for x in self.cached_entries],
+            selected=[x.path for x in self.__model.cached_entries],
         )
-        entry_ids = [e.id for e in self.cached_entries]
+        entry_ids = [e.id for e in self.__model.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
     def update_text_field(self, field: TextField, value: str, is_multiline: bool):
         """Update a text field across selected entries."""
-        entry_ids = [e.id for e in self.cached_entries]
+        entry_ids = [e.id for e in self.__model.cached_entries]
         assert entry_ids, "No entries selected"
 
         self.lib.update_text_field(entry_ids, field, value, is_multiline)
 
     def update_datetime_field(self, field: DatetimeField, value: str):
         """Update a datetime field across selected entries."""
-        entry_ids = [e.id for e in self.cached_entries]
+        entry_ids = [e.id for e in self.__model.cached_entries]
         assert entry_ids, "No entries selected"
 
         self.lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
