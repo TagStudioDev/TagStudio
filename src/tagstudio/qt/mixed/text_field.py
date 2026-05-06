@@ -7,7 +7,7 @@ import re
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
 
-from tagstudio.qt.mixed.field_widget import FieldWidget
+from tagstudio.qt.controllers.field_container_controller import FieldWidget
 
 
 class TextWidget(FieldWidget):

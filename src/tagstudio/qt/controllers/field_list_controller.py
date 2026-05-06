@@ -24,9 +24,9 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.field_container_controller import FieldContainer
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextWidget
 from tagstudio.qt.models.field_list_model import FieldListModel
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
@@ -239,8 +239,8 @@ class FieldContainers(FieldListView):
                     # for better testability
                     container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
 
-                container.set_edit_callback(modal.show)
-                container.set_remove_callback(
+                container.on_edit(modal.show)
+                container.on_remove(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(title),
                         callback=lambda: (
@@ -274,8 +274,8 @@ class FieldContainers(FieldListView):
                         )
                     ),
                 )
-                container.set_edit_callback(modal.show)
-                container.set_remove_callback(
+                container.on_edit(modal.show)
+                container.on_remove(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
@@ -313,8 +313,8 @@ class FieldContainers(FieldListView):
                     ),
                 )
 
-                container.set_edit_callback(modal.show)
-                container.set_remove_callback(
+                container.on_edit(modal.show)
+                container.on_remove(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
@@ -335,7 +335,7 @@ class FieldContainers(FieldListView):
             container.set_inline(False)
             inner_widget = TextWidget(title, field.name)
             container.set_inner_widget(inner_widget)
-            container.set_remove_callback(
+            container.on_remove(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.name),
                     callback=lambda: (
@@ -399,8 +399,8 @@ class FieldContainers(FieldListView):
             inner_widget = TextWidget("Mixed Tags", text)
             container.set_inner_widget(inner_widget)
 
-        container.set_edit_callback()
-        container.set_remove_callback()
+        container.on_edit()
+        container.on_remove()
         container.setHidden(False)
 
     def remove_field(self, field: BaseField):

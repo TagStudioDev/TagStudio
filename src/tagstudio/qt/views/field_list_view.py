@@ -3,7 +3,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import Theme
-from tagstudio.qt.mixed.field_widget import FieldContainer
+from tagstudio.qt.controllers.field_container_controller import FieldContainer
 
 
 class FieldListView(QWidget):
