@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel
 from tagstudio.qt.views.field_widget_view import FieldWidgetView
 
 
-class TextWidget(FieldWidgetView):
+class TextFieldWidget(FieldWidgetView):
     def __init__(self, title, text: str) -> None:
         super().__init__(title)
         self.setObjectName("textBox")
