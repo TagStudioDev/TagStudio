@@ -27,13 +27,13 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.field_container_controller import FieldContainer
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.text_field import TextWidget
 from tagstudio.qt.models.field_list_model import FieldListModel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
 from tagstudio.qt.views.field_list_view import FieldListView
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.text_field_widget_view import TextFieldWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -213,7 +213,7 @@ class FieldContainers(FieldListView):
                 text = "<i>Mixed Data</i>"
 
             title = f"{field.type.name} ({field.type.type.value})"
-            inner_widget = TextWidget(title, text)
+            inner_widget = TextFieldWidget(title, text)
             container.set_inner_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
@@ -252,7 +252,7 @@ class FieldContainers(FieldListView):
             else:
                 text = "<i>Mixed Data</i>"
             title = f"{field.type.name} (Text Box)"
-            inner_widget = TextWidget(title, text)
+            inner_widget = TextFieldWidget(title, text)
             container.set_inner_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
@@ -293,7 +293,7 @@ class FieldContainers(FieldListView):
                     title += " (Unknown Format)"
                     text = str(field.value)
 
-                inner_widget = TextWidget(title, text)
+                inner_widget = TextFieldWidget(title, text)
                 container.set_inner_widget(inner_widget)
 
                 modal = PanelModal(
@@ -320,14 +320,14 @@ class FieldContainers(FieldListView):
             else:
                 text = "<i>Mixed Data</i>"
                 title = f"{field.type.name} (Wacky Date)"
-                inner_widget = TextWidget(title, text)
+                inner_widget = TextFieldWidget(title, text)
                 container.set_inner_widget(inner_widget)
         else:
             logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
             container.set_title(field.type.name)
             container.set_inline(False)
             title = f"{field.type.name} (Unknown Field Type)"
-            inner_widget = TextWidget(title, field.type.name)
+            inner_widget = TextFieldWidget(title, field.type.name)
             container.set_inner_widget(inner_widget)
             container.on_remove(
                 lambda: self.remove_message_box(
@@ -388,7 +388,7 @@ class FieldContainers(FieldListView):
             )
         else:
             text = "<i>Mixed Data</i>"
-            inner_widget = TextWidget("Mixed Tags", text)
+            inner_widget = TextFieldWidget("Mixed Tags", text)
             container.set_inner_widget(inner_widget)
 
         container.on_edit()
