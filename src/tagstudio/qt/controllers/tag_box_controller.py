@@ -22,6 +22,8 @@ logger = structlog.get_logger(__name__)
 
 
 class TagBoxWidget(TagBoxWidgetView):
+    """A widget that holds a list of tags."""
+
     on_update = Signal()
 
     __entries: list[int] = []
@@ -31,6 +33,7 @@ class TagBoxWidget(TagBoxWidgetView):
         self.__driver: QtDriver = driver
 
     def set_entries(self, entries: list[int]) -> None:
+        """Sets the list of entries that are currently selected."""
         self.__entries: list[int] = entries
 
     @override

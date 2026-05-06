@@ -44,6 +44,8 @@ container_style = (
 
 
 class FieldContainerView(QWidget):
+    """A container that holds a field widget and provides some relevant information and controls."""
+
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
 
@@ -143,6 +145,7 @@ class FieldContainerView(QWidget):
         raise NotImplementedError()
 
     def set_inner_widget(self, widget: "FieldWidgetView") -> None:
+        """Sets the field widget the container holds."""
         if self.field_layout.itemAt(0):
             old: QWidget = self.field_layout.itemAt(0).widget()
             self.field_layout.removeWidget(old)
@@ -151,15 +154,18 @@ class FieldContainerView(QWidget):
         self.field_layout.addWidget(widget)
 
     def get_inner_widget(self) -> QWidget | None:
+        """Returns the field widget the container holds."""
         if self.field_layout.itemAt(0):
             return self.field_layout.itemAt(0).widget()
         return None
 
     def set_title(self, title: str) -> None:
+        """Sets the title of the field container."""
         self.title = f"<h4>{title}</h4>"
         self.title_widget.setText(self.title)
 
     def set_inline(self, inline: bool) -> None:
+        """Sets whether the field container is inline or not."""
         self.inline = inline
 
     @override

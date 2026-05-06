@@ -12,6 +12,8 @@ from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 
 class TagColorBoxWidgetView(FieldWidgetView):
+    """A widget holding a list of tag colors."""
+
     def __init__(self, title: str):
         super().__init__(title)
 
@@ -65,6 +67,7 @@ class TagColorBoxWidgetView(FieldWidgetView):
         self.__add_button.clicked.connect(self._on_add_color)
 
     def set_colors(self, colors: Iterable[TagColorGroup], is_mutable: bool) -> None:
+        """Sets the colors the color box contains."""
         max_width: int = 60
 
         self.remove_contents()
@@ -85,6 +88,7 @@ class TagColorBoxWidgetView(FieldWidgetView):
         self.update_add_button(is_mutable)
 
     def add_color_widget(self, color: TagColorGroup, is_mutable: bool) -> TagColorLabel:
+        """Adds a color widget to the color box."""
         color_widget: TagColorLabel = TagColorLabel(
             color=color, has_edit=is_mutable, has_remove=is_mutable
         )
@@ -95,12 +99,14 @@ class TagColorBoxWidgetView(FieldWidgetView):
         return color_widget
 
     def remove_contents(self) -> None:
+        """Removes all the color widgets from the color box."""
         while self.__root_layout.itemAt(0):
             unwrap(self.__root_layout.takeAt(0)).widget().deleteLater()
 
         self.color_widgets = []
 
     def update_add_button(self, is_mutable: bool) -> None:
+        """Moves the add button to the end and updates its visibility."""
         self.__add_button.setVisible(False)
         self.__root_layout.removeWidget(self.__add_button)
         self.__root_layout.addWidget(self.__add_button)

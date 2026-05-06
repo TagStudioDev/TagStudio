@@ -14,6 +14,8 @@ logger = structlog.get_logger(__name__)
 
 
 class FieldContainer(FieldContainerView):
+    """A container that holds a field widget and provides some relevant information and controls."""
+
     copy: Signal = Signal()
     edit: Signal = Signal()
     remove: Signal = Signal()
@@ -31,6 +33,7 @@ class FieldContainer(FieldContainerView):
         self.remove.emit()
 
     def on_copy(self, callback: Callable[[], None] | None = None) -> None:
+        """Connects a callback to the copy signal."""
         if callback is None:
             return
 
@@ -38,6 +41,7 @@ class FieldContainer(FieldContainerView):
         self.copy_enabled = True
 
     def on_edit(self, callback: Callable[[], None] | None = None) -> None:
+        """Connects a callback to the edit signal."""
         if callback is None:
             return
 
@@ -45,6 +49,7 @@ class FieldContainer(FieldContainerView):
         self.edit_enabled = True
 
     def on_remove(self, callback: Callable[[], None] | None = None) -> None:
+        """Connects a callback to the remove signal."""
         if callback is None:
             return
 

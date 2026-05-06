@@ -12,6 +12,8 @@ from tagstudio.qt.views.field_widget_view import FieldWidgetView
 
 
 class TextFieldWidget(FieldWidgetView):
+    """A widget representing a text field of an entry."""
+
     def __init__(self, title, text: str) -> None:
         super().__init__(title)
         self.setObjectName("textBox")
@@ -28,12 +30,14 @@ class TextFieldWidget(FieldWidgetView):
         self.set_text(text)
 
     def set_text(self, text: str) -> None:
+        """Sets the text of the field."""
         text = linkify(text)
         self.text_label.setText(text)
 
 
 # Regex from https://stackoverflow.com/a/6041965
 def linkify(text: str) -> str:
+    """Replaces any found URLs in a string with an embedded link."""
     url_pattern = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#\-*]*[\w@?^=%&\/~+#\-*])"  # noqa: E501
     return re.sub(
         url_pattern,
