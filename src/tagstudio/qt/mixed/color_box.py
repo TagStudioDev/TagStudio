@@ -14,11 +14,11 @@ from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.field_container_controller import FieldWidget
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.field_widget_view import FieldWidgetView
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.panel_modal import PanelModal
 
@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class ColorBoxWidget(FieldWidget):
+class ColorBoxWidget(FieldWidgetView):
     updated = Signal()
 
     def __init__(

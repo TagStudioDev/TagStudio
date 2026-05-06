@@ -9,8 +9,8 @@ import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.controllers.field_container_controller import FieldWidget
 from tagstudio.qt.mixed.tag_widget import TagWidget
+from tagstudio.qt.views.field_widget_view import FieldWidgetView
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class TagBoxWidgetView(FieldWidget):
+class TagBoxWidgetView(FieldWidgetView):
     __lib: Library
 
     def __init__(self, title: str, driver: "QtDriver") -> None:
