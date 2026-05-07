@@ -9,7 +9,6 @@ from datetime import datetime as dt
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
@@ -56,16 +55,15 @@ class FieldListController(FieldListView):
         self.__lib: Library = library
         self.__driver: QtDriver = driver
 
-        self.__common_fields: list = []
-        self.__mixed_fields: list = []
-        self.__cached_entries: list[Entry] = []
+        # Can't be private as other things rely on it...
+        self.model: FieldListModel = FieldListModel(driver)
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldListController] Updating Selection", entry_id=entry_id)
 
         entry: Entry = unwrap(self.__lib.get_entry_full(entry_id))
-        self.__cached_entries = [entry]
+        self.model.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
@@ -77,7 +75,7 @@ class FieldListController(FieldListView):
 
         # Write tag container(s)
         if entry_tags:
-            categories: dict[Tag | None, set[Tag]] = self.get_tag_categories(entry_tags)
+            categories: dict[Tag | None, set[Tag]] = self.model.get_tag_categories(entry_tags)
             for category, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=category, is_mixed=False
@@ -97,7 +95,7 @@ class FieldListController(FieldListView):
 
     def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
         """Visually toggle a tag from the item preview without needing to query the database."""
-        entry: Entry = self.__cached_entries[0]
+        entry: Entry = self.model.cached_entries[0]
         tag: Tag | None = self.__lib.get_tag(tag_id)
 
         if not tag:
@@ -109,92 +107,6 @@ class FieldListController(FieldListView):
             entry.tags.discard(tag)
 
         self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
-
-    def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
-        """Get a dictionary of category tags mapped to their respective tags.
-
-        Example:
-        Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
-        "Cartoon Network" -> Johnny Bravo,
-        "Character" -> "Johnny Bravo",
-        "TV" -> Johnny Bravo"
-        """
-        loop_cutoff: int = 1024  # Used for stopping the while loop
-
-        hierarchy_tags = self.__lib.get_tag_hierarchy(tag.id for tag in tags)
-        categories: dict[Tag | None, set[Tag]] = {None: set()}
-
-        for tag in hierarchy_tags.values():
-            if tag.is_category:
-                categories[tag] = set()
-
-        for tag in tags:
-            tag = hierarchy_tags[tag.id]
-            has_category_parent: bool = False
-            parent_tags: set[Tag] = tag.parent_tags
-
-            loop_counter: int = 0
-            while len(parent_tags) > 0:
-                # NOTE: This is for preventing infinite loops in the event a tag is parented
-                # to itself cyclically.
-                loop_counter += 1
-                if loop_counter >= loop_cutoff:
-                    break
-
-                grandparent_tags: set[Tag] = set()
-                for parent_tag in parent_tags:
-                    if parent_tag in categories:
-                        categories[parent_tag].add(tag)
-                        has_category_parent = True
-                    grandparent_tags.update(parent_tag.parent_tags)
-                parent_tags = grandparent_tags
-
-            if tag.is_category:
-                categories[tag].add(tag)
-            elif not has_category_parent:
-                categories[None].add(tag)
-
-        return dict(
-            (category, category_tags)
-            for category, category_tags in categories.items()
-            if len(category_tags) > 0
-        )
-
-    def add_field_to_selected(self, field_list: list[QListWidgetItem]) -> None:
-        """Add list of entry fields to one or more selected items.
-
-        Uses the current driver selection, NOT the field containers cache.
-        """
-        logger.info(
-            "[FieldListController][add_field_to_selected]",
-            selected=self.__driver.selected,
-            fields=field_list,
-        )
-        for entry_id in self.__driver.selected:
-            for field in field_list:
-                template: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
-                logger.info(
-                    "[FieldContainers][add_field_to_selected] Adding field",
-                    name=template.name,
-                    type=template.class_name,
-                )
-                self.lib.add_field_to_entries(entry_id, template.to_field())
-
-    def add_tags_to_selected(self, tags: int | list[int]) -> None:
-        """Add list of tags to one or more selected items.
-
-        Uses the current driver selection, NOT the field containers cache.
-        """
-        if isinstance(tags, int):
-            tags = [tags]
-            assert isinstance(tags, list)
-
-        logger.info(
-            "[FieldListController][add_tags_to_selected]",
-            selected=self.__driver.selected,
-            tags=tags,
-        )
-        self.__driver.add_tags_to_selected_callback(tags)
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
         """Update/Create data for a FieldContainer.
@@ -245,7 +157,7 @@ class FieldListController(FieldListView):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_text_field(field, content, is_multiline=False),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -258,8 +170,8 @@ class FieldListController(FieldListView):
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(title),
                         callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.__cached_entries[0].id),
+                            self.model.remove_field(field),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -284,7 +196,7 @@ class FieldListController(FieldListView):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_text_field(field, content, is_multiline=True),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -293,8 +205,8 @@ class FieldListController(FieldListView):
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.__cached_entries[0].id),
+                            self.model.remove_field(field),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -322,7 +234,7 @@ class FieldListController(FieldListView):
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
                             self.update_datetime_field(field, content),
-                            self.update_from_entry(self.cached_entries[0].id),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
                 )
@@ -332,8 +244,8 @@ class FieldListController(FieldListView):
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.__cached_entries[0].id),
+                            self.model.remove_field(field),
+                            self.update_from_entry(self.model.cached_entries[0].id),
                         ),
                     )
                 )
@@ -353,8 +265,8 @@ class FieldListController(FieldListView):
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.name),
                     callback=lambda: (
-                        self.remove_field(field),
-                        self.update_from_entry(self.__cached_entries[0].id),
+                        self.model.remove_field(field),
+                        self.update_from_entry(self.model.cached_entries[0].id),
                     ),
                 )
             )
@@ -404,11 +316,13 @@ class FieldListController(FieldListView):
 
                 container.set_field_widget(field_widget)
 
-            field_widget.set_entries([entry.id for entry in self.__cached_entries])
+            field_widget.set_entries([entry.id for entry in self.model.cached_entries])
             field_widget.set_tags(tags)
 
             field_widget.on_update.connect(
-                lambda: (self.update_from_entry(self.__cached_entries[0].id, update_badges=True))
+                lambda: (
+                    self.update_from_entry(self.model.cached_entries[0].id, update_badges=True)
+                )
             )
         else:
             text: str = "<i>Mixed Data</i>"

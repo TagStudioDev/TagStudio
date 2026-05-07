@@ -59,7 +59,7 @@ def test_add_tag_to_selection_single(qt_driver: QtDriver, library: Library, entr
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel.field_list_widget.add_tags_to_selected(2000)
+    panel.field_list_widget.model.add_tags_to_selected(2000)
 
     # Then reload entry
     refreshed_entry: Entry = next(library.all_entries(with_joins=True))
@@ -76,7 +76,7 @@ def test_add_same_tag_to_selection_single(qt_driver: QtDriver, library: Library,
     panel.set_selection(qt_driver.selected)
 
     # Add an existing tag
-    panel.field_list_widget.add_tags_to_selected(1000)
+    panel.field_list_widget.model.add_tags_to_selected(1000)
 
     # Then reload entry
     refreshed_entry = next(library.all_entries(with_joins=True))
@@ -106,7 +106,7 @@ def test_add_tag_to_selection_multiple(qt_driver: QtDriver, library: Library):
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel.field_list_widget.add_tags_to_selected(1000)
+    panel.field_list_widget.model.add_tags_to_selected(1000)
 
     # Then reload all entries and recheck the presence of tag 1000
     refreshed_entries = library.all_entries(with_joins=True)
