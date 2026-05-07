@@ -39,16 +39,16 @@ class FieldListView(QWidget):
         self.__root_layout.addWidget(self.__scroll_area)
 
         # Scroll container
-        self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(0)
+        self.__scroll_layout = QVBoxLayout()
+        self.__scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.__scroll_layout.setContentsMargins(3, 3, 3, 3)
+        self.__scroll_layout.setSpacing(0)
 
-        self.scroll_container: QWidget = QWidget()
-        self.scroll_container.setObjectName("entry_scroll_container")
-        self.scroll_container.setLayout(self.scroll_layout)
+        self.__scroll_container: QWidget = QWidget()
+        self.__scroll_container.setObjectName("entry_scroll_container")
+        self.__scroll_container.setLayout(self.__scroll_layout)
 
-        self.__scroll_area.setWidget(self.scroll_container)
+        self.__scroll_area.setWidget(self.__scroll_container)
 
         # NOTE: I would rather have this style applied to the scroll_area
         # background and NOT the scroll container background, so that the
@@ -62,6 +62,11 @@ class FieldListView(QWidget):
                 }}
             """
         )
+
+    def add_field_container(self, field_container: FieldContainer) -> None:
+        """Adds a field container to the fields list."""
+        self.field_containers.append(field_container)
+        self.__scroll_layout.addWidget(field_container)
 
     def hide_all(self) -> None:
         """Hide all field and tag containers."""
