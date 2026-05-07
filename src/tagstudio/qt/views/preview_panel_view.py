@@ -20,7 +20,7 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.field_list_controller import FieldContainers
+from tagstudio.qt.controllers.field_list_controller import FieldListController
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
@@ -67,7 +67,7 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self._fields = FieldContainers(
+        self._fields = FieldListController(
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
 
@@ -203,7 +203,7 @@ class PreviewPanelView(QWidget):
         return self.__file_attrs
 
     @property
-    def field_containers_widget(self) -> FieldContainers:  # needed for the tests
+    def field_list_widget(self) -> FieldListController:  # needed for the tests
         """Getter for the field containers widget."""
         return self._fields
 
