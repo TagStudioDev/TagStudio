@@ -26,15 +26,14 @@ class TagBoxWidget(TagBoxWidgetView):
 
     on_update: Signal = Signal()
 
-    __entries: list[int] = []
-
     def __init__(self, title: str, driver: "QtDriver") -> None:
         super().__init__(title, driver)
         self.__driver: QtDriver = driver
+        self.__entries: list[int] = []
 
     def set_entries(self, entries: list[int]) -> None:
         """Sets the list of entries that are currently selected."""
-        self.__entries: list[int] = entries
+        self.__entries = entries
 
     @override
     def _on_click(self, tag: Tag) -> None:

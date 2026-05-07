@@ -37,16 +37,16 @@ class FieldContainer(FieldContainerView):
             self.__remove_callback()
 
     def set_copy_callback(self, callback: Callback = None) -> None:
-        """Sets the callback to be called when the 'Copy' button is pressed."""
+        """Sets the callback to be called when the copy button is pressed."""
         self.__copy_callback = callback
         self._copy_enabled = callback is not None
 
     def set_edit_callback(self, callback: Callback = None) -> None:
-        """Sets the callback to be called when the 'Edit' button is pressed."""
+        """Sets the callback to be called when the edit button is pressed."""
         self.__edit_callback = callback
         self._edit_enabled = callback is not None
 
     def set_remove_callback(self, callback: Callback = None) -> None:
-        """Sets the callback to be called when the 'Edit' button is pressed."""
+        """Sets the callback to be called when the remove button is pressed."""
         self.__remove_callback = callback
         self._remove_enabled = callback is not None

@@ -46,7 +46,7 @@ def remove_field_prompt(name: str) -> str:
     return Translations.format("library.field.confirm_remove", name=name)
 
 
-def remove_message_box(prompt: str, callback: Callable) -> None:
+def remove_message_box(prompt: str, callback: Callable[[], None | tuple[None, None]]) -> None:
     remove_mb: QMessageBox = QMessageBox()
     remove_mb.setText(prompt)
     remove_mb.setWindowTitle("Remove Field")
