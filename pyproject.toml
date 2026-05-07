@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.6"
+version = "9.5.7"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -33,6 +33,8 @@ dependencies = [
     "typing_extensions~=4.13",
     "ujson~=5.10",
     "wcmatch==10.*",
+    "requests~=2.31.0",
+    "semver~=3.0.4",
 ]
 
 [project.optional-dependencies]
