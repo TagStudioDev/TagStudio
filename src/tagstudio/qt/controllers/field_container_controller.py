@@ -16,28 +16,28 @@ logger = structlog.get_logger(__name__)
 class FieldContainer(FieldContainerView):
     """A container that holds a field widget and provides some relevant information and controls."""
 
-    copy: Signal = Signal()
-    edit: Signal = Signal()
-    remove: Signal = Signal()
+    __on_copy: Signal = Signal()
+    __on_edit: Signal = Signal()
+    __on_remove: Signal = Signal()
 
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__(title, inline)
 
     def _copy_callback(self) -> None:
-        self.copy.emit()
+        self.__on_copy.emit()
 
     def _edit_callback(self) -> None:
-        self.edit.emit()
+        self.__on_edit.emit()
 
     def _remove_callback(self) -> None:
-        self.remove.emit()
+        self.__on_remove.emit()
 
     def on_copy(self, callback: Callable[[], None] | None = None) -> None:
         """Connects a callback to the copy signal."""
         if callback is None:
             return
 
-        self.copy.connect(callback)
+        self.__on_copy.connect(callback)
         self.copy_enabled = True
 
     def on_edit(self, callback: Callable[[], None] | None = None) -> None:
@@ -45,7 +45,7 @@ class FieldContainer(FieldContainerView):
         if callback is None:
             return
 
-        self.edit.connect(callback)
+        self.__on_edit.connect(callback)
         self.edit_enabled = True
 
     def on_remove(self, callback: Callable[[], None] | None = None) -> None:
@@ -53,5 +53,5 @@ class FieldContainer(FieldContainerView):
         if callback is None:
             return
 
-        self.remove.connect(callback)
+        self.__on_remove.connect(callback)
         self.remove_enabled = True

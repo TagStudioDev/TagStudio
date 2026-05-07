@@ -118,7 +118,7 @@ class TagColorManager(QWidget):
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
                 color_box = TagColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_box.on_update.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),
@@ -130,7 +130,7 @@ class TagColorManager(QWidget):
                     )
                 )
                 field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
-                field_container.set_inner_widget(color_box)
+                field_container.set_field_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     field_container.on_remove(
                         lambda checked=False, g=group: self.delete_namespace_dialog(

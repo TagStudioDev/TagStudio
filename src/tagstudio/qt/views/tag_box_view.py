@@ -27,6 +27,9 @@ class TagBoxWidgetView(FieldWidgetView):
         super().__init__(title)
         self.__lib: Library = driver.lib
 
+        # Tag box
+        self.setObjectName("tag_box")
+
         self.__root_layout = FlowLayout()
         self.__root_layout.enable_grid_optimizations(value=False)
         self.__root_layout.setContentsMargins(0, 0, 0, 0)

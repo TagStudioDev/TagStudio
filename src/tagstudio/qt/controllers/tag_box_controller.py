@@ -24,7 +24,7 @@ logger = structlog.get_logger(__name__)
 class TagBoxWidget(TagBoxWidgetView):
     """A widget that holds a list of tags."""
 
-    on_update = Signal()
+    on_update: Signal = Signal()
 
     __entries: list[int] = []
 

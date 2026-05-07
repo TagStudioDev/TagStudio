@@ -30,17 +30,21 @@ trash_icon_128: Image.Image = Image.open(
 trash_icon_128.load()
 
 # TODO: There should be a global button theme somewhere.
-container_style = (
-    f"QWidget#fieldContainer{{"
-    "border-radius:4px;"
-    f"}}"
-    f"QWidget#fieldContainer::hover{{"
-    f"background-color:{Theme.COLOR_HOVER.value};"
-    f"}}"
-    f"QWidget#fieldContainer::pressed{{"
-    f"background-color:{Theme.COLOR_PRESSED.value};"
-    f"}}"
-)
+CONTAINER_STYLE = f"""
+    QWidget#field_container{{
+        border-radius: 4px;
+    }}
+    
+    QWidget#field_container::hover{{
+        background-color: {Theme.COLOR_HOVER.value};
+    }}
+    
+    QWidget#field_container::pressed{{
+        background-color: {Theme.COLOR_PRESSED.value};
+    }}
+"""
+
+BUTTON_SIZE: int = 24
 
 
 class FieldContainerView(QWidget):
@@ -49,91 +53,108 @@ class FieldContainerView(QWidget):
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
 
-        self.setObjectName("fieldContainer")
-        self.title: str = title
-        self.inline: bool = inline
-        button_size: int = 24
-
         self.copy_enabled: bool = False
         self.edit_enabled: bool = False
         self.remove_enabled: bool = False
 
-        self.root_layout = QVBoxLayout(self)
-        self.root_layout.setObjectName("baseLayout")
-        self.root_layout.setContentsMargins(0, 0, 0, 0)
+        self.setStyleSheet(CONTAINER_STYLE)
 
-        self.inner_layout = QVBoxLayout()
-        self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(6, 0, 6, 6)
-        self.inner_layout.setSpacing(0)
-        self.field_container = QWidget()
-        self.field_container.setObjectName("fieldContainer")
-        self.field_container.setLayout(self.inner_layout)
-        self.root_layout.addWidget(self.field_container)
+        # Container
+        self.setObjectName("field_container")
+        self.title: str = title
+        self.inline: bool = inline
 
-        self.title_container = QWidget()
-        self.title_layout = QHBoxLayout(self.title_container)
-        self.title_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.title_layout.setObjectName("fieldLayout")
-        self.title_layout.setContentsMargins(0, 0, 0, 0)
-        self.title_layout.setSpacing(0)
-        self.inner_layout.addWidget(self.title_container)
+        self.__root_layout = QVBoxLayout(self)
+        self.__root_layout.setObjectName("root_layout")
+        self.__root_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.__root_layout)
 
-        self.title_widget = QLabel()
-        self.title_widget.setMinimumHeight(button_size)
-        self.title_widget.setObjectName("fieldTitle")
-        self.title_widget.setWordWrap(True)
-        self.title_widget.setText(title)
-        self.title_layout.addWidget(self.title_widget)
-        self.title_layout.addStretch(2)
+        # Field container
+        self.__container_layout = QVBoxLayout()
+        self.__container_layout.setObjectName("field_container_layout")
+        self.__container_layout.setContentsMargins(6, 0, 6, 6)
+        self.__container_layout.setSpacing(0)
 
-        self.copy_button = QPushButton()
-        self.copy_button.setObjectName("copyButton")
-        self.copy_button.setMinimumSize(button_size, button_size)
-        self.copy_button.setMaximumSize(button_size, button_size)
-        self.copy_button.setFlat(True)
-        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(clipboard_icon_128)))
-        self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_layout.addWidget(self.copy_button)
-        self.copy_button.setHidden(True)
+        self.__field_container = QWidget()
+        self.__field_container.setObjectName("field_container")
+        self.__field_container.setLayout(self.__container_layout)
 
-        self.edit_button = QPushButton()
-        self.edit_button.setObjectName("editButton")
-        self.edit_button.setMinimumSize(button_size, button_size)
-        self.edit_button.setMaximumSize(button_size, button_size)
-        self.edit_button.setFlat(True)
-        self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(edit_icon_128)))
-        self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_layout.addWidget(self.edit_button)
-        self.edit_button.setHidden(True)
+        self.__root_layout.addWidget(self.__field_container)
 
-        self.remove_button = QPushButton()
-        self.remove_button.setObjectName("removeButton")
-        self.remove_button.setMinimumSize(button_size, button_size)
-        self.remove_button.setMaximumSize(button_size, button_size)
-        self.remove_button.setFlat(True)
-        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(trash_icon_128)))
-        self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_layout.addWidget(self.remove_button)
-        self.remove_button.setHidden(True)
+        # Title
+        self.__title_container = QWidget()
+        self.__title_layout = QHBoxLayout(self.__title_container)
+        self.__title_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.__title_layout.setObjectName("title_layout")
+        self.__title_layout.setContentsMargins(0, 0, 0, 0)
+        self.__title_layout.setSpacing(0)
 
-        self.field = QWidget()
-        self.field.setObjectName("field")
-        self.field_layout = QHBoxLayout()
-        self.field_layout.setObjectName("fieldLayout")
-        self.field_layout.setContentsMargins(0, 0, 0, 0)
-        self.field.setLayout(self.field_layout)
-        self.inner_layout.addWidget(self.field)
+        self.__container_layout.addWidget(self.__title_container)
+
+        self.__title_label = QLabel()
+        self.__title_label.setMinimumHeight(BUTTON_SIZE)
+        self.__title_label.setObjectName("field_title")
+        self.__title_label.setWordWrap(True)
+        self.__title_label.setText(title)
+
+        self.__title_layout.addWidget(self.__title_label)
+        self.__title_layout.addStretch(2)
+
+        # Copy button
+        self.__copy_button = QPushButton()
+        self.__copy_button.setObjectName("copy_button")
+        self.__copy_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__copy_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__copy_button.setFlat(True)
+        self.__copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(clipboard_icon_128)))
+        self.__copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.__copy_button.setHidden(True)
+
+        self.__title_layout.addWidget(self.__copy_button)
+
+        # Edit button
+        self.__edit_button = QPushButton()
+        self.__edit_button.setObjectName("edit_button")
+        self.__edit_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__edit_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__edit_button.setFlat(True)
+        self.__edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(edit_icon_128)))
+        self.__edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.__edit_button.setHidden(True)
+
+        self.__title_layout.addWidget(self.__edit_button)
+
+        # Remove button
+        self.__remove_button = QPushButton()
+        self.__remove_button.setObjectName("remove_button")
+        self.__remove_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__remove_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
+        self.__remove_button.setFlat(True)
+        self.__remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(trash_icon_128)))
+        self.__remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.__remove_button.setHidden(True)
+
+        self.__title_layout.addWidget(self.__remove_button)
+
+        # Field
+        self.__field = QWidget()
+        self.__field.setObjectName("field")
+
+        self.__field_layout = QHBoxLayout()
+        self.__field_layout.setObjectName("field_layout")
+        self.__field_layout.setContentsMargins(0, 0, 0, 0)
+        self.__field.setLayout(self.__field_layout)
+
+        self.__container_layout.addWidget(self.__field)
 
         self.set_title(title)
-        self.setStyleSheet(container_style)
 
         self.__connect_callbacks()
 
     def __connect_callbacks(self) -> None:
-        self.copy_button.clicked.connect(self._copy_callback)
-        self.edit_button.clicked.connect(self._edit_callback)
-        self.remove_button.clicked.connect(self._remove_callback)
+        self.__copy_button.clicked.connect(self._copy_callback)
+        self.__edit_button.clicked.connect(self._edit_callback)
+        self.__remove_button.clicked.connect(self._remove_callback)
 
     def _copy_callback(self) -> None:
         raise NotImplementedError()
@@ -144,25 +165,25 @@ class FieldContainerView(QWidget):
     def _remove_callback(self) -> None:
         raise NotImplementedError()
 
-    def set_inner_widget(self, widget: "FieldWidgetView") -> None:
+    def set_field_widget(self, widget: "FieldWidgetView") -> None:
         """Sets the field widget the container holds."""
-        if self.field_layout.itemAt(0):
-            old: QWidget = self.field_layout.itemAt(0).widget()
-            self.field_layout.removeWidget(old)
+        if self.__field_layout.itemAt(0):
+            old: QWidget = self.__field_layout.itemAt(0).widget()
+            self.__field_layout.removeWidget(old)
             old.deleteLater()
 
-        self.field_layout.addWidget(widget)
+        self.__field_layout.addWidget(widget)
 
-    def get_inner_widget(self) -> QWidget | None:
+    def get_field_widget(self) -> QWidget | None:
         """Returns the field widget the container holds."""
-        if self.field_layout.itemAt(0):
-            return self.field_layout.itemAt(0).widget()
+        if self.__field_layout.itemAt(0):
+            return self.__field_layout.itemAt(0).widget()
         return None
 
     def set_title(self, title: str) -> None:
         """Sets the title of the field container."""
         self.title = f"<h4>{title}</h4>"
-        self.title_widget.setText(self.title)
+        self.__title_label.setText(self.title)
 
     def set_inline(self, inline: bool) -> None:
         """Sets whether the field container is inline or not."""
@@ -171,21 +192,21 @@ class FieldContainerView(QWidget):
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
         # NOTE: You could pass the hover event to the FieldWidgetView if needed.
-        self.copy_button.setHidden(not self.copy_enabled)
-        self.edit_button.setHidden(not self.edit_enabled)
-        self.remove_button.setHidden(not self.remove_enabled)
+        self.__copy_button.setHidden(not self.copy_enabled)
+        self.__edit_button.setHidden(not self.edit_enabled)
+        self.__remove_button.setHidden(not self.remove_enabled)
 
         return super().enterEvent(event)
 
     @override
     def leaveEvent(self, event: QEvent) -> None:
-        self.copy_button.setHidden(True)
-        self.edit_button.setHidden(True)
-        self.remove_button.setHidden(True)
+        self.__copy_button.setHidden(True)
+        self.__edit_button.setHidden(True)
+        self.__remove_button.setHidden(True)
 
         return super().leaveEvent(event)
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.title_widget.setFixedWidth(int(event.size().width() // 1.5))
+        self.__title_label.setFixedWidth(int(event.size().width() // 1.5))
         return super().resizeEvent(event)

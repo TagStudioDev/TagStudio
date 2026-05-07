@@ -10,6 +10,37 @@ from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.views.field_widget_view import FieldWidgetView
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
+ADD_BUTTON_STYLESHEET: str = f"""
+    QPushButton{{
+        background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
+        color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};
+        font-weight: 600;
+        border-color: {get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};
+        border-radius: 6px;
+        border-style:solid;
+        border-width: 2px;
+        padding-right: 4px;
+        padding-bottom: 2px;
+        padding-left: 4px;
+        font-size: 15px
+    }}
+    
+    QPushButton::hover{{
+        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
+    }}
+    
+    QPushButton::pressed{{
+        background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
+        color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
+        border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
+    }}
+    
+    QPushButton::focus{{
+        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
+        outline: none;
+    }}
+"""
+
 
 class TagColorBoxWidgetView(FieldWidgetView):
     """A widget holding a list of tag colors."""
@@ -17,48 +48,22 @@ class TagColorBoxWidgetView(FieldWidgetView):
     def __init__(self, title: str):
         super().__init__(title)
 
-        self.setObjectName("colorBox")
+        self.color_widgets: list[TagColorLabel] = []
+
+        # Tag color box
+        self.setObjectName("tag_color_box")
 
         self.__root_layout = FlowLayout()
         self.__root_layout.enable_grid_optimizations(value=False)
         self.__root_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.__root_layout)
 
-        self.color_widgets: list[TagColorLabel] = []
-
-        self.add_button_stylesheet: str = (
-            f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
-            f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-bottom: 2px;"
-            f"padding-left: 4px;"
-            f"font-size: 15px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"outline:none;"
-            f"}}"
-        )
-
+        # Add button
         self.__add_button = QPushButton()
         self.__add_button.setText("+")
         self.__add_button.setFlat(True)
         self.__add_button.setFixedSize(22, 22)
-        self.__add_button.setStyleSheet(self.add_button_stylesheet)
+        self.__add_button.setStyleSheet(ADD_BUTTON_STYLESHEET)
         self.__add_button.setHidden(True)
 
         self.__connect_callbacks()
