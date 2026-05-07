@@ -46,6 +46,22 @@ def remove_field_prompt(name: str) -> str:
     return Translations.format("library.field.confirm_remove", name=name)
 
 
+def remove_message_box(prompt: str, callback: Callable) -> None:
+    remove_mb: QMessageBox = QMessageBox()
+    remove_mb.setText(prompt)
+    remove_mb.setWindowTitle("Remove Field")
+    remove_mb.setIcon(QMessageBox.Icon.Warning)
+    cancel_button: QPushButton | None = remove_mb.addButton(
+        Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+    )
+    remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
+    if cancel_button is not None:
+        remove_mb.setEscapeButton(cancel_button)
+    result = remove_mb.exec_()
+    if result == QMessageBox.ButtonRole.ActionRole.value:
+        callback()
+
+
 class FieldListController(FieldListView):
     """A list of field containers."""
 
@@ -167,8 +183,8 @@ class FieldListController(FieldListView):
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(title),
+                    lambda: remove_message_box(
+                        prompt=remove_field_prompt(title),
                         callback=lambda: (
                             self.model.remove_field(field),
                             self.update_from_entry(self.model.cached_entries[0].id),
@@ -202,8 +218,8 @@ class FieldListController(FieldListView):
                 )
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.name),
+                    lambda: remove_message_box(
+                        prompt=remove_field_prompt(field.name),
                         callback=lambda: (
                             self.model.remove_field(field),
                             self.update_from_entry(self.model.cached_entries[0].id),
@@ -241,8 +257,8 @@ class FieldListController(FieldListView):
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.name),
+                    lambda: remove_message_box(
+                        prompt=remove_field_prompt(field.name),
                         callback=lambda: (
                             self.model.remove_field(field),
                             self.update_from_entry(self.model.cached_entries[0].id),
@@ -262,8 +278,8 @@ class FieldListController(FieldListView):
             field_widget = TextFieldWidget(title, field.name)
             container.set_field_widget(field_widget)
             container.set_remove_callback(
-                lambda: self.remove_message_box(
-                    prompt=self.remove_field_prompt(field.name),
+                lambda: remove_message_box(
+                    prompt=remove_field_prompt(field.name),
                     callback=lambda: (
                         self.model.remove_field(field),
                         self.update_from_entry(self.model.cached_entries[0].id),
@@ -331,17 +347,6 @@ class FieldListController(FieldListView):
 
         container.setHidden(False)
 
-    def remove_field(self, field: BaseField) -> None:
-        """Remove a field from all selected Entries."""
-        logger.info(
-            "[FieldListController] Removing Field",
-            field=field,
-            selected=[entry.path for entry in self.__cached_entries],
-        )
-
-        entry_ids: list[int] = [entry.id for entry in self.__cached_entries]
-        self.__lib.remove_entry_field(field, entry_ids)
-
     def update_text_field(self, field: TextField, value: str, is_multiline: bool) -> None:
         """Update a text field across selected entries."""
         entry_ids: list[int] = [e.id for e in self.cached_entries]
@@ -355,18 +360,3 @@ class FieldListController(FieldListView):
         assert entry_ids, "No entries selected"
 
         self.__lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
-
-    def remove_message_box(self, prompt: str, callback: Callable) -> None:
-        remove_mb: QMessageBox = QMessageBox()
-        remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")  # TODO: Localize
-        remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button: QPushButton | None = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
-        )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        if cancel_button is not None:
-            remove_mb.setEscapeButton(cancel_button)
-        result = remove_mb.exec_()
-        if result == QMessageBox.ButtonRole.ActionRole.value:
-            callback()
