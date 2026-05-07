@@ -124,7 +124,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.field_list_widget.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -132,7 +132,7 @@ class TagColorManager(QWidget):
                 field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
                 field_container.set_field_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
-                    field_container.on_remove(
+                    field_container.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
@@ -141,7 +141,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.field_list_widget.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),

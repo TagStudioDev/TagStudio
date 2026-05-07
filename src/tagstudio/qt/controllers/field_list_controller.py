@@ -29,7 +29,6 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.field_container_controller import FieldContainer
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.models.field_list_model import FieldListModel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
@@ -47,8 +46,8 @@ def remove_field_prompt(name: str) -> str:
     return Translations.format("library.field.confirm_remove", name=name)
 
 
-class FieldContainers(FieldListView):
-    """The Preview Panel Widget."""
+class FieldListController(FieldListView):
+    """A list of field containers."""
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
@@ -56,14 +55,16 @@ class FieldContainers(FieldListView):
         self.__lib: Library = library
         self.__driver: QtDriver = driver
 
-        self.__model: FieldListModel = FieldListModel()
+        self.__common_fields: list = []
+        self.__mixed_fields: list = []
+        self.__cached_entries: list[Entry] = []
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
-        logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
+        logger.warning("[FieldListController] Updating Selection", entry_id=entry_id)
 
         entry: Entry = unwrap(self.__lib.get_entry_full(entry_id))
-        self.__model.cached_entries = [entry]
+        self.__cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
@@ -95,7 +96,7 @@ class FieldContainers(FieldListView):
 
     def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
         """Visually toggle a tag from the item preview without needing to query the database."""
-        entry: Entry = self.__model.cached_entries[0]
+        entry: Entry = self.__cached_entries[0]
         tag: Tag | None = self.__lib.get_tag(tag_id)
 
         if not tag:
@@ -164,7 +165,7 @@ class FieldContainers(FieldListView):
         Uses the current driver selection, NOT the field containers cache.
         """
         logger.info(
-            "[FieldContainers][add_field_to_selected]",
+            "[FieldListController][add_field_to_selected]",
             selected=self.__driver.selected,
             fields=field_list,
         )
@@ -185,7 +186,7 @@ class FieldContainers(FieldListView):
             assert isinstance(tags, list)
 
         logger.info(
-            "[FieldContainers][add_tags_to_selected]",
+            "[FieldListController][add_tags_to_selected]",
             selected=self.__driver.selected,
             tags=tags,
         )
@@ -207,7 +208,7 @@ class FieldContainers(FieldListView):
 
             If True, field is not present in all selected items.
         """
-        logger.info("[FieldContainers][write_field_container]", index=index)
+        logger.info("[FieldListController][write_field_container]", index=index)
 
         if len(self.field_containers) < (index + 1):
             container: FieldContainer = FieldContainer()
@@ -238,7 +239,7 @@ class FieldContainers(FieldListView):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),  # type: ignore
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         )
                     ),
                 )
@@ -252,7 +253,7 @@ class FieldContainers(FieldListView):
                         prompt=remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         ),
                     )
                 )
@@ -277,7 +278,7 @@ class FieldContainers(FieldListView):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),  # type: ignore
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         )
                     ),
                 )
@@ -287,13 +288,13 @@ class FieldContainers(FieldListView):
                         prompt=remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         ),
                     )
                 )
 
         elif field.type.type == FieldTypeEnum.DATETIME:
-            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
+            logger.info("[FieldListController][write_container] Datetime Field", field=field)
             if not is_mixed:
                 container.set_title(field.type.name)
                 container.set_inline(False)
@@ -317,7 +318,7 @@ class FieldContainers(FieldListView):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),  # type: ignore
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         )
                     ),
                 )
@@ -328,7 +329,7 @@ class FieldContainers(FieldListView):
                         prompt=remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.__model.cached_entries[0].id),
+                            self.update_from_entry(self.__cached_entries[0].id),
                         ),
                     )
                 )
@@ -338,7 +339,7 @@ class FieldContainers(FieldListView):
                 field_widget = TextFieldWidget(title, text)
                 container.set_field_widget(field_widget)
         else:
-            logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
+            logger.warning("[FieldListController][write_container] Unknown Field", field=field)
             container.set_title(field.type.name)
             container.set_inline(False)
             title = f"{field.type.name} (Unknown Field Type)"
@@ -349,7 +350,7 @@ class FieldContainers(FieldListView):
                     prompt=remove_field_prompt(field.type.name),
                     callback=lambda: (
                         self.remove_field(field),
-                        self.update_from_entry(self.__model.cached_entries[0].id),
+                        self.update_from_entry(self.__cached_entries[0].id),
                     ),
                 )
             )
@@ -369,7 +370,7 @@ class FieldContainers(FieldListView):
 
             If True, field is not present in all selected items.
         """
-        logger.info("[FieldContainers][write_tag_container]", index=index)
+        logger.info("[FieldListController][write_tag_container]", index=index)
 
         if len(self.field_containers) < (index + 1):
             container: FieldContainer = FieldContainer()
@@ -397,13 +398,11 @@ class FieldContainers(FieldListView):
 
                 container.set_field_widget(field_widget)
 
-            field_widget.set_entries([entry.id for entry in self.__model.cached_entries])
+            field_widget.set_entries([entry.id for entry in self.__cached_entries])
             field_widget.set_tags(tags)
 
             field_widget.on_update.connect(
-                lambda: (
-                    self.update_from_entry(self.__model.cached_entries[0].id, update_badges=True)
-                )
+                lambda: (self.update_from_entry(self.__cached_entries[0].id, update_badges=True))
             )
         else:
             text: str = "<i>Mixed Data</i>"
@@ -415,12 +414,12 @@ class FieldContainers(FieldListView):
     def remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
-            "[FieldContainers] Removing Field",
+            "[FieldListController] Removing Field",
             field=field,
-            selected=[entry.path for entry in self.__model.cached_entries],
+            selected=[entry.path for entry in self.__cached_entries],
         )
 
-        entry_ids: list[int] = [entry.id for entry in self.__model.cached_entries]
+        entry_ids: list[int] = [entry.id for entry in self.__cached_entries]
         self.__lib.remove_entry_field(field, entry_ids)
 
     def update_field(self, field: BaseField, content: str) -> None:
@@ -430,7 +429,7 @@ class FieldContainers(FieldListView):
             TextField | DatetimeField,
         ), f"instance: {type(field)}"
 
-        entry_ids: list[int] = [e.id for e in self.__model.cached_entries]
+        entry_ids: list[int] = [e.id for e in self.__cached_entries]
 
         assert entry_ids, "No entries selected"
         self.__lib.update_entry_field(
