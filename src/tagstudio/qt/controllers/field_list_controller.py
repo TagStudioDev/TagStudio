@@ -42,6 +42,22 @@ def remove_field_prompt(name: str) -> str:
     return Translations.format("library.field.confirm_remove", name=name)
 
 
+def remove_message_box(prompt: str, callback: Callable) -> None:
+    remove_mb: QMessageBox = QMessageBox()
+    remove_mb.setText(prompt)
+    remove_mb.setWindowTitle("Remove Field")
+    remove_mb.setIcon(QMessageBox.Icon.Warning)
+    cancel_button: QPushButton | None = remove_mb.addButton(
+        Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+    )
+    remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
+    if cancel_button is not None:
+        remove_mb.setEscapeButton(cancel_button)
+    result = remove_mb.exec_()
+    if result == QMessageBox.ButtonRole.ActionRole.value:
+        callback()
+
+
 class FieldListController(FieldListView):
     """A list of field containers."""
 
@@ -155,7 +171,7 @@ class FieldListController(FieldListView):
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
+                    lambda: remove_message_box(
                         prompt=remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.model.remove_field(field),
@@ -190,7 +206,7 @@ class FieldListController(FieldListView):
                 )
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
+                    lambda: remove_message_box(
                         prompt=remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.model.remove_field(field),
@@ -231,7 +247,7 @@ class FieldListController(FieldListView):
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
-                    lambda: self.remove_message_box(
+                    lambda: remove_message_box(
                         prompt=remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.model.remove_field(field),
@@ -252,7 +268,7 @@ class FieldListController(FieldListView):
             field_widget = TextFieldWidget(title, field.type.name)
             container.set_field_widget(field_widget)
             container.set_remove_callback(
-                lambda: self.remove_message_box(
+                lambda: remove_message_box(
                     prompt=remove_field_prompt(field.type.name),
                     callback=lambda: (
                         self.model.remove_field(field),
@@ -318,18 +334,3 @@ class FieldListController(FieldListView):
             container.set_field_widget(mixed_tags_widget)
 
         container.setHidden(False)
-
-    def remove_message_box(self, prompt: str, callback: Callable) -> None:
-        remove_mb: QMessageBox = QMessageBox()
-        remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")
-        remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button: QPushButton | None = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
-        )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        if cancel_button is not None:
-            remove_mb.setEscapeButton(cancel_button)
-        result = remove_mb.exec_()
-        if result == QMessageBox.ButtonRole.ActionRole.value:
-            callback()
