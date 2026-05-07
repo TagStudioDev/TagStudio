@@ -46,14 +46,17 @@ class ProgressWidget(QWidget):
 
     def _update_progress_unknown_iterable(self, value):
         if hasattr(value, "__getitem__"):
-            self.update_progress(value[0] + 1)
+            self.update_progress(value[0])
         else:
-            self.update_progress(value + 1)
+            self.update_progress(value)
 
     def from_iterable_function(
         self, function: Callable, update_label_callback: Callable | None, *done_callbacks
     ):
-        """Display the progress widget from a threaded iterable function."""
+        """Display the progress widget from a threaded iterable function.
+        
+        Method expects the iterable to yield the number of completed objects.
+        """
         iterator = FunctionIterator(function)
         iterator.value.connect(lambda x: self._update_progress_unknown_iterable(x))
         if update_label_callback:

@@ -168,9 +168,9 @@ class DropImportModal(QWidget):
         def displayed_text(x):
             return Translations.format(
                 "drop_import.progress.label.singular"
-                if x[0] + 1 == 1
+                if x[0] == 1
                 else "drop_import.progress.label.plural",
-                count=x[0] + 1,
+                count=x[0],
                 suffix=f" {x[1]} {self.choice.value}" if self.choice else "",
             )
 
@@ -194,6 +194,7 @@ class DropImportModal(QWidget):
         file_count = 0
         duplicated_files_progress = 0
         for file in self.files:
+            yield [file_count, duplicated_files_progress]
             if file.is_dir():
                 continue
 
@@ -214,7 +215,6 @@ class DropImportModal(QWidget):
             shutil.copyfile(file, unwrap(self.driver.lib.library_dir) / dest_file)
 
             file_count += 1
-            yield [file_count, duplicated_files_progress]
 
     def _get_relative_path(self, path: Path) -> Path:
         for dir in self.dirs_in_root:
