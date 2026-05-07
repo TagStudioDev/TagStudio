@@ -7,6 +7,8 @@ from tagstudio.qt.controllers.field_container_controller import FieldContainer
 
 
 class FieldListView(QWidget):
+    """A list of field containers."""
+
     def __init__(self) -> None:
         super().__init__()
 

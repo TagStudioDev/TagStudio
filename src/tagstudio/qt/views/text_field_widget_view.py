@@ -14,7 +14,7 @@ from tagstudio.qt.views.field_widget_view import FieldWidgetView
 class TextFieldWidget(FieldWidgetView):
     """A widget representing a text field of an entry."""
 
-    def __init__(self, title, text: str) -> None:
+    def __init__(self, title: str, text: str) -> None:
         super().__init__(title)
 
         # Text field
