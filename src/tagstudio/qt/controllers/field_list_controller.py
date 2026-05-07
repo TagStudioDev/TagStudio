@@ -134,8 +134,7 @@ class FieldListController(FieldListView):
 
         if len(self.field_containers) < (index + 1):
             container: FieldContainer = FieldContainer()
-            self.field_containers.append(container)
-            self.scroll_layout.addWidget(container)
+            self.add_field_container(container)
         else:
             container = self.field_containers[index]
 
@@ -296,8 +295,7 @@ class FieldListController(FieldListView):
 
         if len(self.field_containers) < (index + 1):
             container: FieldContainer = FieldContainer()
-            self.field_containers.append(container)
-            self.scroll_layout.addWidget(container)
+            self.add_field_container(container)
         else:
             container = self.field_containers[index]
 
