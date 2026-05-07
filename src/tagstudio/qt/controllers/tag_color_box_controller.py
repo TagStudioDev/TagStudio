@@ -25,7 +25,7 @@ logger = structlog.get_logger(__name__)
 class TagColorBoxWidget(TagColorBoxWidgetView):
     """A widget holding a list of tag colors."""
 
-    updated = Signal()
+    on_update: Signal = Signal()
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class TagColorBoxWidget(TagColorBoxWidgetView):
         )
 
         edit_modal.saved.connect(
-            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())  # type: ignore
+            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.on_update.emit())
         )
         edit_modal.show()
 
@@ -92,4 +92,4 @@ class TagColorBoxWidget(TagColorBoxWidgetView):
 
         logger.info("[ColorBoxWidget] Removing color", color=color_group)
         self.lib.delete_color(color_group)
-        self.updated.emit()
+        self.on_update.emit()

@@ -15,29 +15,35 @@ class TextFieldWidget(FieldWidgetView):
 
     def __init__(self, title, text: str) -> None:
         super().__init__(title)
-        self.setObjectName("textBox")
-        self.base_layout = QHBoxLayout()
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.base_layout)
-        self.text_label = QLabel()
-        self.text_label.setStyleSheet("font-size: 12px")
-        self.text_label.setWordWrap(True)
-        self.text_label.setTextFormat(Qt.TextFormat.MarkdownText)
-        self.text_label.setOpenExternalLinks(True)
-        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
-        self.base_layout.addWidget(self.text_label)
+
+        # Text field
+        self.setObjectName("text_field")
+
+        self.__root_layout = QHBoxLayout()
+        self.__root_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.__root_layout)
+
+        # Text label
+        self.__text_label = QLabel()
+        self.__text_label.setStyleSheet("font-size: 12px")
+        self.__text_label.setWordWrap(True)
+        self.__text_label.setTextFormat(Qt.TextFormat.MarkdownText)
+        self.__text_label.setOpenExternalLinks(True)
+        self.__text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+
+        self.__root_layout.addWidget(self.__text_label)
+
         self.set_text(text)
 
     def set_text(self, text: str) -> None:
         """Sets the text of the field."""
-        text = linkify(text)
-        self.text_label.setText(text)
+        self.__text_label.setText(linkify(text))
 
 
 # Regex from https://stackoverflow.com/a/6041965
 def linkify(text: str) -> str:
     """Replaces any found URLs in a string with an embedded link."""
-    url_pattern = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#\-*]*[\w@?^=%&\/~+#\-*])"  # noqa: E501
+    url_pattern: str = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#\-*]*[\w@?^=%&\/~+#\-*])"  # noqa: E501
     return re.sub(
         url_pattern,
         lambda url: f'<a href="{url.group(0)}">{url.group(0)}</a>',
