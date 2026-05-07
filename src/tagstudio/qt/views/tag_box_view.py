@@ -41,10 +41,12 @@ class TagBoxWidgetView(FieldWidgetView):
             list(tags), key=lambda tag: self.__lib.tag_display_name(tag)
         )
         logger.info("[TagBoxWidget] Tags:", tags=tags)
-        while self.__root_layout.itemAt(0) is not None:
-            tag_widget_item: QLayoutItem | None = self.__root_layout.takeAt(0)
-            if tag_widget_item is not None and isinstance(tag_widget_item, TagWidget):
-                tag_widget_item.deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
+
+        # Remove all tag widgets
+        for i in reversed(range(self.__root_layout.count())):
+            item: QLayoutItem | None = self.__root_layout.itemAt(i)
+            if item is not None:
+                item.widget().deleteLater()
 
         for tag in sorted_tags:
             tag_widget: TagWidget = TagWidget(
