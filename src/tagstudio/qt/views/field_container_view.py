@@ -57,9 +57,9 @@ class FieldContainerView(QWidget):
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
 
-        self.copy_enabled: bool = False
-        self.edit_enabled: bool = False
-        self.remove_enabled: bool = False
+        self._copy_enabled: bool = False
+        self._edit_enabled: bool = False
+        self._remove_enabled: bool = False
 
         self.setStyleSheet(CONTAINER_STYLE)
 
@@ -196,9 +196,9 @@ class FieldContainerView(QWidget):
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
         # NOTE: You could pass the hover event to the FieldWidgetView if needed.
-        self.__copy_button.setHidden(not self.copy_enabled)
-        self.__edit_button.setHidden(not self.edit_enabled)
-        self.__remove_button.setHidden(not self.remove_enabled)
+        self.__copy_button.setHidden(not self._copy_enabled)
+        self.__edit_button.setHidden(not self._edit_enabled)
+        self.__remove_button.setHidden(not self._remove_enabled)
 
         return super().enterEvent(event)
 

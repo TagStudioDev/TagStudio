@@ -251,8 +251,8 @@ class FieldContainers(FieldListView):
                     # for better testability
                     container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
 
-                container.on_edit(modal.show)
-                container.on_remove(
+                container.set_edit_callback(modal.show)
+                container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(title),
                         callback=lambda: (
@@ -286,8 +286,8 @@ class FieldContainers(FieldListView):
                         )
                     ),
                 )
-                container.on_edit(modal.show)
-                container.on_remove(
+                container.set_edit_callback(modal.show)
+                container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
@@ -325,8 +325,8 @@ class FieldContainers(FieldListView):
                     ),
                 )
 
-                container.on_edit(modal.show)
-                container.on_remove(
+                container.set_edit_callback(modal.show)
+                container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
@@ -347,7 +347,7 @@ class FieldContainers(FieldListView):
             container.set_inline(False)
             field_widget = TextFieldWidget(title, field.name)
             container.set_field_widget(field_widget)
-            container.on_remove(
+            container.set_remove_callback(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.name),
                     callback=lambda: (
@@ -415,8 +415,6 @@ class FieldContainers(FieldListView):
             mixed_tags_widget: TextFieldWidget = TextFieldWidget("Mixed Tags", text)
             container.set_field_widget(mixed_tags_widget)
 
-        container.on_edit()
-        container.on_remove()
         container.setHidden(False)
 
     def remove_field(self, field: BaseField) -> None:
