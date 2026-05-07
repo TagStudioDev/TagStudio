@@ -117,11 +117,11 @@ class TagColorBoxWidgetView(FieldWidgetView):
         self.__root_layout.addWidget(self.__add_button)
         self.__add_button.setVisible(is_mutable)
 
-    def _on_add_color(self) -> None | NotImplementedError:
-        return NotImplementedError()
+    def _on_add_color(self) -> None:
+        raise NotImplementedError
 
-    def _on_edit_color(self, color_group: TagColorGroup) -> None | NotImplementedError:
-        return NotImplementedError()
+    def _on_edit_color(self, color_group: TagColorGroup) -> None:
+        raise NotImplementedError
 
-    def _on_delete_color(self, color_group: TagColorGroup) -> None | NotImplementedError:
-        return NotImplementedError()
+    def _on_delete_color(self, color_group: TagColorGroup) -> None:
+        raise NotImplementedError
