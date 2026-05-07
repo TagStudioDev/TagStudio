@@ -1,9 +1,7 @@
-from PySide6.QtCore import QAbstractItemModel
-
 from tagstudio.core.library.alchemy.models import Entry
 
 
-class FieldListModel(QAbstractItemModel):
+class FieldListModel:
     def __init__(self) -> None:
         super().__init__()
 
