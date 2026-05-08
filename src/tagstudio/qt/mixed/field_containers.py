@@ -15,6 +15,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
+    QListWidgetItem,
     QMessageBox,
     QScrollArea,
     QSizePolicy,
@@ -23,11 +24,13 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
+    BaseFieldTemplate,
     DatetimeField,
+    DatetimeFieldTemplate,
     TextField,
+    TextFieldTemplate,
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -36,7 +39,7 @@ from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextWidget
-from tagstudio.qt.translations import Translations
+from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
 from tagstudio.qt.views.panel_modal import PanelModal
@@ -205,7 +208,7 @@ class FieldContainers(QWidget):
     def remove_field_prompt(self, name: str) -> str:
         return Translations.format("library.field.confirm_remove", name=name)
 
-    def add_field_to_selected(self, field_list: list):
+    def add_field_to_selected(self, field_list: list[QListWidgetItem]):
         """Add list of entry fields to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
@@ -216,11 +219,24 @@ class FieldContainers(QWidget):
             fields=field_list,
         )
         for entry_id in self.driver.selected:
-            for field_item in field_list:
-                self.lib.add_field_to_entry(
-                    entry_id,
-                    field_id=field_item.data(Qt.ItemDataRole.UserRole),
+            for field in field_list:
+                field_: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
+                logger.info(
+                    "[FieldContainers][add_field_to_selected] Adding field",
+                    name=field_.name,
+                    type=field_.__class__.__name__,
                 )
+                if type(field_) is TextFieldTemplate:
+                    self.lib.add_text_field_to_entry(
+                        entry_id=entry_id,
+                        name=field_.name,
+                        is_multiline=field_.is_multiline,
+                    )
+                elif type(field_) is DatetimeFieldTemplate:
+                    self.lib.add_datetime_field_to_entry(
+                        entry_id=entry_id,
+                        name=field_.name,
+                    )
 
     def add_tags_to_selected(self, tags: int | list[int]):
         """Add list of tags to one or more selected items.
@@ -250,7 +266,12 @@ class FieldContainers(QWidget):
 
             If True, field is not present in all selected items.
         """
-        logger.info("[FieldContainers][write_field_container]", index=index)
+        logger.info(
+            "[FieldContainers][write_container]",
+            index=index,
+            name=field.name,
+            type=field.__class__.__name__,
+        )
         if len(self.containers) < (index + 1):
             container = FieldContainer()
             self.containers.append(container)
@@ -258,8 +279,13 @@ class FieldContainers(QWidget):
         else:
             container = self.containers[index]
 
-        if field.type.type == FieldTypeEnum.TEXT_LINE:
-            container.set_title(field.type.name)
+        # Set field title
+        field_name_key: str = FIELD_TYPE_KEYS.get(field.__class__.__name__, "field_type.unknown")
+        title = f"{field.name} ({Translations[field_name_key]})"
+
+        # Single-line Text
+        if type(field) is TextField and not field.is_multiline:
+            container.set_title(field.name)
             container.set_inline(False)
 
             # Normalize line endings in any text content.
@@ -267,19 +293,18 @@ class FieldContainers(QWidget):
                 assert isinstance(field.value, str | type(None))
                 text = field.value or ""
             else:
-                text = "<i>Mixed Data</i>"
+                text = "<i>Mixed Data</i>"  # TODO: Localize this
 
-            title = f"{field.type.name} ({field.type.type.value})"
             inner_widget = TextWidget(title, text)
             container.set_inner_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextLine(field.value),
                     title=title,
-                    window_title=f"Edit {field.type.type.value}",
-                    save_callback=(
+                    window_title=f"Edit {field.name}",  # TODO: Localize this
+                    save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                            self.update_text_field(field, content, is_multiline=False),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -291,7 +316,7 @@ class FieldContainers(QWidget):
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.type.type.value),
+                        prompt=self.remove_field_prompt(title),
                         callback=lambda: (
                             self.remove_field(field),
                             self.update_from_entry(self.cached_entries[0].id),
@@ -299,26 +324,26 @@ class FieldContainers(QWidget):
                     )
                 )
 
-        elif field.type.type == FieldTypeEnum.TEXT_BOX:
-            container.set_title(field.type.name)
+        # Multiline Text
+        elif type(field) is TextField and field.is_multiline:
+            container.set_title(field.name)
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
                 assert isinstance(field.value, str | type(None))
                 text = (field.value or "").replace("\r", "\n")
             else:
-                text = "<i>Mixed Data</i>"
-            title = f"{field.type.name} (Text Box)"
+                text = "<i>Mixed Data</i>"  # TODO: Localize this
             inner_widget = TextWidget(title, text)
             container.set_inner_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextBox(field.value),
                     title=title,
-                    window_title=f"Edit {field.type.name}",
-                    save_callback=(
+                    window_title=f"Edit {field.name}",  # TODO: Localize this
+                    save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                            self.update_text_field(field, content, is_multiline=True),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -326,7 +351,7 @@ class FieldContainers(QWidget):
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.type.name),
+                        prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
                             self.remove_field(field),
                             self.update_from_entry(self.cached_entries[0].id),
@@ -334,20 +359,18 @@ class FieldContainers(QWidget):
                     )
                 )
 
-        elif field.type.type == FieldTypeEnum.DATETIME:
+        elif type(field) is DatetimeField:
             logger.info("[FieldContainers][write_container] Datetime Field", field=field)
             if not is_mixed:
-                container.set_title(field.type.name)
+                container.set_title(field.name)
                 container.set_inline(False)
 
-                title = f"{field.type.name} (Date)"
                 try:
                     assert field.value is not None
                     text = self.driver.settings.format_datetime(
                         DatetimePicker.string2dt(field.value)
                     )
                 except (ValueError, AssertionError):
-                    title += " (Unknown Format)"
                     text = str(field.value)
 
                 inner_widget = TextWidget(title, text)
@@ -355,10 +378,10 @@ class FieldContainers(QWidget):
 
                 modal = PanelModal(
                     DatetimePicker(self.driver, field.value or dt.now()),
-                    title=f"Edit {field.type.name}",
-                    save_callback=(
+                    title=f"Edit {field.name}",
+                    save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                            self.update_datetime_field(field, content),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -367,7 +390,7 @@ class FieldContainers(QWidget):
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.type.name),
+                        prompt=self.remove_field_prompt(field.name),
                         callback=lambda: (
                             self.remove_field(field),
                             self.update_from_entry(self.cached_entries[0].id),
@@ -375,20 +398,20 @@ class FieldContainers(QWidget):
                     )
                 )
             else:
-                text = "<i>Mixed Data</i>"
-                title = f"{field.type.name} (Wacky Date)"
+                text = "<i>Mixed Data</i>"  # TODO: Localize this
                 inner_widget = TextWidget(title, text)
                 container.set_inner_widget(inner_widget)
         else:
-            logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
-            container.set_title(field.type.name)
+            logger.warning(
+                "[FieldContainers][write_container] Unknown Field", field=field
+            )  # TODO: Localize this
+            container.set_title(field.name)
             container.set_inline(False)
-            title = f"{field.type.name} (Unknown Field Type)"
-            inner_widget = TextWidget(title, field.type.name)
+            inner_widget = TextWidget(title, field.name)
             container.set_inner_widget(inner_widget)
             container.set_remove_callback(
                 lambda: self.remove_message_box(
-                    prompt=self.remove_field_prompt(field.type.name),
+                    prompt=self.remove_field_prompt(field.name),
                     callback=lambda: (
                         self.remove_field(field),
                         self.update_from_entry(self.cached_entries[0].id),
@@ -419,7 +442,9 @@ class FieldContainers(QWidget):
         else:
             container = self.containers[index]
 
-        container.set_title("Tags" if not category_tag else category_tag.name)
+        container.set_title(
+            "Tags" if not category_tag else category_tag.name
+        )  # TODO: Localize this
         container.set_inline(False)
 
         if not is_mixed:
@@ -431,7 +456,7 @@ class FieldContainers(QWidget):
 
             else:
                 inner_widget = TagBoxWidget(
-                    "Tags",
+                    "Tags",  # TODO: Localize this
                     self.driver,
                 )
                 container.set_inner_widget(inner_widget)
@@ -460,26 +485,24 @@ class FieldContainers(QWidget):
         entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
-    def update_field(self, field: BaseField, content: str) -> None:
-        """Update a field in all selected Entries, given a field object."""
-        assert isinstance(
-            field,
-            TextField | DatetimeField,
-        ), f"instance: {type(field)}"
-
+    def update_text_field(self, field: TextField, value: str, is_multiline: bool):
+        """Update a text field across selected entries."""
         entry_ids = [e.id for e in self.cached_entries]
-
         assert entry_ids, "No entries selected"
-        self.lib.update_entry_field(
-            entry_ids,
-            field,
-            content,
-        )
+
+        self.lib.update_text_field(entry_ids, field, value, is_multiline)
+
+    def update_datetime_field(self, field: DatetimeField, value: str):
+        """Update a datetime field across selected entries."""
+        entry_ids = [e.id for e in self.cached_entries]
+        assert entry_ids, "No entries selected"
+
+        self.lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
 
     def remove_message_box(self, prompt: str, callback: Callable) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")
+        remove_mb.setWindowTitle("Remove Field")  # TODO: Localize
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole

@@ -39,6 +39,14 @@ LANGUAGES = {
     "Viossa": "qpv",
 }
 
+# A map of field class names to their respective translation keys.
+FIELD_TYPE_KEYS = {
+    "DatetimeField": "field_type.datetime",
+    "DatetimeFieldTemplate": "field_type.datetime",
+    "TextField": "field_type.text",
+    "TextFieldTemplate": "field_type.text",
+}
+
 
 class Translator:
     _default_strings: dict[str, str]

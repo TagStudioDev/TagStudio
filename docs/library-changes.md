@@ -64,8 +64,8 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
 | [v9.5.0-pr2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr2) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Repairs "Description" fields to use a TEXT_LINE key instead of a TEXT_BOX key.
--   Repairs tags that may have a disambiguation_id pointing towards a deleted tag.
+- ~~Repairs "Description" fields to use a TEXT_LINE key instead of a TEXT_BOX key.~~ _See [Version 200](#version-200)_
+- Repairs tags that may have a disambiguation_id pointing towards a deleted tag.
 
 ---
 
@@ -75,9 +75,9 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
 | [v9.5.0-pr4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Adds the `color_border` column to the `tag_colors` table. Used for instructing the [secondary color](colors.md#secondary-color) to apply to a tag's border as a new optional behavior.
--   Adds three new default colors: "Burgundy (TagStudio Shades)", "Dark Teal (TagStudio Shades)", and "Dark Lavender (TagStudio Shades)".
--   Updates Neon colors to use the new `color_border` property.
+- Adds the `color_border` column to the `tag_colors` table. Used for instructing the [secondary color](colors.md#secondary-color) to apply to a tag's border as a new optional behavior.
+- Adds three new default colors: "Burgundy (TagStudio Shades)", "Dark Teal (TagStudio Shades)", and "Dark Lavender (TagStudio Shades)".
+- Updates Neon colors to use the new `color_border` property.
 
 ---
 
@@ -87,56 +87,75 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
 | [v9.5.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.2) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Adds the `filename` column to the `entries` table. Used for sorting entries by filename in search results.
+- Adds the `filename` column to the `entries` table. Used for sorting entries by filename in search results.
 
 ---
 
-### Version 100
+### Versions 100 - 1xx
+
+#### Version 100
 
 | Used From                                                                                            | Format | Location                                        |
 | ---------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
 | [74383e3](https://github.com/TagStudioDev/TagStudio/commit/74383e3c3c12f72be1481ab0b86c7360b95c2d85) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Introduces built-in minor versioning
-    -   The version number divided by 100 (and floored) constitutes the **major** version. Major version indicate breaking changes that prevent libraries from being opened in TagStudio versions older than the ones they were created in.
-    -   Values more precise than this ("ones" through "tens" columns) constitute the **minor** version. These indicate minor changes that don't prevent a newer library from being opened in an older version of TagStudio, as long as the major version is not also increased.
--   Swaps `parent_id` and `child_id` values in the `tag_parents` table
+- Introduces built-in minor versioning
+    - The version number divided by 100 (and floored) constitutes the **major** version. Major version indicate breaking changes that prevent libraries from being opened in TagStudio versions older than the ones they were created in.
+    - Values more precise than this ("ones" through "tens" columns) constitute the **minor** version. These indicate minor changes that don't prevent a newer library from being opened in an older version of TagStudio, as long as the major version is not also increased.
+- Swaps `parent_id` and `child_id` values in the `tag_parents` table
 
 #### Version 101
 
-| Used From                                                               | Format | Location                                        |
-| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                                                                                                    | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [12e074b](https://github.com/TagStudioDev/TagStudio/commit/12e074b71d8860282b44e49e0e1a41b7a2e4bae8)/[v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Deprecates the `preferences` table, set to be removed in a future TagStudio version.
--   Introduces the `versions` table
-    -   Has a string `key` column and an int `value` column
-    -   The `key` column stores one of two values: `'INITIAL'` and `'CURRENT'`
-    -   `'INITIAL'` stores the database version number in which in was created
-        -   Pre-existing databases set this number to `100`
-    -   `'CURRENT'` stores the current database version number
+- Deprecates the `preferences` table, set to be removed in a future TagStudio version.
+- Introduces the `versions` table
+    - Has a string `key` column and an int `value` column
+    - The `key` column stores one of two values: `'INITIAL'` and `'CURRENT'`
+    - `'INITIAL'` stores the database version number in which in was created
+        - Pre-existing databases set this number to `100`
+    - `'CURRENT'` stores the current database version number
 
 #### Version 102
 
-| Used From                                                               | Format | Location                                        |
-| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                            | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [71d0425](https://github.com/TagStudioDev/TagStudio/commit/71d04254cf87f4200bb7ffc81656e50dfb122e4d) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Applies repairs to the `tag_parents` table created in [version 100](#version-100), removing rows that reference tags that have been deleted.
+- Applies repairs to the `tag_parents` table created in [version 100](#version-100), removing rows that reference tags that have been deleted.
 
-#### Version 103
+| Used From                                                                                                                                                                    | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [88d0b47](https://github.com/TagStudioDev/TagStudio/commit/88d0b47a86821ccfadba653f30a515abce5b24b0)/[v9.5.7](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.7) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
-| Used From                                                               | Format | Location                                        |
-| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [#1139](https://github.com/TagStudioDev/TagStudio/pull/1139)            | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
-
--   Adds the `is_hidden` column to the `tags` table (default `0`). Used for excluding entries tagged with hidden tags from library searches.
--   Sets the `is_hidden` field on the built-in Archived tag to `1`, to match the Archived tag now being hidden by default.
+- Adds the `is_hidden` column to the `tags` table (default `0`). Used for excluding entries tagged with hidden tags from library searches.
+- Sets the `is_hidden` field on the built-in Archived tag to `1`, to match the Archived tag now being hidden by default.
 
 #### Version 104
 
-| Used From                                                               | Format | Location                                        |
-| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [#1298](https://github.com/TagStudioDev/TagStudio/pull/1298)            | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                            | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [ad2cbbc](https://github.com/TagStudioDev/TagStudio/commit/ad2cbbca483018d245b44348e2c4f5a0e0bb28f1) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 - Removes the `preferences` table, after migrating the contained extension list to the .ts_ignore file, if necessary.
+
+### Versions 200 - 2xx
+
+#### Version 200
+
+| Used From | Format | Location                                        |
+| --------- | ------ | ----------------------------------------------- |
+| TBD       | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+- Adds `text_field_templates` and `date_field_templates` tables.
+- Drops `boolean_fields` and `value_type` tables.
+- Adds `name` columns to `text_fields` and `datetime_fields` tables.
+    - Values in the `name` columns are taken from the `type_key` columns and are changed to "Title Case".
+    - **Example:** "DATE_CREATED" -> "Date Created"
+- Drops `position` columns from `text_fields` and `datetime_fields` tables.
+- Adds `is_multiline` column to `text_fields` table.
+    - Values are set to `TRUE` if the field row was previously a "TEXT_BOX" type.
+- Repairs existing "Description" fields inside the `text_fields` table to have their `is_multiline` column set to `TRUE` _(Previously done in [Version 7](#version-7))_.
+- Repairs existing "Comments" fields inside the `text_fields` table to have their `is_multiline` column set to `TRUE`.

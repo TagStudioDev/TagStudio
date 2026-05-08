@@ -5,18 +5,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import TYPE_CHECKING, Any, override
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from tagstudio.core.library.alchemy.db import Base
-from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 
 if TYPE_CHECKING:
-    from tagstudio.core.library.alchemy.models import Entry, ValueType
+    from tagstudio.core.library.alchemy.models import Entry
 
 
 class BaseField(Base):
@@ -27,12 +24,8 @@ class BaseField(Base):
         return mapped_column(primary_key=True, autoincrement=True)
 
     @declared_attr
-    def type_key(self) -> Mapped[str]:
-        return mapped_column(ForeignKey("value_type.key"))
-
-    @declared_attr
-    def type(self) -> Mapped[ValueType]:
-        return relationship(foreign_keys=[self.type_key], lazy=False)  # type: ignore # pyright: ignore[reportArgumentType]
+    def name(self) -> Mapped[str]:
+        return mapped_column(nullable=False, default="")
 
     @declared_attr
     def entry_id(self) -> Mapped[int]:
@@ -42,50 +35,14 @@ class BaseField(Base):
     def entry(self) -> Mapped[Entry]:
         return relationship(foreign_keys=[self.entry_id])  # type: ignore # pyright: ignore[reportArgumentType]
 
-    @declared_attr
-    def position(self) -> Mapped[int]:
-        return mapped_column(default=0)
-
-    @override
-    def __hash__(self):
-        return hash(self.__key())
-
-    def __key(self):  # pyright: ignore[reportUnknownParameterType]
-        raise NotImplementedError
-
     value: Any  # pyright: ignore
-
-
-class BooleanField(BaseField):
-    __tablename__ = "boolean_fields"
-
-    value: Mapped[bool]
-
-    def __key(self):
-        return (self.type, self.value)
-
-    @override
-    def __eq__(self, value: object) -> bool:
-        if isinstance(value, BooleanField):
-            return self.__key() == value.__key()
-        raise NotImplementedError
 
 
 class TextField(BaseField):
     __tablename__ = "text_fields"
 
     value: Mapped[str | None]
-
-    def __key(self) -> tuple[ValueType, str | None]:
-        return self.type, self.value
-
-    @override
-    def __eq__(self, value: object) -> bool:
-        if isinstance(value, TextField):
-            return self.__key() == value.__key()
-        elif isinstance(value, DatetimeField):
-            return False
-        raise NotImplementedError
+    is_multiline: Mapped[bool] = mapped_column(nullable=False, default=False)
 
 
 class DatetimeField(BaseField):
@@ -93,52 +50,56 @@ class DatetimeField(BaseField):
 
     value: Mapped[str | None]
 
-    def __key(self):
-        return (self.type, self.value)
 
-    @override
-    def __eq__(self, value: object) -> bool:
-        if isinstance(value, DatetimeField):
-            return self.__key() == value.__key()
-        raise NotImplementedError
+class BaseFieldTemplate(Base):
+    __abstract__ = True
 
+    @declared_attr
+    def id(self) -> Mapped[int]:
+        return mapped_column(primary_key=True, autoincrement=True)
 
-@dataclass
-class DefaultField:
-    id: int
-    name: str
-    type: FieldTypeEnum
-    is_default: bool = field(default=False)
+    @declared_attr
+    def name(self) -> Mapped[str]:
+        return mapped_column(nullable=False, default="")
 
 
-class FieldID(Enum):
-    """Only for bootstrapping content of DB table."""
+class TextFieldTemplate(BaseFieldTemplate):
+    __tablename__ = "text_field_templates"
+    is_multiline: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True)
-    AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
-    ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
-    URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
-    DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_BOX)
-    NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
-    COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
-    DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
-    DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)
-    DATE_MODIFIED = DefaultField(id=12, name="Date Modified", type=FieldTypeEnum.DATETIME)
-    DATE_TAKEN = DefaultField(id=13, name="Date Taken", type=FieldTypeEnum.DATETIME)
-    DATE_PUBLISHED = DefaultField(id=14, name="Date Published", type=FieldTypeEnum.DATETIME)
-    # ARCHIVED = DefaultField(id=15, name="Archived",  type=CheckboxField.checkbox)
-    # FAVORITE = DefaultField(id=16, name="Favorite", type=CheckboxField.checkbox)
-    BOOK = DefaultField(id=17, name="Book", type=FieldTypeEnum.TEXT_LINE)
-    COMIC = DefaultField(id=18, name="Comic", type=FieldTypeEnum.TEXT_LINE)
-    SERIES = DefaultField(id=19, name="Series", type=FieldTypeEnum.TEXT_LINE)
-    MANGA = DefaultField(id=20, name="Manga", type=FieldTypeEnum.TEXT_LINE)
-    SOURCE = DefaultField(id=21, name="Source", type=FieldTypeEnum.TEXT_LINE)
-    DATE_UPLOADED = DefaultField(id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME)
-    DATE_RELEASED = DefaultField(id=23, name="Date Released", type=FieldTypeEnum.DATETIME)
-    VOLUME = DefaultField(id=24, name="Volume", type=FieldTypeEnum.TEXT_LINE)
-    ANTHOLOGY = DefaultField(id=25, name="Anthology", type=FieldTypeEnum.TEXT_LINE)
-    MAGAZINE = DefaultField(id=26, name="Magazine", type=FieldTypeEnum.TEXT_LINE)
-    PUBLISHER = DefaultField(id=27, name="Publisher", type=FieldTypeEnum.TEXT_LINE)
-    GUEST_ARTIST = DefaultField(id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE)
-    COMPOSER = DefaultField(id=29, name="Composer", type=FieldTypeEnum.TEXT_LINE)
-    COMMENTS = DefaultField(id=30, name="Comments", type=FieldTypeEnum.TEXT_LINE)
+
+class DatetimeFieldTemplate(BaseFieldTemplate):
+    __tablename__ = "datetime_field_templates"
+
+
+# Used for migrating legacy libraries.
+# Legacy JSON libraries (<v9.4) use an integer ID.
+# SQLite libraries 6 until 200 use a slugfield name (e.g. "DATE_CREATED").
+LEGACY_FIELD_MAP = {
+    0: {"type": TextField, "name": "Title", "is_multiline": False},
+    1: {"type": TextField, "name": "Author", "is_multiline": False},
+    2: {"type": TextField, "name": "Artist", "is_multiline": False},
+    3: {"type": TextField, "name": "URL", "is_multiline": False},
+    4: {"type": TextField, "name": "Description", "is_multiline": True},
+    5: {"type": TextField, "name": "Notes", "is_multiline": True},
+    9: {"type": TextField, "name": "Collation", "is_multiline": False},
+    10: {"type": DatetimeField, "name": "Date", "is_multiline": False},
+    11: {"type": DatetimeField, "name": "Date Created"},
+    12: {"type": DatetimeField, "name": "Date Modified"},
+    13: {"type": DatetimeField, "name": "Date Taken"},
+    14: {"type": DatetimeField, "name": "Date Published"},
+    17: {"type": TextField, "name": "Book", "is_multiline": False},
+    18: {"type": TextField, "name": "Comic", "is_multiline": False},
+    19: {"type": TextField, "name": "Series", "is_multiline": False},
+    20: {"type": TextField, "name": "Manga", "is_multiline": False},
+    21: {"type": TextField, "name": "Source", "is_multiline": False},
+    22: {"type": DatetimeField, "name": "Date Uploaded"},
+    23: {"type": DatetimeField, "name": "Date Released"},
+    24: {"type": TextField, "name": "Volume", "is_multiline": False},
+    25: {"type": TextField, "name": "Anthology", "is_multiline": False},
+    26: {"type": TextField, "name": "Magazine", "is_multiline": False},
+    27: {"type": TextField, "name": "Publisher", "is_multiline": False},
+    28: {"type": TextField, "name": "Guest Artist", "is_multiline": False},
+    29: {"type": TextField, "name": "Composer", "is_multiline": False},
+    30: {"type": TextField, "name": "Comments", "is_multiline": True},
+}

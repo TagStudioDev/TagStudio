@@ -12,7 +12,7 @@ import structlog
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.fields import (
-    FieldID,  # pyright: ignore[reportPrivateUsage]
+    DatetimeField,
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
@@ -81,12 +81,12 @@ def test_library_add_file(library: Library):
     entry = Entry(
         path=Path("bar.txt"),
         folder=unwrap(library.folder),
-        fields=library.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
-    assert not library.has_path_entry(entry.path)
+    assert not library.has_entry_with_path(entry.path)
     assert library.add_entries([entry])
-    assert library.has_path_entry(entry.path)
+    assert library.has_entry_with_path(entry.path)
 
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
@@ -207,13 +207,18 @@ def test_remove_entry_field(library: Library, entry_full: Entry):
     assert not entry.text_fields
 
 
-def test_remove_field_entry_with_multiple_field(library: Library, entry_full: Entry):
+def test_remove_text_field_entry_with_multiple_field(library: Library, entry_full: Entry):
     # Given
     title_field = entry_full.text_fields[0]
 
     # When
     # add identical field
-    assert library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
+    assert library.add_text_field_to_entry(
+        entry_full.id,
+        name=title_field.name,
+        value=title_field.value,
+        is_multiline=title_field.is_multiline,
+    )
 
     # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
@@ -226,30 +231,22 @@ def test_remove_field_entry_with_multiple_field(library: Library, entry_full: En
 def test_update_entry_field(library: Library, entry_full: Entry):
     title_field = entry_full.text_fields[0]
 
-    library.update_entry_field(
-        entry_full.id,
-        title_field,
-        "new value",
-    )
+    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
 
     entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
 
 
-def test_update_entry_with_multiple_identical_fields(library: Library, entry_full: Entry):
+def test_update_entry_with_multiple_identical_text_fields(library: Library, entry_full: Entry):
     # Given
     title_field = entry_full.text_fields[0]
 
     # When
     # add identical field
-    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
+    library.add_text_field_to_entry(entry_full.id, name="Title", value="")
 
     # update one of the fields
-    library.update_entry_field(
-        entry_full.id,
-        title_field,
-        "new value",
-    )
+    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
 
     # Then only one should be updated
     entry = next(library.all_entries(with_joins=True))
@@ -257,37 +254,64 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
     assert entry.text_fields[1].value == "new value"
 
 
-def test_mirror_entry_fields(library: Library, entry_full: Entry):
-    # new entry
-    target_entry = Entry(
+def test_mirror_entry_fields(library: Library):
+    # Create and add entries with fields
+    entry_a = Entry(
         folder=unwrap(library.folder),
-        path=Path("xxx"),
+        path=Path("title_and_date.txt"),
         fields=[
-            TextField(
-                type_key=FieldID.NOTES.name,
-                value="notes",
-                position=0,
-            )
+            TextField(name="Title", value="I'm a Test Title"),
+            DatetimeField(name="Date", value="2026-05-07 12:59:24"),
         ],
     )
+    entry_b = Entry(
+        folder=unwrap(library.folder),
+        path=Path("notes.txt"),
+        fields=[
+            TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True)
+        ],
+    )
+    entry_c = Entry(
+        folder=unwrap(library.folder),
+        path=Path("date_published.txt"),
+        fields=[
+            DatetimeField(name="Date Published", value="2000-01-01 12:00:00"),
+        ],
+    )
+    entry_a_id, entry_b_id, entry_c_id = library.add_entries([entry_a, entry_b, entry_c])
 
-    # insert new entry and get id
-    entry_id = library.add_entries([target_entry])[0]
+    # Retrieve from library
+    entry_a_ = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_ = unwrap(library.get_entry_full(entry_b_id))
+    entry_c_ = unwrap(library.get_entry_full(entry_c_id))
 
-    # get new entry from library
-    new_entry = unwrap(library.get_entry_full(entry_id))
+    # Sanity check for initial fields
+    assert entry_a_.fields[0].name == "Title"
+    assert entry_a_.fields[1].name == "Date"
+    assert entry_b_.fields[0].name == "Notes"
+    assert entry_c_.fields[0].name == "Date Published"
+    assert len(entry_a_.fields) == 2
+    assert len(entry_b_.fields) == 1
+    assert len(entry_c_.fields) == 1
 
-    # mirror fields onto new entry
-    library.mirror_entry_fields(new_entry, entry_full)
+    # Mirror fields between entries
+    library.mirror_entry_fields([entry_b_, entry_a_, entry_c_])
 
-    # get new entry from library again
-    entry = unwrap(library.get_entry_full(entry_id))
+    # Retrieve from library, again
+    entry_a_mirrored = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_mirrored = unwrap(library.get_entry_full(entry_b_id))
+    entry_c_mirrored = unwrap(library.get_entry_full(entry_c_id))
 
-    # make sure fields are there after getting it from the library again
-    assert len(entry.fields) == 2
-    assert {x.type_key for x in entry.fields} == {
-        FieldID.TITLE.name,
-        FieldID.NOTES.name,
+    # Assert presence of all fields on all entries
+    assert len(entry_a_mirrored.fields) == 4
+    assert len(entry_b_mirrored.fields) == 4
+    assert len(entry_c_mirrored.fields) == 4
+
+    assert {(type(x), x.name) for x in entry_a_mirrored.fields} == {
+        (TextField, "Title"),
+        (TextField, "Notes"),
+        (DatetimeField, "Date"),
+        (DatetimeField, "Date Published"),
     }
 
 
@@ -298,32 +322,32 @@ def test_merge_entries(library: Library):
     tag_1: Tag = unwrap(library.add_tag(Tag(id=1011, name="tag_1")))
     tag_2: Tag = unwrap(library.add_tag(Tag(id=1012, name="tag_2")))
 
-    a = Entry(
+    entry_a = Entry(
         folder=folder,
         path=Path("a"),
         fields=[
-            TextField(type_key=FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
-            TextField(type_key=FieldID.DESCRIPTION.name, value="test description", position=2),
+            TextField(name="Author", value="Author McAuthorson"),
+            TextField(name="Description", value="test description", is_multiline=True),
         ],
     )
-    b = Entry(
+    entry_b = Entry(
         folder=folder,
         path=Path("b"),
-        fields=[TextField(type_key=FieldID.NOTES.name, value="test note", position=1)],
+        fields=[TextField(name="Notes", value="test note", is_multiline=True)],
     )
-    ids = library.add_entries([a, b])
+    entry_a_id, entry_b_id = library.add_entries([entry_a, entry_b])
 
-    library.add_tags_to_entries(ids[0], [tag_0.id, tag_2.id])
-    library.add_tags_to_entries(ids[1], [tag_1.id])
+    library.add_tags_to_entries(entry_a_id, [tag_0.id, tag_2.id])
+    library.add_tags_to_entries(entry_b_id, [tag_1.id])
 
-    entry_a: Entry = unwrap(library.get_entry_full(ids[0]))
-    entry_b: Entry = unwrap(library.get_entry_full(ids[1]))
+    entry_a_: Entry = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_: Entry = unwrap(library.get_entry_full(entry_b_id))
 
-    assert library.merge_entries(entry_a, entry_b)
-    assert not library.has_path_entry(Path("a"))
-    assert library.has_path_entry(Path("b"))
+    assert library.merge_entries(entry_a_, entry_b_)
+    assert not library.has_entry_with_path(Path("a"))
+    assert library.has_entry_with_path(Path("b"))
 
-    entry_b_merged = unwrap(library.get_entry_full(ids[1]))
+    entry_b_merged = unwrap(library.get_entry_full(entry_b_id))
 
     fields = [field.value for field in entry_b_merged.fields]
     assert "Author McAuthorson" in fields
@@ -358,33 +382,6 @@ def test_search_entry_id(library: Library, query_name: int, has_result: bool):
     result = library.get_entry(query_name)
 
     assert (result is not None) == has_result
-
-
-def test_update_field_order(library: Library, entry_full: Entry):
-    # Given
-    title_field = entry_full.text_fields[0]
-
-    # When add two more fields
-    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key, value="first")
-    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key, value="second")
-
-    # remove the one on first position
-    assert title_field.position == 0
-    library.remove_entry_field(title_field, [entry_full.id])
-
-    # recalculate the positions
-    library.update_field_position(
-        type(title_field),
-        title_field.type_key,
-        entry_full.id,
-    )
-
-    # Then
-    entry = next(library.all_entries(with_joins=True))
-    assert entry.text_fields[0].position == 0
-    assert entry.text_fields[0].value == "first"
-    assert entry.text_fields[1].position == 1
-    assert entry.text_fields[1].value == "second"
 
 
 def test_path_search_ilike(library: Library):

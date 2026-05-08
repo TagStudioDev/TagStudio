@@ -145,7 +145,7 @@ class RefreshTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_path_entry(f):
+            if not self.library.has_entry_with_path(f):
                 self.files_not_in_library.append(f)
 
         end_time_total = time()
@@ -190,7 +190,7 @@ class RefreshTracker:
 
                 relative_path = f.relative_to(library_dir)
 
-                if not self.library.has_path_entry(relative_path):
+                if not self.library.has_entry_with_path(relative_path):
                     self.files_not_in_library.append(relative_path)
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")

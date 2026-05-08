@@ -95,7 +95,7 @@ class MirrorEntriesModal(QWidget):
         mirrored: list = []
         lib = self.driver.lib
         for i, entries in enumerate(self.tracker.groups):
-            lib.mirror_entry_fields(*entries)
+            lib.mirror_entry_fields(entries)
             sleep(0.005)
             yield i
 

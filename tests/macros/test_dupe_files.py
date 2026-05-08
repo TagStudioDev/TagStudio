@@ -4,6 +4,7 @@
 
 from pathlib import Path
 
+from tagstudio.core.library.alchemy.fields import TextField
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
@@ -19,13 +20,13 @@ def test_refresh_dupe_files(library: Library):
     entry = Entry(
         folder=folder,
         path=Path("bar/foo.txt"),
-        fields=library.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     entry2 = Entry(
         folder=folder,
         path=Path("foo/foo.txt"),
-        fields=library.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     library.add_entries([entry, entry2])

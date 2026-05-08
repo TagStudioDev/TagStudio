@@ -52,10 +52,8 @@ from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
-    FieldTypeEnum,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -63,7 +61,7 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.str_formatting import is_version_outdated, strip_web_protocol
+from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
@@ -1123,7 +1121,6 @@ class QtDriver(DriverMixin, QObject):
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
         entry: Entry = unwrap(self.lib.get_entry(entry_id))
-        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
@@ -1139,32 +1136,6 @@ class QtDriver(DriverMixin, QObject):
                 if macro_id == MacroID.AUTOFILL:
                     continue
                 self.run_macro(macro_id, entry_id)
-
-        elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
-            for field_id, value in parsed_items.items():
-                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
-                    value = self.lib.tag_from_strings(value)
-                self.lib.add_field_to_entry(
-                    entry.id,
-                    field_id=field_id,
-                    value=value,
-                )
-
-        elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry, source)
-            if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
-        elif name == MacroID.MATCH:
-            TagStudioCore.match_conditions(self.lib, entry.id)
-        elif name == MacroID.CLEAN_URL:
-            for field in entry.text_fields:
-                if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
-                    self.lib.update_entry_field(
-                        entry_ids=entry.id,
-                        field=field,
-                        content=strip_web_protocol(field.value),
-                    )
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
