@@ -49,8 +49,8 @@ class PreviewThumb(PreviewThumbView):
                     stats.width = image.width
                     stats.height = image.height
             except (
-                rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
-                rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
+                rawpy.LibRawIOError,
+                rawpy.LibRawFileUnsupportedError,
                 FileNotFoundError,
             ):
                 pass
