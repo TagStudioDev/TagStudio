@@ -176,11 +176,11 @@ class SettingsPanel(PanelWidget):
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
         form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
 
-        # Autoload new files
-        self.autoload_new_files_checkbox = QCheckBox()
-        self.autoload_new_files_checkbox.setChecked(self.driver.settings.autoload_new_files)
+        # Scan for new files when a library is opened
+        self.scan_files_on_open_checkbox = QCheckBox()
+        self.scan_files_on_open_checkbox.setChecked(self.driver.settings.scan_files_on_open)
         form_layout.addRow(
-            Translations["media_player.autoload_new_files"], self.autoload_new_files_checkbox
+            Translations["settings.scan_files_on_open"], self.scan_files_on_open_checkbox
         )
 
         # Show Filenames in Grid
