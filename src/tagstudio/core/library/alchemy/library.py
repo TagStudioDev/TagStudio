@@ -339,7 +339,7 @@ class Library:
                                     ),
                                 )
                             elif LEGACY_FIELD_MAP[legacy_field_id]["type"] == DatetimeField:
-                                self.add_text_field_to_entry(
+                                self.add_datetime_field_to_entry(
                                     entry_id=(
                                         entry.id + 1
                                     ),  # NOTE: JSON IDs start at 0 instead of 1
