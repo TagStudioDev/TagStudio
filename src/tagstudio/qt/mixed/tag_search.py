@@ -189,6 +189,7 @@ class TagSearchPanel(PanelWidget):
                 set(self.build_tag_modal.parent_ids),
                 set(self.build_tag_modal.alias_names),
                 set(self.build_tag_modal.alias_ids),
+                set(self.build_tag_modal.exclusion_ids),
             )
             self.add_tag_modal.hide()
 
@@ -382,7 +383,11 @@ class TagSearchPanel(PanelWidget):
 
         def callback(btp: BuildTagPanel):
             self.lib.update_tag(
-                btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
+                btp.build_tag(),
+                set(btp.parent_ids),
+                set(btp.alias_names),
+                set(btp.alias_ids),
+                set(btp.exclusion_ids),
             )
             self.update_tags(self.search_field.text())
 

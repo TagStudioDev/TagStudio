@@ -1,7 +1,8 @@
 # Copyright (C) 2025
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
+from collections.abc import Callable
+from pathlib import Path
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -185,3 +186,26 @@ def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: 
                 assert container.title != "<h4>Tags</h4>"
             case _:
                 pass
+
+
+def test_exclude_tag_category(
+    qt_driver: QtDriver, library: Library, generate_tag: Callable[..., Tag]
+):
+    panel = PreviewPanel(library, qt_driver)
+
+    category_parent = unwrap(generate_tag("category_parent", id=123, is_category=True))
+    library.add_tag(category_parent)
+
+    tag = unwrap(generate_tag("tag", id=124))
+    library.add_tag(tag, parent_ids={category_parent.id}, exclusion_ids={category_parent.id})
+
+    entry = Entry(id=777, folder=unwrap(library.folder), path=Path("test.txt"), fields=[])
+
+    library.add_entries([entry])
+    library.add_tags_to_entries(entry.id, tag.id)
+
+    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
+    panel.set_selection(qt_driver.selected)
+
+    assert len(panel.field_containers_widget.containers) == 1
+    assert panel.field_containers_widget.containers[0].title == "<h4>Tags</h4>"

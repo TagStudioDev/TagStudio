@@ -189,7 +189,7 @@ class FieldContainers(QWidget):
 
                 grandparent_tags: set[Tag] = set()
                 for parent_tag in parent_tags:
-                    if parent_tag in categories:
+                    if parent_tag in categories and parent_tag.id not in tag.exclusion_ids:
                         categories[parent_tag].add(tag)
                         has_category_parent = True
                     grandparent_tags.update(parent_tag.parent_tags)

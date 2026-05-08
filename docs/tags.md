@@ -10,9 +10,9 @@ Tags are discrete objects that represent some attribute. This could be a person,
 
 TagStudio tags do not share the same naming limitations of many other tagging solutions. The key standouts of tag names in TagStudio are:
 
--   Tag names do **NOT** have to be unique
--   Tag names are **NOT** limited to specific characters
--   Tags can have **aliases**, a.k.a. alternate names to go by
+- Tag names do **NOT** have to be unique
+- Tag names are **NOT** limited to specific characters
+- Tags can have **aliases**, a.k.a. alternate names to go by
 
 ### Name
 
@@ -66,7 +66,7 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 <!-- prettier-ignore -->
 !!! warning ""
-    **_Coming in version 9.6.x_**
+**_Coming in version 9.6.x_**
 
 Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming "Tag Override" feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 
@@ -88,7 +88,7 @@ Custom palettes and colors can be created via the [Tag Color Manager](colors.md)
 
 <!-- prettier-ignore -->
 !!! warning ""
-    **_Coming in version 9.6.x_**
+**_Coming in version 9.6.x_**
 
 ## Tag Properties
 
@@ -96,11 +96,13 @@ Properties are special attributes of tags that change their behavior in some way
 
 #### Is Category
 
-The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. Tags inheriting from multiple "category tags" will still show up under any applicable category.
+The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. By default, tags inheriting from multiple "category tags" will still show up under any applicable category.
 
 This means that duplicates of tags can appear on entries if the tag inherits from multiple parent categories, however this is by design and reflects the nature of multiple inheritance. Any tags not inheriting from a category tag will simply show under a default "Tag" section.
 
 ![Tag Category Example](assets/tag_categories_example.png)
+
+If you don't want a tag to appear in one, more, or even all the applicable categories, simply uncheck the category in the "Edit Tag" panel.
 
 ### Built-In Tags and Categories
 
@@ -114,7 +116,7 @@ Due to the nature of how tags and Tag Felids operated prior to v9.5, the organiz
 
 <!-- prettier-ignore -->
 !!! warning ""
-    **_Coming in version 9.6.x_**
+**_Coming in version 9.6.x_**
 
 When the "Is Hidden" property is checked, any file entries tagged with this tag will not show up in searches by default. This property comes by default with the built-in "Archived" tag.
 
@@ -123,7 +125,7 @@ When the "Is Hidden" property is checked, any file entries tagged with this tag 
 The following are examples of how a set of given tags will respond to various search queries.
 
 | Tag                 | Name                | Shorthand | Aliases                | Parent Tags                                  |
-| ------------------- | ------------------- | --------- | ---------------------- | -------------------------------------------- |
+|---------------------|---------------------|-----------|------------------------|----------------------------------------------|
 | _League of Legends_ | "League of Legends" | "LoL"     | ["League"]             | ["Game", "Fantasy"]                          |
 | _Arcane_            | "Arcane"            | ""        | []                     | ["League of Legends", "Cartoon"]             |
 | _Jinx (LoL)_        | "Jinx Piltover"     | "Jinx"    | ["Jinxy", "Jinxy Poo"] | ["League of Legends", "Arcane", "Character"] |
@@ -133,7 +135,7 @@ The following are examples of how a set of given tags will respond to various se
 **The query "Arcane" will display results tagged with:**
 
 | Tag             | Cause of Inclusion               | Tag Tree Lineage           |
-| --------------- | -------------------------------- | -------------------------- |
+|-----------------|----------------------------------|----------------------------|
 | Arcane          | Direct match of tag name         | "Arcane"                   |
 | Jinx (LoL)      | Search term is set as parent tag | "Jinx (LoL) > Arcane"      |
 | Zander (Arcane) | Search term is set as parent tag | "Zander (Arcane) > Arcane" |
@@ -141,7 +143,7 @@ The following are examples of how a set of given tags will respond to various se
 **The query "League of Legends" will display results tagged with:**
 
 | Tag               | Cause of Inclusion                                     | Tag Tree Lineage                               |
-| ----------------- | ------------------------------------------------------ | ---------------------------------------------- |
+|-------------------|--------------------------------------------------------|------------------------------------------------|
 | League of Legends | Direct match of tag name                               | "League of Legends"                            |
 | Arcane            | Search term is set as parent tag                       | "Arcane > League of Legends"                   |
 | Jinx (LoL)        | Search term is set as parent tag                       | "Jinx (LoL) > League of Legends"               |

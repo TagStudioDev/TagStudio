@@ -91,7 +91,7 @@ from tagstudio.core.library.alchemy.fields import (
     FieldID,
     TextField,
 )
-from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
+from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
     Entry,
     Folder,
@@ -125,7 +125,7 @@ class ReservedNamespaceError(Exception):
 
 
 def slugify(input_string: str, allow_reserved: bool = False) -> str:
-    # Convert to lowercase and normalize unicode characters
+    # Convert to lowercase and normalize Unicode characters
     slug = unicodedata.normalize("NFKD", input_string.lower())
 
     # Remove non-word characters (except hyphens and spaces)
@@ -631,7 +631,7 @@ class Library:
             except IntegrityError:
                 session.rollback()
 
-        # Update Neon colors to use the the color_border property
+        # Update Neon colors to use the color_border property
         for color in default_color_groups.neon():
             try:
                 neon_stmt = (
@@ -1103,6 +1103,7 @@ class Library:
             query = query.options(
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
+                selectinload(Tag.category_exclusions),
             )
             if limit > 0:
                 query = query.limit(limit)
@@ -1457,6 +1458,7 @@ class Library:
         parent_ids: list[int] | set[int] | None = None,
         alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
+        exclusion_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1468,6 +1470,9 @@ class Library:
 
                 if alias_ids is not None and alias_names is not None:
                     self.update_aliases(tag, alias_ids, alias_names, session)
+
+                if exclusion_ids is not None:
+                    self.update_category_exclusion(tag, exclusion_ids, session)
 
                 session.commit()
                 session.expunge(tag)
@@ -1595,6 +1600,7 @@ class Library:
         with Session(self.engine) as session:
             tags_query = select(Tag).options(
                 selectinload(Tag.parent_tags),
+                selectinload(Tag.category_exclusions),
                 selectinload(Tag.aliases),
                 joinedload(Tag.color),
             )
@@ -1667,7 +1673,10 @@ class Library:
 
             statement = select(Tag).where(Tag.id.in_(all_tag_ids))
             statement = statement.options(
-                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
+                noload(Tag.parent_tags),
+                selectinload(Tag.aliases),
+                selectinload(Tag.category_exclusions),
+                joinedload(Tag.color),
             )
             tags = session.scalars(statement).fetchall()
             for tag in tags:
@@ -1747,9 +1756,10 @@ class Library:
         parent_ids: list[int] | set[int] | None = None,
         alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
+        exclusion_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
-        self.add_tag(tag, parent_ids, alias_names, alias_ids)
+        self.add_tag(tag, parent_ids, alias_names, alias_ids, exclusion_ids)
 
     def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
         """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
@@ -1800,8 +1810,8 @@ class Library:
             else:
                 self.add_color(new_color_group)
 
+    @staticmethod
     def update_aliases(
-        self,
         tag: Tag,
         alias_ids: list[int] | set[int],
         alias_names: list[str] | set[str],
@@ -1820,7 +1830,8 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
+    @staticmethod
+    def update_parent_tags(tag: Tag, parent_ids: list[int] | set[int], session: Session):
         if tag.id in parent_ids:
             parent_ids.remove(tag.id)
 
@@ -1847,6 +1858,22 @@ class Library:
                 child_id=tag.id,
             )
             session.add(parent_tag)
+
+    @staticmethod
+    def update_category_exclusion(tag: Tag, exclusion_ids: list[int] | set[int], session: Session):
+        prev_exclusions = session.scalars(
+            select(CategoryExclusion).where(CategoryExclusion.tag_id == tag.id)
+        ).all()
+
+        for exclusion in prev_exclusions:
+            if exclusion.category_id not in exclusion_ids:
+                session.delete(exclusion)
+            else:
+                exclusion_ids.remove(exclusion.category_id)
+
+        for exclusion_id in exclusion_ids:
+            exclusion = CategoryExclusion(tag_id=tag.id, category_id=exclusion_id)
+            session.add(exclusion)
 
     def get_version(self, key: str) -> int:
         """Get a version value from the DB.

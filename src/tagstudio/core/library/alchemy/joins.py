@@ -21,3 +21,10 @@ class TagEntry(Base):
 
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
     entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"), primary_key=True)
+
+
+class CategoryExclusion(Base):
+    __tablename__ = "category_exclusions"
+
+    tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("tags.id"), primary_key=True)
