@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -78,10 +79,11 @@ class TagSearchPanel(PanelWidget):
         library: Library,
         exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
+        driver: "QtDriver | None" = None,
     ):
         super().__init__()
         self.lib = library
-        self.driver = None
+        self.driver = driver
         self.exclude = exclude or []
 
         self.is_tag_chooser = is_tag_chooser
@@ -130,6 +132,11 @@ class TagSearchPanel(PanelWidget):
         self.root_layout.addWidget(self.limit_container)
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
+
+        if not self.is_tag_chooser:
+            self.create_tag_button = QPushButton(Translations["tag.create"])
+            self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
+            self.root_layout.addWidget(self.create_tag_button)
 
     def set_driver(self, driver):
         """Set the QtDriver for this search panel. Used for main window operations."""
@@ -345,8 +352,32 @@ class TagSearchPanel(PanelWidget):
                 self.search_field.setFocus()
                 self.search_field.selectAll()
 
-    def delete_tag(self, tag: Tag):
-        pass
+    def build_tag(self, name: str):
+        # TODO: Move this to a top-level import
+        from tagstudio.qt.mixed.build_tag import BuildTagPanel
+
+        panel = BuildTagPanel(self.lib)
+        self.modal = PanelModal(
+            panel,
+            Translations["tag.new"],
+            has_save=True,
+        )
+        if name.strip():
+            panel.name_field.setText(name)
+
+        self.modal.saved.connect(
+            lambda: (
+                self.lib.add_tag(
+                    tag=panel.build_tag(),
+                    parent_ids=panel.parent_ids,
+                    alias_names=panel.alias_names,
+                    alias_ids=panel.alias_ids,
+                ),
+                self.modal.hide(),
+                self.update_tags(self.search_field.text()),
+            )
+        )
+        self.modal.show()
 
     def edit_tag(self, tag: Tag):
         # TODO: Move this to a top-level import
@@ -370,3 +401,25 @@ class TagSearchPanel(PanelWidget):
 
         self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()
+
+    def delete_tag(self, tag: Tag):
+        if self.is_tag_chooser:
+            return
+
+        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
+            return
+
+        message_box = QMessageBox(
+            QMessageBox.Question,  # type: ignore
+            Translations["tag.remove"],
+            Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag)),
+            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+        )
+
+        result = message_box.exec()
+
+        if result != QMessageBox.Ok:  # type: ignore
+            return
+
+        self.lib.remove_tag(tag.id)
+        self.update_tags()
