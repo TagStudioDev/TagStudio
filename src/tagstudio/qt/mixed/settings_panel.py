@@ -321,7 +321,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
-        driver.settings.autoload_new_files = settings["auto_load_new_files"]
+        driver.settings.scan_files_on_open = settings["scan_files_on_open"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.thumb_cache_size = settings["thumb_cache_size"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
