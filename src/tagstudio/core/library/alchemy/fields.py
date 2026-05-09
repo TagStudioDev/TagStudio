@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
@@ -44,11 +44,37 @@ class TextField(BaseField):
     value: Mapped[str | None]
     is_multiline: Mapped[bool] = mapped_column(nullable=False, default=False)
 
+    @override
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TextField):
+            return False
+
+        return (self.name, self.value, self.is_multiline) == (
+            other.name,
+            other.value,
+            other.is_multiline,
+        )
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.name, self.value, self.is_multiline))
+
 
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
 
     value: Mapped[str | None]
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DatetimeField):
+            return False
+
+        return (self.name, self.value) == (other.name, other.value)
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.name, self.value))
 
 
 class BaseFieldTemplate(Base):

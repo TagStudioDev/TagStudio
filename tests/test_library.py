@@ -207,18 +207,13 @@ def test_remove_entry_field(library: Library, entry_full: Entry):
     assert not entry.text_fields
 
 
-def test_remove_text_field_entry_with_multiple_field(library: Library, entry_full: Entry):
+def test_remove_text_field_entry_with_multiple_fields(library: Library, entry_full: Entry):
     # Given
     title_field = entry_full.text_fields[0]
 
     # When
     # add identical field
-    assert library.add_text_field_to_entry(
-        entry_full.id,
-        name=title_field.name,
-        value=title_field.value,
-        is_multiline=title_field.is_multiline,
-    )
+    assert library.add_field_to_entry(entry_full.id, field=title_field)
 
     # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
@@ -243,7 +238,8 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
 
     # When
     # add identical field
-    library.add_text_field_to_entry(entry_full.id, name="Title", value="")
+    empty_title = TextField(name="Title", value="")
+    library.add_field_to_entry(entry_full.id, field=empty_title)
 
     # update one of the fields
     library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
@@ -268,7 +264,8 @@ def test_mirror_entry_fields(library: Library):
         folder=unwrap(library.folder),
         path=Path("notes.txt"),
         fields=[
-            TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True)
+            TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True),
+            TextField(name="Title", value="I'm a Test Title"),
         ],
     )
     entry_c = Entry(
@@ -291,7 +288,7 @@ def test_mirror_entry_fields(library: Library):
     assert entry_b_.fields[0].name == "Notes"
     assert entry_c_.fields[0].name == "Date Published"
     assert len(entry_a_.fields) == 2
-    assert len(entry_b_.fields) == 1
+    assert len(entry_b_.fields) == 2
     assert len(entry_c_.fields) == 1
 
     # Mirror fields between entries
@@ -301,6 +298,11 @@ def test_mirror_entry_fields(library: Library):
     entry_a_mirrored = unwrap(library.get_entry_full(entry_a_id))
     entry_b_mirrored = unwrap(library.get_entry_full(entry_b_id))
     entry_c_mirrored = unwrap(library.get_entry_full(entry_c_id))
+
+    for entry in [entry_a_mirrored, entry_b_mirrored, entry_c_mirrored]:
+        logger.info(
+            "[Library][mirror_fields]", entry_id=entry.id, field_count_after=len(entry.fields)
+        )
 
     # Assert presence of all fields on all entries
     assert len(entry_a_mirrored.fields) == 4

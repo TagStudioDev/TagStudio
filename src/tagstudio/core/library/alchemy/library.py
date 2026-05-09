@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -327,24 +327,21 @@ class Library:
                         self.add_tags_to_entries(entry_ids=entry.id + 1, tag_ids=value)
                     else:
                         try:
-                            if LEGACY_FIELD_MAP[legacy_field_id]["type"] == TextField:
-                                self.add_text_field_to_entry(
-                                    entry_id=(
-                                        entry.id + 1
-                                    ),  # NOTE: JSON IDs start at 0 instead of 1
-                                    name=str(LEGACY_FIELD_MAP[legacy_field_id]["name"]),
+                            # NOTE: JSON IDs start at 0 instead of 1
+                            field_info = LEGACY_FIELD_MAP[legacy_field_id]
+                            if field_info["type"] == TextField:
+                                text_field = TextField(
+                                    name=str(field_info["name"]),
                                     value=value,
-                                    is_multiline=bool(
-                                        LEGACY_FIELD_MAP[legacy_field_id]["is_multiline"]
-                                    ),
+                                    is_multiline=bool(field_info["is_multiline"]),
                                 )
-                            elif LEGACY_FIELD_MAP[legacy_field_id]["type"] == DatetimeField:
-                                self.add_datetime_field_to_entry(
-                                    entry_id=(
-                                        entry.id + 1
-                                    ),  # NOTE: JSON IDs start at 0 instead of 1
-                                    name=str(LEGACY_FIELD_MAP[legacy_field_id]["name"]),
-                                    value=value,
+                                self.add_field_to_entry(entry_id=(entry.id + 1), field=text_field)
+                            elif field_info["type"] == DatetimeField:
+                                datetime_field = DatetimeField(
+                                    name=str(field_info["name"]), value=value
+                                )
+                                self.add_field_to_entry(
+                                    entry_id=(entry.id + 1), field=datetime_field
                                 )
                         except Exception as e:
                             logger.error(
@@ -490,18 +487,14 @@ class Library:
 
             # Add default field templates
             if is_new:
-                for ft in get_default_field_templates():
+                for template in get_default_field_templates():
                     try:
-                        if type(ft) is TextFieldTemplate:
-                            session.add(
-                                TextFieldTemplate(name=ft.name, is_multiline=ft.is_multiline)
-                            )
-                        elif type(ft) is DatetimeFieldTemplate:
-                            session.add(DatetimeFieldTemplate(name=ft.name))
-
+                        session.add(template)
                         session.commit()
                     except IntegrityError:
-                        logger.info("[Library] FieldTemplate already exists", field_template=ft)
+                        logger.info(
+                            "[Library] FieldTemplate already exists", field_template=template
+                        )
                         session.rollback()
 
             # Ensure version rows are present
@@ -575,7 +568,6 @@ class Library:
                     self.__apply_db104_migrations(session, library_dir)
                 if loaded_db_version < 200:
                     self.__apply_db200_migrations(session)
-                    self.__apply_db200_data_repairs(session)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -767,55 +759,54 @@ class Library:
         """Migrate DB to DB_VERSION 200."""
         with session:
             # Drop unused 'boolean_fields' and 'value_type' tables
+            logger.info(
+                "[Library][Migration][200] Dropping boolean_fields and value_type tables..."
+            )
             session.execute(text("DROP TABLE boolean_fields"))
             session.execute(text("DROP TABLE value_type"))
-            session.commit()
-            logger.info("[Library][Migration][200] Dropped boolean_fields and value_type tables")
 
             # Add 'name' column to text_fields and datetime_fields tables
-            stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR NOT NULL DEFAULT ""')
+            logger.info("[Library][Migration][200] Adding name columns to field tables...")
+            stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
             session.execute(stmt)
-            stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR NOT NULL DEFAULT ""')
+            stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
             session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration][200] Added name columns to field tables")
 
             # Drop unnecessary 'position' columns
+            logger.info("[Library][Migration][200] Dropping position columns to field tables...")
             session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
             session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
-            session.commit()
-            logger.info("[Library][Migration][200] Dropped position columns to field tables")
 
             # Add 'is_multiline' column to text_fields table
+            logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
             stmt = text(
                 "ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0"
             )
             session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration][200] Added is_multiline column to text_fields table")
+            session.flush()
 
             # Move values from old `type_key` columns into new `name` columns
+            logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
             session.execute(text("UPDATE text_fields SET name = type_key"))
             session.execute(text("UPDATE datetime_fields SET name = type_key"))
-            session.commit()
-            logger.info("[Library][Migration][200] Moved values from type_key columns to name")
+            session.flush()
 
             # TODO: Remove `type_key` columns from text_fields and datetime_fields tables.
             # See issue with dropping columns foreign keys in SQLite:
             # https://www.sqlite.org/lang_altertable.html#making_other_kinds_of_table_schema_changes
 
             # Change `name` values to title case
+            logger.info("[Library][Migration][200] Normalizing TextField names...")
             for text_field in session.execute(select(TextField)).scalars():
                 # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
                 text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
-            logger.info("[Library][Migration][200] Normalized TextField names")
-            session.commit()
+            logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
             for datetime_field in session.execute(select(DatetimeField)).scalars():
                 datetime_field.name = datetime_field.name.title().replace("_", " ")
-            logger.info("[Library][Migration][200] Normalized DatetimeField names")
-            session.commit()
+            session.flush()
 
             # Add correct `is_multiline` values to text_fields table
+            logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
             text_boxes = [
                 x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
             ]
@@ -823,17 +814,10 @@ class Library:
                 update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
             )
             session.execute(update_stmt)
-            logger.info(
-                "[Library][Migration][200] Updated is_multiline columns for legacy TEXT_BOX fields"
-            )
-            session.commit()
+            session.flush()
 
-        pass
-
-    def __apply_db200_data_repairs(self, session: Session):
-        logger.info("[Library][Migration] Repairing data for library below version 200...")
-        with session:
             # Repair legacy "Description" fields to use is_multiline = True
+            logger.info("[Library][Migration][200] Repairing legacy Description fields...")
             desc_stmt = (
                 update(TextField)
                 .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
@@ -842,26 +826,25 @@ class Library:
             session.execute(desc_stmt)
 
             # Repair legacy "Comments" fields to use is_multiline = True
+            logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
             comm_stmt = (
                 update(TextField)
                 .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
                 .values(is_multiline=True)
             )
             session.execute(comm_stmt)
-            session.commit()
 
             # Add default field templates
-            for ft in get_default_field_templates():
+            logger.info("[Library][Migration][200] Adding default field templates...")
+            for template in get_default_field_templates():
                 try:
-                    if type(ft) is TextFieldTemplate:
-                        session.add(TextFieldTemplate(name=ft.name, is_multiline=ft.is_multiline))
-                    elif type(ft) is DatetimeFieldTemplate:
-                        session.add(DatetimeFieldTemplate(name=ft.name))
-
-                    session.commit()
+                    session.add(template)
+                    session.flush()
                 except IntegrityError:
-                    logger.info("[Library] FieldTemplate already exists", field_template=ft)
+                    logger.error("[Library] FieldTemplate already exists", field_template=template)
                     session.rollback()
+
+            session.commit()
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
@@ -1297,20 +1280,20 @@ class Library:
         field: BaseField,
         entry_ids: list[int],
     ) -> None:
-        field_ = type(field)
+        field_type = type(field)
 
         logger.info(
             "remove_entry_field",
             field=field,
-            type=field_,
+            type=field_type,
             entry_ids=entry_ids,
         )
 
         with Session(self.engine) as session:
             # remove all fields matching entry and field_type
-            delete_stmt = delete(field_).where(
+            delete_stmt = delete(field_type).where(
                 and_(
-                    field_.id == field.id,
+                    field_type.id == field.id,
                 )
             )
 
@@ -1324,14 +1307,14 @@ class Library:
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        field_ = type(field)
+        field_type = type(field)
 
         with Session(self.engine) as session:
             update_stmt = (
-                update(field_)
+                update(field_type)
                 .where(
                     and_(
-                        field_.id == field.id,
+                        field_type.id == field.id,
                     )
                 )
                 .values(value=value, is_multiline=is_multiline)
@@ -1350,14 +1333,14 @@ class Library:
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        field_ = type(field)
+        field_type = type(field)
 
         with Session(self.engine) as session:
             update_stmt = (
-                update(field_)
+                update(field_type)
                 .where(
                     and_(
-                        field_.id == field.id,
+                        field_type.id == field.id,
                     )
                 )
                 .values(value=value)
@@ -1366,61 +1349,51 @@ class Library:
             session.execute(update_stmt)
             session.commit()
 
-    def add_text_field_to_entry(
-        self, entry_id: int, name: str, value: str | None = None, is_multiline: bool = False
-    ) -> bool:
-        """Add a TextField field to an Entry."""
-        logger.info(
-            "[Library] Adding text field to entry",
-            entry_id=entry_id,
-            name=name,
-            value=value,
-            is_multiline=is_multiline,
-        )
+    def add_field_to_entry(self, entry_id: int, field: BaseField) -> bool:
+        """Add a field object to an Entry."""
+        if type(field) is TextField:
+            logger.info(
+                "[Library] Adding TextField to entry",
+                entry_id=entry_id,
+                name=field.name,
+                value=field.value,
+                is_multiline=field.is_multiline,
+            )
 
-        field = TextField(entry_id=entry_id, name=name, value=value, is_multiline=is_multiline)
+            field = TextField(
+                entry_id=entry_id,
+                name=field.name,
+                value=field.value,
+                is_multiline=field.is_multiline,
+            )
 
-        with Session(self.engine) as session:
-            try:
-                session.add(field)
-                session.flush()
-                session.commit()
-            except IntegrityError as e:
-                logger.error(e)
-                session.rollback()
-                return False
+            with Session(self.engine) as session:
+                try:
+                    session.add(field)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error(e)
+                    session.rollback()
+                    return False
 
-        return True
+        elif type(field) is DatetimeField:
+            logger.info(
+                "[Library] Adding DatetimeField to entry",
+                entry_id=entry_id,
+                name=field.name,
+                value=field.value,
+            )
 
-    def add_datetime_field_to_entry(
-        self,
-        entry_id: int,
-        name: str,
-        value: str | None = None,
-    ) -> bool:
-        """Add a DatetimeField field to an Entry."""
-        logger.info(
-            "[Library] Adding datetime field to entry",
-            entry_id=entry_id,
-            name=name,
-            value=value,
-        )
+            field = DatetimeField(entry_id=entry_id, name=field.name, value=field.value)
 
-        field = DatetimeField(
-            entry_id=entry_id,
-            name=name,
-            value=value,
-        )
-
-        with Session(self.engine) as session:
-            try:
-                session.add(field)
-                session.flush()
-                session.commit()
-            except IntegrityError as e:
-                logger.error(e)
-                session.rollback()
-                return False
+            with Session(self.engine) as session:
+                try:
+                    session.add(field)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error(e)
+                    session.rollback()
+                    return False
 
         return True
 
@@ -1963,55 +1936,22 @@ class Library:
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""
-        all_tuples_to_fields_map = {}
+        all_fields: set[BaseField] = set()
+        logger.info("[Library][mirror_fields]", all_fields=all_fields)
 
         # Track all fields across all entries
         for entry in entries:
             for field in entry.fields:
-                field_tuple: tuple | None = None
-                if type(field) is TextField:
-                    field_tuple = (type(field), field.name, field.value, field.is_multiline)
-                elif type(field) is DatetimeField:
-                    field_tuple = (type(field), field.name, field.value)
-                all_tuples_to_fields_map[field_tuple] = field
+                all_fields.add(field)
             logger.info(
                 "[Library][mirror_fields]", entry_id=entry.id, field_count_before=len(entry.fields)
             )
 
         # Apply all (remaining) fields to all entries, avoiding duplicates
         for entry in entries:
-            for field_tuple, field in all_tuples_to_fields_map.items():  # pyright: ignore[reportUnknownVariableType]
-                entry_field_tuples: set[tuple[Any, ...]] = set()  # pyright: ignore[reportExplicitAny]
-                # Locally process the entry's fields into parsable tuples
-                for entry_field in entry.fields:
-                    entry_field_tuple: tuple | None = None
-                    if type(entry_field) is TextField:
-                        entry_field_tuple = (
-                            type(entry_field),
-                            entry_field.name,
-                            entry_field.value,
-                            entry_field.is_multiline,
-                        )
-                        entry_field_tuples.add(entry_field_tuple)
-                    elif type(entry_field) is DatetimeField:
-                        entry_field_tuple = (type(entry_field), entry_field.name, entry_field.value)
-                        entry_field_tuples.add(entry_field_tuple)
-
-                if field_tuple not in entry_field_tuples:
-                    if type(field) is TextField:
-                        self.add_text_field_to_entry(
-                            entry_id=entry.id,
-                            name=field.name,
-                            value=field.value,
-                            is_multiline=field.is_multiline,
-                        )
-                    elif type(field) is DatetimeField:
-                        self.add_datetime_field_to_entry(
-                            entry_id=entry.id, name=field.name, value=field.value
-                        )
-            logger.info(
-                "[Library][mirror_fields]", entry_id=entry.id, field_count_after=len(entry.fields)
-            )
+            for field in all_fields:
+                if field not in entry.fields:
+                    self.add_field_to_entry(entry_id=entry.id, field=field)
 
     def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""

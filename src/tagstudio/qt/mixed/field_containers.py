@@ -220,23 +220,18 @@ class FieldContainers(QWidget):
         )
         for entry_id in self.driver.selected:
             for field in field_list:
-                field_: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
+                template: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
                 logger.info(
                     "[FieldContainers][add_field_to_selected] Adding field",
-                    name=field_.name,
-                    type=field_.__class__.__name__,
+                    name=template.name,
+                    type=template.__class__.__name__,
                 )
-                if type(field_) is TextFieldTemplate:
-                    self.lib.add_text_field_to_entry(
-                        entry_id=entry_id,
-                        name=field_.name,
-                        is_multiline=field_.is_multiline,
-                    )
-                elif type(field_) is DatetimeFieldTemplate:
-                    self.lib.add_datetime_field_to_entry(
-                        entry_id=entry_id,
-                        name=field_.name,
-                    )
+                if type(template) is TextFieldTemplate:
+                    text_field = TextField(name=template.name, is_multiline=template.is_multiline)
+                    self.lib.add_field_to_entry(entry_id, text_field)
+                elif type(template) is DatetimeFieldTemplate:
+                    datetime_field = DatetimeField(name=template.name)
+                    self.lib.add_field_to_entry(entry_id, datetime_field)
 
     def add_tags_to_selected(self, tags: int | list[int]):
         """Add list of tags to one or more selected items.
