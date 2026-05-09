@@ -27,7 +27,7 @@ class PanelModal(QWidget):
         title: str = "",
         window_title: str | None = None,
         done_callback: Callable[[], None] | None = None,
-        save_callback: Callable[[str], None] | None = None,
+        save_callback: Callable[[str], None | tuple[None, None]] | None = None,
         has_save: bool = False,
     ):
         # [Done]

@@ -3,8 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import typing
-
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent
@@ -21,10 +19,6 @@ from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
-    from tagstudio.core.library.alchemy.library import Library
-
 
 class TagColorLabel(QWidget):
     """A widget for displaying a tag color's name.
@@ -40,11 +34,9 @@ class TagColorLabel(QWidget):
         color: TagColorGroup | None,
         has_edit: bool,
         has_remove: bool,
-        library: "Library | None" = None,
     ) -> None:
         super().__init__()
         self.color = color
-        self.lib: Library | None = library
         self.has_edit = has_edit
         self.has_remove = has_remove
 
