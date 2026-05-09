@@ -6,7 +6,7 @@ from datetime import datetime as dt
 from pathlib import Path
 from typing import override
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, Integer, event, JSON
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
