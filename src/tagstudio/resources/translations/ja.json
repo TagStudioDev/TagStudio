@@ -157,8 +157,6 @@
     "json_migration.heading.aliases": "エイリアス:",
     "json_migration.heading.colors": "色:",
     "json_migration.heading.differ": "差異",
-    "json_migration.heading.extension_list_type": "拡張子リストの種類:",
-    "json_migration.heading.file_extension_list": "ファイルの拡張子リスト:",
     "json_migration.heading.match": "一致",
     "json_migration.heading.names": "名前:",
     "json_migration.heading.parent_tags": "親タグ:",

@@ -157,8 +157,6 @@
     "json_migration.heading.aliases": "Aliase:",
     "json_migration.heading.colors": "Farben:",
     "json_migration.heading.differ": "Diskrepanz",
-    "json_migration.heading.extension_list_type": "Erweiterungslistentyp:",
-    "json_migration.heading.file_extension_list": "Liste der Dateiendungen:",
     "json_migration.heading.match": "Übereinstimmend",
     "json_migration.heading.names": "Namen:",
     "json_migration.heading.parent_tags": "Übergeordnete Tags:",

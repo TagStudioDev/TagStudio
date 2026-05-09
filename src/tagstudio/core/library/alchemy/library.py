@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -53,7 +53,6 @@ from sqlalchemy.orm import (
     noload,
     selectinload,
 )
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
@@ -67,13 +66,11 @@ from tagstudio.core.constants import (
     TAG_META,
     TS_FOLDER_NAME,
 )
-from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DB_VERSION_LEGACY_KEY,
     JSON_FILENAME,
     SQL_FILENAME,
     TAG_CHILDREN_QUERY,
@@ -96,7 +93,6 @@ from tagstudio.core.library.alchemy.models import (
     Entry,
     Folder,
     Namespace,
-    Preferences,
     Tag,
     TagAlias,
     TagColorGroup,
@@ -104,6 +100,7 @@ from tagstudio.core.library.alchemy.models import (
     Version,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
@@ -318,9 +315,10 @@ class Library:
                             value=v,
                         )
 
-        # Preferences
-        self.set_prefs(LibraryPrefs.EXTENSION_LIST, [x.strip(".") for x in json_lib.ext_list])
-        self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+        # extension include/exclude list
+        (unwrap(self.library_dir) / TS_FOLDER_NAME / IGNORE_NAME).write_text(
+            migrate_ext_list([x.strip(".") for x in json_lib.ext_list], json_lib.is_exclude_list)
+        )
 
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
@@ -458,15 +456,6 @@ class Library:
 
             # Ensure version rows are present
             with catch_warnings(record=True):
-                # NOTE: The "Preferences" table is depreciated and will be removed in the future.
-                # The DB_VERSION is still being set to it in order to remain backwards-compatible
-                # with existing TagStudio versions until it is removed.
-                try:
-                    session.add(Preferences(key=DB_VERSION_LEGACY_KEY, value=DB_VERSION))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
                 try:
                     initial = DB_VERSION if is_new else 100
                     session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
@@ -479,15 +468,6 @@ class Library:
                     session.commit()
                 except IntegrityError:
                     session.rollback()
-
-            # TODO: Remove this "Preferences" system.
-            for pref in LibraryPrefs:
-                with catch_warnings(record=True):
-                    try:
-                        session.add(Preferences(key=pref.name, value=pref.default))
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
 
             for field in FieldID:
                 try:
@@ -556,10 +536,9 @@ class Library:
                 if loaded_db_version < 103:
                     # changes: tags
                     self.__apply_db103_migration(session)
-
-                # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-                # TODO: do this in the migration step that will remove the preferences table
-                self.migrate_sql_to_ts_ignore(library_dir)
+                if loaded_db_version < 104:
+                    # changes: deletes preferences
+                    self.__apply_db104_migrations(session, library_dir)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -732,33 +711,30 @@ class Library:
             )
             session.rollback()
 
-    def migrate_sql_to_ts_ignore(self, library_dir: Path):
+    def __apply_db104_migrations(self, session: Session, library_dir: Path):
+        """Migrate DB from DB_VERSION 103 to 104."""
+        # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
+        self.__migrate_sql_to_ts_ignore(library_dir)
+        session.execute(text("DROP TABLE preferences"))
+        session.commit()
+
+    def __migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
-        if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
+        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
+        if Path(ts_ignore).exists():
             return
 
-        # Create blank '.ts_ignore' file
-        ts_ignore_template = (
-            Path(__file__).parents[3] / "resources/templates/ts_ignore_template_blank.txt"
-        )
-        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
-        try:
-            shutil.copy2(ts_ignore_template, ts_ignore)
-        except Exception as e:
-            logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
-
         # Load legacy extension data
-        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore
-        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore
+        with Session(self.engine) as session:
+            extensions: list[str] = unwrap(
+                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
+            )
+            is_exclude_list: bool = unwrap(
+                session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
+            )
 
-        # Copy extensions to '.ts_ignore' file
-        if ts_ignore.exists():
-            with open(ts_ignore, "a") as f:
-                prefix = ""
-                if not is_exclude_list:
-                    prefix = "!"
-                    f.write("*\n")
-                f.writelines([f"{prefix}*.{x.lstrip('.')}\n" for x in extensions])
+        with open(ts_ignore, "w") as f:
+            f.write(migrate_ext_list(extensions, is_exclude_list))
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1856,19 +1832,20 @@ class Library:
             engine = sqlalchemy.inspect(self.engine)
             try:
                 # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("Version"):
+                if engine and engine.has_table("versions"):
                     version = session.scalar(select(Version).where(Version.key == key))
                     assert version
                     return version.value
                 # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
                 # and is set to be removed in a future release.
                 else:
-                    pref_version = session.scalar(
-                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    return int(
+                        unwrap(
+                            session.scalar(
+                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
+                            )
+                        )
                     )
-                    assert pref_version
-                    assert isinstance(pref_version.value, int)
-                    return pref_version.value
             except Exception:
                 return 0
 
@@ -1886,59 +1863,9 @@ class Library:
                 version.value = value
                 session.add(version)
                 session.commit()
-
-                # If a depreciated "Preferences" table is found, update the version value to be read
-                # by older TagStudio versions.
-                engine = sqlalchemy.inspect(self.engine)
-                if engine and engine.has_table("Preferences"):
-                    pref = unwrap(
-                        session.scalar(
-                            select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
-                        )
-                    )
-                    pref.value = value  # pyright: ignore
-                    session.add(pref)
-                    session.commit()
             except (IntegrityError, AssertionError) as e:
                 logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
                 session.rollback()
-
-    # TODO: Remove this once the 'preferences' table is removed.
-    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
-    def prefs(self, key: str | LibraryPrefs):  # pyright: ignore[reportUnknownParameterType]
-        # load given item from Preferences table
-        with Session(self.engine) as session:
-            if isinstance(key, LibraryPrefs):
-                return unwrap(
-                    session.scalar(select(Preferences).where(Preferences.key == key.name))
-                ).value  # pyright: ignore[reportUnknownVariableType]
-            else:
-                return unwrap(
-                    session.scalar(select(Preferences).where(Preferences.key == key))
-                ).value  # pyright: ignore[reportUnknownVariableType]
-
-    # TODO: Remove this once the 'preferences' table is removed.
-    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
-    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:  # pyright: ignore[reportExplicitAny]
-        # set given item in Preferences table
-        with Session(self.engine) as session:
-            # load existing preference and update value
-            stuff = session.scalars(select(Preferences))
-            logger.info([x.key for x in list(stuff)])
-
-            pref: Preferences = unwrap(
-                session.scalar(
-                    select(Preferences).where(
-                        Preferences.key == (key.name if isinstance(key, LibraryPrefs) else key)
-                    )
-                )
-            )
-
-            logger.info("loading pref", pref=pref, key=key, value=value)
-            pref.value = value
-            session.add(pref)
-            session.commit()
-            # TODO - try/except
 
     def mirror_entry_fields(self, *entries: Entry) -> None:
         """Mirror fields among multiple Entry items."""
