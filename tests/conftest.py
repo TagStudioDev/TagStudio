@@ -161,7 +161,7 @@ def qt_driver(library: Library, library_dir: Path):
         open = library_dir
         ci = True
 
-    with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
+    with patch("tagstudio.qt.ts_qt.Consumer"):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
 
         driver.app = Mock()
