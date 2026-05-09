@@ -302,7 +302,7 @@ class SettingsPanel(PanelWidget):
                 MIN_THUMB_CACHE_SIZE,
             ),
             "autoplay": self.autoplay_checkbox.isChecked(),
-            "auto_load_new_files": self.autoload_new_files_checkbox.isChecked(),
+            "scan_files_on_open": self.scan_files_on_open_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
             "infinite_scroll": self.infinite_scroll.isChecked(),
