@@ -220,10 +220,10 @@ class TagSearchPanel(PanelWidget):
 
         # Only use the tag limit if it's an actual number (aka not "All Tags")
         tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
-        direct_tags, ancestor_tags = self.lib.search_tags(name=query, limit=tag_limit)
+        direct_tags, descendant_tags = self.lib.search_tags(name=query, limit=tag_limit)
 
         all_results = [t for t in direct_tags if t.id not in self.exclude]
-        all_results.extend(t for t in ancestor_tags if t.id not in self.exclude)
+        all_results.extend(t for t in descendant_tags if t.id not in self.exclude)
 
         if tag_limit > 0:
             all_results = all_results[:tag_limit]

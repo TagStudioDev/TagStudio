@@ -76,6 +76,7 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_LEGACY_KEY,
     JSON_FILENAME,
     SQL_FILENAME,
+    TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
@@ -1070,6 +1071,9 @@ class Library:
 
     def search_tags(self, name: str | None, limit: int = 100) -> tuple[list[Tag], list[Tag]]:
         """Return a list of Tag records matching the query."""
+        if limit <= 0:
+            limit = sys.maxsize
+
         name = name or ""
         name = name.lower()
 
@@ -1110,16 +1114,26 @@ class Library:
                 statement=str(query),
                 results=len(tag_ids),
             )
-
-            if limit <= 0:
-                limit = len(tag_ids)
             tag_ids = tag_ids[:limit]
 
-            hierarchy = self.get_tag_hierarchy(tag_ids)
+            all_ids = set(tag_ids)
+            for tag_id in tag_ids:
+                if len(all_ids) >= limit:
+                    break
+                for id in session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag_id}):
+                    all_ids.add(id)
+                    if len(all_ids) >= limit:
+                        break
+
+            hierarchy = self.get_tag_hierarchy(all_ids)
+
             direct_tags = [hierarchy.pop(id) for id in tag_ids]
-            ancestor_tags = list(hierarchy.values())
-            ancestor_tags.sort(key=lambda t: sort_key(t.name))
-            return direct_tags, ancestor_tags
+
+            all_ids.difference_update(tag_ids)
+            descendant_tags = [hierarchy.pop(id) for id in all_ids]
+            descendant_tags.sort(key=lambda t: sort_key(t.name))
+
+            return direct_tags, descendant_tags
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
         """Set the path field of an entry.
