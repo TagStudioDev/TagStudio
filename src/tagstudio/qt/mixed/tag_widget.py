@@ -9,7 +9,14 @@ from typing import TYPE_CHECKING, override
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
@@ -272,6 +279,15 @@ class TagWidget(QWidget):
 
     def set_has_remove(self, has_remove: bool):
         self.has_remove = has_remove
+
+    def set_partial(self, partial: bool) -> None:
+        """Visually dim tags that are only present on part of the selection."""
+        if partial:
+            effect = QGraphicsOpacityEffect(self)
+            effect.setOpacity(0.55)
+            self.setGraphicsEffect(effect)
+        else:
+            self.setGraphicsEffect(None)
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
