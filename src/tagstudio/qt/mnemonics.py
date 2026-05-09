@@ -1,9 +1,12 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+import re
 
-
+import structlog
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu
+
+logger = structlog.get_logger(__name__)
 
 
 def remove_mnemonic_marker(label: str) -> str:
@@ -23,6 +26,31 @@ def remove_mnemonic_marker(label: str) -> str:
             continue
         result += ch
     return result
+
+
+def get_wanted_mnemonics(text: str) -> list[str]:
+    matches = re.findall("(?:^|[^&])&([^&])", text)
+    return matches
+
+
+def sanitise_mnemonics(actions: list[QAction]) -> None:
+    previous = []
+    for action in actions:
+        text = action.text()
+        m = get_wanted_mnemonics(text)
+
+        if len(m) == 0:
+            continue
+        elif len(m) > 1:
+            logger.warning("Found multiple wanted mnemonics, removing all", text=text)
+            action.setText(remove_mnemonic_marker(text))
+            continue
+        elif m[0] in previous:
+            logger.warning("Removing conflicting mnemonic", text=text)
+            action.setText(remove_mnemonic_marker(text))
+            continue
+
+        previous.append(m[0])
 
 
 # Additional weight for first character in string
@@ -96,6 +124,9 @@ def insert_mnemonic(label: str, char: str) -> str:
 def assign_mnemonics(menu: QMenu):
     # Collect actions
     actions = [a for a in menu.actions() if not a.isSeparator()]
+
+    # sanitise mnemonics to prevent deadlocks
+    sanitise_mnemonics(actions)
 
     # Sequence map: mnemonic key -> QAction
     sequence_to_action: dict[str, QAction] = {}

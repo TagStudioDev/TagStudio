@@ -48,17 +48,17 @@ jobs:
   macos:
     strategy:
       matrix:
-        os-version: ['13', '14']
+        os-version: ['14', '15']
         include:
-          - os-version: '13'
-            arch: x86_64
           - os-version: '14'
+            arch: x86_64
+          - os-version: '15'
             arch: aarch64
 
     runs-on: macos-${{ matrix.os-version }}
 
     env:
-      # INFO: Even though we run on 13, target towards compatibility
+      # INFO: Even though we run on 14, target towards compatibility
       MACOSX_DEPLOYMENT_TARGET: '11.0'
 
     steps:

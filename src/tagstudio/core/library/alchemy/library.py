@@ -42,6 +42,7 @@ from sqlalchemy import (
     text,
     update,
 )
+from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     InstanceState,
@@ -1144,35 +1145,29 @@ class Library:
             session.commit()
         return True
 
-    def remove_tag(self, tag_id: int):
+    def remove_tag(self, tag_id: int) -> bool:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
-                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag_id))
-                for alias in aliases:
-                    session.delete(alias)
-                    session.flush()
-
-                tag_parents = session.scalars(
-                    select(TagParent).where(TagParent.parent_id == tag_id)
-                ).all()
-                for tag_parent in tag_parents:
-                    session.delete(tag_parent)
-                    session.flush()
-
-                disam_stmt = (
+                session.execute(delete(TagAlias).where(TagAlias.tag_id == tag_id))
+                session.execute(delete(TagEntry).where(TagEntry.tag_id == tag_id))
+                session.execute(
+                    delete(TagParent).where(
+                        or_(TagParent.child_id == tag_id, TagParent.parent_id == tag_id)
+                    )
+                )
+                session.execute(
                     update(Tag)
                     .where(Tag.disambiguation_id == tag_id)
                     .values(disambiguation_id=None)
                 )
-                session.execute(disam_stmt)
-                session.flush()
-
-                session.query(Tag).filter_by(id=tag_id).delete()
+                session.execute(delete(Tag).where(Tag.id == tag_id))
                 session.commit()
 
             except IntegrityError as e:
                 logger.error(e)
                 session.rollback()
+                return False
+        return True
 
     def update_field_position(
         self,
@@ -1458,7 +1453,7 @@ class Library:
                 return None
 
     def add_tags_to_entries(
-        self, entry_ids: int | list[int] | set[int], tag_ids: int | list[int] | set[int]
+        self, entry_ids: int | Iterable[int], tag_ids: int | Iterable[int]
     ) -> int:
         """Add one or more tags to one or more entries.
 
@@ -1474,45 +1469,57 @@ class Library:
 
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        values: list[tuple[int, int]] = []
+        for tag_id in tag_ids_:
+            values.extend((tag_id, entry_id) for entry_id in entry_ids_)
+
         with Session(self.engine, expire_on_commit=False) as session:
-            for tag_id in tag_ids_:
-                for entry_id in entry_ids_:
-                    try:
-                        session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
-                        total_added += 1
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
+            for sub_list in [
+                values[i : i + MAX_SQL_VARIABLES // 2]
+                for i in range(0, len(values), MAX_SQL_VARIABLES // 2)
+            ]:
+                stmt = (
+                    sqlite.insert(TagEntry)
+                    .values(sub_list)
+                    .on_conflict_do_nothing()
+                    .returning(TagEntry)
+                )
+                added = session.scalars(stmt).all()
+                total_added += len(added)
+            session.commit()
 
         return total_added
 
     def remove_tags_from_entries(
-        self, entry_ids: int | list[int] | set[int], tag_ids: int | list[int] | set[int]
-    ) -> bool:
+        self, entry_ids: int | Iterable[int], tag_ids: int | Iterable[int]
+    ):
         """Remove one or more tags from one or more entries."""
-        entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
-        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        logger.info(
+            "[Library][remove_tags_from_entries]",
+            entry_ids=entry_ids,
+            tag_ids=tag_ids,
+        )
+
+        entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else list(entry_ids)
+        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else list(tag_ids)
+
         with Session(self.engine, expire_on_commit=False) as session:
-            try:
-                for tag_id in tag_ids_:
-                    for entry_id in entry_ids_:
-                        tag_entry = session.scalars(
-                            select(TagEntry).where(
-                                and_(
-                                    TagEntry.tag_id == tag_id,
-                                    TagEntry.entry_id == entry_id,
-                                )
-                            )
-                        ).first()
-                        if tag_entry:
-                            session.delete(tag_entry)
-                            session.flush()
-                session.commit()
-                return True
-            except IntegrityError as e:
-                logger.error(e)
-                session.rollback()
-                return False
+            for tags_sub_list in [
+                tag_ids_[i : i + MAX_SQL_VARIABLES // 2]
+                for i in range(0, len(tag_ids_), MAX_SQL_VARIABLES // 2)
+            ]:
+                for entries_sub_list in [
+                    entry_ids_[i : i + MAX_SQL_VARIABLES // 2]
+                    for i in range(0, len(entry_ids_), MAX_SQL_VARIABLES // 2)
+                ]:
+                    stmt = delete(TagEntry).where(
+                        and_(
+                            TagEntry.tag_id.in_(tags_sub_list),
+                            TagEntry.entry_id.in_(entries_sub_list),
+                        )
+                    )
+                    session.execute(stmt)
+            session.commit()
 
     def add_color(self, color_group: TagColorGroup) -> TagColorGroup | None:
         with Session(self.engine, expire_on_commit=False) as session:
