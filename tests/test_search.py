@@ -3,12 +3,17 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import pytest
 import structlog
 
-from tagstudio.core.library.alchemy.enums import BrowsingState
+from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.query_lang.util import ParsingError
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
 
@@ -146,3 +151,124 @@ def test_parent_tags(search_library: Library, query: str, count: int):
 def test_syntax(search_library: Library, invalid_query: str):
     with pytest.raises(ParsingError) as e_info:  # noqa: F841  # pyright: ignore[reportUnusedVariable]
         search_library.search_library(BrowsingState.from_search_query(invalid_query), page_size=500)
+
+
+def _make_size_library(files: list[tuple[str, bytes]]) -> tuple[Library, TemporaryDirectory]:
+    """Create a temporary library with files of known sizes.
+
+    Args:
+        files: List of (relative path, content) pairs.
+
+    Returns:
+        A tuple of (open Library, TemporaryDirectory) — caller must close the tempdir.
+    """
+    tmp = TemporaryDirectory()
+    lib_path = Path(tmp.name)
+
+    lib = Library()
+    status = lib.open_library(lib_path)
+    assert status.success
+
+    folder = unwrap(lib.folder)
+    entries = []
+    for rel_path, content in files:
+        full = lib_path / rel_path
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_bytes(content)
+        entries.append(Entry(folder=folder, path=Path(rel_path), fields=lib.default_fields))
+
+    lib.add_entries(entries)
+    return lib, tmp
+
+
+def test_sort_by_size_ascending():
+    """Entries are returned smallest-first when sorting by size ascending."""
+    files = [
+        ("large.bin", b"x" * 300),
+        ("small.bin", b"x" * 100),
+        ("medium.bin", b"x" * 200),
+    ]
+    lib, tmp = _make_size_library(files)
+    try:
+        state = BrowsingState(sorting_mode=SortingModeEnum.SIZE, ascending=True)
+        results = lib.search_library(state, page_size=None)
+
+        assert results.total_count == 3
+        sizes = []
+        for entry_id in results.ids:
+            entry = lib.get_entry(entry_id)
+            assert entry is not None
+            sizes.append((unwrap(lib.library_dir) / entry.path).stat().st_size)
+
+        assert sizes == sorted(sizes), f"Expected ascending order, got sizes: {sizes}"
+    finally:
+        tmp.cleanup()
+
+
+def test_sort_by_size_descending():
+    """Entries are returned largest-first when sorting by size descending."""
+    files = [
+        ("large.bin", b"x" * 300),
+        ("small.bin", b"x" * 100),
+        ("medium.bin", b"x" * 200),
+    ]
+    lib, tmp = _make_size_library(files)
+    try:
+        state = BrowsingState(sorting_mode=SortingModeEnum.SIZE, ascending=False)
+        results = lib.search_library(state, page_size=None)
+
+        assert results.total_count == 3
+        sizes = []
+        for entry_id in results.ids:
+            entry = lib.get_entry(entry_id)
+            assert entry is not None
+            sizes.append((unwrap(lib.library_dir) / entry.path).stat().st_size)
+
+        assert (
+            sizes == sorted(sizes, reverse=True)
+        ), (
+            f"Expected descending order, "
+            f"got sizes: {sizes}"
+        )
+    finally:
+        tmp.cleanup()
+
+
+def test_sort_by_size_empty_result():
+    """Sorting an empty result set returns an empty list without error."""
+    lib, tmp = _make_size_library([("placeholder.bin", b"x")])
+    try:
+        state = BrowsingState(
+            sorting_mode=SortingModeEnum.SIZE,
+            ascending=True,
+            query="tag:nonexistent_tag_xyz",
+        )
+        results = lib.search_library(state, page_size=None)
+        assert results.total_count == 0
+        assert results.ids == []
+    finally:
+        tmp.cleanup()
+
+
+def test_sort_by_size_missing_file_sorts_to_start_ascending():
+    """Entries with missing files (size=-1) sort to the start when ascending."""
+    files = [
+        ("exists.bin", b"x" * 200),
+    ]
+    lib, tmp = _make_size_library(files)
+    try:
+        folder = unwrap(lib.folder)
+        # Add an entry for a file that doesn't exist on disk
+        ghost = Entry(folder=folder, path=Path("ghost.bin"), fields=lib.default_fields)
+        lib.add_entries([ghost])
+
+        state = BrowsingState(sorting_mode=SortingModeEnum.SIZE, ascending=True)
+        results = lib.search_library(state, page_size=None)
+
+        assert results.total_count == 2
+        # The ghost entry (size=-1) should come first in ascending order
+        first_entry = lib.get_entry(results.ids[0])
+        assert first_entry is not None
+        assert first_entry.path == Path("ghost.bin")
+    finally:
+        tmp.cleanup()
