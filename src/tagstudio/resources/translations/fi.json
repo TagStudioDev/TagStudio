@@ -157,8 +157,6 @@
     "json_migration.heading.aliases": "Aliaksia:",
     "json_migration.heading.colors": "Värit:",
     "json_migration.heading.differ": "Poikkeavuus",
-    "json_migration.heading.extension_list_type": "Laajennusluettelon tyyppi:",
-    "json_migration.heading.file_extension_list": "Tiedostopääte lista:",
     "json_migration.heading.match": "Yhdistetty",
     "json_migration.heading.names": "Nimet:",
     "json_migration.heading.parent_tags": "Päätunnukset:",
