@@ -28,3 +28,10 @@ RESERVED_TAG_START = 0
 RESERVED_TAG_END = 999
 
 RESERVED_NAMESPACE_PREFIX = "tagstudio"
+
+# Default ceilings for attacker-controlled XML reads in the thumbnail renderer
+# and the DupeGuru results XML. Values are in MiB.
+DEFAULT_DUPE_RESULTS_MAX_MB: int = 128
+DEFAULT_COMIC_INFO_MAX_MB: int = 1
+DEFAULT_MDP_HEADER_MAX_MB: int = 1
+DEFAULT_PDN_HEADER_MAX_MB: int = 16

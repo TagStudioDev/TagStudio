@@ -11,6 +11,12 @@ import structlog
 import toml
 from pydantic import BaseModel, Field
 
+from tagstudio.core.constants import (
+    DEFAULT_COMIC_INFO_MAX_MB,
+    DEFAULT_DUPE_RESULTS_MAX_MB,
+    DEFAULT_MDP_HEADER_MAX_MB,
+    DEFAULT_PDN_HEADER_MAX_MB,
+)
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
 logger = structlog.get_logger(__name__)
@@ -76,6 +82,11 @@ class GlobalSettings(BaseModel):
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
     zero_padding: bool = Field(default=True)
+
+    dupe_results_max_mb: int = Field(default=DEFAULT_DUPE_RESULTS_MAX_MB)
+    comic_info_max_mb: int = Field(default=DEFAULT_COMIC_INFO_MAX_MB)
+    mdp_header_max_mb: int = Field(default=DEFAULT_MDP_HEADER_MAX_MB)
+    pdn_header_max_mb: int = Field(default=DEFAULT_PDN_HEADER_MAX_MB)
 
     loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
 

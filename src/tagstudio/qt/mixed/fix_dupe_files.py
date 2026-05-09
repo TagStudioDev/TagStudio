@@ -114,7 +114,10 @@ class FixDupeFilesModal(QWidget):
         self.mirror_modal.refresh_list()
 
     def refresh_dupes(self):
-        self.tracker.refresh_dupe_files(self.filename)
+        self.tracker.refresh_dupe_files(
+            self.filename,
+            max_bytes=self.driver.settings.dupe_results_max_mb * 1024 * 1024,
+        )
         self.set_dupe_count(self.tracker.groups_count)
 
     def set_dupe_count(self, count: int):
