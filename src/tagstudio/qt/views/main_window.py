@@ -443,14 +443,6 @@ class MainMenuBar(QMenuBar):
 
 # View Component
 class MainWindow(QMainWindow):
-    THUMB_SIZES: list[tuple[str, int]] = [
-        (Translations["home.thumbnail_size.extra_large"], 256),
-        (Translations["home.thumbnail_size.large"], 192),
-        (Translations["home.thumbnail_size.medium"], 128),
-        (Translations["home.thumbnail_size.small"], 96),
-        (Translations["home.thumbnail_size.mini"], 76),
-    ]
-
     def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.rm = ResourceManager()
@@ -669,8 +661,11 @@ class MainWindow(QMainWindow):
         self.thumb_size_combobox.setMinimumWidth(128)
         self.thumb_size_combobox.setMaximumWidth(352)
         self.extra_input_layout.addWidget(self.thumb_size_combobox)
-        for size in MainWindow.THUMB_SIZES:
-            self.thumb_size_combobox.addItem(size[0], size[1])
+        self.thumb_size_combobox.addItem(Translations["home.thumbnail_size.extra_large"], 256)
+        self.thumb_size_combobox.addItem(Translations["home.thumbnail_size.large"], 192)
+        self.thumb_size_combobox.addItem(Translations["home.thumbnail_size.medium"], 128)
+        self.thumb_size_combobox.addItem(Translations["home.thumbnail_size.small"], 96)
+        self.thumb_size_combobox.addItem(Translations["home.thumbnail_size.mini"], 76)
         self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
 
         self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)

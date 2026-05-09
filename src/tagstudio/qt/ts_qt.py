@@ -995,9 +995,9 @@ class QtDriver(DriverMixin, QObject):
         msg.setStyleSheet("font-weight:normal;")
         msg.setTextFormat(Qt.TextFormat.RichText)
         msg.setWindowTitle(
-            Translations["trash.title.singular"]
+            Translations["trash.dialog.title.singular"]
             if count == 1
-            else Translations["trash.title.plural"]
+            else Translations["trash.dialog.title.plural"]
         )
         msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
@@ -1022,8 +1022,10 @@ class QtDriver(DriverMixin, QObject):
                 f"{perm_warning}<br>"
             )
 
-        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
-        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        yes_button: QPushButton = msg.addButton(
+            Translations["generic.yes"], QMessageBox.ButtonRole.YesRole
+        )
+        msg.addButton(Translations["generic.no"], QMessageBox.ButtonRole.NoRole)
         msg.setDefaultButton(yes_button)
 
         return msg.exec()

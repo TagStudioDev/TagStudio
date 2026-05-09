@@ -121,7 +121,7 @@ class ColorBoxWidget(FieldWidget):
                     TagColorGroup(
                         slug="slug",
                         namespace=self.namespace,
-                        name="Color",
+                        name=Translations["color.placeholder"],
                         primary="#FFFFFF",
                         secondary=None,
                     )

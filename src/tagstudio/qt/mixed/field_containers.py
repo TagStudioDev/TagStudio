@@ -479,13 +479,14 @@ class FieldContainers(QWidget):
     def remove_message_box(self, prompt: str, callback: Callable) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")
+        remove_mb.setWindowTitle(Translations["library.field.remove"])
         remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+        cancel_button = remove_mb.addButton(QMessageBox.StandardButton.Cancel)
+        cancel_button.setText(Translations["generic.cancel_alt"])
+        remove_mb.addButton(QMessageBox.StandardButton.Discard).setText(
+            Translations["generic.remove_alt"]
         )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
         remove_mb.setEscapeButton(cancel_button)
-        result = remove_mb.exec_()
-        if result == QMessageBox.ButtonRole.ActionRole.value:
+        result = remove_mb.exec()
+        if result == QMessageBox.StandardButton.Discard:
             callback()
