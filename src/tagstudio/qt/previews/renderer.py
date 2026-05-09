@@ -1121,8 +1121,8 @@ class ThumbRenderer(QObject):
                 )
         except (
             DecompressionBombError,
-            rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
-            rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
+            rawpy.LibRawIOError,
+            rawpy.LibRawFileUnsupportedError,
         ) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im

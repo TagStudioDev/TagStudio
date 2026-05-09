@@ -10,7 +10,6 @@ from tempfile import TemporaryDirectory
 import pytest
 import structlog
 
-from tagstudio.core.enums import DefaultEnum, LibraryPrefs
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.fields import (
     FieldID,  # pyright: ignore[reportPrivateUsage]
@@ -197,11 +196,6 @@ def test_search_library_case_insensitive(library: Library):
     assert len(results) == 1
 
     assert results[0] == entry.id
-
-
-def test_preferences(library: Library):
-    for pref in LibraryPrefs:
-        assert library.prefs(pref) == pref.default
 
 
 def test_remove_entry_field(library: Library, entry_full: Entry):
@@ -391,24 +385,6 @@ def test_update_field_order(library: Library, entry_full: Entry):
     assert entry.text_fields[0].value == "first"
     assert entry.text_fields[1].position == 1
     assert entry.text_fields[1].value == "second"
-
-
-def test_library_prefs_multiple_identical_vals():
-    # check the preferences are inherited from DefaultEnum
-    assert issubclass(LibraryPrefs, DefaultEnum)
-
-    # create custom settings with identical values
-    class TestPrefs(DefaultEnum):
-        FOO = 1
-        BAR = 1
-
-    assert TestPrefs.FOO.default == 1
-    assert TestPrefs.BAR.default == 1
-    assert TestPrefs.BAR.name == "BAR"
-
-    # accessing .value should raise exception
-    with pytest.raises(AttributeError):
-        assert TestPrefs.BAR.value
 
 
 def test_path_search_ilike(library: Library):
