@@ -78,7 +78,7 @@ class AddFieldModal(QWidget):
         self.list_widget.clear()
         for field_template in self.lib.field_templates:
             field_name_key: str = FIELD_TYPE_KEYS.get(
-                field_template.__class__.__name__, "field_type.unknown"
+                field_template.class_name, "field_type.unknown"
             )
             item = QListWidgetItem(f"{field_template.name} ({Translations[field_name_key]})")
             item.setData(Qt.ItemDataRole.UserRole, field_template)

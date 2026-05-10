@@ -28,9 +28,7 @@ from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BaseFieldTemplate,
     DatetimeField,
-    DatetimeFieldTemplate,
     TextField,
-    TextFieldTemplate,
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -224,14 +222,9 @@ class FieldContainers(QWidget):
                 logger.info(
                     "[FieldContainers][add_field_to_selected] Adding field",
                     name=template.name,
-                    type=template.__class__.__name__,
+                    type=template.class_name,
                 )
-                if type(template) is TextFieldTemplate:
-                    text_field = TextField(name=template.name, is_multiline=template.is_multiline)
-                    self.lib.add_field_to_entry(entry_id, text_field)
-                elif type(template) is DatetimeFieldTemplate:
-                    datetime_field = DatetimeField(name=template.name)
-                    self.lib.add_field_to_entry(entry_id, datetime_field)
+                self.lib.add_field_to_entries(entry_id, template.to_field())
 
     def add_tags_to_selected(self, tags: int | list[int]):
         """Add list of tags to one or more selected items.
@@ -265,7 +258,7 @@ class FieldContainers(QWidget):
             "[FieldContainers][write_container]",
             index=index,
             name=field.name,
-            type=field.__class__.__name__,
+            type=field.class_name,
         )
         if len(self.containers) < (index + 1):
             container = FieldContainer()
@@ -275,7 +268,7 @@ class FieldContainers(QWidget):
             container = self.containers[index]
 
         # Set field title
-        field_name_key: str = FIELD_TYPE_KEYS.get(field.__class__.__name__, "field_type.unknown")
+        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
         title = f"{field.name} ({Translations[field_name_key]})"
 
         # Single-line Text

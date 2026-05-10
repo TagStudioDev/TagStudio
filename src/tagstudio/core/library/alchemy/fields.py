@@ -35,6 +35,13 @@ class BaseField(Base):
     def entry(self) -> Mapped[Entry]:
         return relationship(foreign_keys=[self.entry_id])  # type: ignore # pyright: ignore[reportArgumentType]
 
+    @property
+    def class_name(self) -> str:
+        return self.__class__.__name__
+
+    def clone_with_entry_id(self, entry_id: int) -> BaseField:  # pyright: ignore
+        raise NotImplementedError()
+
     value: Any  # pyright: ignore
 
 
@@ -59,6 +66,12 @@ class TextField(BaseField):
     def __hash__(self) -> int:
         return hash((self.name, self.value, self.is_multiline))
 
+    @override
+    def clone_with_entry_id(self, entry_id: int) -> TextField:
+        return TextField(
+            name=self.name, entry_id=entry_id, value=self.value, is_multiline=self.is_multiline
+        )
+
 
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
@@ -76,6 +89,10 @@ class DatetimeField(BaseField):
     def __hash__(self) -> int:
         return hash((self.name, self.value))
 
+    @override
+    def clone_with_entry_id(self, entry_id: int) -> DatetimeField:
+        return DatetimeField(name=self.name, entry_id=entry_id, value=self.value)
+
 
 class BaseFieldTemplate(Base):
     __abstract__ = True
@@ -88,14 +105,29 @@ class BaseFieldTemplate(Base):
     def name(self) -> Mapped[str]:
         return mapped_column(nullable=False, default="")
 
+    @property
+    def class_name(self) -> str:
+        return self.__class__.__name__
+
+    def to_field(self, value: Any | None = None) -> BaseField:  # pyright: ignore
+        raise NotImplementedError()
+
 
 class TextFieldTemplate(BaseFieldTemplate):
     __tablename__ = "text_field_templates"
     is_multiline: Mapped[bool] = mapped_column(nullable=False, default=False)
 
+    @override
+    def to_field(self, value: str | None = None) -> TextField:
+        return TextField(name=self.name, value=value, is_multiline=self.is_multiline)
+
 
 class DatetimeFieldTemplate(BaseFieldTemplate):
     __tablename__ = "datetime_field_templates"
+
+    @override
+    def to_field(self, value: str | None = None) -> DatetimeField:
+        return DatetimeField(name=self.name, value=value)
 
 
 # Used for migrating legacy libraries.

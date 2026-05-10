@@ -335,13 +335,15 @@ class Library:
                                     value=value,
                                     is_multiline=bool(field_info["is_multiline"]),
                                 )
-                                self.add_field_to_entry(entry_id=(entry.id + 1), field=text_field)
+                                self.add_field_to_entries(
+                                    entry_ids=(entry.id + 1), field=text_field
+                                )
                             elif field_info["type"] == DatetimeField:
                                 datetime_field = DatetimeField(
                                     name=str(field_info["name"]), value=value
                                 )
-                                self.add_field_to_entry(
-                                    entry_id=(entry.id + 1), field=datetime_field
+                                self.add_field_to_entries(
+                                    entry_ids=(entry.id + 1), field=datetime_field
                                 )
                         except Exception as e:
                             logger.error(
@@ -1312,11 +1314,7 @@ class Library:
         with Session(self.engine) as session:
             update_stmt = (
                 update(field_type)
-                .where(
-                    and_(
-                        field_type.id == field.id,
-                    )
-                )
+                .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
                 .values(value=value, is_multiline=is_multiline)
             )
 
@@ -1338,57 +1336,30 @@ class Library:
         with Session(self.engine) as session:
             update_stmt = (
                 update(field_type)
-                .where(
-                    and_(
-                        field_type.id == field.id,
-                    )
-                )
+                .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
                 .values(value=value)
             )
 
             session.execute(update_stmt)
             session.commit()
 
-    def add_field_to_entry(self, entry_id: int, field: BaseField) -> bool:
+    def add_field_to_entries(self, entry_ids: list[int] | int, field: BaseField) -> bool:
         """Add a field object to an Entry."""
-        if type(field) is TextField:
-            logger.info(
-                "[Library] Adding TextField to entry",
-                entry_id=entry_id,
-                name=field.name,
-                value=field.value,
-                is_multiline=field.is_multiline,
-            )
+        if isinstance(entry_ids, int):
+            entry_ids = [entry_ids]
 
-            field = TextField(
-                entry_id=entry_id,
-                name=field.name,
-                value=field.value,
-                is_multiline=field.is_multiline,
-            )
+        logger.info(
+            "[Library] Adding field to entry",
+            type=field.class_name,
+            entry_ids=entry_ids,
+            name=field.name,
+            value=field.value,
+        )
 
-            with Session(self.engine) as session:
+        with Session(self.engine) as session:
+            for entry_id in entry_ids:
                 try:
-                    session.add(field)
-                    session.commit()
-                except IntegrityError as e:
-                    logger.error(e)
-                    session.rollback()
-                    return False
-
-        elif type(field) is DatetimeField:
-            logger.info(
-                "[Library] Adding DatetimeField to entry",
-                entry_id=entry_id,
-                name=field.name,
-                value=field.value,
-            )
-
-            field = DatetimeField(entry_id=entry_id, name=field.name, value=field.value)
-
-            with Session(self.engine) as session:
-                try:
-                    session.add(field)
+                    session.add(field.clone_with_entry_id(entry_id))
                     session.commit()
                 except IntegrityError as e:
                     logger.error(e)
@@ -1951,7 +1922,7 @@ class Library:
         for entry in entries:
             for field in all_fields:
                 if field not in entry.fields:
-                    self.add_field_to_entry(entry_id=entry.id, field=field)
+                    self.add_field_to_entries(entry_ids=entry.id, field=field)
 
     def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""

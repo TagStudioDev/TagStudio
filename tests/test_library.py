@@ -213,7 +213,7 @@ def test_remove_text_field_entry_with_multiple_fields(library: Library, entry_fu
 
     # When
     # add identical field
-    assert library.add_field_to_entry(entry_full.id, field=title_field)
+    assert library.add_field_to_entries(entry_full.id, field=title_field)
 
     # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
@@ -239,7 +239,7 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
     # When
     # add identical field
     empty_title = TextField(name="Title", value="")
-    library.add_field_to_entry(entry_full.id, field=empty_title)
+    library.add_field_to_entries(entry_full.id, field=empty_title)
 
     # update one of the fields
     library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
