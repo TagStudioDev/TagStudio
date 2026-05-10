@@ -1651,7 +1651,6 @@ class QtDriver(DriverMixin, QObject):
 
         if self.settings.scan_files_on_open:
             self.add_new_files_callback()
-            self.add_new_files_callback()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
             library_dir_display = self.lib.library_dir
