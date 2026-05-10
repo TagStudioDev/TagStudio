@@ -272,6 +272,7 @@
     "settings.open_library_on_start": "Open Library on Start",
     "settings.page_size": "Page Size",
     "settings.restart_required": "Please restart TagStudio for changes to take effect.",
+    "settings.scan_files_on_open": "Automatically Load New Files",
     "settings.show_filenames_in_grid": "Show Filenames in Grid",
     "settings.show_recent_libraries": "Show Recent Libraries",
     "settings.splash.label": "Splash Screen",

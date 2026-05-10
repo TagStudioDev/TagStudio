@@ -1650,8 +1650,7 @@ class QtDriver(DriverMixin, QObject):
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
-        # TODO - make this call optional
-        if self.lib.entries_count < 10000:
+        if self.settings.scan_files_on_open:
             self.add_new_files_callback()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:

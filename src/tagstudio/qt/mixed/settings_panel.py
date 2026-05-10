@@ -176,6 +176,13 @@ class SettingsPanel(PanelWidget):
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
         form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
 
+        # Scan for new files when a library is opened
+        self.scan_files_on_open_checkbox = QCheckBox()
+        self.scan_files_on_open_checkbox.setChecked(self.driver.settings.scan_files_on_open)
+        form_layout.addRow(
+            Translations["settings.scan_files_on_open"], self.scan_files_on_open_checkbox
+        )
+
         # Show Filenames in Grid
         self.show_filenames_checkbox = QCheckBox()
         self.show_filenames_checkbox.setChecked(self.driver.settings.show_filenames_in_grid)
@@ -295,6 +302,7 @@ class SettingsPanel(PanelWidget):
                 MIN_THUMB_CACHE_SIZE,
             ),
             "autoplay": self.autoplay_checkbox.isChecked(),
+            "scan_files_on_open": self.scan_files_on_open_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
             "infinite_scroll": self.infinite_scroll.isChecked(),
@@ -313,6 +321,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
+        driver.settings.scan_files_on_open = settings["scan_files_on_open"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.thumb_cache_size = settings["thumb_cache_size"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
