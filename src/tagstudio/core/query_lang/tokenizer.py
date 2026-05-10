@@ -61,7 +61,7 @@ class Tokenizer:
     pos: int
     current_char: str | None
 
-    ESCAPABLE_CHARS = ["\\", '"', '"']
+    ESCAPABLE_CHARS = ["\\", '"', "'"]
     NOT_IN_ULITERAL = [":", " ", "[", "]", "(", ")", "=", ","]
 
     def __init__(self, text: str) -> None:
