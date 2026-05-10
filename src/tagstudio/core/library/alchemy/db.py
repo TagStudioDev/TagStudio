@@ -66,8 +66,3 @@ def make_tables(engine: Engine) -> None:
             except OperationalError as e:
                 logger.error("Could not initialize built-in tags", error=e)
                 conn.rollback()
-
-
-def drop_tables(engine: Engine) -> None:
-    logger.info("dropping db tables")
-    Base.metadata.drop_all(engine)

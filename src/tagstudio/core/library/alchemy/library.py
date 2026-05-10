@@ -11,7 +11,7 @@ import re
 import shutil
 import time
 import unicodedata
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -79,14 +79,16 @@ from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
     BrowsingState,
-    FieldTypeEnum,
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import (
+    LEGACY_FIELD_MAP,
     BaseField,
+    BaseFieldTemplate,
     DatetimeField,
-    FieldID,
+    DatetimeFieldTemplate,
     TextField,
+    TextFieldTemplate,
 )
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
@@ -96,7 +98,6 @@ from tagstudio.core.library.alchemy.models import (
     Tag,
     TagAlias,
     TagColorGroup,
-    ValueType,
     Version,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
@@ -138,6 +139,7 @@ def slugify(input_string: str, allow_reserved: bool = False) -> str:
 
 
 def get_default_tags() -> tuple[Tag, ...]:
+    """Return the built-in tags for a new TagStudio library."""
     meta_tag = Tag(
         id=TAG_META,
         name="Meta Tags",
@@ -166,6 +168,20 @@ def get_default_tags() -> tuple[Tag, ...]:
     )
 
     return archive_tag, favorite_tag, meta_tag
+
+
+def get_default_field_templates() -> tuple[BaseFieldTemplate, ...]:
+    """Return the default field templates for a new TagStudio library."""
+    title = TextFieldTemplate(name="Title")
+    author = TextFieldTemplate(name="Author")
+    artist = TextFieldTemplate(name="Artist")
+    url = TextFieldTemplate(name="URL")
+    description = TextFieldTemplate(name="Description", is_multiline=True)
+    notes = TextFieldTemplate(name="Notes", is_multiline=True)
+    comments = TextFieldTemplate(name="Comments", is_multiline=True)
+    date = DatetimeFieldTemplate(name="Date")
+
+    return title, author, artist, url, description, notes, comments, date
 
 
 # The difference in the number of default JSON tags vs default tags in the current version.
@@ -296,24 +312,47 @@ class Library:
                     path=entry.path / entry.filename,
                     folder=folder,
                     fields=[],
-                    id=entry.id + 1,  # JSON IDs start at 0 instead of 1
+                    id=entry.id + 1,  # NOTE: JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
                 )
                 for entry in json_lib.entries
             ]
         )
+
         for entry in json_lib.entries:
             for field in entry.fields:  # pyright: ignore[reportUnknownVariableType]
-                for k, v in field.items():  # pyright: ignore[reportUnknownVariableType]
+                for legacy_field_id, value in field.items():  # pyright: ignore[reportUnknownVariableType]
                     # Old tag fields get added as tags
-                    if k in LEGACY_TAG_FIELD_IDS:
-                        self.add_tags_to_entries(entry_ids=entry.id + 1, tag_ids=v)
+                    if legacy_field_id in LEGACY_TAG_FIELD_IDS:
+                        self.add_tags_to_entries(entry_ids=entry.id + 1, tag_ids=value)
                     else:
-                        self.add_field_to_entry(
-                            entry_id=(entry.id + 1),  # JSON IDs start at 0 instead of 1
-                            field_id=self.get_field_name_from_id(k),
-                            value=v,
-                        )
+                        try:
+                            # NOTE: JSON IDs start at 0 instead of 1
+                            field_info = LEGACY_FIELD_MAP[legacy_field_id]
+                            if field_info["type"] == TextField:
+                                text_field = TextField(
+                                    name=str(field_info["name"]),
+                                    value=value,
+                                    is_multiline=bool(field_info["is_multiline"]),
+                                )
+                                self.add_field_to_entries(
+                                    entry_ids=(entry.id + 1), field=text_field
+                                )
+                            elif field_info["type"] == DatetimeField:
+                                datetime_field = DatetimeField(
+                                    name=str(field_info["name"]), value=value
+                                )
+                                self.add_field_to_entries(
+                                    entry_ids=(entry.id + 1), field=datetime_field
+                                )
+                        except Exception as e:
+                            logger.error(
+                                "[Library][JSON Migration] Error reading field",
+                                error=e,
+                                entry_id=entry.id + 1,
+                                legacy_field_id=legacy_field_id,
+                                value=value,
+                            )
 
         # extension include/exclude list
         (unwrap(self.library_dir) / TS_FOLDER_NAME / IGNORE_NAME).write_text(
@@ -322,12 +361,6 @@ class Library:
 
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
-
-    def get_field_name_from_id(self, field_id: int) -> FieldID | None:
-        for f in FieldID:
-            if field_id == f.value.id:
-                return f
-        return None
 
     def tag_display_name(self, tag: Tag | None) -> str:
         if not tag:
@@ -454,6 +487,18 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
+            # Add default field templates
+            if is_new:
+                for template in get_default_field_templates():
+                    try:
+                        session.add(template)
+                        session.commit()
+                    except IntegrityError:
+                        logger.info(
+                            "[Library] FieldTemplate already exists", field_template=template
+                        )
+                        session.rollback()
+
             # Ensure version rows are present
             with catch_warnings(record=True):
                 try:
@@ -467,22 +512,6 @@ class Library:
                     session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
                     session.commit()
                 except IntegrityError:
-                    session.rollback()
-
-            for field in FieldID:
-                try:
-                    session.add(
-                        ValueType(
-                            key=field.name,
-                            name=field.value.name,
-                            type=field.value.type,
-                            position=field.value.id,
-                            is_default=field.value.is_default,
-                        )
-                    )
-                    session.commit()
-                except IntegrityError:
-                    logger.debug("ValueType already exists", field=field)
                     session.rollback()
 
             # check if folder matching current path exists already
@@ -539,6 +568,8 @@ class Library:
                 if loaded_db_version < 104:
                     # changes: deletes preferences
                     self.__apply_db104_migrations(session, library_dir)
+                if loaded_db_version < 200:
+                    self.__apply_db200_migrations(session)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -552,15 +583,6 @@ class Library:
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
-            # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
-            desc_stmt = (
-                update(ValueType)
-                .where(ValueType.key == FieldID.DESCRIPTION.name)
-                .values(type=FieldTypeEnum.TEXT_BOX.name)
-            )
-            session.execute(desc_stmt)
-            session.flush()
-
             # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
             all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
             disam_stmt = (
@@ -703,7 +725,6 @@ class Library:
             session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
             session.commit()
             logger.info("[Library][Migration] Updated archived tag to be hidden")
-            session.commit()
         except Exception as e:
             logger.error(
                 "[Library][Migration] Could not update archived tag to be hidden!",
@@ -736,16 +757,103 @@ class Library:
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
-    @property
-    def default_fields(self) -> list[BaseField]:
-        with Session(self.engine) as session:
-            types = session.scalars(
-                select(ValueType).where(
-                    # check if field is default
-                    ValueType.is_default.is_(True)
-                )
+    def __apply_db200_migrations(self, session: Session):
+        """Migrate DB to DB_VERSION 200."""
+        with session:
+            # Drop unused 'boolean_fields' and 'value_type' tables
+            logger.info(
+                "[Library][Migration][200] Dropping boolean_fields and value_type tables..."
             )
-            return [x.as_field for x in types]
+            session.execute(text("DROP TABLE boolean_fields"))
+            session.execute(text("DROP TABLE value_type"))
+
+            # Add 'name' column to text_fields and datetime_fields tables
+            logger.info("[Library][Migration][200] Adding name columns to field tables...")
+            stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
+            session.execute(stmt)
+            stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
+            session.execute(stmt)
+
+            # Drop unnecessary 'position' columns
+            logger.info("[Library][Migration][200] Dropping position columns to field tables...")
+            session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
+            session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
+
+            # Add 'is_multiline' column to text_fields table
+            logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
+            stmt = text(
+                "ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0"
+            )
+            session.execute(stmt)
+            session.flush()
+
+            # Move values from old `type_key` columns into new `name` columns
+            logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
+            session.execute(text("UPDATE text_fields SET name = type_key"))
+            session.execute(text("UPDATE datetime_fields SET name = type_key"))
+            session.flush()
+
+            # TODO: Remove `type_key` columns from text_fields and datetime_fields tables.
+            # See issue with dropping columns foreign keys in SQLite:
+            # https://www.sqlite.org/lang_altertable.html#making_other_kinds_of_table_schema_changes
+
+            # Change `name` values to title case
+            logger.info("[Library][Migration][200] Normalizing TextField names...")
+            for text_field in session.execute(select(TextField)).scalars():
+                # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
+                text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
+            logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
+            for datetime_field in session.execute(select(DatetimeField)).scalars():
+                datetime_field.name = datetime_field.name.title().replace("_", " ")
+            session.flush()
+
+            # Add correct `is_multiline` values to text_fields table
+            logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
+            text_boxes = [
+                x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
+            ]
+            update_stmt = (
+                update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
+            )
+            session.execute(update_stmt)
+            session.flush()
+
+            # Repair legacy "Description" fields to use is_multiline = True
+            logger.info("[Library][Migration][200] Repairing legacy Description fields...")
+            desc_stmt = (
+                update(TextField)
+                .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
+                .values(is_multiline=True)
+            )
+            session.execute(desc_stmt)
+
+            # Repair legacy "Comments" fields to use is_multiline = True
+            logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
+            comm_stmt = (
+                update(TextField)
+                .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
+                .values(is_multiline=True)
+            )
+            session.execute(comm_stmt)
+
+            # Add default field templates
+            logger.info("[Library][Migration][200] Adding default field templates...")
+            for template in get_default_field_templates():
+                try:
+                    session.add(template)
+                    session.flush()
+                except IntegrityError:
+                    logger.error("[Library] FieldTemplate already exists", field_template=template)
+                    session.rollback()
+
+            session.commit()
+
+    @property
+    def field_templates(self) -> Sequence[BaseFieldTemplate]:
+        with Session(self.engine) as session:
+            text_templates = list(session.scalars(select(TextFieldTemplate)))
+            datetime_templates = list(session.scalars(select(DatetimeFieldTemplate)))
+            return text_templates + datetime_templates
 
     def get_entry(self, entry_id: int) -> Entry | None:
         """Load entry without joins."""
@@ -976,8 +1084,8 @@ class Library:
                 session.query(Entry).where(Entry.id.in_(sub_list)).delete()
             session.commit()
 
-    def has_path_entry(self, path: Path) -> bool:
-        """Check if item with given path is in library already."""
+    def has_entry_with_path(self, path: Path) -> bool:
+        """Check if an entry with this path is in the library."""
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
@@ -1125,7 +1233,7 @@ class Library:
 
         Returns True if the action succeeded and False if the path already exists.
         """
-        if self.has_path_entry(path):
+        if self.has_entry_with_path(path):
             return False
         if isinstance(entry_id, Entry):
             entry_id = entry_id.id
@@ -1169,165 +1277,95 @@ class Library:
                 return False
         return True
 
-    def update_field_position(
-        self,
-        field_class: type[BaseField],
-        field_type: str,
-        entry_ids: list[int] | int,
-    ):
-        if isinstance(entry_ids, int):
-            entry_ids = [entry_ids]
-
-        with Session(self.engine) as session:
-            for entry_id in entry_ids:
-                rows = list(
-                    session.scalars(
-                        select(field_class)
-                        .where(
-                            and_(
-                                field_class.entry_id == entry_id,
-                                field_class.type_key == field_type,
-                            )
-                        )
-                        .order_by(field_class.id)
-                    )
-                )
-
-                # Reassign `order` starting from 0
-                for index, row in enumerate(rows):
-                    row.position = index
-                    session.add(row)
-                    session.flush()
-                if rows:
-                    session.commit()
-
     def remove_entry_field(
         self,
         field: BaseField,
         entry_ids: list[int],
     ) -> None:
-        FieldClass = type(field)  # noqa: N806
+        field_type = type(field)
 
         logger.info(
             "remove_entry_field",
             field=field,
+            type=field_type,
             entry_ids=entry_ids,
-            field_type=field.type,
-            cls=FieldClass,
-            pos=field.position,
         )
 
         with Session(self.engine) as session:
             # remove all fields matching entry and field_type
-            delete_stmt = delete(FieldClass).where(
+            delete_stmt = delete(field_type).where(
                 and_(
-                    FieldClass.position == field.position,
-                    FieldClass.type_key == field.type_key,
-                    FieldClass.entry_id.in_(entry_ids),
+                    field_type.id == field.id,
                 )
             )
 
             session.execute(delete_stmt)
-
             session.commit()
 
-        # recalculate the remaining positions
-        # self.update_field_position(type(field), field.type, entry_ids)
-
-    def update_entry_field(
-        self,
-        entry_ids: list[int] | int,
-        field: BaseField,
-        content: str | datetime,
+    def update_text_field(
+        self, entry_ids: list[int] | int, field: TextField, value: str, is_multiline: bool
     ):
+        """Update a TextField field on one or more Entries."""
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        FieldClass = type(field)  # noqa: N806
+        field_type = type(field)
 
         with Session(self.engine) as session:
             update_stmt = (
-                update(FieldClass)
-                .where(
-                    and_(
-                        FieldClass.position == field.position,
-                        FieldClass.type == field.type,
-                        FieldClass.entry_id.in_(entry_ids),
-                    )
-                )
-                .values(value=content)
+                update(field_type)
+                .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
+                .values(value=value, is_multiline=is_multiline)
             )
 
             session.execute(update_stmt)
             session.commit()
 
-    @property
-    def field_types(self) -> dict[str, ValueType]:
-        with Session(self.engine) as session:
-            return {x.key: x for x in session.scalars(select(ValueType)).all()}
-
-    def get_value_type(self, field_key: str) -> ValueType:
-        with Session(self.engine) as session:
-            field = unwrap(session.scalar(select(ValueType).where(ValueType.key == field_key)))
-            session.expunge(field)
-            return field
-
-    def add_field_to_entry(
+    def update_datetime_field(
         self,
-        entry_id: int,
-        *,
-        field: ValueType | None = None,
-        field_id: FieldID | str | None = None,
-        value: str | datetime | None = None,
-    ) -> bool:
-        logger.info(
-            "[Library][add_field_to_entry]",
-            entry_id=entry_id,
-            field_type=field,
-            field_id=field_id,
-            value=value,
-        )
-        # supply only instance or ID, not both
-        assert bool(field) != (field_id is not None)
+        entry_ids: list[int] | int,
+        field: DatetimeField,
+        value: datetime,
+    ):
+        """Update a DatetimeField field on one or more Entries."""
+        if isinstance(entry_ids, int):
+            entry_ids = [entry_ids]
 
-        if not field:
-            if isinstance(field_id, FieldID):
-                field_id = field_id.name
-            field = self.get_value_type(unwrap(field_id))
-
-        field_model: TextField | DatetimeField
-        if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
-            field_model = TextField(
-                type_key=field.key,
-                value=value or "",
-            )
-
-        elif field.type == FieldTypeEnum.DATETIME:
-            field_model = DatetimeField(
-                type_key=field.key,
-                value=value,
-            )
-        else:
-            raise NotImplementedError(f"field type not implemented: {field.type}")
+        field_type = type(field)
 
         with Session(self.engine) as session:
-            try:
-                field_model.entry_id = entry_id
-                session.add(field_model)
-                session.flush()
-                session.commit()
-            except IntegrityError as e:
-                logger.error(e)
-                session.rollback()
-                return False
-                # TODO - trigger error signal
+            update_stmt = (
+                update(field_type)
+                .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
+                .values(value=value)
+            )
 
-        # recalculate the positions of fields
-        self.update_field_position(
-            field_class=type(field_model),
-            field_type=field.key,
-            entry_ids=entry_id,
+            session.execute(update_stmt)
+            session.commit()
+
+    def add_field_to_entries(self, entry_ids: list[int] | int, field: BaseField) -> bool:
+        """Add a field object to an Entry."""
+        if isinstance(entry_ids, int):
+            entry_ids = [entry_ids]
+
+        logger.info(
+            "[Library] Adding field to entry",
+            type=field.class_name,
+            entry_ids=entry_ids,
+            name=field.name,
+            value=field.value,
         )
+
+        with Session(self.engine) as session:
+            for entry_id in entry_ids:
+                try:
+                    session.add(field.clone_with_entry_id(entry_id))
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error(e)
+                    session.rollback()
+                    return False
+
         return True
 
     def tag_from_strings(self, strings: list[str] | str) -> list[int]:
@@ -1867,39 +1905,42 @@ class Library:
                 logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
                 session.rollback()
 
-    def mirror_entry_fields(self, *entries: Entry) -> None:
+    def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""
-        fields = {}
-        # load all fields
-        existing_fields = {field.type_key for field in entries[0].fields}
-        for entry in entries:
-            for entry_field in entry.fields:
-                fields[entry_field.type_key] = entry_field
+        all_fields: set[BaseField] = set()
+        logger.info("[Library][mirror_fields]", all_fields=all_fields)
 
-        # assign the field to all entries
+        # Track all fields across all entries
         for entry in entries:
-            for field_key, field in fields.items():  # pyright: ignore[reportUnknownVariableType]
-                if field_key not in existing_fields:
-                    self.add_field_to_entry(
-                        entry_id=entry.id,
-                        field_id=field.type_key,
-                        value=field.value,
-                    )
+            for field in entry.fields:
+                all_fields.add(field)
+            logger.info(
+                "[Library][mirror_fields]", entry_id=entry.id, field_count_before=len(entry.fields)
+            )
+
+        # Apply all (remaining) fields to all entries, avoiding duplicates
+        for entry in entries:
+            for field in all_fields:
+                if field not in entry.fields:
+                    self.add_field_to_entries(entry_ids=entry.id, field=field)
 
     def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""
-        success = True
-        for field in from_entry.fields:
-            result = self.add_field_to_entry(
-                entry_id=into_entry.id,
-                field_id=field.type_key,
-                value=field.value,
+        success = False
+
+        try:
+            self.mirror_entry_fields([from_entry, into_entry])
+            tag_ids = [tag.id for tag in from_entry.tags]
+            self.add_tags_to_entries(into_entry.id, tag_ids)
+            self.remove_entries([from_entry.id])
+            success = True
+        except Exception as e:
+            logger.error(
+                "[Library][merge_entries] Could not merge entires",
+                error=e,
+                from_entry_id=from_entry.id,
+                into_entry_id=into_entry.id,
             )
-            if not result:
-                success = False
-        tag_ids = [tag.id for tag in from_entry.tags]
-        self.add_tags_to_entries(into_entry.id, tag_ids)
-        self.remove_entries([from_entry.id])
 
         return success
 

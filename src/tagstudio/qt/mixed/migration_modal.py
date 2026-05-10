@@ -34,6 +34,7 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import SQL_FILENAME
+from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
@@ -544,9 +545,6 @@ class JsonMigrationModal(QObject):
     def check_field_parity(self) -> bool:
         """Check if all JSON field and tag data matches the new SQL data."""
 
-        def sanitize_field(entry: Entry, value, type, type_key):
-            return value if value else None
-
         def sanitize_json_field(value):
             if isinstance(value, list):
                 return set(value) if value else None
@@ -557,7 +555,7 @@ class JsonMigrationModal(QObject):
             sql_fields: list[tuple] = []
             json_fields: list[tuple] = []
 
-            sql_entry: Entry = unwrap(self.sql_lib.get_entry_full(json_entry.id + 1))
+            sql_entry: Entry | None = self.sql_lib.get_entry_full(json_entry.id + 1)
             if not sql_entry:
                 logger.info(
                     "[Field Comparison]",
@@ -570,14 +568,13 @@ class JsonMigrationModal(QObject):
                 return self.field_parity
 
             for sf in sql_entry.fields:
-                if sf.type.type.value not in LEGACY_TAG_FIELD_IDS:
-                    sql_fields.append(
-                        (
-                            sql_entry.id,
-                            sf.type.key,
-                            sanitize_field(sql_entry, sf.value, sf.type.type, sf.type_key),
-                        )
+                sql_fields.append(
+                    (
+                        sql_entry.id,
+                        sf.name.upper().replace(" ", "_"),
+                        sf.value if sf.value else None,
                     )
+                )
             sql_fields.sort()
 
             # NOTE: The JSON database stored tags inside of special "tag field" types which
@@ -591,7 +588,7 @@ class JsonMigrationModal(QObject):
                     tags_count += 1
                     json_tags = json_tags.union(value or [])
                 else:
-                    key: str = unwrap(self.sql_lib.get_field_name_from_id(int_key)).name
+                    key: str = str(LEGACY_FIELD_MAP[int_key]["name"]).upper().replace(" ", "_")
                     json_fields.append((json_entry.id + 1, key, value))
             json_fields.sort()
 

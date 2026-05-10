@@ -22,12 +22,15 @@ class PreviewPanel(PreviewPanelView):
         self.__add_field_modal = AddFieldModal(self.lib)
         self.__add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
 
+    @typing.override
     def _add_field_button_callback(self):
         self.__add_field_modal.show()
 
+    @typing.override
     def _add_tag_button_callback(self):
         self.__add_tag_modal.show()
 
+    @typing.override
     def _set_selection_callback(self):
         with catch_warnings(record=True):
             self.__add_field_modal.done.disconnect()

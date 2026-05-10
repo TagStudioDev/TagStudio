@@ -152,11 +152,3 @@ class BrowsingState:
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
         return replace(self, show_hidden_entries=show_hidden_entries)
-
-
-class FieldTypeEnum(enum.Enum):
-    TEXT_LINE = "Text Line"
-    TEXT_BOX = "Text Box"
-    TAGS = "Tags"
-    DATETIME = "Datetime"
-    BOOLEAN = "Checkbox"
