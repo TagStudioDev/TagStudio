@@ -14,6 +14,7 @@ path = [
     "src/tagstudio/resources/tagstudio.desktop",
     "src/tagstudio/resources/templates/ts_ignore_template.txt",
     "src/tagstudio/resources/templates/ts_ignore_template_blank.txt",
+    "src/tagstudio/resources/translations/*.json",
     "tests/qt/__snapshots__/test_folders_to_tags.ambr",
 
     ".git-blame-ignore-revs",
