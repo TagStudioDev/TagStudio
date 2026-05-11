@@ -8,7 +8,9 @@ path = [
     "contrib/.envrc-uv",
     "contrib/.vscode/launch.json",
     "docs/CNAME",
+    "docs/assets/**",
     "src/tagstudio/qt/resources.json",
+    "src/tagstudio/resources/icon.*",
     "src/tagstudio/resources/tagstudio.desktop",
     "src/tagstudio/resources/templates/ts_ignore_template.txt",
     "src/tagstudio/resources/templates/ts_ignore_template_blank.txt",
@@ -22,3 +24,13 @@ path = [
 ]
 SPDX-FileCopyrightText = "(c) TagStudio Contributors"
 SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = ["src/tagstudio/resources/qt/images/**"]
+SPDX-FileCopyrightText = "(c) 2026 Boxicons"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["src/tagstudio/resources/qt/images/volume.svg", "src/tagstudio/resources/qt/images/volume_mute.svg"]
+SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
+SPDX-License-Identifier = "MIT"
