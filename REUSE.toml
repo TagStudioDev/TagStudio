@@ -33,4 +33,4 @@ SPDX-License-Identifier = "MIT"
 [[annotations]]
 path = ["src/tagstudio/resources/qt/images/volume.svg", "src/tagstudio/resources/qt/images/volume_mute.svg"]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
-SPDX-License-Identifier = "MIT"
+SPDX-License-Identifier = "Apache-2.0"
