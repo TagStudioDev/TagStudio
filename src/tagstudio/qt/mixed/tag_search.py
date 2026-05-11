@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import contextlib
 from typing import TYPE_CHECKING, Union
 from warnings import catch_warnings
 
@@ -107,9 +106,6 @@ class TagSearchPanel(PanelWidget):
         self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
         self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)
         self.limit_combobox.currentIndexChanged.connect(self.update_limit)
-        self.previous_limit: int = (
-            TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
-        )
         self.limit_layout.addWidget(self.limit_combobox)
         self.limit_layout.addStretch(1)
 
@@ -218,32 +214,13 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
             self.create_button_in_layout = False
 
-        # Get results for the search query
-        query_lower = "" if not query else query.lower()
         # Only use the tag limit if it's an actual number (aka not "All Tags")
         tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
-        tag_results: list[set[Tag]] = self.lib.search_tags(name=query, limit=tag_limit)
-        if self.exclude:
-            tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
-            tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
+        direct_tags, descendant_tags = self.lib.search_tags(name=query, limit=tag_limit)
 
-        # Sort and prioritize the results
-        results_0 = list(tag_results[0])
-        results_0.sort(key=lambda tag: tag.name.lower())
-        results_1 = list(tag_results[1])
-        results_1.sort(key=lambda tag: tag.name.lower())
-        raw_results = list(results_0 + results_1)
-        priority_results: set[Tag] = set()
-        all_results: list[Tag] = []
+        all_results = [t for t in direct_tags if t.id not in self.exclude]
+        all_results.extend(t for t in descendant_tags if t.id not in self.exclude)
 
-        if query and query.strip():
-            for tag in raw_results:
-                if tag.name.lower().startswith(query_lower):
-                    priority_results.add(tag)
-
-        all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
-            r for r in raw_results if r not in priority_results
-        ]
         if tag_limit > 0:
             all_results = all_results[:tag_limit]
 
@@ -255,15 +232,11 @@ class TagSearchPanel(PanelWidget):
             self.first_tag_id = None
 
         # Update every tag widget with the new search result data
-        norm_previous = self.previous_limit if self.previous_limit > 0 else len(self.lib.tags)
-        norm_limit = tag_limit if tag_limit > 0 else len(self.lib.tags)
-        range_limit = max(norm_previous, norm_limit)
-        for i in range(0, range_limit):
-            tag = None
-            with contextlib.suppress(IndexError):
-                tag = all_results[i]
-            self.set_tag_widget(tag=tag, index=i)
-        self.previous_limit = tag_limit
+        for i in range(0, len(all_results)):
+            tag = all_results[i]
+            self.set_tag_widget(tag, i)
+        for i in range(len(all_results), self.scroll_layout.count()):
+            self.set_tag_widget(None, i)
 
         # Add back the "Create & Add" button
         if query and query.strip():
@@ -326,6 +299,9 @@ class TagSearchPanel(PanelWidget):
 
     def update_limit(self, index: int):
         logger.info("[TagSearchPanel] Updating tag limit")
+        if TagSearchPanel.cur_limit_idx == index:
+            return
+
         TagSearchPanel.cur_limit_idx = index
 
         if index < len(self._limit_items) - 1:
@@ -336,9 +312,6 @@ class TagSearchPanel(PanelWidget):
         # Method was called outside the limit_combobox callback
         if index != self.limit_combobox.currentIndex():
             self.limit_combobox.setCurrentIndex(index)
-
-        if self.previous_limit == TagSearchPanel.tag_limit:
-            return
 
         self.update_tags(self.search_field.text())
 

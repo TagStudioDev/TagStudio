@@ -9,6 +9,7 @@
 
 import re
 import shutil
+import sys
 import time
 import unicodedata
 from collections.abc import Iterable, Iterator, Sequence
@@ -570,6 +571,20 @@ class Library:
                     self.__apply_db104_migrations(session, library_dir)
                 if loaded_db_version < 200:
                     self.__apply_db200_migrations(session)
+
+            session.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
+                )
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
+                )
+            )
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -1178,55 +1193,71 @@ class Library:
 
             return res
 
-    def search_tags(self, name: str | None, limit: int = 100) -> list[set[Tag]]:
+    def search_tags(self, name: str | None, limit: int = 100) -> tuple[list[Tag], list[Tag]]:
         """Return a list of Tag records matching the query."""
+        if limit <= 0:
+            limit = sys.maxsize
+
+        name = name or ""
+        name = name.lower()
+
+        def sort_key(text: str):
+            priority = text.startswith(name)
+            p_ordering = len(text) if priority else sys.maxsize
+            return (not priority, p_ordering, text)
+
         with Session(self.engine) as session:
-            query = select(Tag).outerjoin(TagAlias).order_by(func.lower(Tag.name))
-            query = query.options(
-                selectinload(Tag.parent_tags),
-                selectinload(Tag.aliases),
-            )
-            if limit > 0:
-                query = query.limit(limit)
+            query = select(Tag.id, Tag.name)
+
+            if limit > 0 and not name:
+                query = query.order_by(Tag.name).limit(limit)
 
             if name:
                 query = query.where(
                     or_(
                         Tag.name.icontains(name),
                         Tag.shorthand.icontains(name),
-                        TagAlias.name.icontains(name),
                     )
                 )
 
-            direct_tags = set(session.scalars(query))
-            ancestor_tag_ids: list[Tag] = []
-            for tag in direct_tags:
-                ancestor_tag_ids.extend(
-                    list(session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag.id}))
-                )
+            tags = list(session.execute(query))
 
-            ancestor_tags = session.scalars(
-                select(Tag)
-                .where(Tag.id.in_(ancestor_tag_ids))
-                .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
-            )
+            if name:
+                query = select(TagAlias.tag_id, TagAlias.name).where(TagAlias.name.icontains(name))
+                tags.extend(session.execute(query))
 
-            res = [
-                direct_tags,
-                {at for at in ancestor_tags if at not in direct_tags},
-            ]
+            tags.sort(key=lambda t: sort_key(t[1]))
+            # Use order from Tag.name or TagAlias.name depending on which comes first for each tag.
+            # Value=0 to avoid unnecessary copying of tag names.
+            tag_ids = list(dict((id, 0) for id, _ in tags).keys())
 
             logger.info(
                 "searching tags",
                 search=name,
                 limit=limit,
                 statement=str(query),
-                results=len(res),
+                results=len(tag_ids),
             )
+            tag_ids = tag_ids[:limit]
 
-            session.expunge_all()
+            all_ids = set(tag_ids)
+            for tag_id in tag_ids:
+                if len(all_ids) >= limit:
+                    break
+                for id in session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag_id}):
+                    all_ids.add(id)
+                    if len(all_ids) >= limit:
+                        break
 
-            return res
+            hierarchy = self.get_tag_hierarchy(all_ids)
+
+            direct_tags = [hierarchy.pop(id) for id in tag_ids]
+
+            all_ids.difference_update(tag_ids)
+            descendant_tags = [hierarchy.pop(id) for id in all_ids]
+            descendant_tags.sort(key=lambda t: sort_key(t.name))
+
+            return direct_tags, descendant_tags
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
         """Set the path field of an entry.
