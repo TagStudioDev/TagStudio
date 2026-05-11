@@ -307,7 +307,7 @@
     "trash.dialog.title.singular": "Poista tiedosto",
     "trash.name.generic": "Roskakori",
     "trash.name.windows": "Roskakori",
-    "version_modal.description": "TagStudion uusi versio on saatavilla! Voit ladata uusimman version <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">Githubista</a>.",
+    "version_modal.description": "TagStudion uusi versio on saatavilla! Voit ladata uusimman version <a href=\"{github_url}\">Githubista</a>.",
     "version_modal.status": "Asennettu versio: {installed_version}<br>Uusin julkaisuversio: {latest_release_version}",
     "version_modal.title": "TagStudio päivitys saatavilla",
     "view.size.0": "Mini",

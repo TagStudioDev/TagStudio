@@ -335,7 +335,7 @@
     "trash.dialog.title.singular": "o weka e lipu",
     "trash.name.generic": "poki pi ijo weka",
     "trash.name.windows": "poki pi ijo weka",
-    "version_modal.description": "nanpa sin pi ilo TagStudio li lon! sina ken kama jo e ona tan <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">ma Github</a>.",
+    "version_modal.description": "nanpa sin pi ilo TagStudio li lon! sina ken kama jo e ona tan <a href=\"{github_url}\">ma Github</a>.",
     "version_modal.status": "nanpa ni: {installed_version}<br>nanpa sin: {latest_release_version}",
     "version_modal.title": "nanpa sin pi ilo TagStudio li lon",
     "view.size.0": "lili mute",

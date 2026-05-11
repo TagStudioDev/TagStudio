@@ -349,7 +349,7 @@
     "trash.dialog.title.singular": "Supprimer le Fichier",
     "trash.name.generic": "Poubelle",
     "trash.name.windows": "Corbeille",
-    "version_modal.description": "Une nouvelle version de TagStudio est disponible! Vous pouvez télécharger la version la plus récente sur <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">Github</a>.",
+    "version_modal.description": "Une nouvelle version de TagStudio est disponible! Vous pouvez télécharger la version la plus récente sur <a href=\"{github_url}\">Github</a>.",
     "version_modal.status": "Version installer : {installed_version}<br>Dernière version disponible : {latest_release_version}",
     "version_modal.title": "Mise à jour de TagStudio disponible",
     "view.size.0": "Mini",

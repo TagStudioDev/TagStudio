@@ -351,7 +351,7 @@
     "trash.dialog.title.singular": "Datei löschen",
     "trash.name.generic": "Mülleimer",
     "trash.name.windows": "Papierkorb",
-    "version_modal.description": "Eine neue Version von TagStudio ist verfügbar! Du kannst die neueste Version auf <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">GitHub</a> herunterladen.",
+    "version_modal.description": "Eine neue Version von TagStudio ist verfügbar! Du kannst die neueste Version auf <a href=\"{github_url}\">GitHub</a> herunterladen.",
     "version_modal.status": "Installierte Version: {installed_version}<br>Letzte veröffentlichte Version: {latest_release_version}",
     "version_modal.title": "TagStudio Aktualisierung verfügbar",
     "view.size.0": "Mini",

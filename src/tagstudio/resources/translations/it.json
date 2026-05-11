@@ -348,7 +348,7 @@
     "trash.dialog.title.singular": "Elimina File",
     "trash.name.generic": "Spazzatura",
     "trash.name.windows": "Cestino",
-    "version_modal.description": "Una nuova versione di TagStudio è disponibile! Puoi scaricare l'ultima versione da <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">Github</a>.",
+    "version_modal.description": "Una nuova versione di TagStudio è disponibile! Puoi scaricare l'ultima versione da <a href=\"{github_url}\">Github</a>.",
     "version_modal.status": "Versione Installata: {installed_version}<br>Ultima Versione Rilasciata: {latest_release_version}",
     "version_modal.title": "Aggiornamento di TagStudio Disponibile",
     "view.size.0": "Mini",

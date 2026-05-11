@@ -4,6 +4,7 @@
 
 VERSION: str = "9.5.7"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
+GITHUB_RELEASE_URL = "https://github.com/TagStudioDev/TagStudio/releases/latest"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
