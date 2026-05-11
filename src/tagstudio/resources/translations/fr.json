@@ -157,6 +157,7 @@
     "json_migration.heading.aliases": "Alias :",
     "json_migration.heading.colors": "Couleurs :",
     "json_migration.heading.differ": "Divergence",
+    "json_migration.heading.extensions": "Extensions:",
     "json_migration.heading.match": "Correspondant",
     "json_migration.heading.names": "Noms :",
     "json_migration.heading.parent_tags": "Tags Parents :",
