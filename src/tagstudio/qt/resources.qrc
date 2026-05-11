@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- TO COMPILE: pyside6-rcc resources.qrc -o resources_rc.py (in \tagstudio\src\qt)-->
 <RCC>
     <qresource prefix="/">
