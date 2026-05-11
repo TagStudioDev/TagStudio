@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import typing
 from collections.abc import Callable
 from datetime import datetime as dt

@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from PySide6.QtCore import QObject, QRunnable, Signal

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from pytestqt.qtbot import QtBot
 
 from tagstudio.qt.mixed.about_modal import AboutModal
