@@ -21,6 +21,9 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
 -   If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
 
+### Formatter Configs
+TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) file ([`.editorconfig`](../.editorconfig)) along with a [Prettier](https://prettier.io/) config file ([`.prettierrc.toml`](../.prettierrc.toml)) for formatting files other than .py files (Markdown, JSON, YAML, HTML, CSS, etc.). If editing these types of files it's recommended that you use a formatter that supports EditorConfig or has its settings matched to the EditorConfig and Prettier configs. Lastly, please pay attention to the `prettier-ignore` flags in present in some files if you are not using Prettier, as formatting these sections will break formatting used elsewhere such as the [MkDocs site](https://docs.tagstud.io/).
+
 ## Qt
 
 As of writing this section, the QT part of the code base is quite unstructured and the View and Controller parts are completely intermixed[^1]. This makes maintenance, fixes and general understanding of the code base quite challenging, because the interesting parts you are looking for are entangled in a bunch of repetitive UI setup code. To address this we are aiming to more strictly separate the view and controller aspects of the QT frontend.
