@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: (C) 2013 Riverbank Computing Limited.
 # SPDX-FileCopyrightText: (C) 2022 The Qt Company Ltd.
 # SPDX-FileCopyrightText: (C) TagStudio Contributors
-# SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
