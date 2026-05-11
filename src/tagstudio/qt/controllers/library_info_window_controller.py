@@ -1,6 +1,7 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, override

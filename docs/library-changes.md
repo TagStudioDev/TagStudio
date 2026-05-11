@@ -1,6 +1,8 @@
 ---
 icon: material/database-edit
 ---
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-database-edit: Library Format
 

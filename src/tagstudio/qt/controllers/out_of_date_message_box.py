@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox

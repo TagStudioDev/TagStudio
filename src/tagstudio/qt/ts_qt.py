@@ -1,6 +1,6 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 # SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
 # https://github.com/arsenetar/dupeguru/blob/master/run.py#L71

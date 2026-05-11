@@ -1,5 +1,6 @@
-# Copyright (C) 2013 Riverbank Computing Limited.
-# Copyright (C) 2022 The Qt Company Ltd.
+# SPDX-FileCopyrightText: (C) 2013 Riverbank Computing Limited.
+# SPDX-FileCopyrightText: (C) 2022 The Qt Company Ltd.
+# SPDX-FileCopyrightText: (C) TagStudio Contributors
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
 
