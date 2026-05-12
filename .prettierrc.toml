@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: MIT
+
+# Prettier https://prettier.io/
+
+bracketSameLine = false
+bracketSpacing = true
+objectWrap = "preserve"
+quoteProps = "as-needed"
+singleQuote = false
