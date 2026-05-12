@@ -1,0 +1,2 @@
+overrides/partials/*.html
+tests/fixtures/json_library/.TagStudio/*.json

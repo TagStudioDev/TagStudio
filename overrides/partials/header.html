@@ -2,14 +2,22 @@
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: MIT -->
 
+
 <!-- Determine classes -->
-{% set class = "md-header" %} {% if "navigation.tabs.sticky" in features %} {% set class = class ~ "
-md-header--shadow md-header--lifted" %} {% elif "navigation.tabs" not in features %} {% set class =
-class ~ " md-header--shadow" %} {% endif %}
+{% set class = "md-header" %}
+{% if "navigation.tabs.sticky" in features %}
+  {% set class = class ~ " md-header--shadow md-header--lifted" %}
+{% elif "navigation.tabs" not in features %}
+  {% set class = class ~ " md-header--shadow" %}
+{% endif %}
 
 <!-- Header -->
 <header class="{{ class }}" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
+  <nav
+    class="md-header__inner md-grid"
+    aria-label="{{ lang.t('header') }}"
+  >
+
     <!-- Link to home -->
     <a
       href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}"
@@ -23,8 +31,8 @@ class ~ " md-header--shadow" %} {% endif %}
 
     <!-- Button to open drawer -->
     <label class="md-header__button md-icon" for="__drawer">
-      {% set icon = config.theme.icon.menu or "material/menu" %} {% include ".icons/" ~ icon ~
-      ".svg" %}
+      {% set icon = config.theme.icon.menu or "material/menu" %}
+      {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
 
     <!-- Header title -->
@@ -32,12 +40,15 @@ class ~ " md-header--shadow" %} {% endif %}
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            <a style="font-weight: 900">Tag</a><a style="font-weight: 500"><i>Studio</i></a>
+            <a style="font-weight: 900;">Tag</a><a style="font-weight: 500;"><i>Studio</i></a>
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
-            {% if page.meta and page.meta.title %} {{ page.meta.title }} {% else %} {{ page.title }}
+            {% if page.meta and page.meta.title %}
+              {{ page.meta.title }}
+            {% else %}
+              {{ page.title }}
             {% endif %}
           </span>
         </div>
@@ -45,37 +56,50 @@ class ~ " md-header--shadow" %} {% endif %}
     </div>
 
     <!-- Color palette toggle -->
-    {% if config.theme.palette %} {% if not config.theme.palette is mapping %} {% include
-    "partials/palette.html" %} {% endif %} {% endif %}
+    {% if config.theme.palette %}
+      {% if not config.theme.palette is mapping %}
+        {% include "partials/palette.html" %}
+      {% endif %}
+    {% endif %}
 
     <!-- User preference: color palette -->
-    {% if not config.theme.palette is mapping %} {% include "partials/javascripts/palette.html" %}
+    {% if not config.theme.palette is mapping %}
+      {% include "partials/javascripts/palette.html" %}
     {% endif %}
 
     <!-- Site language selector -->
-    {% if config.extra.alternate %} {% include "partials/alternate.html" %} {% endif %}
+    {% if config.extra.alternate %}
+      {% include "partials/alternate.html" %}
+    {% endif %}
 
     <!-- Button to open search modal -->
-    {% if "material/search" in config.plugins %} {% set search = config.plugins["material/search"] |
-    attr("config") %}
+    {% if "material/search" in config.plugins %}
+      {% set search = config.plugins["material/search"] | attr("config") %}
 
-    <!-- Check if search is actually enabled - see https://t.ly/DT_0V -->
-    {% if search.enabled %}
-    <label class="md-header__button md-icon" for="__search">
-      {% set icon = config.theme.icon.search or "material/magnify" %} {% include ".icons/" ~ icon ~
-      ".svg" %}
-    </label>
+      <!-- Check if search is actually enabled - see https://t.ly/DT_0V -->
+      {% if search.enabled %}
+        <label class="md-header__button md-icon" for="__search">
+          {% set icon = config.theme.icon.search or "material/magnify" %}
+          {% include ".icons/" ~ icon ~ ".svg" %}
+        </label>
 
-    <!-- Search interface -->
-    {% include "partials/search.html" %} {% endif %} {% endif %}
+        <!-- Search interface -->
+        {% include "partials/search.html" %}
+      {% endif %}
+    {% endif %}
 
     <!-- Repository information -->
     {% if config.repo_url %}
-    <div class="md-header__source">{% include "partials/source.html" %}</div>
+      <div class="md-header__source">
+        {% include "partials/source.html" %}
+      </div>
     {% endif %}
   </nav>
 
   <!-- Navigation tabs (sticky) -->
-  {% if "navigation.tabs.sticky" in features %} {% if "navigation.tabs" in features %} {% include
-  "partials/tabs.html" %} {% endif %} {% endif %}
+  {% if "navigation.tabs.sticky" in features %}
+    {% if "navigation.tabs" in features %}
+      {% include "partials/tabs.html" %}
+    {% endif %}
+  {% endif %}
 </header>
