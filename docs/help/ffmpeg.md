@@ -1,6 +1,8 @@
 ---
 icon: material/movie-open-cog
 ---
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-movie-open-cog: Installing FFmpeg
 

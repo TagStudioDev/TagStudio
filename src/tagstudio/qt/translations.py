@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from collections import defaultdict
 from pathlib import Path
 from platform import system
@@ -37,6 +41,14 @@ LANGUAGES = {
     "Toki Pona": "tok",
     "Turkish": "tr",
     "Viossa": "qpv",
+}
+
+# A map of field class names to their respective translation keys.
+FIELD_TYPE_KEYS = {
+    "DatetimeField": "field_type.datetime",
+    "DatetimeFieldTemplate": "field_type.datetime",
+    "TextField": "field_type.text",
+    "TextFieldTemplate": "field_type.text",
 }
 
 

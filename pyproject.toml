@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -5,7 +9,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.6"
+version = "9.5.7"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -24,7 +28,7 @@ dependencies = [
     "pydub~=0.25",
     "PySide6==6.8.0.*",
     "rarfile==4.2",
-    "rawpy~=0.24",
+    "rawpy~=0.27",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
     "srctools~=2.6",
@@ -33,6 +37,8 @@ dependencies = [
     "typing_extensions~=4.13",
     "ujson~=5.10",
     "wcmatch==10.*",
+    "requests~=2.31.0",
+    "semver~=3.0.4",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +50,7 @@ pyinstaller = ["Pyinstaller~=6.13"]
 pytest = [
     "pytest==8.3.5",
     "pytest-cov==6.1.1",
+    "pytest-mock==3.15.1",
     "pytest-qt==4.4.0",
     "syrupy==4.9.1",
 ]

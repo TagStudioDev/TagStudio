@@ -2,6 +2,8 @@
 title: Ignoring Files
 icon: material/file-document-remove
 ---
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-file-document-remove: Ignoring Files & Directories
 

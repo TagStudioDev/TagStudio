@@ -3,6 +3,8 @@ title: Changelog
 icon: material/script-text
 toc_depth: 2
 ---
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-script-text: Changelog
 

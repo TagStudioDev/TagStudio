@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import typing
@@ -95,7 +94,7 @@ class MirrorEntriesModal(QWidget):
         mirrored: list = []
         lib = self.driver.lib
         for i, entries in enumerate(self.tracker.groups):
-            lib.mirror_entry_fields(*entries)
+            lib.mirror_entry_fields(entries)
             sleep(0.005)
             yield i
 

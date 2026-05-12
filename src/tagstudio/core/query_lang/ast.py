@@ -1,11 +1,10 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: MIT
 
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar, override
+from typing import TypeVar, override
 
 
 class ConstraintType(Enum):
@@ -98,7 +97,7 @@ class Not(AST):
 T = TypeVar("T")
 
 
-class BaseVisitor(ABC, Generic[T]):
+class BaseVisitor[T](ABC):
     def visit(self, node: AST) -> T:
         if isinstance(node, ANDList):
             return self.visit_and_list(node)

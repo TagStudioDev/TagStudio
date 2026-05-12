@@ -1,6 +1,7 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, override
@@ -65,7 +66,7 @@ class LibraryInfoWindow(LibraryInfoWindowView):
     def update_stats(self):
         self.entry_count_label.setText(f"<b>{self.lib.entries_count}</b>")
         self.tag_count_label.setText(f"<b>{len(self.lib.tags)}</b>")
-        self.field_count_label.setText(f"<b>{len(self.lib.field_types)}</b>")
+        self.field_count_label.setText(f"<b>{len(self.lib.field_templates)}</b>")
         self.namespaces_count_label.setText(f"<b>{len(self.lib.namespaces)}</b>")
         colors_total = 0
         for c in self.lib.tag_color_groups.values():

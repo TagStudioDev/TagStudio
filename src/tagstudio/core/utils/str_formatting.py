@@ -1,6 +1,8 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
+import semver
 
 
 def strip_punctuation(string: str) -> str:
@@ -32,3 +34,18 @@ def strip_web_protocol(string: str) -> str:
     for prefix in prefixes:
         string = string.removeprefix(prefix)
     return string
+
+
+def is_version_outdated(current: str, latest: str) -> bool:
+    vcur = semver.Version.parse(current)
+    vlat = semver.Version.parse(latest)
+    assert vlat.prerelease is None and vlat.build is None
+
+    if vcur.major != vlat.major:
+        return vcur.major < vlat.major
+    elif vcur.minor != vlat.minor:
+        return vcur.minor < vlat.minor
+    elif vcur.patch != vlat.patch:
+        return vcur.patch < vlat.patch
+    else:
+        return vcur.prerelease is not None or vcur.build is not None

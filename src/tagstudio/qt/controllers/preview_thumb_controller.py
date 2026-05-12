@@ -1,5 +1,6 @@
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import io
 from pathlib import Path
@@ -49,8 +50,8 @@ class PreviewThumb(PreviewThumbView):
                     stats.width = image.width
                     stats.height = image.height
             except (
-                rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
-                rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
+                rawpy.LibRawIOError,
+                rawpy.LibRawFileUnsupportedError,
                 FileNotFoundError,
             ):
                 pass

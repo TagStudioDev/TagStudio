@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import shutil
@@ -105,8 +104,8 @@ class RefreshTracker:
                 ),
                 cwd=library_dir,
                 capture_output=True,
-                text=True,
                 shell=True,
+                encoding="UTF-8",
             )
             compiled_ignore_path.unlink()
 
@@ -145,7 +144,7 @@ class RefreshTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_path_entry(f):
+            if not self.library.has_entry_with_path(f):
                 self.files_not_in_library.append(f)
 
         end_time_total = time()
@@ -190,7 +189,7 @@ class RefreshTracker:
 
                 relative_path = f.relative_to(library_dir)
 
-                if not self.library.has_path_entry(relative_path):
+                if not self.library.has_entry_with_path(relative_path):
                     self.files_not_in_library.append(relative_path)
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
