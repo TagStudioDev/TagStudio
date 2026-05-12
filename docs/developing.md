@@ -1,6 +1,7 @@
 ---
 icon: material/code-braces
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -87,10 +88,9 @@ If you choose to manually set up a virtual environment and install dependencies 
     ```
 
 2.  Activate your environment:
-
-    -   Windows w/Powershell: `.venv\Scripts\Activate.ps1`
-    -   Windows w/Command Prompt: `.venv\Scripts\activate.bat`
-    -   Linux/macOS: `source .venv/bin/activate`
+    - Windows w/Powershell: `.venv\Scripts\Activate.ps1`
+    - Windows w/Command Prompt: `.venv\Scripts\activate.bat`
+    - Linux/macOS: `source .venv/bin/activate`
 
     <!-- prettier-ignore -->
     !!! info "Supported Shells"
