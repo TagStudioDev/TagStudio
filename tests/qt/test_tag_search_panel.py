@@ -6,7 +6,7 @@ from PySide6.QtCore import SIGNAL
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.mixed.tag_search import TagSearchPanel
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -24,12 +24,12 @@ def test_update_tags(qtbot: QtBot, library: Library):
 def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver, library: Library):
     panel = TagSearchPanel(library)
     qtbot.addWidget(panel)
-    panel.driver = qt_driver
+    panel.set_driver(qt_driver)
 
     # Set the widget
     tags = library.tags
     panel.set_tag_widget(tags[0], 0)
-    tag_widget: TagWidget = panel.scroll_layout.itemAt(0).widget()  # pyright: ignore[reportAssignmentType]
+    tag_widget: TagWidget = panel.get_tag_widget(0, library)
 
     should_replace_actions = {
         tag_widget: ["on_edit()", "on_remove()"],

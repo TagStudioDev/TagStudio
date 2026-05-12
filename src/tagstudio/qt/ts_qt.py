@@ -70,6 +70,7 @@ from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntr
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.controllers.out_of_date_message_box import OutOfDateMessageBox
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
 from tagstudio.qt.global_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     GlobalSettings,
@@ -86,7 +87,6 @@ from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
-from tagstudio.qt.mixed.tag_search import TagSearchModal, TagSearchPanel
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
@@ -363,7 +363,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
-            widget=TagSearchPanel(self.lib, is_tag_chooser=False, driver=self),
+            widget=TagSearchPanel(self.lib, is_tag_chooser=False),
             title=Translations["tag_manager.title"],
             done_callback=lambda checked=False: (
                 self.main_window.preview_panel.set_selection(self.selected, update_preview=False)

@@ -8,8 +8,8 @@ from warnings import catch_warnings
 from PySide6.QtWidgets import QListWidgetItem
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.mixed.add_field import AddFieldModal
-from tagstudio.qt.mixed.tag_search import TagSearchModal
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
