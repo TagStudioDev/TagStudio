@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 # MkDocs: https://www.mkdocs.org/
@@ -37,9 +36,9 @@ nav:
       - install.md
       - usage.md
       - Developing:
-        - developing.md
-        - contributing.md
-        - style.md
+          - developing.md
+          - contributing.md
+          - style.md
       - Help:
           - help/ffmpeg.md
   - Using Libraries:
@@ -50,7 +49,7 @@ nav:
       - ignore.md
       - macros.md
       - Fields:
-        - fields.md
+          - fields.md
       - Tags:
           - tags.md
           - colors.md
@@ -58,7 +57,7 @@ nav:
       - changelog.md
       - roadmap.md
       - Schema History:
-        - library-changes.md
+          - library-changes.md
 
 theme:
   name: material
@@ -108,7 +107,6 @@ theme:
       upcoming: material/flask-outline
 
 markdown_extensions:
-
   # Python Markdown
   - abbr
   - admonition
@@ -152,8 +150,8 @@ markdown_extensions:
 plugins:
   - search
   - tags
-  - social:  # social embed cards
-      enabled: !ENV [CI, false]  # enabled only when running in CI (eg GitHub Actions)
+  - social: # social embed cards
+      enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
   - redirects:
       redirect_maps:
         "develop.md": "developing.md"

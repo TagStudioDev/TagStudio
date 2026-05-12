@@ -1,6 +1,7 @@
 ---
 icon: material/file
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -24,33 +25,33 @@ To fix file entries that have become unlinked, select the "Fix Unlinked Entries"
 
 ## Internal Structure
 
--   `id` (`INTEGER`/`int`, `UNIQUE`, `NOT NULL`, `PRIMARY KEY`)
-    -   The ID for the file entry.
-    -   Used for guaranteed unique references.
--   `folder` (`INTEGER`/`int`, `NOT NULL`, `FOREIGN KEY`)
-    -   _Not currently used, may be removed._
--   `path` (`VARCHAR`/`Path`, `UNIQUE`, `NOT NULL`)
-    -   The filename and filepath relative to the root of the library folder.
-    -   (E.g. for library "Folder", path = "any_subfolders/filename.txt")
--   `suffix` (`VARCHAR`/`str`, `NOT NULL`)
-    -   The filename suffix with no leading dot.
-    -   Used for quicker file extension checks.
--   `date_created` (`DATETIME`/`Datetime`)
-    -   _Not currently used, will be implemented in an upcoming update._
-    -   The creation date of the file (not the entry).
-    -   Generated from `st_birthtime` on Windows and Mac, and `st_ctime` on Linux.
--   `date_modified` (`DATETIME`/`Datetime`)
-    -   _Not currently used, will be implemented in an upcoming update._
-    -   The latest modification date of the file (not the entry).
-    -   Generated from `st_mtime`.
--   `date_added` (`DATETIME`/`Datetime`)
-    -   The date the file entry was added to the TagStudio library.
+- `id` (`INTEGER`/`int`, `UNIQUE`, `NOT NULL`, `PRIMARY KEY`)
+    - The ID for the file entry.
+    - Used for guaranteed unique references.
+- `folder` (`INTEGER`/`int`, `NOT NULL`, `FOREIGN KEY`)
+    - _Not currently used, may be removed._
+- `path` (`VARCHAR`/`Path`, `UNIQUE`, `NOT NULL`)
+    - The filename and filepath relative to the root of the library folder.
+    - (E.g. for library "Folder", path = "any_subfolders/filename.txt")
+- `suffix` (`VARCHAR`/`str`, `NOT NULL`)
+    - The filename suffix with no leading dot.
+    - Used for quicker file extension checks.
+- `date_created` (`DATETIME`/`Datetime`)
+    - _Not currently used, will be implemented in an upcoming update._
+    - The creation date of the file (not the entry).
+    - Generated from `st_birthtime` on Windows and Mac, and `st_ctime` on Linux.
+- `date_modified` (`DATETIME`/`Datetime`)
+    - _Not currently used, will be implemented in an upcoming update._
+    - The latest modification date of the file (not the entry).
+    - Generated from `st_mtime`.
+- `date_added` (`DATETIME`/`Datetime`)
+    - The date the file entry was added to the TagStudio library.
 
 ### Table Relationships
 
--   `tag_entries`
-    -   A relationship between `entry_id` to `tag_id`s from the `tags` table.
--   `text_fields`
-    -   (TODO: determine the relationship for `entry_id`)
--   `datetime_fields`
-    -   (TODO: determine the relationship for `entry_id`)
+- `tag_entries`
+    - A relationship between `entry_id` to `tag_id`s from the `tags` table.
+- `text_fields`
+    - (TODO: determine the relationship for `entry_id`)
+- `datetime_fields`
+    - (TODO: determine the relationship for `entry_id`)

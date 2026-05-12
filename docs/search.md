@@ -1,6 +1,7 @@
 ---
 icon: material/magnify
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -50,13 +51,13 @@ Sometimes search queries have ambiguous characters and need to be "escaped". Thi
 
 #### Valid Escaped Tag Searches
 
--   "Tag Name With Spaces"
--   Tag_Name_With_Spaces
+- "Tag Name With Spaces"
+- Tag_Name_With_Spaces
 
 #### Invalid Escaped Tag Searches
 
--   Tag Name With Spaces
-    -   Reason: Ambiguity between a tag named "Tag Name With Spaces" and four individual tags called "Tag", "Name", "With", "Spaces".
+- Tag Name With Spaces
+    - Reason: Ambiguity between a tag named "Tag Name With Spaces" and four individual tags called "Tag", "Name", "With", "Spaces".
 
 ## Tags
 
@@ -86,31 +87,31 @@ Optionally, you may use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)
 
 Given a file "Artwork/Piece.jpg", the following searches will return results for it:
 
--   `path: artwork/piece.jpg`
--   `path: Artwork/Piece.jpg`
--   `path: piece.jpg`
--   `path: Piece.jpg`
--   `path: artwork`
--   `path: rtwor`
--   `path: ece.jpg`
--   `path: iec`
--   `path: artwork/*`
--   `path: Artwork/*`
--   `path: *piece.jpg*`
--   `path: *Piece.jpg*`
--   `path: *artwork*`
--   `path: *Artwork*`
--   `path: *rtwor*`
--   `path: *ece.jpg*`
--   `path: *iec*`
--   `path: *.jpg`
+- `path: artwork/piece.jpg`
+- `path: Artwork/Piece.jpg`
+- `path: piece.jpg`
+- `path: Piece.jpg`
+- `path: artwork`
+- `path: rtwor`
+- `path: ece.jpg`
+- `path: iec`
+- `path: artwork/*`
+- `path: Artwork/*`
+- `path: *piece.jpg*`
+- `path: *Piece.jpg*`
+- `path: *artwork*`
+- `path: *Artwork*`
+- `path: *rtwor*`
+- `path: *ece.jpg*`
+- `path: *iec*`
+- `path: *.jpg`
 
 While the following searches will **NOT:**
 
--   `path: ARTWORK/Piece.jpg` _(Reason: Mismatched case)_
--   `path: *aRtWoRk/Piece*` _(Reason: Mismatched case)_
--   `path: PieCe.jpg` _(Reason: Mismatched case)_
--   `path: *PieCe.jpg*` _(Reason: Mismatched case)_
+- `path: ARTWORK/Piece.jpg` _(Reason: Mismatched case)_
+- `path: *aRtWoRk/Piece*` _(Reason: Mismatched case)_
+- `path: PieCe.jpg` _(Reason: Mismatched case)_
+- `path: *PieCe.jpg*` _(Reason: Mismatched case)_
 
 ## Special Searches
 
