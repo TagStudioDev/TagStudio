@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, func, or_, select
+from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
@@ -163,6 +163,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         continue
                     case ConstraintType.Tag:
                         ids = self.__get_tag_ids(term.value)
+                        if len(ids) == 0:
+                            bool_expressions.append(false())
+                            continue
                         if not only_single:
                             tag_ids.update(ids)
                             continue
