@@ -1,10 +1,11 @@
-# Based off example from Refactoring Guru:
-# https://refactoring.guru/design-patterns/singleton/python/example#example-1
-# Adapted for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 from threading import Lock
 
 
+# See also: https://refactoring.guru/design-patterns/singleton/python/example#example-1
 class Singleton(type):
     """A thread-safe implementation of a Singleton."""
 

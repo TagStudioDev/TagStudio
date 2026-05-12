@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 ---
 name: pytest
 
@@ -43,6 +45,7 @@ jobs:
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
             libyaml-dev \
+            ripgrep \
             x11-utils
 
       - name: Execute pytest

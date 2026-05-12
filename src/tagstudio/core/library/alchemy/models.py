@@ -1,21 +1,18 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 from datetime import datetime as dt
 from pathlib import Path
 from typing import override
 
-from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.db import Base, PathType
-from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
-    BooleanField,
     DatetimeField,
     TextField,
 )
@@ -224,7 +221,6 @@ class Entry(Base):
         fields: list[BaseField] = []
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
-        fields = sorted(fields, key=lambda field: field.type.position)
         return fields
 
     @property
@@ -274,67 +270,6 @@ class Entry(Base):
     def remove_tag(self, tag: Tag) -> None:
         """Removes a Tag from the Entry."""
         self.tags.remove(tag)
-
-
-class ValueType(Base):
-    """Define Field Types in the Library.
-
-    Example:
-        key: content_tags (this field is slugified `name`)
-        name: Content Tags (this field is human readable name)
-        kind: type of content (Text Line, Text Box, Tags, Datetime, Checkbox)
-        is_default: Should the field be present in new Entry?
-        order: position of the field widget in the Entry form
-
-    """
-
-    __tablename__ = "value_type"
-
-    key: Mapped[str] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(nullable=False)
-    type: Mapped[FieldTypeEnum] = mapped_column(default=FieldTypeEnum.TEXT_LINE)
-    is_default: Mapped[bool]  # pyright: ignore[reportUninitializedInstanceVariable]
-    position: Mapped[int]  # pyright: ignore[reportUninitializedInstanceVariable]
-
-    # add relations to other tables
-    text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
-    datetime_fields: Mapped[list[DatetimeField]] = relationship(
-        "DatetimeField", back_populates="type"
-    )
-    boolean_fields: Mapped[list[BooleanField]] = relationship("BooleanField", back_populates="type")
-
-    @property
-    def as_field(self) -> BaseField:
-        FieldClass = {  # noqa: N806
-            FieldTypeEnum.TEXT_LINE: TextField,
-            FieldTypeEnum.TEXT_BOX: TextField,
-            FieldTypeEnum.DATETIME: DatetimeField,
-            FieldTypeEnum.BOOLEAN: BooleanField,
-        }
-
-        return FieldClass[self.type](
-            type_key=self.key,
-            position=self.position,
-        )
-
-
-@event.listens_for(ValueType, "before_insert")
-def slugify_field_key(mapper, connection, target):  # pyright: ignore
-    """Slugify the field key before inserting into the database."""
-    if not target.key:
-        from tagstudio.core.library.alchemy.library import slugify
-
-        target.key = slugify(target.tag)
-
-
-# NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-# and is set to be removed in a future release.
-@deprecated("Use `Version` for storing version, and `ts_ignore` system for file exclusion.")
-class Preferences(Base):
-    __tablename__ = "preferences"
-
-    key: Mapped[str] = mapped_column(primary_key=True)
-    value: Mapped[dict] = mapped_column(JSON, nullable=False)
 
 
 class Version(Base):

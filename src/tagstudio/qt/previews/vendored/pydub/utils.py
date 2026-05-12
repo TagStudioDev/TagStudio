@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: (c) 2011 James Robert, http://jiaaro.com
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+# Vendored from pydub
+
+
 import json
 import re
 import subprocess
