@@ -1,6 +1,7 @@
 ---
 icon: material/movie-open-cog
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -25,7 +26,6 @@ To Install:
 1. Download 7z or zip file and extract it (right click > Extract All)
 2. Move extracted contents to a unique folder (i.e; `c:\ffmpeg` or `c:\Program Files\ffmpeg`)
 3. Add FFmpeg to your system PATH
-
     1. In Windows, search for or go to "Edit the system environment variables" under the Control Panel
     2. Under "User Variables", select "Path" then edit
     3. Click new and add `<Your folder>\bin` (e.g; `c:\ffmpeg\bin` or `c:\Program Files\ffmpeg\bin`)

@@ -1,6 +1,7 @@
 ---
 icon: material/file-plus
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -10,11 +11,11 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ## Getting Started
 
--   Check the [Feature Roadmap](roadmap.md) page to see what priority features there are, the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq), as well as the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
--   If you'd like to add a feature that isn't on the feature roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
-    -   We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
--   **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
--   If you wish to discuss TagStudio further, feel free to join the [Discord Server](https://discord.com/invite/hRNnVKhF2G)!
+- Check the [Feature Roadmap](roadmap.md) page to see what priority features there are, the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq), as well as the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
+- If you'd like to add a feature that isn't on the feature roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
+    - We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
+- **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
+- If you wish to discuss TagStudio further, feel free to join the [Discord Server](https://discord.com/invite/hRNnVKhF2G)!
 
 <!-- prettier-ignore -->
 !!! note
@@ -22,20 +23,20 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ### Contribution Checklist
 
--   I've read the [Feature Roadmap](roadmap.md) page
--   I've read the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq)
--   I've checked the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
--   **I've created a new issue for my feature/fix _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
--   I've set up my development environment including Ruff, Mypy, and PyTest
--   I've read the CONTRIBUTING.md/Contributing page on the documentation site as well as the and/or [Style Guide](style.md)
--   **_I mean it, I've found or created an issue for my feature/fix!_**
+- I've read the [Feature Roadmap](roadmap.md) page
+- I've read the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq)
+- I've checked the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
+- **I've created a new issue for my feature/fix _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
+- I've set up my development environment including Ruff, Mypy, and PyTest
+- I've read the CONTRIBUTING.md/Contributing page on the documentation site as well as the and/or [Style Guide](style.md)
+- **_I mean it, I've found or created an issue for my feature/fix!_**
 
 <!-- prettier-ignore -->
 !!! failure "Unacceptable Code"
     The following types of code will NOT be accepted to the project:
 
-    -   Code that is not yours or does not have a compatible license with TagStudio's [own one](../LICENSE)
-    -   Code that you do not understand and/or cannot explain
+    - Code that is not yours or does not have a compatible license with TagStudio's [own one](../LICENSE)
+    - Code that you do not understand and/or cannot explain
 
 ## Creating a Development Environment
 
@@ -80,9 +81,9 @@ A Python linter and code formatter. Ruff uses the `pyproject.toml` as its config
 
 Inside the root repository directory:
 
--   Lint code with `ruff check`
-    -   Some linting suggestions can be automatically formatted with `ruff check --fix`
--   Format code with `ruff format`
+- Lint code with `ruff check`
+    - Some linting suggestions can be automatically formatted with `ruff check --fix`
+- Format code with `ruff format`
 
 Ruff should automatically discover the configuration options inside the [pyproject.toml](https://github.com/TagStudioDev/TagStudio/blob/main/pyproject.toml) file. For more information, see the [ruff configuration discovery docs](https://docs.astral.sh/ruff/configuration/#config-file-discovery).
 
@@ -94,16 +95,16 @@ Mypy is a static type checker for Python. It sure has a lot to say sometimes, bu
 
 #### Running Locally
 
--   **(First time only)** Run the following:
-    -   `mkdir -p .mypy_cache`
-    -   `mypy --install-types --non-interactive`
--   You can now check code by running `mypy --config-file pyproject.toml .` in the repository root. _(Don't forget the "." at the end!)_
+- **(First time only)** Run the following:
+    - `mkdir -p .mypy_cache`
+    - `mypy --install-types --non-interactive`
+- You can now check code by running `mypy --config-file pyproject.toml .` in the repository root. _(Don't forget the "." at the end!)_
 
 Mypy is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=matangover.mypy), PyCharm [plugin](https://plugins.jetbrains.com/plugin/11086-mypy), and [more](https://plugins.jetbrains.com/plugin/11086-mypy).
 
 ### PyTest
 
--   Run all tests by running `pytest tests/` in the repository root.
+- Run all tests by running `pytest tests/` in the repository root.
 
 ## Code Style
 
@@ -111,22 +112,22 @@ See the [Style Guide](style.md)
 
 ### Modules & Implementations
 
--   **Do not** modify legacy library code in the `src/core/library/json/` directory
--   Avoid direct calls to `os`
-    -   Use `Pathlib` library instead of `os.path`
-    -   Use `platform.system()` instead of `os.name` and `sys.platform`
--   Don't prepend local imports with `tagstudio`, stick to `src`
--   Use the `logger` system instead of `print` statements
--   Avoid nested f-strings
--   Use HTML-like tags inside Qt widgets over stylesheets where possible
+- **Do not** modify legacy library code in the `src/core/library/json/` directory
+- Avoid direct calls to `os`
+    - Use `Pathlib` library instead of `os.path`
+    - Use `platform.system()` instead of `os.name` and `sys.platform`
+- Don't prepend local imports with `tagstudio`, stick to `src`
+- Use the `logger` system instead of `print` statements
+- Avoid nested f-strings
+- Use HTML-like tags inside Qt widgets over stylesheets where possible
 
 ### Commit and Pull Request Style
 
--   Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) as a guideline for commit messages. This allows us to easily generate changelogs for releases.
-    -   See some [examples](https://www.conventionalcommits.org/en/v1.0.0/#examples) of what this looks like in practice.
--   Use clear and concise commit messages. If your commit does too much, either consider breaking it up into smaller commits or providing extra detail in the commit description.
--   Pull requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
--   Pull requests should ideally be limited to **a single** feature or fix.
+- Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) as a guideline for commit messages. This allows us to easily generate changelogs for releases.
+    - See some [examples](https://www.conventionalcommits.org/en/v1.0.0/#examples) of what this looks like in practice.
+- Use clear and concise commit messages. If your commit does too much, either consider breaking it up into smaller commits or providing extra detail in the commit description.
+- Pull requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
+- Pull requests should ideally be limited to **a single** feature or fix.
 
 <!-- prettier-ignore -->
 !!! important
@@ -138,24 +139,24 @@ See the [Style Guide](style.md)
 
 ### Runtime Requirements
 
--   Final code must function on supported versions of Windows, macOS, and Linux:
-    -   Windows: 10, 11
-    -   macOS: 13.0+
-    -   Linux: _Varies_
--   Final code must **_NOT:_**
-    -   Contain superfluous or unnecessary logging statements
-    -   Cause unreasonable slowdowns to the program outside of a progress-indicated task
-    -   Cause undesirable visual glitches or artifacts on screen
+- Final code must function on supported versions of Windows, macOS, and Linux:
+    - Windows: 10, 11
+    - macOS: 13.0+
+    - Linux: _Varies_
+- Final code must **_NOT:_**
+    - Contain superfluous or unnecessary logging statements
+    - Cause unreasonable slowdowns to the program outside of a progress-indicated task
+    - Cause undesirable visual glitches or artifacts on screen
 
 ## Documentation Guidelines
 
 Documentation contributions include anything inside of the `docs/` folder, as well as the `README.md` and `CONTRIBUTING.md` files. Documentation inside the `docs/` folder is built and hosted on our static documentation site, [docs.tagstud.io](https://docs.tagstud.io/).
 
--   Use "[dash-case / kebab-case](https://developer.mozilla.org/en-US/docs/Glossary/Kebab_case)" for file and folder names
--   Follow the folder structure pattern
--   Don't add images or other media with excessively large file sizes
--   Provide alt text for all embedded media
--   Use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" for title capitalization
+- Use "[dash-case / kebab-case](https://developer.mozilla.org/en-US/docs/Glossary/Kebab_case)" for file and folder names
+- Follow the folder structure pattern
+- Don't add images or other media with excessively large file sizes
+- Provide alt text for all embedded media
+- Use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" for title capitalization
 
 ## Translation Guidelines
 

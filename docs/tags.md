@@ -1,6 +1,7 @@
 ---
 icon: material/tag-text
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -12,9 +13,9 @@ Tags are discrete objects that represent some attribute. This could be a person,
 
 TagStudio tags do not share the same naming limitations of many other tagging solutions. The key standouts of tag names in TagStudio are:
 
--   Tag names do **NOT** have to be unique
--   Tag names are **NOT** limited to specific characters
--   Tags can have **aliases**, a.k.a. alternate names to go by
+- Tag names do **NOT** have to be unique
+- Tag names are **NOT** limited to specific characters
+- Tags can have **aliases**, a.k.a. alternate names to go by
 
 ### Name
 

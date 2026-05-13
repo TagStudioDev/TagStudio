@@ -1,6 +1,7 @@
 ---
 icon: material/image-check
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -81,7 +82,7 @@ Audio thumbnails will default to embedded cover art (if any) and fallback to gen
 Preview support for office documents or well-known project file formats varies by the format and whether or not embedded thumbnails are available to be read from. OpenDocument-based files are typically supported.
 
 | Filetype                             | Extensions            | Preview Type                                                               |
-|--------------------------------------| --------------------- | -------------------------------------------------------------------------- |
+| ------------------------------------ | --------------------- | -------------------------------------------------------------------------- |
 | Blender                              | `.blend`, `.blend<#>` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
 | Clip Studio Paint                    | `.clip`               | Embedded thumbnail                                                         |
 | Keynote (Apple iWork)                | `.key`                | Embedded thumbnail                                                         |
@@ -103,7 +104,7 @@ Preview support for office documents or well-known project file formats varies b
 Archive thumbnails will display the first image from the archive within the Preview Panel.
 
 | Filetype | Extensions     |
-|----------|----------------|
+| -------- | -------------- |
 | 7-Zip    | `.7z`, `.s7z`  |
 | RAR      | `.rar`         |
 | Tar      | `.tar`, `.tgz` |

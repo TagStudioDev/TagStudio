@@ -1,6 +1,7 @@
 ---
 icon: material/download
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -64,22 +65,21 @@ TagStudio can now be launched via the `tagstudio` command in your terminal.
 
 Some external dependencies are required for TagStudio to execute. Below is a table of known packages that will be necessary.
 
-<!-- prettier-ignore -->
-| Package | Reason |
-|--------------- | --------------- |
-| [dbus](https://repology.org/project/dbus) | required for Qt; opening desktop applications |
-| [ffmpeg](https://repology.org/project/ffmpeg) | audio/video playback |
-| libstdc++ | required for Qt |
-| [libva](https://repology.org/project/libva) | hardware rendering with [VAAPI](https://www.freedesktop.org/wiki/Software/vaapi) |
-| [libvdpau](https://repology.org/project/libvdpau) | hardware rendering with [VDPAU](https://www.freedesktop.org/wiki/Software/VDPAU) |
-| [libx11](https://repology.org/project/libx11) | required for Qt |
-| libxcb-cursor OR [xcb-util-cursor](https://repology.org/project/xcb-util-cursor) | required for Qt |
-| [libxkbcommon](https://repology.org/project/libxkbcommon) | required for Qt |
-| [libxrandr](https://repology.org/project/libxrandr) | hardware rendering |
-| [pipewire](https://repology.org/project/pipewire) | PipeWire audio support |
-| [qt](https://repology.org/project/qt) | required |
-| [qt-multimedia](https://repology.org/project/qt) | required |
-| [qt-wayland](https://repology.org/project/qt) | Wayland support |
+| Package                                                                          | Reason                                                                           |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [dbus](https://repology.org/project/dbus)                                        | required for Qt; opening desktop applications                                    |
+| [ffmpeg](https://repology.org/project/ffmpeg)                                    | audio/video playback                                                             |
+| libstdc++                                                                        | required for Qt                                                                  |
+| [libva](https://repology.org/project/libva)                                      | hardware rendering with [VAAPI](https://www.freedesktop.org/wiki/Software/vaapi) |
+| [libvdpau](https://repology.org/project/libvdpau)                                | hardware rendering with [VDPAU](https://www.freedesktop.org/wiki/Software/VDPAU) |
+| [libx11](https://repology.org/project/libx11)                                    | required for Qt                                                                  |
+| libxcb-cursor OR [xcb-util-cursor](https://repology.org/project/xcb-util-cursor) | required for Qt                                                                  |
+| [libxkbcommon](https://repology.org/project/libxkbcommon)                        | required for Qt                                                                  |
+| [libxrandr](https://repology.org/project/libxrandr)                              | hardware rendering                                                               |
+| [pipewire](https://repology.org/project/pipewire)                                | PipeWire audio support                                                           |
+| [qt](https://repology.org/project/qt)                                            | required                                                                         |
+| [qt-multimedia](https://repology.org/project/qt)                                 | required                                                                         |
+| [qt-wayland](https://repology.org/project/qt)                                    | Wayland support                                                                  |
 
 ### :material-nix: Nix(OS)
 
@@ -225,15 +225,15 @@ For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/
 
 To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extractor capable of handling them.
 
--   :material-penguin: On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
+- :material-penguin: On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
 
--   :fontawesome-brands-apple: On macOS `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula.
+- :fontawesome-brands-apple: On macOS `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula.
 
     <!-- prettier-ignore -->
     !!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
         On macOS, you may be met with a message similar to  "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
 
--   :fontawesome-brands-windows: On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
+- :fontawesome-brands-windows: On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
 
     <!-- prettier-ignore -->
     !!! tip "WinRAR License"

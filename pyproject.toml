@@ -104,6 +104,7 @@ include = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
+reportImportCycles = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
@@ -112,6 +113,7 @@ reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
 reportUnannotatedClassAttribute = false
+reportUninitializedInstanceVariable = false
 
 [tool.ruff]
 exclude = ["home_ui.py", "resources.py", "resources_rc.py"]

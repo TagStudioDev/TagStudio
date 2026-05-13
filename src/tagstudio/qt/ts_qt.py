@@ -8,7 +8,6 @@
 
 """A Qt driver for TagStudio."""
 
-import contextlib
 import ctypes
 import math
 import os
@@ -194,7 +193,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager
+    cache_manager: CacheManager | None
 
     browsing_history: History[BrowsingState]
 
@@ -539,7 +538,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: self.cache_manager.clear_cache()
+            lambda: unwrap(self.cache_manager).clear_cache()
         )
 
         # endregion
@@ -913,7 +912,7 @@ class QtDriver(DriverMixin, QObject):
             origin_id(id): The entry ID associated with the widget making the call.
         """
         entry: Entry | None = None
-        pending: list[tuple[int, Path]] = []
+        pending: list[tuple[int | None, Path]] = []
         deleted_count: int = 0
 
         selected = self.selected
@@ -921,14 +920,13 @@ class QtDriver(DriverMixin, QObject):
 
         if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
-            if not origin_id_:
-                with contextlib.suppress(IndexError):
-                    origin_id_ = selected[0]
+            if origin_id_ is None:
+                origin_id_ = selected[0] if len(selected) > 0 else None
 
             pending.append((origin_id_, Path(origin_path)))
         else:
             for item in selected:
-                entry = self.lib.get_entry(item)
+                entry = unwrap(self.lib.get_entry(item))
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
@@ -950,7 +948,8 @@ class QtDriver(DriverMixin, QObject):
                     self.main_window.status_bar.showMessage(msg)
                     self.main_window.status_bar.repaint()
 
-                    self.lib.remove_entries([e_id])
+                    if e_id is not None:
+                        self.lib.remove_entries([e_id])
                     if delete_file(library_dir / f):
                         deleted_count += 1
 
@@ -1226,10 +1225,10 @@ class QtDriver(DriverMixin, QObject):
             for field in self.copy_buffer["fields"]:
                 exists = False
                 for e in existing_fields:
-                    if field.type_key == e.type_key and field.value == e.value:
+                    if field == e:
                         exists = True
                 if not exists:
-                    self.lib.add_field_to_entries(id, field_id=field.type_key, value=field.value)
+                    self.lib.add_field_to_entries(id, field=field)
             self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:

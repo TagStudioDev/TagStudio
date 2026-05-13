@@ -3,8 +3,8 @@
 ---
 name: Bug Report
 description: File a bug or issue report.
-title: '[Bug]: '
-labels: ['Type: Bug']
+title: "[Bug]: "
+labels: ["Type: Bug"]
 body:
   - type: markdown
     attributes:

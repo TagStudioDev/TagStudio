@@ -2,6 +2,7 @@
 title: Ignoring Files
 icon: material/file-document-remove
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -64,7 +65,7 @@ When scanning your library directories, the `.ts_ignore` file is read by either 
 
 A `#` symbol at the start of a line indicates that this line is a comment, and match no items. Blank lines are used to enhance readability and also match no items.
 
--   Can be escaped by putting a backslash ("`\`") in front of the `#` symbol.
+- Can be escaped by putting a backslash ("`\`") in front of the `#` symbol.
 
 <!-- prettier-ignore-start -->
 === "Example comment"
@@ -106,9 +107,9 @@ A `#` symbol at the start of a line indicates that this line is a comment, and m
 
 The forward slash "`/`" is used as the directory separator. Separators may occur at the beginning, middle or end of the `.ts_ignore` search pattern.
 
--   If there is a separator at the beginning or middle (or both) of the pattern, then the pattern is relative to the directory level of the particular `.TagStudio` library folder itself. Otherwise the pattern may also match at any level below the `.TagStudio` folder level.
+- If there is a separator at the beginning or middle (or both) of the pattern, then the pattern is relative to the directory level of the particular `.TagStudio` library folder itself. Otherwise the pattern may also match at any level below the `.TagStudio` folder level.
 
--   If there is a separator at the end of the pattern then the pattern will only match directories, otherwise the pattern can match both files and directories.
+- If there is a separator at the end of the pattern then the pattern will only match directories, otherwise the pattern can match both files and directories.
 
 <!-- prettier-ignore-start -->
 === "Example folder pattern"
@@ -129,8 +130,8 @@ The forward slash "`/`" is used as the directory separator. Separators may occur
 
 A `!` prefix before a pattern negates the pattern, allowing any files matched matched by previous patterns to be un-matched.
 
--   Any matching file excluded by a previous pattern will become included again.
--   **It is not possible to re-include a file if a parent directory of that file is excluded.**
+- Any matching file excluded by a previous pattern will become included again.
+- **It is not possible to re-include a file if a parent directory of that file is excluded.**
 
 <!-- prettier-ignore-start -->
 === "Example negation"
@@ -204,10 +205,10 @@ The character "`?`" matches any one character except "`/`".
 
 Two consecutive asterisks ("`**`") in patterns matched against full pathname may have special meaning:
 
--   A leading "`**`" followed by a slash means matches in all directories.
--   A trailing "`/**`" matches everything inside.
--   A slash followed by two consecutive asterisks then a slash ("`/**/`") matches zero or more directories.
--   Other consecutive asterisks are considered regular asterisks and will match according to the previous rules.
+- A leading "`**`" followed by a slash means matches in all directories.
+- A trailing "`/**`" matches everything inside.
+- A slash followed by two consecutive asterisks then a slash ("`/**/`") matches zero or more directories.
+- Other consecutive asterisks are considered regular asterisks and will match according to the previous rules.
 
 <!-- prettier-ignore-start -->
 === "Leading **"

@@ -12,11 +12,11 @@ jobs:
   linux:
     strategy:
       matrix:
-        build-type: ['', portable]
+        build-type: ["", portable]
         include:
-          - build-type: ''
-            build-flag: ''
-            suffix: ''
+          - build-type: ""
+            build-flag: ""
+            suffix: ""
           - build-type: portable
             build-flag: --portable
             suffix: _portable
@@ -28,7 +28,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - name: Install Python dependencies
@@ -50,18 +50,18 @@ jobs:
   macos:
     strategy:
       matrix:
-        os-version: ['14', '15']
+        os-version: ["14", "15"]
         include:
-          - os-version: '14'
+          - os-version: "14"
             arch: x86_64
-          - os-version: '15'
+          - os-version: "15"
             arch: aarch64
 
     runs-on: macos-${{ matrix.os-version }}
 
     env:
       # INFO: Even though we run on 14, target towards compatibility
-      MACOSX_DEPLOYMENT_TARGET: '11.0'
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
 
     steps:
       - name: Checkout repo
@@ -70,14 +70,13 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
           uv pip install --system .[pyinstaller]
-
 
       - name: Execute PyInstaller
         run: |
@@ -92,12 +91,12 @@ jobs:
   windows:
     strategy:
       matrix:
-        build-type: ['', portable]
+        build-type: ["", portable]
         include:
-          - build-type: ''
-            build-flag: ''
-            suffix: ''
-            file-end: ''
+          - build-type: ""
+            build-flag: ""
+            suffix: ""
+            file-end: ""
           - build-type: portable
             build-flag: --portable
             suffix: _portable
@@ -112,7 +111,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - name: Install Python dependencies

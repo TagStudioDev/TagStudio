@@ -29,7 +29,7 @@ def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver
     # Set the widget
     tags = library.tags
     panel.set_tag_widget(tags[0], 0)
-    tag_widget: TagWidget = panel.scroll_layout.itemAt(0).widget()
+    tag_widget: TagWidget = panel.scroll_layout.itemAt(0).widget()  # pyright: ignore[reportAssignmentType]
 
     should_replace_actions = {
         tag_widget: ["on_edit()", "on_remove()"],

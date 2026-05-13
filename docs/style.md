@@ -1,6 +1,7 @@
 ---
 icon: material/sign-text
 ---
+
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
@@ -10,18 +11,22 @@ icon: material/sign-text
 
 Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older code may not be adhering to all of these guidelines, in which case _"do as I say, not as I do"..._
 
--   Do your best to write clear, concise, and modular code.
-    -   This should include making methods private by default (e.g. `__method()`)
-    -   Methods should only be protected (e.g. `_method()`) or public (e.g. `method()`) when needed and warranted
--   Keep a maximum column width of no more than **100** characters.
--   Code comments should be used to help describe sections of code that can't speak for themselves.
--   Use [Google style](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings) docstrings for any classes and functions you add.
-    -   If you're modifying an existing function that does _not_ have docstrings, you don't _have_ to add docstrings to it... but it would be pretty cool if you did ;)
--   Imports should be ordered alphabetically.
--   Lists of values should be ordered using their [natural sort order](https://en.wikipedia.org/wiki/Natural_sort_order).
-    -   Some files have their methods ordered alphabetically as well (i.e. [`thumb_renderer`](https://github.com/TagStudioDev/TagStudio/blob/main/src/tagstudio/qt/widgets/thumb_renderer.py)). If you're working in a file and notice this, please try and keep to the pattern.
--   When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
--   If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
+- Do your best to write clear, concise, and modular code.
+    - This should include making methods private by default (e.g. `__method()`)
+    - Methods should only be protected (e.g. `_method()`) or public (e.g. `method()`) when needed and warranted
+- Keep a maximum column width of no more than **100** characters.
+- Code comments should be used to help describe sections of code that can't speak for themselves.
+- Use [Google style](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings) docstrings for any classes and functions you add.
+    - If you're modifying an existing function that does _not_ have docstrings, you don't _have_ to add docstrings to it... but it would be pretty cool if you did ;)
+- Imports should be ordered alphabetically.
+- Lists of values should be ordered using their [natural sort order](https://en.wikipedia.org/wiki/Natural_sort_order).
+    - Some files have their methods ordered alphabetically as well (i.e. [`thumb_renderer`](https://github.com/TagStudioDev/TagStudio/blob/main/src/tagstudio/qt/widgets/thumb_renderer.py)). If you're working in a file and notice this, please try and keep to the pattern.
+- When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
+- If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
+
+### Formatter Configs
+
+TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) file ([`.editorconfig`](../.editorconfig)) along with a [Prettier](https://prettier.io/) config file ([`.prettierrc.toml`](../.prettierrc.toml)) for formatting files other than .py files (Markdown, JSON, YAML, HTML, CSS, etc.). If editing these types of files it's recommended that you use a formatter that supports EditorConfig or has its settings matched to the EditorConfig and Prettier configs. Lastly, please pay attention to the `prettier-ignore` flags in present in some files if you are not using Prettier, as formatting these sections will break formatting used elsewhere such as the [MkDocs site](https://docs.tagstud.io/).
 
 ## Qt
 
@@ -82,14 +87,14 @@ class MyCoolWidget(MyCoolWidgetView):
 
 Observe the following key aspects of this example:
 
--   The Controller is just called `MyCoolWidget` instead of `MyCoolWidgetController` as it will be directly used by other code
--   The UI elements are in private variables
-    -   This enforces that the controller shouldn't directly access UI elements
-    -   Instead the view should provide a protected API (e.g. `_get_color()`) for things like setting/getting the value of a dropdown, etc.
-    -   Instead of `_get_color()` there could also be a `_color` method marked with `@property`
--   The callback methods are already defined as protected methods with NotImplementedErrors
-    -   Defines the interface the callbacks
-    -   Enforces that UI events be handled
+- The Controller is just called `MyCoolWidget` instead of `MyCoolWidgetController` as it will be directly used by other code
+- The UI elements are in private variables
+    - This enforces that the controller shouldn't directly access UI elements
+    - Instead the view should provide a protected API (e.g. `_get_color()`) for things like setting/getting the value of a dropdown, etc.
+    - Instead of `_get_color()` there could also be a `_color` method marked with `@property`
+- The callback methods are already defined as protected methods with NotImplementedErrors
+    - Defines the interface the callbacks
+    - Enforces that UI events be handled
 
 <!-- prettier-ignore -->
 !!! tip

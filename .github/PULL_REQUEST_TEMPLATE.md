@@ -1,5 +1,6 @@
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
+
 ### Summary
 
 <!--
@@ -19,15 +20,15 @@ Thank you for your eagerness to contribute!
 
 <!-- No requirements, just context for reviewers. -->
 
--   Platforms Tested:
-    -   [ ] Windows x86
-    -   [ ] Windows ARM
-    -   [ ] macOS x86
-    -   [ ] macOS ARM
-    -   [ ] Linux x86
-    -   [ ] Linux ARM
-    <!-- If an unspecified platform was tested, please add it here -->
--   Tested For:
-    -   [ ] Basic functionality
-    -   [ ] PyInstaller executable <!-- Not necessarily required, but appreciated! -->
-    <!-- If other important criteria was tested for, please add it here -->
+- Platforms Tested:
+    - [ ] Windows x86
+    - [ ] Windows ARM
+    - [ ] macOS x86
+    - [ ] macOS ARM
+    - [ ] Linux x86
+    - [ ] Linux ARM
+      <!-- If an unspecified platform was tested, please add it here -->
+- Tested For:
+    - [ ] Basic functionality
+    - [ ] PyInstaller executable <!-- Not necessarily required, but appreciated! -->
+      <!-- If other important criteria was tested for, please add it here -->
