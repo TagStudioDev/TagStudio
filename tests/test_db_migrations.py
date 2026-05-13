@@ -30,6 +30,7 @@ EMPTY_LIBRARIES = "empty_libraries"
         # str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_102")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_103")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_200")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_201")),
     ],
 )
 def test_library_migrations(path: str):

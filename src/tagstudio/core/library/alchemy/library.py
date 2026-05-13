@@ -419,6 +419,7 @@ class Library:
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if storage_path == ":memory:" else NullPool
         loaded_db_version: int = 0
+        initial_db_version: int = DB_VERSION
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -430,6 +431,7 @@ class Library:
             # Don't check DB version when creating new library
             if not is_new:
                 loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
+                initial_db_version = self.get_version(DB_VERSION_INITIAL_KEY)
 
                 # ======================== Library Database Version Checking =======================
                 # DB_VERSION 6 is the first supported SQLite DB version.
@@ -452,7 +454,7 @@ class Library:
                         ),
                     )
 
-            logger.info(f"[Library] DB_VERSION: {loaded_db_version}")
+            logger.info(f"[Library] Library DB version: {loaded_db_version}")
             make_tables(self.engine)
 
             if is_new:
@@ -571,6 +573,9 @@ class Library:
                     self.__apply_db104_migrations(session, library_dir)
                 if loaded_db_version < 200:
                     self.__apply_db200_migrations(session)
+                    # changes: field tables
+                if initial_db_version < 200 and loaded_db_version < 201:
+                    self.__apply_db201_migrations(session)
 
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
@@ -588,6 +593,7 @@ class Library:
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
+                logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
                 self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
 
         # everything is fine, set the library path
@@ -808,10 +814,6 @@ class Library:
             session.execute(text("UPDATE datetime_fields SET name = type_key"))
             session.flush()
 
-            # TODO: Remove `type_key` columns from text_fields and datetime_fields tables.
-            # See issue with dropping columns foreign keys in SQLite:
-            # https://www.sqlite.org/lang_altertable.html#making_other_kinds_of_table_schema_changes
-
             # Change `name` values to title case
             logger.info("[Library][Migration][200] Normalizing TextField names...")
             for text_field in session.execute(select(TextField)).scalars():
@@ -860,6 +862,59 @@ class Library:
                 except IntegrityError:
                     logger.error("[Library] FieldTemplate already exists", field_template=template)
                     session.rollback()
+
+            session.commit()
+
+    def __apply_db201_migrations(self, session: Session):
+        """Migrate DB to DB_VERSION 201."""
+        with session:
+            create_text_fields_table = text("""
+            CREATE TABLE text_fields (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                is_multiline BOOLEAN NOT NULL,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+            """)
+            create_datetime_fields_table = text("""
+            CREATE TABLE datetime_fields (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+            """)
+
+            logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
+            session.execute(text("ALTER TABLE text_fields RENAME TO text_fields_old"))
+            session.flush()
+            session.execute(create_text_fields_table)
+            session.flush()
+            session.execute(
+                text("""
+                    INSERT INTO text_fields (id, name, entry_id, value, is_multiline)
+                    SELECT id, name, entry_id, value, is_multiline
+                    FROM text_fields_old
+                """)
+            )
+            session.execute(text("DROP TABLE text_fields_old"))
+
+            logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
+            session.execute(text("ALTER TABLE datetime_fields RENAME TO datetime_fields_old"))
+            session.flush()
+            session.execute(create_datetime_fields_table)
+            session.flush()
+            session.execute(
+                text("""
+                    INSERT INTO datetime_fields (id, name, entry_id, value)
+                    SELECT id, name, entry_id, value
+                    FROM datetime_fields_old
+                """)
+            )
+            session.execute(text("DROP TABLE datetime_fields_old"))
 
             session.commit()
 

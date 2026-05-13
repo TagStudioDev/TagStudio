@@ -148,9 +148,9 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 #### Version 200
 
-| Used From | Format | Location                                        |
-| --------- | ------ | ----------------------------------------------- |
-| TBD       | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                            | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [c15e2b5](https://github.com/TagStudioDev/TagStudio/commit/c15e2b56eedd0a3c13391fa43571b8f8f7c7a91f) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 - Adds `text_field_templates` and `date_field_templates` tables.
 - Drops `boolean_fields` and `value_type` tables.
@@ -162,3 +162,12 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
     - Values are set to `TRUE` if the field row was previously a "TEXT_BOX" type.
 - Repairs existing "Description" fields inside the `text_fields` table to have their `is_multiline` column set to `TRUE` _(Previously done in [Version 7](#version-7))_.
 - Repairs existing "Comments" fields inside the `text_fields` table to have their `is_multiline` column set to `TRUE`.
+
+#### Version 201
+
+| Used From | Format | Location                                        |
+| --------- | ------ | ----------------------------------------------- |
+| TBD       | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+- Drops `type_key` columns from `text_fields` and `datetime_fields` tables.
+- Enforces column positions for `text_fields` and `datetime_fields` tables.
