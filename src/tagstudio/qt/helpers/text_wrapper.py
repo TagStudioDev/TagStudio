@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def wrap_line(
     text: str,
-    font: ImageFont.ImageFont,
+    font: ImageFont.ImageFont | ImageFont.FreeTypeFont | ImageFont.TransposedFont,
     width: int = 256,
     draw: ImageDraw.ImageDraw | None = None,
 ) -> int:
@@ -31,7 +31,7 @@ def wrap_line(
 
 def wrap_full_text(
     text: str,
-    font: ImageFont.ImageFont,
+    font: ImageFont.ImageFont | ImageFont.FreeTypeFont | ImageFont.TransposedFont,
     width: int = 256,
     draw: ImageDraw.ImageDraw | None = None,
 ) -> str:

@@ -5,7 +5,7 @@
 from PySide6.QtCore import QObject, QRunnable, Signal
 
 
-class CustomRunnable(QRunnable, QObject):
+class CustomRunnable(QRunnable, QObject):  # pyright: ignore[reportUnsafeMultipleInheritance]
     done = Signal()
 
     def __init__(self, function) -> None:
