@@ -101,6 +101,8 @@ ignore = [
 ]
 include = ["src/tagstudio", "tests"]
 # reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+reportAny = false
+reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
@@ -109,6 +111,7 @@ reportUnknownArgumentType = false
 reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
+reportUnannotatedClassAttribute = false
 
 [tool.ruff]
 exclude = ["home_ui.py", "resources.py", "resources_rc.py"]
