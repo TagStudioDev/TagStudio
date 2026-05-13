@@ -43,7 +43,7 @@ from PIL import (
     UnidentifiedImageError,
 )
 from PIL.Image import DecompressionBombError
-from pillow_heif import register_heif_opener
+from pillow_heif import register_heif_opener  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import (
     QBuffer,
     QFile,
@@ -58,6 +58,10 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
+from rawpy import (
+    LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
+    LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
+)
 
 from tagstudio.core.constants import (
     FONT_SAMPLE_SIZES,
@@ -75,9 +79,11 @@ from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
-from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
+from tagstudio.qt.previews.vendored.blender_renderer import (
+    blend_thumb,  # pyright: ignore[reportUnknownVariableType]
+)
 from tagstudio.qt.previews.vendored.pydub.audio_segment import (
-    _AudioSegment as AudioSegment,
+    _AudioSegment as AudioSegment,  # pyright: ignore[reportPrivateUsage]
 )
 from tagstudio.qt.resource_manager import ResourceManager
 
@@ -1120,8 +1126,8 @@ class ThumbRenderer(QObject):
                 )
         except (
             DecompressionBombError,
-            rawpy.LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
-            rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
+            LibRawIOError,
+            LibRawFileUnsupportedError,
         ) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1137,7 +1143,7 @@ class ThumbRenderer(QObject):
         try:
             # Load the EXR data to an array and rotate the color space from BGRA -> RGBA
             raw_array = cv2.imread(str(filepath), cv2.IMREAD_UNCHANGED)
-            assert raw_array
+            assert raw_array is not None
             raw_array[..., :3] = raw_array[..., 2::-1]
 
             # Correct the gamma of the raw array
@@ -1615,7 +1621,7 @@ class ThumbRenderer(QObject):
 
         def fetch_cached_image(file_name: Path):
             image: Image.Image | None = None
-            assert self.driver.cache_manager
+            assert self.driver.cache_manager is not None
             cached_path = self.driver.cache_manager.get_file_path(file_name)
 
             if cached_path and cached_path.is_file():
@@ -1878,7 +1884,7 @@ class ThumbRenderer(QObject):
                     image = self._resize_image(image, (adj_size, adj_size))
 
                 if save_to_file and savable_media_type and image:
-                    assert self.driver.cache_manager
+                    assert self.driver.cache_manager is not None
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
             except (
