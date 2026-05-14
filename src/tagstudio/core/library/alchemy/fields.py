@@ -20,15 +20,15 @@ class BaseField(Base):
 
     @declared_attr
     def id(self) -> Mapped[int]:
-        return mapped_column(primary_key=True, autoincrement=True)
+        return mapped_column(primary_key=True, autoincrement=True, sort_order=1)
 
     @declared_attr
     def name(self) -> Mapped[str]:
-        return mapped_column(nullable=False, default="")
+        return mapped_column(nullable=False, default="", sort_order=2)
 
     @declared_attr
     def entry_id(self) -> Mapped[int]:
-        return mapped_column(ForeignKey("entries.id"))
+        return mapped_column(ForeignKey("entries.id"), sort_order=3)
 
     @declared_attr
     def entry(self) -> Mapped[Entry]:
@@ -47,7 +47,7 @@ class BaseField(Base):
 class TextField(BaseField):
     __tablename__ = "text_fields"
 
-    value: Mapped[str | None]
+    value: Mapped[str | None] = mapped_column(sort_order=4)
     is_multiline: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     @override
@@ -75,7 +75,7 @@ class TextField(BaseField):
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
 
-    value: Mapped[str | None]
+    value: Mapped[str | None] = mapped_column(sort_order=4)
 
     @override
     def __eq__(self, other: object) -> bool:
