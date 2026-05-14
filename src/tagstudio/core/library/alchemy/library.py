@@ -869,7 +869,7 @@ class Library:
         """Migrate DB to DB_VERSION 201."""
         with session:
             create_text_fields_table = text("""
-            CREATE TABLE text_fields (
+            CREATE TABLE text_fields_new (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 name VARCHAR NOT NULL,
                 entry_id INTEGER NOT NULL,
@@ -879,7 +879,7 @@ class Library:
             )
             """)
             create_datetime_fields_table = text("""
-            CREATE TABLE datetime_fields (
+            CREATE TABLE datetime_fields_new (
                 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 name VARCHAR NOT NULL,
                 entry_id INTEGER NOT NULL,
@@ -889,32 +889,30 @@ class Library:
             """)
 
             logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
-            session.execute(text("ALTER TABLE text_fields RENAME TO text_fields_old"))
-            session.flush()
             session.execute(create_text_fields_table)
             session.flush()
             session.execute(
                 text("""
-                    INSERT INTO text_fields (id, name, entry_id, value, is_multiline)
+                    INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
                     SELECT id, name, entry_id, value, is_multiline
-                    FROM text_fields_old
+                    FROM text_fields
                 """)
             )
-            session.execute(text("DROP TABLE text_fields_old"))
+            session.execute(text("DROP TABLE text_fields"))
+            session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
 
             logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
-            session.execute(text("ALTER TABLE datetime_fields RENAME TO datetime_fields_old"))
-            session.flush()
             session.execute(create_datetime_fields_table)
             session.flush()
             session.execute(
                 text("""
-                    INSERT INTO datetime_fields (id, name, entry_id, value)
+                    INSERT INTO datetime_fields_new (id, name, entry_id, value)
                     SELECT id, name, entry_id, value
-                    FROM datetime_fields_old
+                    FROM datetime_fields
                 """)
             )
-            session.execute(text("DROP TABLE datetime_fields_old"))
+            session.execute(text("DROP TABLE datetime_fields"))
+            session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
 
             session.commit()
 
