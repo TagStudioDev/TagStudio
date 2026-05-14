@@ -64,6 +64,9 @@ from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
+from tagstudio.qt.controllers.field_template_search_panel_controller import (
+    FieldTemplateSearchPanel,
+)
 
 # this import has side-effect of import PySide resources
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
@@ -180,8 +183,10 @@ class QtDriver(DriverMixin, QObject):
 
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
+    field_template_manager_panel: PanelModal | None = None
     ignore_modal: PanelModal | None = None
     add_tag_modal: PanelModal | None = None
+    add_field_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
@@ -374,6 +379,16 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Color Group Manager panel
         self.color_manager_panel = TagColorManager(self)
 
+        # Initialize the Field Template Manager panel
+        self.field_template_manager_panel = PanelModal(
+            widget=FieldTemplateSearchPanel(self.lib, is_field_template_chooser=False),
+            title=Translations["field_template_manager.title"],
+            done_callback=lambda checked=False: (
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            ),
+            has_save=False,
+        )
+
         # Initialize the Tag Search panel
         self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
         self.add_tag_modal.tsp.set_driver(self)
@@ -465,6 +480,10 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.menu_bar.color_manager_action.triggered.connect(
             self.color_manager_panel.show
+        )
+
+        self.main_window.menu_bar.field_template_manager_action.triggered.connect(
+            self.field_template_manager_panel.show
         )
 
         # endregion
@@ -793,6 +812,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
+            self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
             self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
@@ -1645,6 +1665,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
+        self.main_window.menu_bar.field_template_manager_action.setEnabled(True)
         self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
