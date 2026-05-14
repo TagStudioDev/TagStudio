@@ -364,7 +364,7 @@ class JsonMigrationModal(QObject):
             iterator = FunctionIterator(self.migration_iterator)
             iterator.value.connect(
                 lambda x: (
-                    pb.setLabelText(f"<h4>{x}</h4>"),  # type: ignore
+                    pb.setLabelText(f"<h4>{x}</h4>"),
                     self.update_sql_value_ui(show_msg_box=False)
                     if x == Translations["json_migration.checking_for_parity"]
                     else (),
@@ -377,8 +377,8 @@ class JsonMigrationModal(QObject):
             r.done.connect(
                 lambda: (
                     self.update_sql_value_ui(show_msg_box=not skip_ui),
-                    pb.setMinimum(1),  # type: ignore
-                    pb.setValue(1),  # type: ignore
+                    pb.setMinimum(1),
+                    pb.setValue(1),
                     # Enable the finish button
                     cast(QPushButtonWrapper, self.stack[1].buttons[4]).setDisabled(False),
                 )
@@ -483,26 +483,26 @@ class JsonMigrationModal(QObject):
 
     def update_json_entry_count(self, value: int):
         self.old_entry_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_default(value))
 
     def update_json_tag_count(self, value: int):
         self.old_tag_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_default(value))
 
     def update_sql_value(self, row: int, value: int | bool, old_value: int | bool):
-        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_conditional(old_value, value))
         warning_icon.setText("" if old_value == value else self.warning)
 
     def update_parity_value(self, row: int, value: bool):
         result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
         old_label.setText(self.color_value_conditional(self.match_text, result))
         new_label.setText(self.color_value_conditional(self.match_text, result))
         old_warning_icon.setText("" if value else self.warning)

@@ -46,6 +46,6 @@ class IgnoreModal(IgnoreModalView):
         Ignore.write_ignore_file(self.lib.library_dir, lines)
 
     @override
-    def showEvent(self, event: QShowEvent) -> None:  # type: ignore
+    def showEvent(self, event: QShowEvent) -> None:
         self.__load_file()
         return super().showEvent(event)

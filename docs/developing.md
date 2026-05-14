@@ -146,7 +146,7 @@ The entry point for TagStudio is `src/tagstudio/main.py`. You can target this fi
 
 ### pre-commit
 
-There is a [pre-commit](https://pre-commit.com/) configuration that will run through some checks before code is committed. Namely, mypy and the Ruff linter and formatter will check your code, catching those nits right away.
+There is a [pre-commit](https://pre-commit.com/) configuration that will run through some checks before code is committed. Namely Pyright and Ruff will check your code, catching those nits right away.
 
 Once you have pre-commit installed, just run:
 

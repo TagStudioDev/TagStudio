@@ -86,7 +86,7 @@ class ThumbButton(QPushButtonWrapper):
         )
 
     @override
-    def paintEvent(self, arg__1: QPaintEvent) -> None:  # type: ignore
+    def paintEvent(self, arg__1: QPaintEvent) -> None:
         super().paintEvent(arg__1)
         if self.hovered or self.selected:
             painter = QPainter()
@@ -127,13 +127,13 @@ class ThumbButton(QPushButtonWrapper):
             painter.end()
 
     @override
-    def enterEvent(self, event: QEnterEvent) -> None:  # type: ignore
+    def enterEvent(self, event: QEnterEvent) -> None:
         self.hovered = True
         self.repaint()
         return super().enterEvent(event)
 
     @override
-    def leaveEvent(self, event: QEvent) -> None:  # type: ignore
+    def leaveEvent(self, event: QEvent) -> None:
         self.hovered = False
         self.repaint()
         return super().leaveEvent(event)

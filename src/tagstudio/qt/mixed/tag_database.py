@@ -59,15 +59,15 @@ class TagDatabasePanel(TagSearchPanel):
             return
 
         message_box = QMessageBox(
-            QMessageBox.Question,  # type: ignore
+            QMessageBox.Question,  # pyright: ignore[reportAttributeAccessIssue]
             Translations["tag.remove"],
             Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag)),
-            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+            QMessageBox.Ok | QMessageBox.Cancel,  # pyright: ignore[reportAttributeAccessIssue]
         )
 
         result = message_box.exec()
 
-        if result != QMessageBox.Ok:  # type: ignore
+        if result != QMessageBox.Ok:  # pyright: ignore[reportAttributeAccessIssue]
             return
 
         self.lib.remove_tag(tag.id)

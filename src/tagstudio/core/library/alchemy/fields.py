@@ -32,7 +32,7 @@ class BaseField(Base):
 
     @declared_attr
     def entry(self) -> Mapped[Entry]:
-        return relationship(foreign_keys=[self.entry_id])  # type: ignore # pyright: ignore[reportArgumentType]
+        return relationship(foreign_keys=[self.entry_id])  # pyright: ignore[reportArgumentType]
 
     @property
     def class_name(self) -> str:

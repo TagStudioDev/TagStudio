@@ -138,7 +138,7 @@ class ColorBoxWidget(FieldWidget):
         )
 
         self.edit_modal.saved.connect(
-            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())  # type: ignore
+            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())
         )
         self.edit_modal.show()
 

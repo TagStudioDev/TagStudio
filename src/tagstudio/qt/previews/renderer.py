@@ -299,7 +299,7 @@ class ThumbRenderer(QObject):
 
         im: Image.Image = Image.new(
             mode="L",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="black",
         )
         draw = ImageDraw.Draw(im)
@@ -330,7 +330,7 @@ class ThumbRenderer(QObject):
         # Highlight
         im_hl: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_hl)
@@ -349,7 +349,7 @@ class ThumbRenderer(QObject):
         # Shadow
         im_sh: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_sh)
@@ -394,7 +394,7 @@ class ThumbRenderer(QObject):
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="#FF000000",
         )
 
@@ -402,13 +402,13 @@ class ThumbRenderer(QObject):
         bg: Image.Image
         bg = Image.new(
             "RGB",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="#000000FF",
         )
 
         # Use a background image if provided
         if bg_image:
-            bg_im = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore  # pyright: ignore[reportArgumentType]
+            bg_im = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # pyright: ignore[reportArgumentType]
             bg_im = ImageEnhance.Brightness(bg_im).enhance(0.3)  # Reduce the brightness
             bg.paste(bg_im)
 
@@ -417,7 +417,7 @@ class ThumbRenderer(QObject):
             bg,
             (0, 0),
             mask=self._get_mask(
-                tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+                tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
                 (pixel_ratio * smooth_factor),
             ),
         )
@@ -501,19 +501,19 @@ class ThumbRenderer(QObject):
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+            size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
             color="#00000000",
         )
 
         bg: Image.Image
         # Use a background image if provided
         if bg_image:
-            bg = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore  # pyright: ignore[reportArgumentType]
+            bg = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # pyright: ignore[reportArgumentType]
         # Create solid background color
         else:
             bg = Image.new(
                 "RGB",
-                size=tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+                size=tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
                 color="#000000",
             )
             # Apply color overlay
@@ -527,7 +527,7 @@ class ThumbRenderer(QObject):
             bg,
             (0, 0),
             mask=self._get_mask(
-                tuple([d * smooth_factor for d in size]),  # type: ignore  # pyright: ignore[reportArgumentType]
+                tuple([d * smooth_factor for d in size]),  # pyright: ignore[reportArgumentType]
                 (pixel_ratio * smooth_factor),
             ),
         )
@@ -1216,7 +1216,7 @@ class ThumbRenderer(QObject):
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(device=buffer, format="PNG")  # type: ignore # pyright: ignore[reportArgumentType]
+        q_image.save(device=buffer, format="PNG")  # pyright: ignore[reportArgumentType]
 
         # Load the image from the buffer
         im = Image.new("RGB", (size, size), color="#1e1e1e")
@@ -1338,7 +1338,7 @@ class ThumbRenderer(QObject):
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         try:
-            q_image.save(buffer, "PNG")  # type: ignore # pyright: ignore
+            q_image.save(buffer, "PNG")  # pyright: ignore
             im = Image.open(BytesIO(buffer.buffer().data()))
         finally:
             buffer.close()
