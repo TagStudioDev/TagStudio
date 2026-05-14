@@ -43,7 +43,7 @@ def _item_name(item: object) -> str:
 class SearchPanel(SearchPanelView, Generic[T]):
     item_chosen = Signal(int)
 
-    def __init__(self, exclude: list[int] | None = None, is_chooser: bool = True):
+    def __init__(self, exclude: list[int] | None = None, is_chooser: bool = True) -> None:
         super().__init__(is_chooser)
         self._driver: QtDriver | None = None
         self.exclude: list[int] = exclude or []
@@ -132,6 +132,9 @@ class SearchPanel(SearchPanelView, Generic[T]):
     def _on_item_chosen(self, item: T) -> None:
         raise NotImplementedError()
 
+    def _is_excluded(self, item: T) -> bool:
+        return _item_id(item) in self.exclude
+
     def update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items", limit=self._get_limit()[1])
@@ -144,15 +147,11 @@ class SearchPanel(SearchPanelView, Generic[T]):
         search_results: tuple[list[T], list[T]] = self.search_items(query_lower)
 
         # Sort and prioritize the results
-        direct_results = list(
-            {item for item in search_results[0] if _item_id(item) not in self.exclude}
-        )
-        direct_results.sort(key=lambda i: _item_name(i).lower())
+        direct_results = list({item for item in search_results[0] if not self._is_excluded(item)})
+        direct_results.sort(key=lambda item: _item_name(item).lower())
 
-        ancestor_results = list(
-            {item for item in search_results[1] if _item_id(item) not in self.exclude}
-        )
-        ancestor_results.sort(key=lambda i: _item_name(i).lower())
+        ancestor_results = list({item for item in search_results[1] if not self._is_excluded(item)})
+        ancestor_results.sort(key=lambda item: _item_name(item).lower())
 
         raw_results = list(direct_results + ancestor_results)
         priority_results: set[T] = set()
