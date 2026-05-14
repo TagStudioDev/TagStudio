@@ -48,7 +48,7 @@ pyright = ["pyright~=1.1.409"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]
 pytest = [
-    "pytest==8.3.5",
+    "pytest==9.0.3",
     "pytest-cov==6.1.1",
     "pytest-mock==3.15.1",
     "pytest-qt==4.4.0",
