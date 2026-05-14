@@ -114,7 +114,7 @@ class FileAttributes(QWidget):
         if filepath and filepath.is_file():
             created: dt
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)

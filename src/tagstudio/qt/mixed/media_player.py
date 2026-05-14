@@ -324,7 +324,7 @@ class MediaPlayer(QGraphicsView):
         """Manage events for the media player."""
         if (
             arg__2.type() == QEvent.Type.MouseButtonPress
-            and arg__2.button() == Qt.MouseButton.LeftButton  # type: ignore
+            and arg__2.button() == Qt.MouseButton.LeftButton  # pyright: ignore[reportAttributeAccessIssue]
         ):
             if arg__1 == self.play_pause:
                 self.toggle_play()

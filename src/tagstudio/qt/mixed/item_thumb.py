@@ -467,12 +467,12 @@ class ItemThumb(FlowWidget):
                 badge.setHidden(is_hidden)
 
     @override
-    def enterEvent(self, event: QEnterEvent) -> None:  # type: ignore[misc]
+    def enterEvent(self, event: QEnterEvent) -> None:
         self.show_check_badges(show=True)
         return super().enterEvent(event)
 
     @override
-    def leaveEvent(self, event: QEvent) -> None:  # type: ignore[misc]
+    def leaveEvent(self, event: QEvent) -> None:
         self.show_check_badges(show=False)
         return super().leaveEvent(event)
 
@@ -502,7 +502,7 @@ class ItemThumb(FlowWidget):
             )
 
     @override
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[misc]
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if event.buttons() is not Qt.MouseButton.LeftButton:
             return
 

@@ -2,7 +2,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 # Vendored from pydub
-# type: ignore
 
 
 import array

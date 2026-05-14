@@ -27,7 +27,7 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 - I've read the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq)
 - I've checked the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
 - **I've created a new issue for my feature/fix _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
-- I've set up my development environment including Ruff, Mypy, and PyTest
+- I've set up my development environment including Ruff, Pyright, and Pytest
 - I've read the CONTRIBUTING.md/Contributing page on the documentation site as well as the and/or [Style Guide](style.md)
 - **_I mean it, I've found or created an issue for my feature/fix!_**
 
@@ -75,7 +75,11 @@ When pushing your code, several automated workflows will check it against predef
 
 ### [Ruff](https://github.com/astral-sh/ruff)
 
-A Python linter and code formatter. Ruff uses the `pyproject.toml` as its config file and runs whenever code is pushed or pulled into the project.
+Ruff is a Python linter and code formatter that helps enforce a consistent formatting style across our codebase.
+
+Ruff is installed alongside the `pip install -e ".[dev]"` command, but is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
+
+Our Ruff workflow runs whenever a pull request is opened or commits are pushed. Note that this workflow **does NOT** format code, but just serves to report any issues that have not been addressed by that point.
 
 #### Running Locally
 
@@ -87,24 +91,31 @@ Inside the root repository directory:
 
 Ruff should automatically discover the configuration options inside the [pyproject.toml](https://github.com/TagStudioDev/TagStudio/blob/main/pyproject.toml) file. For more information, see the [ruff configuration discovery docs](https://docs.astral.sh/ruff/configuration/#config-file-discovery).
 
-Ruff is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
+### [Pyright](https://github.com/microsoft/pyright)
 
-### [Mypy](https://github.com/python/mypy)
+Pyright is a static type checker for Python that helps enforce type strictness and prevent easy-to-miss errors across our codebase.
 
-Mypy is a static type checker for Python. It sure has a lot to say sometimes, but we recommend you take its advice when possible. Mypy also uses the `pyproject.toml` as its config file and runs whenever code is pushed or pulled into the project.
+Pyright is installed alongside the `pip install -e ".[dev]"` command, but is also available as VS Code extensions (see the [Pyright](https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright), [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance), and [basedpyright](https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright) extensions), a PyCharm [setting](https://www.jetbrains.com/help/pycharm/lsp-tools.html#pyright), or in the form of forks such as [basedpyright](https://docs.basedpyright.com/latest/).
+
+Our Pyright workflow runs whenever a pull request is opened or commits are pushed. Note that this **does NOT** format code or fix issues, but just serves to report any issues that have not been addressed by that point.
 
 #### Running Locally
 
-- **(First time only)** Run the following:
-    - `mkdir -p .mypy_cache`
-    - `mypy --install-types --non-interactive`
-- You can now check code by running `mypy --config-file pyproject.toml .` in the repository root. _(Don't forget the "." at the end!)_
+- Run `pyright` to check code
 
-Mypy is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=matangover.mypy), PyCharm [plugin](https://plugins.jetbrains.com/plugin/11086-mypy), and [more](https://plugins.jetbrains.com/plugin/11086-mypy).
+Pyright/basedpyright should automatically discover the configuration options inside the [pyproject.toml](https://github.com/TagStudioDev/TagStudio/blob/main/pyproject.toml) file.
 
-### PyTest
+### [Pytest](https://github.com/pytest-dev/pytest)
 
-- Run all tests by running `pytest tests/` in the repository root.
+Pytest is our testing suite and runs all our Python code against the tests in the [`tests/`](https://github.com/TagStudioDev/TagStudio/tree/main/tests) directory.
+
+Pytest is installed alongside the `pip install -e ".[dev]"` command.
+
+Our Pytest workflow runs whenever a pull request is opened or commits are pushed.
+
+#### Running Locally
+
+- Run all tests by running `pytest tests/` in the repository root
 
 ## Code Style
 

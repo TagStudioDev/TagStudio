@@ -350,7 +350,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
         self.app.setApplicationName("tagstudio")
         self.app.setApplicationDisplayName("TagStudio")
@@ -1100,7 +1100,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.hide(),
                 pw.deleteLater(),
                 # refresh the library only when new items are added
-                files_count and self.update_browsing_state(),  # type: ignore
+                files_count and self.update_browsing_state(),
             )
         )
         QThreadPool.globalInstance().start(r)

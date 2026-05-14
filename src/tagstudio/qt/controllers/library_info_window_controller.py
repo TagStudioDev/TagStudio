@@ -162,6 +162,6 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         return size
 
     @override
-    def showEvent(self, event: QtGui.QShowEvent):  # type: ignore
+    def showEvent(self, event: QtGui.QShowEvent):
         self.refresh()
         return super().showEvent(event)

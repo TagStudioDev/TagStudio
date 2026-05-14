@@ -62,6 +62,6 @@ class ProgressWidget(QWidget):
 
         r = CustomRunnable(lambda: iterator.run())
         r.done.connect(
-            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])  # type: ignore
+            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])
         )
         QThreadPool.globalInstance().start(r)
