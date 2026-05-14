@@ -18,7 +18,7 @@ def test_update_tags(qtbot: QtBot, library: Library):
     qtbot.addWidget(panel)
 
     # When
-    panel.update_tags()
+    panel.search_tags()
 
 
 def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver, library: Library):

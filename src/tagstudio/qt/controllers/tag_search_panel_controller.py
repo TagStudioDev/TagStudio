@@ -53,10 +53,6 @@ class TagSearchModal(PanelModal):
 
 class TagSearchPanel(TagSearchPanelView):
     tag_chosen = Signal(int)
-    is_initialized: bool = False
-    first_tag_id: int | None = None
-    is_tag_chooser: bool
-    exclude: list[int]
 
     _limit_items: list[tuple[str, int]] = [
         ("25", 25),
@@ -66,7 +62,7 @@ class TagSearchPanel(TagSearchPanelView):
         ("500", 500),
         (Translations["tag.all_tags"], -1),
     ]
-    _default_limit_index: int = 0  # 50 Tag Limit (Default)
+    _default_limit_index: int = 0  # 25 Tag Limit (Default)
 
     def __init__(
         self, library: Library, exclude: list[int] | None = None, is_tag_chooser: bool = True
@@ -74,13 +70,16 @@ class TagSearchPanel(TagSearchPanelView):
         super().__init__(is_tag_chooser)
         self.__lib = library
         self.__driver: QtDriver | None = None
-        self.exclude = exclude or []
-
-        self.previous_limit_index: int = self._default_limit_index
+        self.exclude: list[int] = exclude or []
 
         # Limits
+        self.previous_limit_index: int = self._default_limit_index
+
         self.set_limit_items(self._limit_items)
         self.set_limit_index(self._default_limit_index)
+
+        # Tags
+        self.tags: list[Tag] = []
 
     def set_driver(self, driver: "QtDriver") -> None:
         self.__driver = driver
@@ -95,7 +94,7 @@ class TagSearchPanel(TagSearchPanelView):
         if self.previous_limit_index == index:
             return
 
-        self.update_tags(self.search_field.text())
+        self.search_tags(self.search_field.text())
 
     def __get_limit(self) -> tuple[str, int]:
         return self._limit_items[self.get_limit_index()]
@@ -105,7 +104,7 @@ class TagSearchPanel(TagSearchPanelView):
 
     def _on_search_query_changed(self, query: str) -> None:
         self.create_and_add_button.setText(Translations.format("tag.create_add", query=query))
-        self.update_tags(query)
+        self.search_tags(query)
 
     def _on_search_query_submitted(self, query: str):
         # Focus search field if no query
@@ -115,14 +114,14 @@ class TagSearchPanel(TagSearchPanelView):
             return
 
         # Create and add tag if no search results
-        if self.first_tag_id is None:
+        if self.tags[0] is None:
             self._on_tag_create_and_add()
 
         if self.is_tag_chooser:
-            self.tag_chosen.emit(self.first_tag_id)
+            self.choose_tag(self.tags[0].id)
 
         self.clear_search_query()
-        self.update_tags()
+        self.search_tags()
 
     def _on_tag_create(self) -> None:
         # TODO: Move this to a top-level import
@@ -178,7 +177,7 @@ class TagSearchPanel(TagSearchPanelView):
             return
 
         self.__lib.remove_tag(tag.id)
-        self.update_tags()
+        self.search_tags()
 
     def _on_tag_create_and_add(self) -> None:
         """Opens "Create Tag" panel to create and add a new tag with given name."""
@@ -203,7 +202,7 @@ class TagSearchPanel(TagSearchPanelView):
         build_tag_modal.saved.connect(lambda: self.create_tag(build_tag_modal, choose_tag=True))
         build_tag_modal.show()
 
-    def update_tags(self, query: str | None = None):
+    def search_tags(self, query: str | None = None):
         """Update the tag list given a search query."""
         logger.info("[TagSearchPanel] Updating Tags", limit=self.__get_limit()[1])
 
@@ -241,7 +240,7 @@ class TagSearchPanel(TagSearchPanelView):
         if self.__get_limit()[1] > 0:
             all_results = all_results[: self.__get_limit()[1]]
 
-        self.first_tag_id = all_results[0].id if len(all_results) > 0 else None
+        self.tags = all_results
 
         # Update every tag widget with the new search result data
         previous_limit: int = (
@@ -298,7 +297,7 @@ class TagSearchPanel(TagSearchPanelView):
             tag_widget.search_for_tag_action.setEnabled(False)
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
-        self.update_tags()
+        self.search_tags()
         self.scroll_to(0)
         self.clear_search_query()
         return super().showEvent(event)
@@ -343,7 +342,7 @@ class TagSearchPanel(TagSearchPanelView):
             alias_ids=edit_tag_panel.alias_ids,
         )
 
-        self.update_tags(self.search_field.text())
+        self.search_tags(self.search_field.text())
 
     def search_for_tag(self, tag_id: int) -> None:
         if self.__driver is None:
