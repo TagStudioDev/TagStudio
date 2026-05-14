@@ -35,10 +35,10 @@ class PreviewPanel(PreviewPanelView):
     def _set_selection_callback(self):
         with catch_warnings(record=True):
             self.__add_field_modal.done.disconnect()
-            self.__add_tag_modal.tsp.tag_chosen.disconnect()
+            self.__add_tag_modal.tsp.item_chosen.disconnect()
 
         self.__add_field_modal.done.connect(self._add_field_to_selected)
-        self.__add_tag_modal.tsp.tag_chosen.connect(self._add_tag_to_selected)
+        self.__add_tag_modal.tsp.item_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
         self._fields.add_field_to_selected(field_list)

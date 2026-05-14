@@ -377,7 +377,7 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Tag Search panel
         self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
         self.add_tag_modal.tsp.set_driver(self)
-        self.add_tag_modal.tsp.tag_chosen.connect(
+        self.add_tag_modal.tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
                 self.main_window.preview_panel.set_selection(self.selected),

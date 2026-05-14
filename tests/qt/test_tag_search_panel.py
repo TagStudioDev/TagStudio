@@ -18,7 +18,7 @@ def test_update_tags(qtbot: QtBot, library: Library):
     qtbot.addWidget(panel)
 
     # When
-    panel.search_tags()
+    panel.update_items()
 
 
 def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver, library: Library):
@@ -28,8 +28,8 @@ def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver
 
     # Set the widget
     tags = library.tags
-    panel.set_tag_widget(tags[0], 0)
-    tag_widget: TagWidget = panel.get_tag_widget(0, library)
+    panel.set_item_widget(tags[0], 0)
+    tag_widget: TagWidget = panel.get_item_widget(0, library)
 
     should_replace_actions = {
         tag_widget: ["on_edit()", "on_remove()"],
@@ -41,7 +41,7 @@ def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver
     ensure_one_receiver_per_action(should_replace_actions)
 
     # Set the widget again
-    panel.set_tag_widget(tags[0], 0)
+    panel.set_item_widget(tags[0], 0)
 
     # Ensure each action has been replaced (amount of receivers is still 1)
     ensure_one_receiver_per_action(should_replace_actions)
