@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QComboBox,
@@ -32,17 +35,17 @@ CREATE_BUTTON_STYLESHEET: str = f"""
         padding-left: 4px;
         font-size: 13px
     }}
-    
+
     QPushButton::hover{{
         border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
     }}
-    
+
     QPushButton::pressed{{
         background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
         color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
         border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
     }}
-    
+
     QPushButton::focus{{
         border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
         outline: none;
