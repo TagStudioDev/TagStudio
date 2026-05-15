@@ -334,7 +334,7 @@
     "tag.search_for_tag": "Cerca Etichetta",
     "tag.shorthand": "Abbreviazione",
     "tag.tag_name_required": "Nome Etichetta (Obbligatorio)",
-    "tag.view_limit": "Limite di Visualizzazione:",
+    "home.search.view_limit": "Limite di Visualizzazione:",
     "tag_manager.title": "Etichette della Biblioteca",
     "trash.context.ambiguous": "Sposta file(s) in {trash_term}",
     "trash.context.plural": "Sposta files in {trash_term}",

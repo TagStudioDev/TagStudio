@@ -334,7 +334,7 @@
     "tag.search_for_tag": "குறிச்சொல்லைத் தேடு",
     "tag.shorthand": "சுருக்கெழுத்து",
     "tag.tag_name_required": "குறிச்சொல் பெயர் (தேவை)",
-    "tag.view_limit": "வரம்பைக் காண்க:",
+    "home.search.view_limit": "வரம்பைக் காண்க:",
     "tag_manager.title": "நூலக குறிச்சொற்கள்",
     "trash.context.ambiguous": "கோப்புகளை நகர்த்தவும்) {trash_term}",
     "trash.context.plural": "கோப்புகளை {trash_term} பெறுநர் க்கு நகர்த்தவும்",

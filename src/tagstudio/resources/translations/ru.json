@@ -297,7 +297,7 @@
     "tag.search_for_tag": "Поиск тега",
     "tag.shorthand": "Сокращённое название",
     "tag.tag_name_required": "Название тега (Обязательно)",
-    "tag.view_limit": "Лимит просмотра:",
+    "home.search.view_limit": "Лимит просмотра:",
     "tag_manager.title": "Теги этой библиотеки",
     "trash.context.ambiguous": "Перемеcтить файл(ы) в {trash_term}",
     "trash.context.plural": "Перемеcтить файлы в {trash_term}",

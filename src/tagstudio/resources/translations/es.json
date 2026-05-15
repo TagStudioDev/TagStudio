@@ -334,7 +334,7 @@
     "tag.search_for_tag": "Buscar por etiqueta",
     "tag.shorthand": "Abreviatura",
     "tag.tag_name_required": "Nombre etiqueta (Obligatorio)",
-    "tag.view_limit": "Límite visualización:",
+    "home.search.view_limit": "Límite visualización:",
     "tag_manager.title": "Etiquetas de la biblioteca",
     "trash.context.ambiguous": "Mover archivo(s) a la {trash_term}",
     "trash.context.plural": "Mover archivos a la {trash_term}",

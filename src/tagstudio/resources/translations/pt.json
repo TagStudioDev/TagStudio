@@ -241,7 +241,7 @@
     "tag.parent_tags.add": "Adicionar Tag Pai",
     "tag.search_for_tag": "Procurar por Tag",
     "tag.shorthand": "Abreviação",
-    "tag.view_limit": "Limite de visualização:",
+    "home.search.view_limit": "Limite de visualização:",
     "tag_manager.title": "Tags da sua biblioteca",
     "trash.context.ambiguous": "Mover ficheiro(s) para {trash_term}",
     "trash.context.plural": "Mover ficheiros para {trash_term}",

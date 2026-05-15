@@ -301,7 +301,7 @@
     "tag.search_for_tag": "Etsi tunnistetta",
     "tag.shorthand": "Lyhenne",
     "tag.tag_name_required": "Tunnisteen nimi (Vaaditaan)",
-    "tag.view_limit": "Näytä raja:",
+    "home.search.view_limit": "Näytä raja:",
     "tag_manager.title": "Kirjasto tunnisteet",
     "trash.dialog.title.plural": "Poista tiedostoja",
     "trash.dialog.title.singular": "Poista tiedosto",

@@ -312,7 +312,7 @@
     "tag.search_for_tag": "搜索标签",
     "tag.shorthand": "缩写",
     "tag.tag_name_required": "标签名称(必填)",
-    "tag.view_limit": "查看限制：",
+    "home.search.view_limit": "查看限制：",
     "tag_manager.title": "仓库标签",
     "trash.context.ambiguous": "移动文件到 {trash_term}",
     "trash.context.plural": "移动文件到 {trash_term}",

@@ -287,7 +287,7 @@
     "tag.search_for_tag": "Maghanap para sa Tag",
     "tag.shorthand": "Shorthand",
     "tag.tag_name_required": "Pangalan ng Tag (Kinakailangan)",
-    "tag.view_limit": "Limitasyon ng Pagtingin:",
+    "home.search.view_limit": "Limitasyon ng Pagtingin:",
     "tag_manager.title": "Mga Tag ng Library",
     "trash.context.ambiguous": "Ilipat ang (mga) file sa {trash_term}",
     "trash.context.plural": "Ilipat ang mga file sa {trash_term}",

@@ -332,7 +332,7 @@
     "tag.search_for_tag": "搜尋標籤",
     "tag.shorthand": "簡寫",
     "tag.tag_name_required": "標籤名稱 (必填)",
-    "tag.view_limit": "檢視限制：",
+    "home.search.view_limit": "檢視限制：",
     "tag_manager.title": "文件庫標籤",
     "trash.context.ambiguous": "移動檔案至「{trash_term}」",
     "trash.context.plural": "移動多個檔案移至「{trash_term}」",

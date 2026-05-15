@@ -273,7 +273,7 @@
     "tag.search_for_tag": "Szukaj dla tagu",
     "tag.shorthand": "Skrót",
     "tag.tag_name_required": "Nazwa tagu (wymagana)",
-    "tag.view_limit": "Limit wyświetlania:",
+    "home.search.view_limit": "Limit wyświetlania:",
     "tag_manager.title": "Biblioteka tagów",
     "trash.context.ambiguous": "Przenieś plik(i) do {trash_term}",
     "trash.context.plural": "Przenieś pliki do {trash_term}",

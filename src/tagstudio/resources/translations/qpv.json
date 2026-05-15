@@ -265,7 +265,7 @@
     "tag.search_for_tag": "Suha fu festaretol",
     "tag.shorthand": "Namaenen",
     "tag.tag_name_required": "Namae fu festaretol (Trengjena)",
-    "tag.view_limit": "Lesteatai per anse:",
+    "home.search.view_limit": "Lesteatai per anse:",
     "tag_manager.title": "Festaretol fu mlafuhuomi",
     "trash.context.ambiguous": "Ugoki mlafu {trash_term} made",
     "trash.context.plural": "Ugoki mlafu {trash_term} made",

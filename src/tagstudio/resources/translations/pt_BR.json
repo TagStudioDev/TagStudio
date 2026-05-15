@@ -331,7 +331,7 @@
     "tag.search_for_tag": "Procurar por Tag",
     "tag.shorthand": "Abreviação",
     "tag.tag_name_required": "Nome da Tag (Obrigatório)",
-    "tag.view_limit": "Limite de visualização:",
+    "home.search.view_limit": "Limite de visualização:",
     "tag_manager.title": "Tags da sua biblioteca",
     "trash.context.ambiguous": "Mover arquivo(s) para {trash_term}",
     "trash.context.plural": "Mover arquivos para {trash_term}",

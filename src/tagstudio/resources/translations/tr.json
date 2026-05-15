@@ -258,7 +258,7 @@
     "tag.search_for_tag": "Etiket Ara",
     "tag.shorthand": "Kısaltma",
     "tag.tag_name_required": "Etiket İsmi (Gerekli)",
-    "tag.view_limit": "Görünüm Limiti:",
+    "home.search.view_limit": "Görünüm Limiti:",
     "tag_manager.title": "Kütüphane Etiketleri",
     "trash.context.ambiguous": "Dosya(ları) {trash_term} klasörüne taşı",
     "trash.context.plural": "Dosyaları {trash_term} klasörüne taşı",

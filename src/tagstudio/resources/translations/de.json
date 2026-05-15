@@ -337,7 +337,7 @@
     "tag.search_for_tag": "Nach Tag suchen",
     "tag.shorthand": "Kürzel",
     "tag.tag_name_required": "Tag Name (Pflichtfeld)",
-    "tag.view_limit": "Anzeige-Limit:",
+    "home.search.view_limit": "Anzeige-Limit:",
     "tag_manager.title": "Bibliothek Tags",
     "trash.context.ambiguous": "Datei(en) nach {trash_term} verschieben",
     "trash.context.plural": "Dateien nach {trash_term} verschieben",

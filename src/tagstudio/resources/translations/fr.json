@@ -335,7 +335,7 @@
     "tag.search_for_tag": "Recherche de Label",
     "tag.shorthand": "Abrégé",
     "tag.tag_name_required": "Nom du Tag (Requis)",
-    "tag.view_limit": "Limite d'affichage :",
+    "home.search.view_limit": "Limite d'affichage :",
     "tag_manager.title": "Tags de la Bibliothèque",
     "trash.context.ambiguous": "Déplacer les fichier(s) vers {trash_term}",
     "trash.context.plural": "Déplacer les fichiers vers {trash_term}",

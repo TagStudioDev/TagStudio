@@ -339,7 +339,7 @@
     "tag.search_for_tag": "Címke keresése",
     "tag.shorthand": "Rövidítés",
     "tag.tag_name_required": "Címkenév (kötelező)",
-    "tag.view_limit": "Megtekintési korlát:",
+    "home.search.view_limit": "Megtekintési korlát:",
     "tag_manager.title": "Könyvtárcímkék",
     "trash.context.ambiguous": "Fájl(ok) {trash_term} helyezése",
     "trash.context.plural": "Fájlok {trash_term} helyezése",

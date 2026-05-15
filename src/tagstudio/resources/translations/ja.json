@@ -334,7 +334,7 @@
     "tag.search_for_tag": "このタグで検索",
     "tag.shorthand": "略称",
     "tag.tag_name_required": "タグの名前 (必須)",
-    "tag.view_limit": "表示件数:",
+    "home.search.view_limit": "表示件数:",
     "tag_manager.title": "ライブラリ タグ",
     "trash.context.ambiguous": "ファイルを {trash_term} に移動",
     "trash.context.plural": "ファイルを {trash_term} に移動",

@@ -296,7 +296,7 @@
     "tag.search_for_tag": "Søk etter etikett",
     "tag.shorthand": "Forkortelse",
     "tag.tag_name_required": "Etikettnavn (Påkrevd)",
-    "tag.view_limit": "Se Grense:",
+    "home.search.view_limit": "Se Grense:",
     "tag_manager.title": "Biblioteksetiketter",
     "trash.context.ambiguous": "Flytt fil(er) til {trash_term}",
     "trash.context.plural": "Flytt filer til {trash_term}",
