@@ -28,9 +28,9 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
-from tagstudio.qt.mixed.tag_search import TagSearchModal, TagSearchPanel
 from tagstudio.qt.mixed.tag_widget import (
     TagWidget,
     get_border_color,
@@ -167,7 +167,7 @@ class BuildTagPanel(PanelWidget):
             exclude_ids.append(tag.id)
 
         self.add_tag_modal = TagSearchModal(self.lib, exclude_ids)
-        self.add_tag_modal.tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
+        self.add_tag_modal.tsp.item_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
@@ -431,7 +431,7 @@ class BuildTagPanel(PanelWidget):
             has_remove=True,
         )
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
-        tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).edit_tag(t))
+        tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).on_item_edit(t))
         row.addWidget(tag_widget)
 
         # Add Disambiguation Tag Button

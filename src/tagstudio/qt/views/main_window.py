@@ -77,6 +77,7 @@ class MainMenuBar(QMenuBar):
     delete_file_action: QAction
     ignore_modal_action: QAction
     tag_manager_action: QAction
+    field_template_manager_action: QAction
     color_manager_action: QAction
 
     view_menu: QMenu
@@ -298,6 +299,13 @@ class MainMenuBar(QMenuBar):
         self.color_manager_action = QAction(Translations["edit.color_manager"], self)
         self.color_manager_action.setEnabled(False)
         self.edit_menu.addAction(self.color_manager_action)
+
+        # Manage Field Templates
+        self.field_template_manager_action = QAction(
+            Translations["menu.edit.manage_field_templates"], self
+        )
+        self.field_template_manager_action.setEnabled(False)
+        self.edit_menu.addAction(self.field_template_manager_action)
 
         assign_mnemonics(self.edit_menu)
         self.addMenu(self.edit_menu)

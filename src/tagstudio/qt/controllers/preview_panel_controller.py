@@ -5,11 +5,10 @@
 import typing
 from warnings import catch_warnings
 
-from PySide6.QtWidgets import QListWidgetItem
-
+from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.mixed.add_field import AddFieldModal
-from tagstudio.qt.mixed.tag_search import TagSearchModal
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchModal
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
@@ -17,35 +16,37 @@ if typing.TYPE_CHECKING:
 
 
 class PreviewPanel(PreviewPanelView):
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__(library, driver)
 
-        self.__add_field_modal = AddFieldModal(self.lib)
+        self.__add_field_modal = FieldTemplateSearchModal(self.lib, is_field_template_chooser=True)
         self.__add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
 
     @typing.override
-    def _add_field_button_callback(self):
+    def _add_field_button_callback(self) -> None:
         self.__add_field_modal.show()
 
     @typing.override
-    def _add_tag_button_callback(self):
+    def _add_tag_button_callback(self) -> None:
         self.__add_tag_modal.show()
 
     @typing.override
-    def _set_selection_callback(self):
+    def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
-            self.__add_field_modal.done.disconnect()
-            self.__add_tag_modal.tsp.tag_chosen.disconnect()
+            self.__add_field_modal.search_panel.field_template_chosen.disconnect()
+            self.__add_tag_modal.tsp.item_chosen.disconnect()
 
-        self.__add_field_modal.done.connect(self._add_field_to_selected)
-        self.__add_tag_modal.tsp.tag_chosen.connect(self._add_tag_to_selected)
+        self.__add_field_modal.search_panel.field_template_chosen.connect(
+            self._add_field_to_selected
+        )
+        self.__add_tag_modal.tsp.item_chosen.connect(self._add_tag_to_selected)
 
-    def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
-        self._fields.add_field_to_selected(field_list)
+    def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
+        self._fields.add_field_to_selected(template)
         if len(self._selected) == 1:
             self._fields.update_from_entry(self._selected[0])
 
-    def _add_tag_to_selected(self, tag_id: int):
+    def _add_tag_to_selected(self, tag_id: int) -> None:
         self._fields.add_tags_to_selected(tag_id)
         if len(self._selected) == 1:
             self._fields.update_from_entry(self._selected[0])

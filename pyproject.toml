@@ -66,6 +66,7 @@ packages = ["src/tagstudio"]
 [tool.pytest.ini_options]
 #addopts = "-m 'not qt'"
 qt_api = "pyside6"
+pythonpath = ["src"]
 
 [tool.pyright]
 ignore = [

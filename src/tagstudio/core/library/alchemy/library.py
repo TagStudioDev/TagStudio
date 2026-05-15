@@ -1251,32 +1251,33 @@ class Library:
         if limit <= 0:
             limit = sys.maxsize
 
-        name = name or ""
-        name = name.lower()
+        search_query: str = name.lower() if name else ""
 
         def sort_key(text: str):
-            priority = text.startswith(name)
+            priority = text.startswith(search_query)
             p_ordering = len(text) if priority else sys.maxsize
-            return (not priority, p_ordering, text)
+            return not priority, p_ordering, text
 
         with Session(self.engine) as session:
             query = select(Tag.id, Tag.name)
 
-            if limit > 0 and not name:
+            if limit > 0 and not search_query:
                 query = query.order_by(Tag.name).limit(limit)
 
-            if name:
+            if search_query:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(name),
-                        Tag.shorthand.icontains(name),
+                        Tag.name.icontains(search_query),
+                        Tag.shorthand.icontains(search_query),
                     )
                 )
 
             tags = list(session.execute(query))
 
-            if name:
-                query = select(TagAlias.tag_id, TagAlias.name).where(TagAlias.name.icontains(name))
+            if search_query:
+                query = select(TagAlias.tag_id, TagAlias.name).where(
+                    TagAlias.name.icontains(search_query)
+                )
                 tags.extend(session.execute(query))
 
             tags.sort(key=lambda t: sort_key(t[1]))
@@ -1286,7 +1287,7 @@ class Library:
 
             logger.info(
                 "searching tags",
-                search=name,
+                search=search_query,
                 limit=limit,
                 statement=str(query),
                 results=len(tag_ids),
@@ -1311,6 +1312,49 @@ class Library:
             descendant_tags.sort(key=lambda t: sort_key(t.name))
 
             return direct_tags, descendant_tags
+
+    def search_field_templates(self, name: str | None, limit: int = 100) -> list[BaseFieldTemplate]:
+        """Return field template rows matching the query, detached from the session."""
+        if limit <= 0:
+            limit = sys.maxsize
+
+        search_query: str = name.lower() if name else ""
+
+        def sort_key(template: BaseFieldTemplate) -> tuple:
+            text = template.name.lower()
+            if not search_query:
+                return (text,)
+            priority = text.startswith(search_query)
+            p_ordering = len(text) if priority else sys.maxsize
+            return (not priority, p_ordering, text)
+
+        with Session(self.engine) as session:
+            text_stmt = select(TextFieldTemplate)
+            datetime_stmt = select(DatetimeFieldTemplate)
+            if search_query:
+                text_stmt = text_stmt.where(TextFieldTemplate.name.icontains(search_query))
+                datetime_stmt = datetime_stmt.where(
+                    DatetimeFieldTemplate.name.icontains(search_query)
+                )
+
+            field_templates: list[BaseFieldTemplate] = [
+                *session.scalars(text_stmt),
+                *session.scalars(datetime_stmt),
+            ]
+            field_templates.sort(key=sort_key)
+            field_templates = field_templates[:limit]
+
+            for ft in field_templates:
+                session.expunge(ft)
+                make_transient(ft)
+
+            logger.info(
+                "Searching field templates",
+                search=search_query,
+                limit=limit,
+                results=len(field_templates),
+            )
+            return field_templates
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
         """Set the path field of an entry.
