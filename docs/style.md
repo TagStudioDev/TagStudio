@@ -24,9 +24,26 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 - When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
 - If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
 
+### Modules & Implementations
+
+- **Do not** modify legacy library code in the `src/core/library/json/` directory
+- Avoid direct calls to `os`
+    - Use `Pathlib` library instead of `os.path`
+    - Use `platform.system()` instead of `os.name` and `sys.platform`
+- Don't prepend local imports with `tagstudio`, stick to `src`
+- Use the `logger` system instead of `print` statements
+- Avoid nested f-strings
+- Use HTML-like tags inside Qt widgets over stylesheets where possible
+
+Final submitted code must **_NOT:_**
+
+- Contain superfluous or unnecessary logging statements
+- Cause unreasonable slowdowns to the program outside of a progress-indicated task
+- Cause undesirable visual glitches or artifacts on screen
+
 ### Formatter Configs
 
-TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) file ([`.editorconfig`](../.editorconfig)) along with a [Prettier](https://prettier.io/) config file ([`.prettierrc.toml`](../.prettierrc.toml)) for formatting files other than .py files (Markdown, JSON, YAML, HTML, CSS, etc.). If editing these types of files it's recommended that you use a formatter that supports EditorConfig or has its settings matched to the EditorConfig and Prettier configs. Lastly, please pay attention to the `prettier-ignore` flags in present in some files if you are not using Prettier, as formatting these sections will break formatting used elsewhere such as the [MkDocs site](https://docs.tagstud.io/).
+TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) file ([`.editorconfig`](https://github.com/TagStudioDev/TagStudio/blob/main/.editorconfig)) along with a [Prettier](https://prettier.io/) config file ([`.prettierrc.toml`](https://github.com/TagStudioDev/TagStudio/blob/main/.prettierrc.toml)) for formatting files other than .py files (Markdown, JSON, YAML, HTML, CSS, etc.). If editing these types of files it's recommended that you use a formatter that supports EditorConfig or has its settings matched to the EditorConfig and Prettier configs. Lastly, please pay attention to the `prettier-ignore` flags in present in some files if you are not using Prettier, as formatting these sections will break formatting used elsewhere such as the [MkDocs site](https://docs.tagstud.io/).
 
 ## Qt
 
