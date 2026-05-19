@@ -242,3 +242,20 @@ To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extracto
 ### ripgrep
 
 A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
+
+## Common Error Messages
+### Could not load the Qt platform plugin "xcb"
+
+If you get an error message like this one:
+
+```
+qt.qpa.plugin: From 6.5.0, xcb-cursor0 or libxcb-cursor0 is needed to load the Qt xcb platform plugin.
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/tmp/_MEIayuTiW/cv2/qt/plugins" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: vnc, wayland-egl, offscreen, wayland, linuxfb, minimalegl, eglfs, minimal, vkkhrdisplay, xcb.
+
+Aborted (core dumped)
+```
+
+Make sure you installed `libxcb-cursor` or `xcb-util-cursor`.
