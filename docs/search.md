@@ -1,4 +1,5 @@
 ---
+title: Searching
 icon: material/magnify
 ---
 

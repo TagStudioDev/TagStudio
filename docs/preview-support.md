@@ -1,4 +1,5 @@
 ---
+title: Supported Previews
 icon: material/image-check
 ---
 

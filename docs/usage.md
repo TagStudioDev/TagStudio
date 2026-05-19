@@ -1,4 +1,5 @@
 ---
+title: Basic Usage
 icon: material/mouse
 ---
 

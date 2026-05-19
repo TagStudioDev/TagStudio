@@ -3,13 +3,24 @@
 <!-- SPDX-License-Identifier: MIT -->
 
 
+
 <!-- Table of contents item -->
 <li class="md-nav__item">
-    <a href="{{ toc_item.url }}" class="md-nav__link">
-      <span class="md-ellipsis">
+  <a href="{{ toc_item.url }}" class="md-nav__link">
+    <span class="md-ellipsis">
+
+      <!-- Typeset title -->
+      {% if toc_item.typeset %}
+        <span class="md-typeset">
+          {{ toc_item.typeset.title }}
+        </span>
+
+      <!-- Regular title -->
+      {% else %}
         {{ toc_item.title }}
-      </span>
-    </a>
+      {% endif %}
+    </span>
+  </a>
 
     <!-- Table of contents list -->
     {% if toc_item.children %}

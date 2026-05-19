@@ -1,4 +1,5 @@
 ---
+title: Tags
 icon: material/tag-text
 ---
 

@@ -1,4 +1,5 @@
 ---
+title: Developing
 icon: material/code-braces
 ---
 
@@ -189,7 +190,7 @@ Pyright/basedpyright should automatically discover the configuration options ins
 
 ### Pytest
 
-[Pytest](<(https://github.com/pytest-dev/pytest)>) runs our Python code against the tests inside the [`tests/`](https://github.com/TagStudioDev/TagStudio/tree/main/tests) directory.
+[Pytest](https://github.com/pytest-dev/pytest) runs our Python code against the tests inside the [`tests/`](https://github.com/TagStudioDev/TagStudio/tree/main/tests) directory.
 
 Pytest is installed alongside the `pip install -e ".[dev]"` command.
 

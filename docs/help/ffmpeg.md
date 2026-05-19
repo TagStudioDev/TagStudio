@@ -1,4 +1,5 @@
 ---
+title: Installing FFmpeg
 icon: material/movie-open-cog
 ---
 

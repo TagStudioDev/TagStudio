@@ -1,4 +1,5 @@
 ---
+title: Style Guide
 icon: material/sign-text
 ---
 

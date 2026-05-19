@@ -1,4 +1,5 @@
 ---
+title: Roadmap
 icon: material/map-check
 ---
 
@@ -143,7 +144,7 @@ Some form of official plugin support for TagStudio, likely with its own API that
 
 ---
 
-## [Library](libraries.md)
+## Library
 
 ### :material-wrench: Library Mechanics
 
@@ -160,9 +161,9 @@ Some form of official plugin support for TagStudio, likely with its own API that
 - [x] Thumbnail Caching **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [ ] Audio Waveform Caching :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
 
-### :material-grid: [Entries](entries.md)
+### :material-grid: Entries
 
-Library representations of files or file-like objects.
+File or file-like [entries](entries.md) stored in the library.
 
 - [x] File Entries **[v1.0.0]**
 - [ ] Folder Entries :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -181,7 +182,7 @@ Library representations of files or file-like objects.
     - [ ] Group is treated as entry with tags and metadata :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [ ] Nested groups :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 
-### :material-tag-text: [Tags](tags.md)
+### :material-tag-text: Tags
 
 Discrete library objects representing [attributes](<https://en.wikipedia.org/wiki/Property_(philosophy)>). Can be applied to library [entries](entries.md), or applied to other tags to build traversable relationships.
 
@@ -212,7 +213,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 - [ ] Tag Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 - [ ] Tag Merging :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 
-### :material-magnify: [Search](search.md)
+### :material-magnify: Search
 
 - [x] Tag Search **[v8.0.0]**
 - [x] Filename Search **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
@@ -246,7 +247,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 - [ ] OCR Search :material-chevron-up:{ .priority-low title="Low Priority" }
 - [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }
 
-### :material-file-cog: [Macros](macros.md)
+### :material-file-cog: Macros
 
 - [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.x]**
 - [ ] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.x]**

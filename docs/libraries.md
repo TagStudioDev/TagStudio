@@ -1,4 +1,5 @@
 ---
+title: Libraries
 icon: material/database
 ---
 

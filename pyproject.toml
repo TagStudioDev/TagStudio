@@ -43,7 +43,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["tagstudio[mkdocs,pyright,pre-commit,pyinstaller,pytest,ruff]"]
-mkdocs = ["mkdocs-material[imaging]>=9.6.14", "mkdocs-redirects~=1.2"]
+mkdocs = ["mkdocs-material[imaging]>=9.7", "mkdocs-redirects~=1.2"]
 pyright = ["pyright~=1.1.409"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]

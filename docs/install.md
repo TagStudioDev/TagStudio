@@ -1,4 +1,5 @@
 ---
+title: Installation
 icon: material/download
 ---
 
@@ -229,15 +230,17 @@ To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extracto
 
 - :fontawesome-brands-apple: On macOS `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula.
 
-    <!-- prettier-ignore -->
+      <!-- prettier-ignore -->
+
     !!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
-        On macOS, you may be met with a message similar to  "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
+    On macOS, you may be met with a message similar to "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
 
 - :fontawesome-brands-windows: On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
 
-    <!-- prettier-ignore -->
+      <!-- prettier-ignore -->
+
     !!! tip "WinRAR License"
-        Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
+    Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
 
 ### ripgrep
 

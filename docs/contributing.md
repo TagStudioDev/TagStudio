@@ -1,11 +1,12 @@
 ---
+title: Contributing
 icon: material/file-plus
 ---
 
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
-# :material-file-plus: Contributing
+# :material-file-plus: Contribution Guidelines
 
 Thank you so much for showing interest in contributing to TagStudio! This page goes over the instructions and guidelines for contributing to the TagStudio. This page will change over time, so make sure that your contributions still line up with the current guidelines before submitting a pull request.
 
