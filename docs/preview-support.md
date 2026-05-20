@@ -124,6 +124,8 @@ Archive thumbnails will display the first image from the archive within the Prev
 !!! failure "3D Model Support"
     TagStudio does not currently support previews for 3D model files *(outside of Blender project embedded thumbnails)*. This is on our [roadmap](roadmap.md#uiux) for a future release.
 
+    See the [GitHub discussion](https://github.com/TagStudioDev/TagStudio/discussions/1231) relating to status of this feature.
+
 ### :material-format-font: Fonts
 
 Font thumbnails will use a "Aa" example preview of the font, with a full alphanumeric of the font available in the Preview Panel.
@@ -155,7 +157,7 @@ Text files render the first 256 bytes of text information to an image preview fo
 
 <!-- prettier-ignore-start -->
 [^1]:
-    The `.jpg_large` extension is unofficial and instead the byproduct of how [Google Chrome used to download images from Twitter](https://fileinfo.com/extension/jpg_large). Since this mangled extension is still in circulation, TagStudio supports it.
+    The `.jpg_large` extension is unofficial and is instead the byproduct of how [Google Chrome used to download images from Twitter](https://fileinfo.com/extension/jpg_large). Since this mangled extension is still in circulation, TagStudio supports it.
 
 [^2]:
     Apple Lossless traditionally uses `.m4a` and `.caf` containers, but may unofficially use the `.alac` extension. The `.m4a` container is also used for separate compressed audio codecs.
