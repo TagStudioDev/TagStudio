@@ -1,9 +1,19 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 import typing
+from datetime import datetime as dt
 
 import structlog
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QListWidgetItem
 
-from tagstudio.core.library.alchemy.fields import BaseField, DatetimeField, TextField
+from tagstudio.core.library.alchemy.fields import (
+    BaseField,
+    BaseFieldTemplate,
+    DatetimeField,
+    TextField,
+)
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 
@@ -22,7 +32,7 @@ class FieldListModel:
         self.mixed_fields: list = []
         self.cached_entries: list[Entry] = []
 
-    def add_field_to_selected(self, field_list: list) -> None:
+    def add_field_to_selected(self, field_list: list[QListWidgetItem]) -> None:
         """Add list of entry fields to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
@@ -33,11 +43,14 @@ class FieldListModel:
             fields=field_list,
         )
         for entry_id in self.__driver.selected:
-            for field_item in field_list:
-                self.__lib.add_field_to_entry(
-                    entry_id,
-                    field_id=field_item.data(Qt.ItemDataRole.UserRole),
+            for field in field_list:
+                template: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
+                logger.info(
+                    "[FieldListModel][add_field_to_selected] Adding field",
+                    name=template.name,
+                    type=template.class_name,
                 )
+                self.__lib.add_field_to_entries(entry_id, template.to_field())
 
     def add_tags_to_selected(self, tags: int | list[int]) -> None:
         """Add list of tags to one or more selected items.
@@ -54,12 +67,24 @@ class FieldListModel:
             tags=tags,
         )
 
-        self.__lib.add_tags_to_entries(
-            self.__driver.selected,
-            tag_ids=tags,
-        )
-
+        selected = self.__driver.selected
+        self.__driver.main_window.thumb_layout.add_tags(selected, tags)
+        self.__lib.add_tags_to_entries(selected, tag_ids=tags)
         self.__driver.emit_badge_signals(tags, emit_on_absent=False)
+
+    def update_text_field(self, field: TextField, value: str, is_multiline: bool) -> None:
+        """Update a text field across selected entries."""
+        entry_ids: list[int] = [e.id for e in self.cached_entries]
+        assert entry_ids, "No entries selected"
+
+        self.__lib.update_text_field(entry_ids, field, value, is_multiline)
+
+    def update_datetime_field(self, field: DatetimeField, value: str) -> None:
+        """Update a datetime field across selected entries."""
+        entry_ids: list[int] = [e.id for e in self.cached_entries]
+        assert entry_ids, "No entries selected"
+
+        self.__lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
 
     def remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
@@ -71,22 +96,6 @@ class FieldListModel:
 
         entry_ids: list[int] = [entry.id for entry in self.cached_entries]
         self.__lib.remove_entry_field(field, entry_ids)
-
-    def update_field(self, field: BaseField, content: str) -> None:
-        """Update a field in all selected Entries, given a field object."""
-        assert isinstance(
-            field,
-            TextField | DatetimeField,
-        ), f"instance: {type(field)}"
-
-        entry_ids: list[int] = [e.id for e in self.cached_entries]
-
-        assert entry_ids, "No entries selected"
-        self.__lib.update_entry_field(
-            entry_ids,
-            field,
-            content,
-        )
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
         """Get a dictionary of category tags mapped to their respective tags.

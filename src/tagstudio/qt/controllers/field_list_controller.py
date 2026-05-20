@@ -15,10 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
-    BaseFieldTemplate,
     DatetimeField,
     TextField,
 )
@@ -171,7 +169,7 @@ class FieldListController(FieldListView):
                     window_title=f"Edit {field.name}",  # TODO: Localize this
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_text_field(field, content, is_multiline=False),
+                            self.model.update_text_field(field, content, is_multiline=False),
                             self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
@@ -210,7 +208,7 @@ class FieldListController(FieldListView):
                     window_title=f"Edit {field.name}",  # TODO: Localize this
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_text_field(field, content, is_multiline=True),
+                            self.model.update_text_field(field, content, is_multiline=True),
                             self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
@@ -248,7 +246,7 @@ class FieldListController(FieldListView):
                     title=f"Edit {field.name}",
                     save_callback=(  # pyright: ignore[reportArgumentType]
                         lambda content: (
-                            self.update_datetime_field(field, content),
+                            self.model.update_datetime_field(field, content),
                             self.update_from_entry(self.model.cached_entries[0].id),
                         )
                     ),
@@ -344,17 +342,3 @@ class FieldListController(FieldListView):
             container.set_field_widget(mixed_tags_widget)
 
         container.setHidden(False)
-
-    def update_text_field(self, field: TextField, value: str, is_multiline: bool) -> None:
-        """Update a text field across selected entries."""
-        entry_ids: list[int] = [e.id for e in self.cached_entries]
-        assert entry_ids, "No entries selected"
-
-        self.__lib.update_text_field(entry_ids, field, value, is_multiline)
-
-    def update_datetime_field(self, field: DatetimeField, value: str):
-        """Update a datetime field across selected entries."""
-        entry_ids = [e.id for e in self.__model.cached_entries]
-        assert entry_ids, "No entries selected"
-
-        self.__lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
