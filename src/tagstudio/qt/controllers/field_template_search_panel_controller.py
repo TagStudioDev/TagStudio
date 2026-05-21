@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from collections.abc import Sequence
 from warnings import catch_warnings
 
 import structlog
@@ -23,14 +22,13 @@ class FieldTemplateSearchModal(PanelModal):
     def __init__(
         self,
         library: Library,
-        exclude: Sequence[BaseFieldTemplate] | None = None,
         is_field_template_chooser: bool = True,
         done_callback=None,
         save_callback=None,
         has_save=False,
     ) -> None:
         self.search_panel: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
-            library, exclude, is_field_template_chooser
+            library, is_field_template_chooser
         )
         super().__init__(
             self.search_panel,
@@ -47,23 +45,16 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate], FieldTemplateSear
     def __init__(
         self,
         library: Library,
-        exclude: Sequence[BaseFieldTemplate] | None = None,
         is_field_template_chooser: bool = True,
     ) -> None:
         super().__init__([], is_field_template_chooser)
         self.__lib = library
-        self._exclude_keys: frozenset[tuple[str, int]] = frozenset(
-            (t.__class__.__name__, t.id) for t in (exclude or ())
-        )
 
         self._unlimited_limit_item_label = Translations["field_template.all_field_templates"]
         self._create_and_add_button_label_key = "field_template.create_add"
 
     def _get_max_limit(self) -> int:
         return len(self.__lib.field_templates)
-
-    def _is_excluded(self, item: BaseFieldTemplate) -> bool:  # type: ignore[override]
-        return (item.__class__.__name__, item.id) in self._exclude_keys
 
     def _on_item_create(self) -> None:
         # TODO: Allow creation of field templates
