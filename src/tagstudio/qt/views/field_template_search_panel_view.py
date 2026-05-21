@@ -10,8 +10,8 @@ from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 
 class FieldTemplateSearchPanelView(SearchPanelView):
-    def __init__(self, is_field_chooser: bool) -> None:
-        super().__init__(is_field_chooser)
+    def __init__(self, is_field_template_chooser: bool) -> None:
+        super().__init__(is_field_template_chooser)
 
         self.search_field.setPlaceholderText(Translations["home.search_field_templates"])
         self.create_button.setText(Translations["field_template.create"])
