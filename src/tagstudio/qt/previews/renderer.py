@@ -1888,10 +1888,11 @@ class ThumbRenderer(QObject):
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
             except (
-                UnidentifiedImageError,
-                DecompressionBombError,
-                ValueError,
+                AssertionError,
                 ChildProcessError,
+                DecompressionBombError,
+                UnidentifiedImageError,
+                ValueError,
             ) as e:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
                 image = None
