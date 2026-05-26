@@ -1216,7 +1216,7 @@ class ThumbRenderer(QObject):
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(device=buffer, format="PNG")  # pyright: ignore[reportArgumentType]
+        q_image.save(buffer, "PNG")  # pyright: ignore[reportCallIssue, reportArgumentType]
 
         # Load the image from the buffer
         im = Image.new("RGB", (size, size), color="#1e1e1e")
