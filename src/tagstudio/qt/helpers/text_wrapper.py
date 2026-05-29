@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from PIL import Image, ImageDraw, ImageFont
@@ -8,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def wrap_line(
     text: str,
-    font: ImageFont.ImageFont,
+    font: ImageFont.ImageFont | ImageFont.FreeTypeFont | ImageFont.TransposedFont,
     width: int = 256,
     draw: ImageDraw.ImageDraw | None = None,
 ) -> int:
@@ -32,7 +31,7 @@ def wrap_line(
 
 def wrap_full_text(
     text: str,
-    font: ImageFont.ImageFont,
+    font: ImageFont.ImageFont | ImageFont.FreeTypeFont | ImageFont.TransposedFont,
     width: int = 256,
     draw: ImageDraw.ImageDraw | None = None,
 ) -> str:

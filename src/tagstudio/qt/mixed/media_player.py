@@ -1,6 +1,6 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import typing
 from pathlib import Path
@@ -324,7 +324,7 @@ class MediaPlayer(QGraphicsView):
         """Manage events for the media player."""
         if (
             arg__2.type() == QEvent.Type.MouseButtonPress
-            and arg__2.button() == Qt.MouseButton.LeftButton  # type: ignore
+            and arg__2.button() == Qt.MouseButton.LeftButton  # pyright: ignore[reportAttributeAccessIssue]
         ):
             if arg__1 == self.play_pause:
                 self.toggle_play()

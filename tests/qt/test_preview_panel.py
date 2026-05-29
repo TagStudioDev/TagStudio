@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from PySide6.QtCore import Qt
@@ -63,23 +62,23 @@ def test_add_field_to_selection_multiple_refreshes(qt_driver: QtDriver, library:
     panel.set_selection(qt_driver.selected, update_preview=False)
 
     selected_entries = list(library.get_entries_full([1, 2]))
-    existing_field_keys = {field.type_key for entry in selected_entries for field in entry.fields}
-    field_type = next(
-        value_type
-        for value_type in library.field_types.values()
-        if value_type.key not in existing_field_keys
+    existing_field_names = {field.name for entry in selected_entries for field in entry.fields}
+    field_template = next(
+        template
+        for template in library.field_templates
+        if template.name not in existing_field_names
     )
 
-    item = QListWidgetItem(f"{field_type.name} ({field_type.type.value})")
-    item.setData(Qt.ItemDataRole.UserRole, field_type.key)
+    item = QListWidgetItem(field_template.name)
+    item.setData(Qt.ItemDataRole.UserRole, field_template)
 
     panel._add_field_to_selected([item])
 
     refreshed_entries = list(library.get_entries_full([1, 2]))
     assert all(
-        any(field.type_key == field_type.key for field in entry.fields) for entry in refreshed_entries
+        any(field.name == field_template.name for field in entry.fields) for entry in refreshed_entries
     )
     assert all(
-        any(field.type_key == field_type.key for field in entry.fields)
+        any(field.name == field_template.name for field in entry.fields)
         for entry in panel.field_containers_widget.cached_entries
     )

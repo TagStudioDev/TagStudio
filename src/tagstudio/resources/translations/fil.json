@@ -140,8 +140,6 @@
     "json_migration.heading.aliases": "Mga alyas:",
     "json_migration.heading.colors": "Mga kulay:",
     "json_migration.heading.differ": "May pagkakaiba",
-    "json_migration.heading.extension_list_type": "Uri ng Listahan ng Extension:",
-    "json_migration.heading.file_extension_list": "Listahan ng Mga File Extension:",
     "json_migration.heading.match": "Tumutugma",
     "json_migration.heading.names": "Mga pangalan:",
     "json_migration.heading.parent_tags": "Mga parent tag:",

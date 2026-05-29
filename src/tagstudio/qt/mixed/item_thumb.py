@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from enum import Enum
@@ -468,12 +467,12 @@ class ItemThumb(FlowWidget):
                 badge.setHidden(is_hidden)
 
     @override
-    def enterEvent(self, event: QEnterEvent) -> None:  # type: ignore[misc]
+    def enterEvent(self, event: QEnterEvent) -> None:
         self.show_check_badges(show=True)
         return super().enterEvent(event)
 
     @override
-    def leaveEvent(self, event: QEvent) -> None:  # type: ignore[misc]
+    def leaveEvent(self, event: QEvent) -> None:
         self.show_check_badges(show=False)
         return super().leaveEvent(event)
 
@@ -496,16 +495,14 @@ class ItemThumb(FlowWidget):
         toggle_value: bool,
         tag_id: int,
     ):
-        if entry_id in self.driver.selected:
-            if len(self.driver.selected) == 1:
-                self.driver.main_window.preview_panel.field_containers_widget.update_toggled_tag(
-                    tag_id, toggle_value
-                )
-            else:
-                pass
+        selected = self.driver._selected
+        if len(selected) == 1 and entry_id in selected:
+            self.driver.main_window.preview_panel.field_containers_widget.update_toggled_tag(
+                tag_id, toggle_value
+            )
 
     @override
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[misc]
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if event.buttons() is not Qt.MouseButton.LeftButton:
             return
 

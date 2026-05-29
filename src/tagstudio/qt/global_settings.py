@@ -1,5 +1,6 @@
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import platform
 from datetime import datetime
@@ -63,6 +64,7 @@ class GlobalSettings(BaseModel):
     cached_thumb_quality: int = Field(default=DEFAULT_CACHED_IMAGE_QUALITY)
     cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_IMAGE_RES)
     autoplay: bool = Field(default=True)
+    scan_files_on_open: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
     page_size: int = Field(default=100)

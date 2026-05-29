@@ -1,8 +1,5 @@
 {
-    "tags": [
-        "ng_tag",
-        "ng_tag2"
-    ],
+    "tags": ["ng_tag", "ng_tag2"],
     "date": "2024-01-02",
     "description": "NG description",
     "user": "NG artist",

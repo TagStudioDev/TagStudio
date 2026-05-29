@@ -1,6 +1,8 @@
-# Copyright (C) 2022  Karl Kroening (kkroening).
-# Licensed under the GPL-3.0 License.
+# SPDX-FileCopyrightText: (c) 2022  Karl Kroening (kkroening)
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 # Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
+
 
 import contextlib
 import json

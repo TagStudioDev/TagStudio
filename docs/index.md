@@ -5,6 +5,9 @@ hide:
     - navigation
 ---
 
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+
 #
 
 <link rel="stylesheet" href="stylesheets/home.css">
@@ -36,7 +39,7 @@ hide:
 
 <div class="grid cards" markdown>
 
--   :material-file-multiple:{ .lg .middle } **[All Files](entries.md) Welcome**
+- :material-file-multiple:{ .lg .middle } **[All Files](entries.md) Welcome**
 
     ***
 
@@ -44,27 +47,25 @@ hide:
 
     [:material-arrow-right: See Full Preview Support](preview-support.md)
 
--   :material-tag-text:{ .lg .middle } **Create [Tags](tags.md) Your Way**
+- :material-tag-text:{ .lg .middle } **Create [Tags](tags.md) Your Way**
 
     ***
+    - :material-format-font: No character restrictions
+    - :material-form-textbox: Add aliases/alternate names
+    - :material-palette: Customize colors and styles
+    - :material-tag-multiple: Tags can be tagged with other tags!
+    - :material-star-four-points: And more!
 
-    -   :material-format-font: No character restrictions
-    -   :material-form-textbox: Add aliases/alternate names
-    -   :material-palette: Customize colors and styles
-    -   :material-tag-multiple: Tags can be tagged with other tags!
-    -   :material-star-four-points: And more!
-
--   :material-magnify:{ .lg .middle } **Powerful [Search](search.md)**
+- :material-magnify:{ .lg .middle } **Powerful [Search](search.md)**
 
     ***
+    - Full [Boolean operator](search.md) support
+    - Filenames, paths, and extensions with [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax
+    - General media types (e.g. "Photo", "Video", "Document")
+    - Special searches (e.g. "Untagged")
+    - "[Smartcase](search.md#case-sensitivity)" case sensitivity
 
-    -   Full [Boolean operator](search.md) support
-    -   Filenames, paths, and extensions with [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax
-    -   General media types (e.g. "Photo", "Video", "Document")
-    -   Special searches (e.g. "Untagged")
-    -   "[Smartcase](search.md#case-sensitivity)" case sensitivity
-
--   :material-text-box:{ .lg .middle } **Text and Date [Fields](fields.md)**
+- :material-text-box:{ .lg .middle } **Text and Date [Fields](fields.md)**
 
     ***
 
@@ -78,7 +79,7 @@ hide:
 
 <div class="grid cards" markdown>
 
--   :material-scale-balance:{ .lg .middle } **Open Source**
+- :material-scale-balance:{ .lg .middle } **Open Source**
 
     ***
 
@@ -88,11 +89,11 @@ hide:
 
     [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#core-library-api)
 
--   :material-database:{ .lg .middle } **Central Save File**
+- :material-database:{ .lg .middle } **Central Save File**
 
     ***
 
-    Apposed to filling your drives with [sidecar files](https://en.wikipedia.org/wiki/Sidecar_file), TagStudio uses a project-like [library](libraries.md) system that stores your tags and metadata inside a single save file per-library.
+    Opposed to filling your drives with [sidecar files](https://en.wikipedia.org/wiki/Sidecar_file), TagStudio uses a project-like [library](libraries.md) system that stores your tags and metadata inside a single save file per-library.
 
     [:material-arrow-right: Learn About the Format](libraries.md)
 
@@ -106,6 +107,6 @@ TagStudio aims to create an **open** and **robust** format for file tagging that
 
 <div class="grid cards" markdown>
 
--   :material-map-check:{ .lg .middle } See the [**Roadmap**](roadmap.md) for future features and updates
+- :material-map-check:{ .lg .middle } See the [**Roadmap**](roadmap.md) for future features and updates
 
 </div>

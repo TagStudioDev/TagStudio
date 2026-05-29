@@ -1,0 +1,49 @@
+version = 1
+
+[[annotations]]
+path = [
+    "tests/fixtures/**",
+
+    "contrib/.envrc-nix",
+    "contrib/.envrc-uv",
+    "contrib/.vscode/launch.json",
+    "docs/CNAME",
+    "docs/assets/**",
+    "src/tagstudio/qt/resources.json",
+    "src/tagstudio/resources/icon.*",
+    "src/tagstudio/resources/tagstudio.desktop",
+    "src/tagstudio/resources/templates/ts_ignore_template.txt",
+    "src/tagstudio/resources/templates/ts_ignore_template_blank.txt",
+    "src/tagstudio/resources/qt/images/**",
+    "tests/qt/__snapshots__/test_folders_to_tags.ambr",
+
+    ".git-blame-ignore-revs",
+    ".gitattributes",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    "flake.lock",
+]
+SPDX-FileCopyrightText = "(c) TagStudio Contributors"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = ["src/tagstudio/resources/translations/*.json"]
+SPDX-FileCopyrightText = "(c) TagStudio Contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/bxs-left-arrow.png",
+    "src/tagstudio/resources/qt/images/bxs-right-arrow.png",
+    "src/tagstudio/resources/qt/images/file_icons/database.png",
+]
+SPDX-FileCopyrightText = "(c) 2026 Boxicons"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/volume.svg",
+    "src/tagstudio/resources/qt/images/volume_mute.svg",
+]
+SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
+SPDX-License-Identifier = "Apache-2.0"

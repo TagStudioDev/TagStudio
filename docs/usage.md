@@ -1,6 +1,10 @@
 ---
+title: Basic Usage
 icon: material/mouse
 ---
+
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-mouse: Basic Usage
 
@@ -34,14 +38,14 @@ Hover over the field and click the pencil icon. From there, add or edit text in 
 
 Create a new tag by accessing the "New Tag" option from the Edit menu or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>. In the tag creation panel, enter a tag name, optional shorthand name, optional tag aliases, optional parent tags, and an optional color.
 
--   The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
--   The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
--   **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
--   **Parent Tags** are tags in which this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
-    -   Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
-    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
--   The **color** option lets you select an optional color palette to use for your tag.
--   The **"Is Category"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
+- The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
+- The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
+- **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
+- **Parent Tags** are tags in which this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
+    - Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
+    - For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
+- The **color** option lets you select an optional color palette to use for your tag.
+- The **"Is Category"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
 
 ### Tag Manager
 

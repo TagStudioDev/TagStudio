@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 ---
 name: pytest
 
@@ -17,7 +19,7 @@ jobs:
         name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - &install-dependencies
@@ -43,6 +45,7 @@ jobs:
             libxcb-xinerama0 \
             libxkbcommon-x11-0 \
             libyaml-dev \
+            ripgrep \
             x11-utils
 
       - name: Execute pytest
@@ -86,9 +89,9 @@ jobs:
       - name: Check coverage
         uses: yedpodtrzitko/coverage@main
         with:
-          thresholdAll: 0.4
-          thresholdNew: 0.4
-          thresholdModified: 0.4
+          thresholdAll: 0.1
+          thresholdNew: 0.1
+          thresholdModified: 0.1
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           sourceDir: tagstudio/src

@@ -1,6 +1,10 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import enum
 import random
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import structlog
@@ -78,8 +82,9 @@ class BrowsingState:
     """Represent a state of the Library grid view."""
 
     page_index: int = 0
+    page_positions: dict[int, int] = field(default_factory=dict)
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
-    ascending: bool = True
+    ascending: bool = False
     random_seed: float = 0
 
     show_hidden_entries: bool = False
@@ -151,11 +156,3 @@ class BrowsingState:
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
         return replace(self, show_hidden_entries=show_hidden_entries)
-
-
-class FieldTypeEnum(enum.Enum):
-    TEXT_LINE = "Text Line"
-    TEXT_BOX = "Text Box"
-    TAGS = "Tags"
-    DATETIME = "Datetime"
-    BOOLEAN = "Checkbox"

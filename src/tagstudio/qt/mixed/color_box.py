@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import typing
@@ -139,7 +138,7 @@ class ColorBoxWidget(FieldWidget):
         )
 
         self.edit_modal.saved.connect(
-            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())  # type: ignore
+            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())
         )
         self.edit_modal.show()
 
