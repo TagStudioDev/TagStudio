@@ -59,7 +59,7 @@
     "entries.running.dialog.new_entries": "{total} 件の新しいファイル エントリを追加しています...",
     "entries.running.dialog.title": "新しいファイルエントリを追加",
     "entries.tags": "タグ",
-    "entries.unlinked.description": "ライブラリの各エントリは、ディレクトリ内のファイルにリンクされています。エントリにリンクされたファイルがTagStudio以外で移動または削除された場合、そのエントリはリンク切れとして扱われます。<br><br>リンク切れのエントリは、ディレクトリを検索して自動的に再リンクすることも、必要に応じて削除することもできます。",
+    "entries.unlinked.description": "ライブラリの各エントリは、ディレクトリ内のファイルにリンクされています。エントリにリンクされたファイルが TagStudio 以外で移動または削除された場合、そのエントリはリンク切れとして扱われます。<br><br>リンク切れのエントリは、ディレクトリを検索して自動的に再リンクすることも、必要に応じて削除することもできます。",
     "entries.unlinked.relink.attempting": "{unlinked_count} 件中 {index} 件のエントリを再リンク中、{fixed_count} 件を正常に再リンクしました",
     "entries.unlinked.relink.manual": "手動で再リンク(&M)",
     "entries.unlinked.relink.title": "エントリの再リンク",
