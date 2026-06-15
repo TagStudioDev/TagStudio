@@ -86,7 +86,7 @@ class ResourceManager:
             try:
                 match mode:
                     case "r":
-                        data = file_path.read_text()
+                        data = file_path.read_text(encoding="utf-8")
 
                     case "rb":
                         data = file_path.read_bytes()

@@ -88,7 +88,7 @@ class RefreshTracker:
             compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
 
             # Write compiled ignore patterns (built-in + user) to a temp file to pass to ripgrep
-            with open(compiled_ignore_path, "w") as pattern_file:
+            with open(compiled_ignore_path, "w", encoding="utf-8") as pattern_file:
                 pattern_file.write("\n".join(ignore_patterns))
 
             result = silent_run(

@@ -357,7 +357,8 @@ class Library:
 
         # extension include/exclude list
         (unwrap(self.library_dir) / TS_FOLDER_NAME / IGNORE_NAME).write_text(
-            migrate_ext_list([x.strip(".") for x in json_lib.ext_list], json_lib.is_exclude_list)
+            migrate_ext_list([x.strip(".") for x in json_lib.ext_list], json_lib.is_exclude_list),
+            encoding="utf-8",
         )
 
         end_time = time.time()
@@ -775,7 +776,7 @@ class Library:
                 session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
             )
 
-        with open(ts_ignore, "w") as f:
+        with open(ts_ignore, "w", encoding="utf-8") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
     def __apply_db200_migrations(self, session: Session):

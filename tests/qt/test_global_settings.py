@@ -34,3 +34,18 @@ def test_read_settings(library_dir: Path):
     assert settings.date_format == "%x"
     assert settings.hour_format
     assert settings.zero_padding
+
+
+def test_read_settings_legacy_locale_encoding(library_dir: Path, monkeypatch):
+    settings_path = library_dir / "settings.toml"
+    settings_path.write_bytes(
+        b'language = "ja"\ndate_format = "' + "写真".encode("cp932") + b'"\n'
+    )
+    monkeypatch.setattr("tagstudio.qt.global_settings.detect_char_encoding", lambda _: None)
+    monkeypatch.setattr("tagstudio.qt.global_settings.locale.getencoding", lambda: "cp932")
+
+    settings = GlobalSettings.read_settings(settings_path)
+    settings.save()
+
+    assert settings.date_format == "写真"
+    assert settings_path.read_bytes().decode("utf-8")

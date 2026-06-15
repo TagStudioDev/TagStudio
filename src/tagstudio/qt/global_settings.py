@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import locale
 import platform
 from datetime import datetime
 from enum import Enum, IntEnum, StrEnum
@@ -13,6 +14,7 @@ import toml
 from pydantic import BaseModel, Field
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+from tagstudio.core.utils.encoding import detect_char_encoding
 
 logger = structlog.get_logger(__name__)
 
@@ -84,13 +86,16 @@ class GlobalSettings(BaseModel):
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
-            with open(path) as file:
-                filecontents = file.read()
-                if len(filecontents.strip()) != 0:
-                    logger.info("[Settings] Reading Global Settings File", path=path)
-                    settings_data = toml.loads(filecontents)
-                    settings = GlobalSettings(**settings_data, loaded_from=path)
-                    return settings
+            try:
+                filecontents = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                encoding = detect_char_encoding(path) or locale.getencoding()
+                filecontents = path.read_text(encoding=encoding)
+            if len(filecontents.strip()) != 0:
+                logger.info("[Settings] Reading Global Settings File", path=path)
+                settings_data = toml.loads(filecontents)
+                settings = GlobalSettings(**settings_data, loaded_from=path)
+                return settings
 
         return GlobalSettings(loaded_from=path)
 
@@ -100,7 +105,7 @@ class GlobalSettings(BaseModel):
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
 
     @property
