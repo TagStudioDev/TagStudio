@@ -1273,11 +1273,20 @@ class Library:
                     )
                 )
 
-            tags = list(session.execute(query))
+            tags = [(tag_id, tag_name) for tag_id, tag_name in session.execute(query)]
 
             if name:
+                shorthand_query = select(Tag.id, Tag.shorthand).where(
+                    and_(Tag.shorthand.is_not(None), Tag.shorthand.icontains(name))
+                )
+                tags.extend(
+                    (tag_id, shorthand)
+                    for tag_id, shorthand in session.execute(shorthand_query)
+                    if shorthand is not None
+                )
+
                 query = select(TagAlias.tag_id, TagAlias.name).where(TagAlias.name.icontains(name))
-                tags.extend(session.execute(query))
+                tags.extend((tag_id, alias_name) for tag_id, alias_name in session.execute(query))
 
             tags.sort(key=lambda t: sort_key(t[1]))
             # Use order from Tag.name or TagAlias.name depending on which comes first for each tag.

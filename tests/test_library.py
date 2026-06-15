@@ -135,6 +135,21 @@ def test_tag_search(library: Library):
     assert library.search_tags(tag.name * 2) == ([], [])
 
 
+def test_tag_search_exact_shorthand_takes_priority(generate_tag: Callable[..., Tag]):
+    with TemporaryDirectory() as tmp_dir_name:
+        library = Library()
+        status = library.open_library(Path(tmp_dir_name), in_memory=True)
+        assert status.success
+
+        blue = unwrap(library.add_tag(generate_tag("blue", shorthand="u")))
+        black = unwrap(library.add_tag(generate_tag("black", shorthand="b")))
+
+        direct_tags, _ = library.search_tags("b")
+
+        assert blue.id != black.id
+        assert direct_tags[0].id == black.id
+
+
 def test_get_entry(library: Library, entry_min: Entry):
     result = unwrap(library.get_entry_full(unwrap(entry_min.id)))
     assert len(result.tags) == 1
