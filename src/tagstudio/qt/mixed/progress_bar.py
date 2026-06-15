@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from collections.abc import Callable
@@ -66,6 +65,6 @@ class ProgressWidget(QWidget):
 
         r = CustomRunnable(lambda: iterator.run())
         r.done.connect(
-            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])  # type: ignore
+            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])
         )
         QThreadPool.globalInstance().start(r)

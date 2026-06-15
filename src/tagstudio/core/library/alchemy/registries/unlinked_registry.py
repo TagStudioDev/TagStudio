@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path

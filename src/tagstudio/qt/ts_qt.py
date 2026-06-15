@@ -1,6 +1,6 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 # SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
 # https://github.com/arsenetar/dupeguru/blob/master/run.py#L71
@@ -8,7 +8,6 @@
 
 """A Qt driver for TagStudio."""
 
-import contextlib
 import ctypes
 import math
 import os
@@ -21,7 +20,7 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Queue
 from shutil import which
-from typing import Generic, TypeVar
+from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
@@ -52,10 +51,8 @@ from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
-    FieldTypeEnum,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -63,7 +60,7 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.str_formatting import is_version_outdated, strip_web_protocol
+from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
@@ -150,7 +147,7 @@ T = TypeVar("T")
 #                 | A   [B]<- C |
 #                 |[A]<- B    C |  Previous routes still exist
 #                 | A ->[D]     |  Stack is cut from [:A] on new route
-class History(Generic[T]):
+class History[T]:
     __history: list[T]
     __index: int = 0
 
@@ -196,7 +193,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager
+    cache_manager: CacheManager | None
 
     browsing_history: History[BrowsingState]
 
@@ -306,13 +303,13 @@ class QtDriver(DriverMixin, QObject):
             sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
-        if self.settings.theme == Theme.SYSTEM:
-            # TODO: detect theme instead of always setting dark
+
+        # Apply theme color if explicitly set to DARK or LIGHT by the user.
+        # For SYSTEM, we let Qt decide based on OS theme.
+        if self.settings.theme == Theme.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        else:
-            self.app.styleHints().setColorScheme(
-                Qt.ColorScheme.Dark if self.settings.theme == Theme.DARK else Qt.ColorScheme.Light
-            )
+        elif self.settings.theme == Theme.LIGHT:
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
@@ -353,7 +350,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
         self.app.setApplicationName("tagstudio")
         self.app.setApplicationDisplayName("TagStudio")
@@ -541,7 +538,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: self.cache_manager.clear_cache()
+            lambda: unwrap(self.cache_manager).clear_cache()
         )
 
         # endregion
@@ -613,7 +610,8 @@ class QtDriver(DriverMixin, QObject):
         if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
             FfmpegMissingMessageBox().show()
 
-        if is_version_outdated(VERSION, TagStudioCore.get_most_recent_release_version()):
+        latest_version = TagStudioCore.get_most_recent_release_version()
+        if latest_version and is_version_outdated(VERSION, latest_version):
             OutOfDateMessageBox().exec()
 
         self.app.exec()
@@ -898,7 +896,7 @@ class QtDriver(DriverMixin, QObject):
         selected: list[int] = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
-        self.emit_badge_signals(tag_ids)
+        self.emit_badge_signals(tag_ids, emit_on_absent=False)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -914,7 +912,7 @@ class QtDriver(DriverMixin, QObject):
             origin_id(id): The entry ID associated with the widget making the call.
         """
         entry: Entry | None = None
-        pending: list[tuple[int, Path]] = []
+        pending: list[tuple[int | None, Path]] = []
         deleted_count: int = 0
 
         selected = self.selected
@@ -922,14 +920,13 @@ class QtDriver(DriverMixin, QObject):
 
         if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
-            if not origin_id_:
-                with contextlib.suppress(IndexError):
-                    origin_id_ = selected[0]
+            if origin_id_ is None:
+                origin_id_ = selected[0] if len(selected) > 0 else None
 
             pending.append((origin_id_, Path(origin_path)))
         else:
             for item in selected:
-                entry = self.lib.get_entry(item)
+                entry = unwrap(self.lib.get_entry(item))
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
@@ -951,7 +948,8 @@ class QtDriver(DriverMixin, QObject):
                     self.main_window.status_bar.showMessage(msg)
                     self.main_window.status_bar.repaint()
 
-                    self.lib.remove_entries([e_id])
+                    if e_id is not None:
+                        self.lib.remove_entries([e_id])
                     if delete_file(library_dir / f):
                         deleted_count += 1
 
@@ -1102,7 +1100,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.hide(),
                 pw.deleteLater(),
                 # refresh the library only when new items are added
-                files_count and self.update_browsing_state(),  # type: ignore
+                files_count and self.update_browsing_state(),
             )
         )
         QThreadPool.globalInstance().start(r)
@@ -1123,7 +1121,6 @@ class QtDriver(DriverMixin, QObject):
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
         entry: Entry = unwrap(self.lib.get_entry(entry_id))
-        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
@@ -1139,32 +1136,6 @@ class QtDriver(DriverMixin, QObject):
                 if macro_id == MacroID.AUTOFILL:
                     continue
                 self.run_macro(macro_id, entry_id)
-
-        elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
-            for field_id, value in parsed_items.items():
-                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
-                    value = self.lib.tag_from_strings(value)
-                self.lib.add_field_to_entry(
-                    entry.id,
-                    field_id=field_id,
-                    value=value,
-                )
-
-        elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry, source)
-            if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
-        elif name == MacroID.MATCH:
-            TagStudioCore.match_conditions(self.lib, entry.id)
-        elif name == MacroID.CLEAN_URL:
-            for field in entry.text_fields:
-                if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
-                    self.lib.update_entry_field(
-                        entry_ids=entry.id,
-                        field=field,
-                        content=strip_web_protocol(field.value),
-                    )
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
@@ -1254,10 +1225,10 @@ class QtDriver(DriverMixin, QObject):
             for field in self.copy_buffer["fields"]:
                 exists = False
                 for e in existing_fields:
-                    if field.type_key == e.type_key and field.value == e.value:
+                    if field == e:
                         exists = True
                 if not exists:
-                    self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+                    self.lib.add_field_to_entries(id, field=field)
             self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:
@@ -1649,8 +1620,7 @@ class QtDriver(DriverMixin, QObject):
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
-        # TODO - make this call optional
-        if self.lib.entries_count < 10000:
+        if self.settings.scan_files_on_open:
             self.add_new_files_callback()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:

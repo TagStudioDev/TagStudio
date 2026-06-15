@@ -1,12 +1,12 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import re
 from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, func, or_, select
+from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
@@ -47,21 +47,21 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         self.lib = lib
 
     @override
-    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:  # type: ignore
+    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:
         tag_ids, bool_expressions = self.__separate_tags(node.elements, only_single=False)
         if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_any_tags(tag_ids))
         return or_(*bool_expressions)
 
     @override
-    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:  # type: ignore
+    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:
         tag_ids, bool_expressions = self.__separate_tags(node.terms, only_single=True)
         if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_all_tags(tag_ids))
         return and_(*bool_expressions)
 
     @override
-    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:  # type: ignore
+    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:
         """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
@@ -113,11 +113,11 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         raise NotImplementedError("This type of constraint is not implemented yet")
 
     @override
-    def visit_property(self, node: Property) -> ColumnElement[bool]:  # type: ignore
+    def visit_property(self, node: Property) -> ColumnElement[bool]:
         raise NotImplementedError("This should never be reached!")
 
     @override
-    def visit_not(self, node: Not) -> ColumnElement[bool]:  # type: ignore
+    def visit_not(self, node: Not) -> ColumnElement[bool]:
         return ~self.visit(node.child)
 
     def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
@@ -163,6 +163,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         continue
                     case ConstraintType.Tag:
                         ids = self.__get_tag_ids(term.value)
+                        if len(ids) == 0:
+                            bool_expressions.append(false())
+                            continue
                         if not only_single:
                             tag_ids.update(ids)
                             continue

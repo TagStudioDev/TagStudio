@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from typing import TYPE_CHECKING, override
@@ -89,6 +88,6 @@ class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
             self.driver.library_info_window.update_cleanup()
 
     @override
-    def showEvent(self, event: QtGui.QShowEvent) -> None:  # type: ignore
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
         self.update_ignored_count()
         return super().showEvent(event)

@@ -156,8 +156,6 @@
     "json_migration.heading.aliases": "別名：",
     "json_migration.heading.colors": "顏色：",
     "json_migration.heading.differ": "差異",
-    "json_migration.heading.extension_list_type": "副檔名清單類型：",
-    "json_migration.heading.file_extension_list": "檔案副檔名清單：",
     "json_migration.heading.match": "已一致",
     "json_migration.heading.names": "名稱：",
     "json_migration.heading.parent_tags": "父標籤：",

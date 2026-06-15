@@ -1,6 +1,6 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 from copy import deepcopy
 from pathlib import Path
@@ -89,6 +89,23 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
 
     logger.info("[Ignore]", glob_patterns=glob_patterns)
     return glob_patterns
+
+
+def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
+    # read template
+    ts_ignore_template = (
+        Path(__file__).parents[2] / "resources/templates/ts_ignore_template_blank.txt"
+    )
+    with open(ts_ignore_template) as f:
+        out = f.read()
+
+    # actual conversion
+    prefix = ""
+    if not is_exclude_list:
+        prefix = "!"
+        out += "*\n"
+    out += "\n".join([f"{prefix}*.{x.lstrip('.')}\n" for x in exts])
+    return out
 
 
 class Ignore(metaclass=Singleton):

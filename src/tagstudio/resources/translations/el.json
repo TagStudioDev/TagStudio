@@ -157,8 +157,6 @@
     "json_migration.heading.aliases": "Ψευδώνυμα:",
     "json_migration.heading.colors": "Χρώματα:",
     "json_migration.heading.differ": "Ασυμφωνία",
-    "json_migration.heading.extension_list_type": "Τύπος λίστας επεκτάσεων:",
-    "json_migration.heading.file_extension_list": "Λίστα επεκτάσεων αρχείων:",
     "json_migration.heading.match": "Αντιστοιχίστηκε",
     "json_migration.heading.names": "Όνομα:"
 }

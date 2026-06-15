@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 BOX_FIELDS = ["tag_box", "text_box"]
 TEXT_FIELDS = ["text_line", "text_box"]
 DATE_FIELDS = ["datetime"]

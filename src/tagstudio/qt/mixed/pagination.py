@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 """A pagination widget created for TagStudio."""
@@ -219,7 +218,7 @@ class Pagination(QWidget):
                 if i < index:
                     if (i != 0) and i >= index - 4:
                         self.start_buffer_layout.itemAt(i - start_offset).widget().setHidden(False)
-                        self.start_buffer_layout.itemAt(i - start_offset).widget().setText(  # type: ignore
+                        self.start_buffer_layout.itemAt(i - start_offset).widget().setText(  # pyright: ignore[reportAttributeAccessIssue]
                             str(i + 1)
                         )
                         self._assign_click(
@@ -238,9 +237,7 @@ class Pagination(QWidget):
                 elif i > index:
                     if i != page_count - 1 and i <= index + 4:
                         self.end_buffer_layout.itemAt(i - end_offset).widget().setHidden(False)
-                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(  # type: ignore
-                            str(i + 1)
-                        )
+                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(str(i + 1))  # pyright: ignore[reportAttributeAccessIssue]
                         self._assign_click(
                             cast(
                                 QPushButtonWrapper,

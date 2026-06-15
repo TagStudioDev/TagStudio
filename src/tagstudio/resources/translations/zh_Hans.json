@@ -152,8 +152,6 @@
     "json_migration.heading.aliases": "别名：",
     "json_migration.heading.colors": "颜色：",
     "json_migration.heading.differ": "差异",
-    "json_migration.heading.extension_list_type": "扩展名列表类型：",
-    "json_migration.heading.file_extension_list": "文件扩展名列表：",
     "json_migration.heading.match": "已匹配",
     "json_migration.heading.names": "名字：",
     "json_migration.heading.parent_tags": "上级标签：",
