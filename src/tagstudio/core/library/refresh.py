@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime as dt
 from pathlib import Path
 from time import time
+import platform
 
 import structlog
 from wcmatch import pathlib
@@ -38,12 +39,14 @@ class RefreshTracker:
         while index < len(self.files_not_in_library):
             yield index
             end = min(len(self.files_not_in_library), index + batch_size)
+            lib_dir = unwrap(self.library.library_dir)
             entries = [
                 Entry(
                     path=entry_path,
                     folder=unwrap(self.library.folder),
                     fields=[],
                     date_added=dt.now(),
+                    path_for_file_metadata=(lib_dir / entry_path),
                 )
                 for entry_path in self.files_not_in_library[index:end]
             ]
@@ -144,8 +147,11 @@ class RefreshTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_entry_with_path(f):
+            entry_id = self.library.get_entry_id_from_path(f)
+            if entry_id < 0:
                 self.files_not_in_library.append(f)
+            else:
+                self.library.refresh_file_entry_stats(entry_id, path=f)
 
         end_time_total = time()
         yield dir_file_count
@@ -189,8 +195,12 @@ class RefreshTracker:
 
                 relative_path = f.relative_to(library_dir)
 
-                if not self.library.has_entry_with_path(relative_path):
+                entry_id = self.library.get_entry_id_from_path(relative_path)
+                if entry_id < 0:
                     self.files_not_in_library.append(relative_path)
+                else:
+                    self.library.refresh_file_entry_stats(entry_id, path=relative_path)
+
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
 
