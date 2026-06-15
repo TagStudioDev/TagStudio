@@ -81,9 +81,9 @@ def test_library_add_file(library: Library):
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
-    assert not library.has_entry_with_path(entry.path)
+    assert not library.get_entry_id_from_path(entry.path)
     assert library.add_entries([entry])
-    assert library.has_entry_with_path(entry.path)
+    assert library.get_entry_id_from_path(entry.path)
 
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
@@ -347,8 +347,8 @@ def test_merge_entries(library: Library):
     entry_b_: Entry = unwrap(library.get_entry_full(entry_b_id))
 
     assert library.merge_entries(entry_a_, entry_b_)
-    assert not library.has_entry_with_path(Path("a"))
-    assert library.has_entry_with_path(Path("b"))
+    assert not library.get_entry_id_from_path(Path("a"))
+    assert library.get_entry_id_from_path(Path("b"))
 
     entry_b_merged = unwrap(library.get_entry_full(entry_b_id))
 

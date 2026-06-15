@@ -7,6 +7,7 @@
 # pyright: reportDeprecated=false
 
 
+import platform
 import re
 import shutil
 import sys
@@ -93,6 +94,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextFieldTemplate,
 )
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
+from tagstudio.core.library.alchemy.metadata import FileMetadata
 from tagstudio.core.library.alchemy.models import (
     Entry,
     Folder,
@@ -105,6 +107,7 @@ from tagstudio.core.library.alchemy.models import (
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.utils.stat import get_date_created, get_date_modified
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
@@ -935,7 +938,11 @@ class Library:
             return entry
 
     def get_entry_full(
-        self, entry_id: int, with_fields: bool = True, with_tags: bool = True
+        self,
+        entry_id: int,
+        with_fields: bool = True,
+        with_tags: bool = True,
+        with_metadata: bool = True,
     ) -> Entry | None:
         """Load entry and join with all joins and all tags."""
         # NOTE: TODO: Currently this method makes multiple separate queries to the db and combines
@@ -963,6 +970,11 @@ class Library:
                         TagEntry.tag_id == Tag.id,
                         TagEntry.entry_id == entry_id,
                     )
+                )
+
+            if with_metadata:
+                entry_stmt = entry_stmt.outerjoin(Entry.file_metadata).options(
+                    selectinload(Entry.file_metadata),
                 )
 
             start_time = time.time()
@@ -1153,10 +1165,79 @@ class Library:
                 session.query(Entry).where(Entry.id.in_(sub_list)).delete()
             session.commit()
 
-    def has_entry_with_path(self, path: Path) -> bool:
-        """Check if an entry with this path is in the library."""
+    def get_entry_id_from_path(self, path: Path) -> int:
+        """Attempt to return an Entry ID given a filepath, else return -1."""
         with Session(self.engine) as session:
-            return session.query(exists().where(Entry.path == path)).scalar()
+            return session.scalar(select(Entry.id).where(Entry.path == path).limit(1)) or -1
+
+    # def update_entry_file_metadata(
+    #     self, entry_id: int, date_created: datetime | None, date_modified: datetime | None
+    # ):
+    #     with Session(self.engine) as session:
+    #         stmt = update(FileMetadata).where(
+    #             and_(
+    #                 FileMetadata.entry_id == entry_id,
+    #             )
+    #         )
+    #         if date_created:
+    #             stmt = stmt.values(date_created=date_created)
+    #         if date_modified:
+    #             stmt = stmt.values(date_modified=date_modified)
+
+    #         session.execute(stmt)
+    #         session.commit()
+
+    def refresh_file_entry_stats(self, entry_id: int, path: Path | None):
+        """Updates a file entry's associated stat() data."""
+        needs_update = False
+
+        entry = self.get_entry_full(
+            entry_id, with_fields=False, with_tags=False, with_metadata=True
+        )
+        if not entry:
+            return
+
+        if not path:
+            full_path = unwrap(self.library_dir) / entry.path
+        else:
+            full_path = unwrap(self.library_dir) / path
+
+        logger.info(full_path)
+
+        file_date_created = get_date_created(full_path)
+        file_date_modified = get_date_modified(full_path)
+
+        # Log info
+        if entry.date_created != file_date_created:
+            logger.info(f"Difference in date_created!: {entry.date_created}/{file_date_created}")
+            needs_update = True
+        else:
+            logger.info("No difference in date_created.")
+
+        if entry.date_modified != file_date_modified:
+            logger.info(f"Difference in date_modified!: {entry.date_modified}/{file_date_modified}")
+            needs_update = True
+        else:
+            logger.info("No difference in date_modified")
+
+        if needs_update:
+            return
+        else:
+            logger.info(f"Updating entry file_metadata for {full_path}")
+
+        with Session(self.engine) as session:
+            stmt = update(FileMetadata).where(
+                and_(
+                    FileMetadata.entry_id == entry_id,
+                )
+            )
+            if file_date_created:
+                stmt = stmt.values(date_created=file_date_created)
+            if file_date_modified:
+                stmt = stmt.values(date_modified=file_date_modified)
+
+            session.execute(stmt)
+            session.commit()
 
     def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
@@ -1470,7 +1551,7 @@ class Library:
 
         Returns True if the action succeeded and False if the path already exists.
         """
-        if self.has_entry_with_path(path):
+        if self.get_entry_id_from_path(path) >= 0:
             return False
         if isinstance(entry_id, Entry):
             entry_id = entry_id.id
