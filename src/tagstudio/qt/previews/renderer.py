@@ -949,7 +949,9 @@ class ThumbRenderer(QObject):
         if cover is not None:
             pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
             page_name = pages[int(unwrap(cover.get("Image")))]
-            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            if page_name.lower().endswith(
+                (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp")
+            ):
                 image_data = archive.read(page_name)
                 im = Image.open(BytesIO(image_data))
 
@@ -1006,7 +1008,9 @@ class ThumbRenderer(QObject):
             Image: The first renderable image in the archive.
         """
         for file_name in archive.namelist():
-            if file_name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            if file_name.lower().endswith(
+                (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp")
+            ):
                 image_data = archive.read(file_name)
                 return Image.open(BytesIO(image_data))
 
