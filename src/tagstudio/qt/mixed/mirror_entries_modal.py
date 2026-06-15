@@ -67,13 +67,15 @@ class MirrorEntriesModal(QWidget):
         )
 
         self.model.clear()
-        for i in self.tracker.groups:
-            self.model.appendRow(QStandardItem(str(i)))
+        for entries in self.tracker.groups:
+            item = QStandardItem("\n".join(str(entry.path) for entry in entries))
+            item.setEditable(False)
+            self.model.appendRow(item)
 
     def mirror_entries(self):
         def displayed_text(x):
             return Translations.format(
-                "entries.mirror.label", idx=x + 1, count=self.tracker.groups_count
+                "entries.mirror.label", idx=x + 1, total=self.tracker.groups_count
             )
 
         pw = ProgressWidget(
