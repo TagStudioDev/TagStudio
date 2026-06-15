@@ -17,6 +17,8 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.joins import TagParent
+from tagstudio.core.library.alchemy.metadata import FileMetadata
+from tagstudio.core.utils.stat import get_date_created, get_date_modified
 
 
 class Namespace(Base):
@@ -181,6 +183,7 @@ class Tag(Base):
         return self.name >= other.name
 
 
+# TODO: Use or replace these with an actual multi-root implementation
 class Folder(Base):
     __tablename__ = "folders"
 
@@ -195,15 +198,16 @@ class Entry(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
+    # TODO: Use or replace these with an actual multi-root implementation
     folder_id: Mapped[int] = mapped_column(ForeignKey("folders.id"))
     folder: Mapped[Folder] = relationship("Folder")
 
+    # TODO: Possibly move to FileMetadata table if Entry is split into Entry/FileEntry (see #588)
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     filename: Mapped[str] = mapped_column()
     suffix: Mapped[str] = mapped_column()
-    date_created: Mapped[dt | None]
-    date_modified: Mapped[dt | None]
-    date_added: Mapped[dt | None]
+
+    date_added: Mapped[dt | None]  # The date this entry was added to the library
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
 
@@ -214,6 +218,11 @@ class Entry(Base):
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         back_populates="entry",
         cascade="all, delete",
+    )
+
+    file_metadata: Mapped["FileMetadata"] = relationship(
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     @property
@@ -231,30 +240,35 @@ class Entry(Base):
     def is_archived(self) -> bool:
         return any(tag.id == TAG_ARCHIVED for tag in self.tags)
 
+    @property
+    def date_created(self) -> float | None:
+        return self.file_metadata.date_created if self.file_metadata else None
+
+    @property
+    def date_modified(self) -> float | None:
+        return self.file_metadata.date_modified if self.file_metadata else None
+
     def __init__(
         self,
         path: Path,
         folder: Folder,
         fields: list[BaseField],
         id: int | None = None,
-        date_created: dt | None = None,
-        date_modified: dt | None = None,
         date_added: dt | None = None,
+        # date_created: float | None = None,
+        # date_modified: float | None = None,
+        path_for_file_metadata: Path | None = None,
     ) -> None:
         super().__init__()
-        self.path = path
-        self.folder = folder
+
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
+
+        self.folder = folder  # NOTE: Currently unused
+        self.path = path
         self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
-        # The date the file associated with this entry was created.
-        # st_birthtime on Windows and Mac, st_ctime on Linux.
-        self.date_created = date_created
-        # The date the file associated with this entry was last modified: st_mtime.
-        self.date_modified = date_modified
-        # The date this entry was added to the library.
-        self.date_added = date_added
+        self.date_added = date_added  # The date this entry was added to the library
 
         for field in fields:
             if isinstance(field, TextField):
@@ -263,6 +277,13 @@ class Entry(Base):
                 self.datetime_fields.append(field)
             else:
                 raise ValueError(f"Invalid field type: {field}")
+
+        if path_for_file_metadata:
+            self.file_metadata = FileMetadata(
+                entry_id=self.id,
+                date_created=get_date_created(path_for_file_metadata),
+                date_modified=get_date_modified(path_for_file_metadata),
+            )
 
     def has_tag(self, tag: Tag) -> bool:
         return tag in self.tags
