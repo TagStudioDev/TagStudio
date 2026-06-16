@@ -366,8 +366,8 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: (
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
             ),
             has_save=False,
         )

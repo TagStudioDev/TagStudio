@@ -447,7 +447,7 @@ class FieldContainers(QWidget):
             inner_widget.set_tags(tags)
 
             inner_widget.on_update.connect(
-                lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
+                lambda: self.update_from_entry(self.cached_entries[0].id, update_badges=True)
             )
         else:
             text = "<i>Mixed Data</i>"

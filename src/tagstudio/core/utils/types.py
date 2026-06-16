@@ -2,12 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TypeVar
-
-T = TypeVar("T")
-
-
-def unwrap(optional: T | None, default: T | None = None) -> T:
+def unwrap[T](optional: T | None, default: T | None = None) -> T:
     if optional is not None:
         return optional
     if default is not None:
