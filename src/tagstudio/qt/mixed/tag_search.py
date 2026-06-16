@@ -68,10 +68,14 @@ class TagSearchPanel(PanelWidget):
     is_tag_chooser: bool
     exclude: list[int]
 
-    _limit_items: list[int | str] = [25, 50, 100, 250, 500, Translations["tag.all_tags"]]
-    _default_limit_idx: int = 0  # 50 Tag Limit (Default)
+    _limit_items: list[int] = [25, 50, 100, 250, 500]
+    _default_limit_idx: int = 0  # 25 Tag Limit (Default)
     cur_limit_idx: int = _default_limit_idx
-    tag_limit: int | str = _limit_items[_default_limit_idx]
+    tag_limit: int = _limit_items[_default_limit_idx]
+
+    @classmethod
+    def limit_item_labels(cls) -> list[str]:
+        return [str(item) for item in cls._limit_items] + [Translations["tag.all_tags"]]
 
     def __init__(
         self,
@@ -102,7 +106,7 @@ class TagSearchPanel(PanelWidget):
 
         self.limit_combobox = QComboBox()
         self.limit_combobox.setEditable(False)
-        self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
+        self.limit_combobox.addItems(TagSearchPanel.limit_item_labels())
         self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)
         self.limit_combobox.currentIndexChanged.connect(self.update_limit)
         self.limit_layout.addWidget(self.limit_combobox)
@@ -213,8 +217,8 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
             self.create_button_in_layout = False
 
-        # Only use the tag limit if it's an actual number (aka not "All Tags")
-        tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
+        # -1 means "All Tags".
+        tag_limit = TagSearchPanel.tag_limit
         direct_tags, descendant_tags = self.lib.search_tags(name=query, limit=tag_limit)
 
         all_results = [t for t in direct_tags if t.id not in self.exclude]
@@ -303,8 +307,8 @@ class TagSearchPanel(PanelWidget):
 
         TagSearchPanel.cur_limit_idx = index
 
-        if index < len(self._limit_items) - 1:
-            TagSearchPanel.tag_limit = int(self._limit_items[index])
+        if index < len(self._limit_items):
+            TagSearchPanel.tag_limit = self._limit_items[index]
         else:
             TagSearchPanel.tag_limit = -1
 

@@ -38,31 +38,49 @@ logger = structlog.get_logger(__name__)
 class SettingsPanel(PanelWidget):
     driver: "QtDriver"
 
-    filepath_option_map: dict[ShowFilepathOption, str] = {
-        ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
-        ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
-        ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
-    }
+    @staticmethod
+    def filepath_option_map() -> dict[ShowFilepathOption, str]:
+        return {
+            ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+            ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations[
+                "settings.filepath.option.relative"
+            ],
+            ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations[
+                "settings.filepath.option.name"
+            ],
+        }
 
-    theme_map: dict[Theme, str] = {
-        Theme.SYSTEM: Translations["settings.theme.system"],
-        Theme.DARK: Translations["settings.theme.dark"],
-        Theme.LIGHT: Translations["settings.theme.light"],
-    }
+    @staticmethod
+    def theme_map() -> dict[Theme, str]:
+        return {
+            Theme.SYSTEM: Translations["settings.theme.system"],
+            Theme.DARK: Translations["settings.theme.dark"],
+            Theme.LIGHT: Translations["settings.theme.light"],
+        }
 
-    splash_map: dict[Splash, str] = {
-        Splash.DEFAULT: Translations["settings.splash.option.default"],
-        Splash.RANDOM: Translations["settings.splash.option.random"],
-        Splash.CLASSIC: Translations["settings.splash.option.classic"],
-        Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
-        Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
-    }
+    @staticmethod
+    def splash_map() -> dict[Splash, str]:
+        return {
+            Splash.DEFAULT: Translations["settings.splash.option.default"],
+            Splash.RANDOM: Translations["settings.splash.option.random"],
+            Splash.CLASSIC: Translations["settings.splash.option.classic"],
+            Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
+            Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
+        }
 
-    tag_click_action_map: dict[TagClickActionOption, str] = {
-        TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
-        TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
-        TagClickActionOption.ADD_TO_SEARCH: Translations["settings.tag_click_action.add_to_search"],
-    }
+    @staticmethod
+    def tag_click_action_map() -> dict[TagClickActionOption, str]:
+        return {
+            TagClickActionOption.OPEN_EDIT: Translations[
+                "settings.tag_click_action.open_edit"
+            ],
+            TagClickActionOption.SET_SEARCH: Translations[
+                "settings.tag_click_action.set_search"
+            ],
+            TagClickActionOption.ADD_TO_SEARCH: Translations[
+                "settings.tag_click_action.add_to_search"
+            ],
+        }
 
     date_format_map: dict[str, str] = {
         "%d/%m/%y": "21/08/24",
@@ -84,9 +102,6 @@ class SettingsPanel(PanelWidget):
 
     def __init__(self, driver: "QtDriver"):
         super().__init__()
-        # set these "constants" because language will be loaded from config shortly after startup
-        # and we want to use the current language for the dropdowns
-
         self.driver = driver
         self.setMinimumSize(400, 500)
 
@@ -212,25 +227,27 @@ class SettingsPanel(PanelWidget):
 
         # Show Filepath
         self.filepath_combobox = QComboBox()
-        for k in SettingsPanel.filepath_option_map:
-            self.filepath_combobox.addItem(SettingsPanel.filepath_option_map[k], k)
+        filepath_option_map = SettingsPanel.filepath_option_map()
+        for k, label in filepath_option_map.items():
+            self.filepath_combobox.addItem(label, k)
         filepath_option: ShowFilepathOption = self.driver.settings.show_filepath
-        if filepath_option not in SettingsPanel.filepath_option_map:
+        if filepath_option not in filepath_option_map:
             filepath_option = ShowFilepathOption.DEFAULT
         self.filepath_combobox.setCurrentIndex(
-            list(SettingsPanel.filepath_option_map.keys()).index(filepath_option)
+            list(filepath_option_map.keys()).index(filepath_option)
         )
         form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
 
         # Tag Click Action
         self.tag_click_action_combobox = QComboBox()
-        for k in SettingsPanel.tag_click_action_map:
-            self.tag_click_action_combobox.addItem(SettingsPanel.tag_click_action_map[k], k)
+        tag_click_action_map = SettingsPanel.tag_click_action_map()
+        for k, label in tag_click_action_map.items():
+            self.tag_click_action_combobox.addItem(label, k)
         tag_click_action = self.driver.settings.tag_click_action
-        if tag_click_action not in SettingsPanel.tag_click_action_map:
+        if tag_click_action not in tag_click_action_map:
             tag_click_action = TagClickActionOption.DEFAULT
         self.tag_click_action_combobox.setCurrentIndex(
-            list(SettingsPanel.tag_click_action_map.keys()).index(tag_click_action)
+            list(tag_click_action_map.keys()).index(tag_click_action)
         )
         form_layout.addRow(
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
@@ -238,23 +255,25 @@ class SettingsPanel(PanelWidget):
 
         # Dark Mode
         self.theme_combobox = QComboBox()
-        for k in SettingsPanel.theme_map:
-            self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
+        theme_map = SettingsPanel.theme_map()
+        for k, label in theme_map.items():
+            self.theme_combobox.addItem(label, k)
         theme = self.driver.settings.theme
-        if theme not in SettingsPanel.theme_map:
+        if theme not in theme_map:
             theme = Theme.DEFAULT
-        self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
+        self.theme_combobox.setCurrentIndex(list(theme_map.keys()).index(theme))
         self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
         # Splash Screen
         self.splash_combobox = QComboBox()
-        for k in SettingsPanel.splash_map:
-            self.splash_combobox.addItem(SettingsPanel.splash_map[k], k)
+        splash_map = SettingsPanel.splash_map()
+        for k, label in splash_map.items():
+            self.splash_combobox.addItem(label, k)
         splash = self.driver.settings.splash
-        if splash not in SettingsPanel.splash_map:
+        if splash not in splash_map:
             splash = Splash.DEFAULT
-        self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
+        self.splash_combobox.setCurrentIndex(list(splash_map.keys()).index(splash))
         form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
 
         # Date Format

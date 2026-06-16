@@ -186,10 +186,7 @@ class FoldersToTagsModal(QWidget):
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setText(
-            """Creates tags based on your folder structure and applies them to your entries.
-            This tree shows all tags to be created and which entries they will be applied to."""
-        )
+        self.desc_widget.setText(Translations["folders_to_tags.description"])
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.open_close_button_w = QWidget()
