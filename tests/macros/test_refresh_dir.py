@@ -3,6 +3,7 @@
 
 
 from pathlib import Path
+from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -48,3 +49,24 @@ def test_refresh_multi_byte_filenames(library: Library):
     assert Path("em–dash.txt") in registry.files_not_in_library
     assert Path("apostrophe’.txt") in registry.files_not_in_library
     assert Path("umlaute äöü.txt") in registry.files_not_in_library
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_refresh_falls_back_when_ripgrep_fails(library: Library, monkeypatch: pytest.MonkeyPatch):
+    library_dir = unwrap(library.library_dir)
+    registry = RefreshTracker(library=library)
+    library.included_files.clear()
+    (library_dir / ".TagStudio").mkdir()
+    (library_dir / "new-file.txt").touch()
+
+    monkeypatch.setattr("tagstudio.core.library.refresh.shutil.which", lambda _: "rg")
+    monkeypatch.setattr(
+        "tagstudio.core.library.refresh.silent_run",
+        lambda *args, **kwargs: CompletedProcess(
+            args=args, returncode=1, stdout="", stderr="rg failed"
+        ),
+    )
+
+    list(registry.refresh_dir(library_dir))
+
+    assert Path("new-file.txt") in registry.files_not_in_library

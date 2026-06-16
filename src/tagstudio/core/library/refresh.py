@@ -91,26 +91,28 @@ class RefreshTracker:
             with open(compiled_ignore_path, "w") as pattern_file:
                 pattern_file.write("\n".join(ignore_patterns))
 
-            result = silent_run(
-                " ".join(
+            try:
+                result = silent_run(
                     [
-                        "rg",
+                        rg_path,
                         "--files",
                         "--follow",
                         "--hidden",
                         "--ignore-file",
-                        f'"{str(compiled_ignore_path)}"',
-                    ]
-                ),
-                cwd=library_dir,
-                capture_output=True,
-                shell=True,
-                encoding="UTF-8",
-            )
-            compiled_ignore_path.unlink()
+                        str(compiled_ignore_path),
+                    ],
+                    cwd=library_dir,
+                    capture_output=True,
+                    encoding="UTF-8",
+                )
+            finally:
+                compiled_ignore_path.unlink()
 
             if result.stderr:
                 logger.error(result.stderr)
+
+            if result.returncode != 0:
+                return None
 
             return result.stdout.splitlines()  # pyright: ignore [reportReturnType]
 
