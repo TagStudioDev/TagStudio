@@ -11,6 +11,33 @@ from typing import Any
 """Implementation of subprocess.Popen that does not spawn console windows or log output
 and sanitizes pyinstaller environment variables."""
 
+PYINSTALLER_QT_ENV_VARS = (
+    "QT_PLUGIN_PATH",
+    "QT_QPA_PLATFORM_PLUGIN_PATH",
+    "QML2_IMPORT_PATH",
+)
+
+
+def sanitized_subprocess_env(env: dict[str, str] | None = None) -> dict[str, str]:
+    """Return an environment safe to pass to external system applications.
+
+    PyInstaller/PySide builds can add bundled library and Qt plugin paths to the
+    process environment. If inherited by ``xdg-open`` and the default application,
+    those paths can cause silent launch failures or broken Qt/LibreOffice starts.
+    """
+    clean_env = dict(os.environ if env is None else env)
+    original_ld_library_path = clean_env.get("LD_LIBRARY_PATH_ORIG")
+
+    if original_ld_library_path is not None:
+        clean_env["LD_LIBRARY_PATH"] = original_ld_library_path
+    else:
+        clean_env.pop("LD_LIBRARY_PATH", None)
+
+    for env_var in PYINSTALLER_QT_ENV_VARS:
+        clean_env.pop(env_var, None)
+
+    return clean_env
+
 
 def silent_popen(
     args,
@@ -55,9 +82,7 @@ def silent_popen(
         or sys.platform.startswith("openbsd")
     ):
         # pass clean environment to the subprocess
-        current_env = os.environ
-        original_env = current_env.get("LD_LIBRARY_PATH_ORIG")
-        current_env["LD_LIBRARY_PATH"] = original_env if original_env else ""
+        current_env = sanitized_subprocess_env(current_env)
 
     return subprocess.Popen(
         args=args,
@@ -131,9 +156,7 @@ def silent_run(
         or sys.platform.startswith("openbsd")
     ):
         # pass clean environment to the subprocess
-        env = os.environ
-        original_env = env.get("LD_LIBRARY_PATH_ORIG")
-        env["LD_LIBRARY_PATH"] = original_env if original_env else ""
+        env = sanitized_subprocess_env(env)
 
     return subprocess.run(
         args=args,
