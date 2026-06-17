@@ -23,7 +23,7 @@ If you wish to discuss TagStudio further, feel free to join the [Discord Server]
 
 #### Feature Additions
 
-- [x] I've read the [Feature Roadmap](roadmap.md) and understand what core features are planned, their priorities, and their scheduled timelines
+- [x] I've read the [Roadmap](roadmap.md) and understand what core features are planned, their priorities, and their scheduled timelines
 - [x] I've found an existing [feature request](https://github.com/TagStudioDev/TagStudio/issues) or created my own **_before starting work on a feature_** so that the feature can be discussed beforehand
 
 <!-- prettier-ignore -->

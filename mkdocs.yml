@@ -41,18 +41,18 @@ nav:
           - style.md
       - Help:
           - help/ffmpeg.md
-  - Using Libraries:
+  - Using TagStudio:
       - libraries.md
       - entries.md
       - preview-support.md
       - search.md
       - ignore.md
       - macros.md
-      - Fields:
-          - fields.md
       - Tags:
           - tags.md
           - colors.md
+      - Fields:
+          - fields.md
   - Updates:
       - changelog.md
       - roadmap.md

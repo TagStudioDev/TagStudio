@@ -8,13 +8,17 @@ icon: material/mouse
 
 # :material-mouse: Basic Usage
 
-## Creating/Opening a Library
+## :material-database-plus: Creating/Opening a Library
 
-With TagStudio opened, start by creating a new library or opening an existing one using File -> Open/Create Library from the menu bar. TagStudio will automatically create a new library from the chosen directory if one does not already exist. Upon creating a new library, TagStudio will automatically scan your folders for files and add those to your library (no files are moved during this process!).
+To create or open a [library](libraries.md), go to **File -> Open/Create Library** in the menu bar or use <kbd>Ctrl</kbd>+<kbd>O</kbd> (<kbd>⌘ Command </kbd>+<kbd>O</kbd> on macOS) and chose a folder with file contents you'd like to use as a TagStudio library. If a `.TagStudio` folder doesn't already exist inside the directory, TagStudio will create one and automatically scan the folder for files to include. Otherwise, the pre-existing library is opened.
 
-## Refreshing the Library
+### :material-database-refresh: Refreshing Directories
 
-Libraries under 10,000 files automatically scan for new or modified files when opened. In order to refresh the library manually, select "Refresh Directories" under the File menu.
+TagStudio automatically scans for new or updated files when opening a library by default. Manually refresh by going to **File -> Refresh Directories** in the menu or by using <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘ Command </kbd>+<kbd>R</kbd> on macOS).
+
+<!-- prettier-ignore -->
+!!! tip "TagStudio Libraries"
+    To learn more about how TagStudio libraries work and how to use them, visit the **[Libraries](libraries.md)** page.
 
 ## Adding Tags to File Entries
 
