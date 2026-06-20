@@ -37,7 +37,12 @@ class TagSearchModal(PanelModal):
         save_callback=None,
         has_save=False,
     ):
-        self.tsp = TagSearchPanel(library, exclude, is_tag_chooser)
+        self.tsp = TagSearchPanel(
+            library,
+            exclude,
+            is_tag_chooser,
+            view=TagSearchPanelView(is_tag_chooser),
+        )
         super().__init__(
             self.tsp,
             Translations["tag.add.plural"],
@@ -47,11 +52,19 @@ class TagSearchModal(PanelModal):
         )
 
 
-class TagSearchPanel(SearchPanel[Tag], TagSearchPanelView):
+class TagSearchPanel(SearchPanel[Tag]):
     def __init__(
-        self, library: Library, exclude: list[int] | None = None, is_tag_chooser: bool = True
+        self,
+        library: Library,
+        exclude: list[int] | None = None,
+        is_tag_chooser: bool = True,
+        view: TagSearchPanelView | None = None,
     ):
-        super().__init__(exclude, is_tag_chooser)
+        super().__init__(
+            view=view or TagSearchPanelView(is_tag_chooser),
+            exclude=exclude,
+            is_chooser=is_tag_chooser,
+        )
         self.__lib = library
 
         self._unlimited_limit_item_label = Translations["tag.all_tags"]
@@ -60,7 +73,7 @@ class TagSearchPanel(SearchPanel[Tag], TagSearchPanelView):
     def _get_max_limit(self) -> int:
         return len(self.__lib.tags)
 
-    def _on_item_create(self) -> None:
+    def on_item_create(self) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
@@ -116,7 +129,7 @@ class TagSearchPanel(SearchPanel[Tag], TagSearchPanelView):
         self.__lib.remove_tag(item.id)
         self.update_items(self.get_search_query())
 
-    def _on_item_create_and_add(self) -> None:
+    def on_item_create_and_add(self) -> None:
         """Opens "Create Tag" panel to create and add a new tag with given name."""
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
@@ -200,7 +213,7 @@ class TagSearchPanel(SearchPanel[Tag], TagSearchPanelView):
                 self.clear_search_query()
 
         build_item_modal.hide()
-        self._on_search_query_changed(self.get_search_query())
+        self.on_search_query_changed(self.get_search_query())
 
     def edit_item(self, edit_item_panel: PanelWidget) -> None:
         # TODO: Move this to a top-level import

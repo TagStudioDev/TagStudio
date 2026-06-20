@@ -28,7 +28,9 @@ class FieldTemplateSearchModal(PanelModal):
         has_save=False,
     ) -> None:
         self.search_panel: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
-            library, is_field_template_chooser
+            library,
+            is_field_template_chooser,
+            view=FieldTemplateSearchPanelView(is_field_template_chooser),
         )
         super().__init__(
             self.search_panel,
@@ -39,15 +41,20 @@ class FieldTemplateSearchModal(PanelModal):
         )
 
 
-class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate], FieldTemplateSearchPanelView):
+class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
     field_template_chosen = Signal(object)
 
     def __init__(
         self,
         library: Library,
         is_field_template_chooser: bool = True,
+        view: FieldTemplateSearchPanelView | None = None,
     ) -> None:
-        super().__init__([], is_field_template_chooser)
+        super().__init__(
+            view=view or FieldTemplateSearchPanelView(is_field_template_chooser),
+            exclude=[],
+            is_chooser=is_field_template_chooser,
+        )
         self.__lib = library
 
         self._unlimited_limit_item_label = Translations["field_template.all_field_templates"]
@@ -56,7 +63,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate], FieldTemplateSear
     def _get_max_limit(self) -> int:
         return len(self.__lib.field_templates)
 
-    def _on_item_create(self) -> None:
+    def on_item_create(self) -> None:
         # TODO: Allow creation of field templates
         pass
 
@@ -71,7 +78,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate], FieldTemplateSear
         # TODO: Allow creation of field templates
         pass
 
-    def _on_item_create_and_add(self) -> None:
+    def on_item_create_and_add(self) -> None:
         # TODO: Allow creation of field templates
         pass
 

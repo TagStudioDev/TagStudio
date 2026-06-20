@@ -41,6 +41,7 @@ from tagstudio.qt.mixed.tag_widget import (
 from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
 
@@ -431,7 +432,11 @@ class BuildTagPanel(PanelWidget):
             has_remove=True,
         )
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
-        tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).on_item_edit(t))
+        tag_widget.on_edit.connect(
+            lambda t=tag: TagSearchPanel(
+                library=self.lib, view=TagSearchPanelView(is_tag_chooser=True)
+            ).on_item_edit(t)
+        )
         row.addWidget(tag_widget)
 
         # Add Disambiguation Tag Button

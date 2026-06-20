@@ -98,9 +98,11 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -368,7 +370,11 @@ class QtDriver(DriverMixin, QObject):
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
-            widget=TagSearchPanel(self.lib, is_tag_chooser=False),
+            widget=TagSearchPanel(
+                self.lib,
+                is_tag_chooser=False,
+                view=TagSearchPanelView(is_tag_chooser=False),
+            ),
             title=Translations["tag_manager.title"],
             done_callback=lambda checked=False: (
                 self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
@@ -381,7 +387,11 @@ class QtDriver(DriverMixin, QObject):
 
         # Initialize the Field Template Manager panel
         self.field_template_manager_panel = PanelModal(
-            widget=FieldTemplateSearchPanel(self.lib, is_field_template_chooser=False),
+            widget=FieldTemplateSearchPanel(
+                self.lib,
+                is_field_template_chooser=False,
+                view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
+            ),
             title=Translations["field_template_manager.title"],
             done_callback=lambda checked=False: (
                 self.main_window.preview_panel.set_selection(self.selected, update_preview=False)

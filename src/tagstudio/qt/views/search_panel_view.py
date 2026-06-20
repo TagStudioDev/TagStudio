@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
@@ -21,6 +21,9 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+
+if TYPE_CHECKING:
+    from tagstudio.qt.controllers.search_panel_controller import SearchPanel
 
 CREATE_BUTTON_STYLESHEET: str = f"""
     QPushButton{{
@@ -119,8 +122,6 @@ class SearchPanelView(PanelWidget):
         self.create_and_add_button.setMinimumSize(22, 22)
         self.create_and_add_button.setStyleSheet(CREATE_BUTTON_STYLESHEET)
 
-        self.__connect_callbacks()
-
     @property
     def scroll_layout(self) -> QVBoxLayout:
         return self._scroll_layout
@@ -129,20 +130,16 @@ class SearchPanelView(PanelWidget):
     def scroll_area(self) -> QScrollArea:
         return self.__scroll_area
 
-    def __connect_callbacks(self) -> None:
-        self.limit_combobox.currentIndexChanged.connect(self._on_limit_changed)
+    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:
+        self.limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
 
-        self.search_field.textChanged.connect(self._on_search_query_changed)
+        self.search_field.textChanged.connect(controller.on_search_query_changed)
         self.search_field.returnPressed.connect(
-            lambda: self._on_search_query_submitted(self.get_search_query())
+            lambda: controller.on_search_query_submitted(self.get_search_query())
         )
 
-        self.create_button.clicked.connect(self._on_item_create)
-        self.create_and_add_button.clicked.connect(self._on_item_create_and_add)
-
-    # Limit dropdown
-    def _on_limit_changed(self, index: int) -> None:
-        raise NotImplementedError()
+        self.create_button.clicked.connect(controller.on_item_create)
+        self.create_and_add_button.clicked.connect(controller.on_item_create_and_add)
 
     def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
         # Remove existing limit items
@@ -158,13 +155,6 @@ class SearchPanelView(PanelWidget):
     def set_limit_index(self, index: int) -> None:
         self.limit_combobox.setCurrentIndex(index)
 
-    # Search field
-    def _on_search_query_changed(self, query: str) -> None:
-        raise NotImplementedError()
-
-    def _on_search_query_submitted(self, query: str) -> None:
-        raise NotImplementedError()
-
     def focus_search_box(self, select_all: bool = False) -> None:
         self.search_field.setFocus()
         if select_all:
@@ -178,20 +168,10 @@ class SearchPanelView(PanelWidget):
         self.focus_search_box()
 
     # Item list
-    def _on_item_add(self) -> None:
-        raise NotImplementedError()
-
     def scroll_to(self, position: int) -> None:
         self.__scroll_area.verticalScrollBar().setValue(position)
 
     def get_item_widget(self, index: int, library: Library | None) -> Any:
-        raise NotImplementedError()
-
-    # Create buttons
-    def _on_item_create(self) -> None:
-        raise NotImplementedError()
-
-    def _on_item_create_and_add(self) -> None:
         raise NotImplementedError()
 
     def add_create_and_add_button(self) -> None:

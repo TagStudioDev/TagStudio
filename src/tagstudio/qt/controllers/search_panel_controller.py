@@ -8,6 +8,7 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QShowEvent
+from PySide6.QtWidgets import QVBoxLayout
 
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
@@ -40,11 +41,22 @@ def _item_name(item: object) -> str:
         raise AttributeError()
 
 
-class SearchPanel(SearchPanelView, Generic[T]):
+class SearchPanel(PanelWidget, Generic[T]):
     item_chosen = Signal(int)
 
-    def __init__(self, exclude: list[int] | None = None, is_chooser: bool = True) -> None:
-        super().__init__(is_chooser)
+    def __init__(
+        self,
+        view: SearchPanelView,
+        exclude: list[int] | None = None,
+        is_chooser: bool = True,
+    ) -> None:
+        super().__init__()
+        self.view = view
+        self.is_chooser = is_chooser
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.addWidget(self.view)
+        self.view.connect_callbacks(self)
         self._driver: QtDriver | None = None
         self.exclude: list[int] = exclude or []
 
@@ -61,23 +73,40 @@ class SearchPanel(SearchPanelView, Generic[T]):
         self.__default_limit_index: int = 0  # 25 Limit (Default)
         self.__previous_limit_index: int = self.__default_limit_index
 
-        self.set_limit_items(self.__limit_items)
-        self.set_limit_index(self.__default_limit_index)
+        self.view.set_limit_items(self.__limit_items)
+        self.view.set_limit_index(self.__default_limit_index)
 
         # Items
         self._search_results: list[T] = []
 
         self._create_and_add_button_label_key: str = ""
 
+    @property
+    def search_field(self):
+        return self.view.search_field
+
+    @property
+    def create_and_add_button(self):
+        return self.view.create_and_add_button
+
+    def get_search_query(self) -> str:
+        return self.view.get_search_query()
+
+    def clear_search_query(self) -> None:
+        self.view.clear_search_query()
+
+    def get_item_widget(self, index: int, library: Any):
+        return self.view.get_item_widget(index, library)
+
     def set_driver(self, driver: "QtDriver") -> None:
         self._driver = driver
 
-    def _on_limit_changed(self, index: int) -> None:
+    def on_limit_changed(self, index: int) -> None:
         logger.info("[SearchPanel] Updating limit")
 
         # Method was called outside the limit_combobox callback
-        if index != self.get_limit_index():
-            self.set_limit_index(index)
+        if index != self.view.get_limit_index():
+            self.view.set_limit_index(index)
 
         if self.__previous_limit_index == index:
             return
@@ -85,7 +114,7 @@ class SearchPanel(SearchPanelView, Generic[T]):
         self.update_items(self.search_field.text())
 
     def _get_limit(self) -> tuple[str, int]:
-        return self.__limit_items[self.get_limit_index()]
+        return self.__limit_items[self.view.get_limit_index()]
 
     def _get_previous_limit(self) -> tuple[str, int]:
         return self.__limit_items[self.__previous_limit_index]
@@ -93,13 +122,13 @@ class SearchPanel(SearchPanelView, Generic[T]):
     def _get_max_limit(self) -> int:
         raise NotImplementedError()
 
-    def _on_search_query_changed(self, query: str) -> None:
+    def on_search_query_changed(self, query: str) -> None:
         self.create_and_add_button.setText(
             Translations.format(self._create_and_add_button_label_key, query=query)
         )
         self.update_items(query)
 
-    def _on_search_query_submitted(self, query: str) -> None:
+    def on_search_query_submitted(self, query: str) -> None:
         # Focus search field if no query
         if not query:
             self.search_field.setFocus()
@@ -110,14 +139,14 @@ class SearchPanel(SearchPanelView, Generic[T]):
 
         # Create and add item if no search results
         if len(self._search_results) <= 0:
-            self._on_item_create_and_add()
+            self.on_item_create_and_add()
         elif self.is_chooser:
             self._on_item_chosen(self._search_results[0])
 
         self.clear_search_query()
         self.update_items()
 
-    def _on_item_create(self) -> None:
+    def on_item_create(self) -> None:
         raise NotImplementedError()
 
     def on_item_edit(self, item: T) -> None:
@@ -126,7 +155,7 @@ class SearchPanel(SearchPanelView, Generic[T]):
     def _on_item_remove(self, item: T) -> None:
         raise NotImplementedError()
 
-    def _on_item_create_and_add(self) -> None:
+    def on_item_create_and_add(self) -> None:
         raise NotImplementedError()
 
     def _on_item_chosen(self, item: T) -> None:
@@ -140,7 +169,7 @@ class SearchPanel(SearchPanelView, Generic[T]):
         logger.info("[SearchPanel] Updating items", limit=self._get_limit()[1])
 
         # Remove the "Create & Add" button if one exists
-        self.remove_create_and_add_button()
+        self.view.remove_create_and_add_button()
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
@@ -182,11 +211,11 @@ class SearchPanel(SearchPanelView, Generic[T]):
             item: T | None = all_results[i] if i < len(all_results) else None
             self.set_item_widget(item=item, index=i)
 
-        self.__previous_limit_index = self.get_limit_index()
+        self.__previous_limit_index = self.view.get_limit_index()
 
         # Add back the "Create & Add" button
         if query and query.strip():
-            self.add_create_and_add_button()
+            self.view.add_create_and_add_button()
 
     def search_items(self, query: str) -> tuple[list[T], list[T]]:
         raise NotImplementedError()
@@ -196,8 +225,8 @@ class SearchPanel(SearchPanelView, Generic[T]):
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
         self.update_items()
-        self.scroll_to(0)
-        self.clear_search_query()
+        self.view.scroll_to(0)
+        self.view.clear_search_query()
         return super().showEvent(event)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
@@ -207,7 +236,7 @@ class SearchPanel(SearchPanelView, Generic[T]):
             if self.search_field.hasFocus():
                 super().keyPressEvent(event)
             else:
-                self.focus_search_box(select_all=True)
+                self.view.focus_search_box(select_all=True)
 
     def create_item(self, build_item_modal: PanelModal, choose_item: bool = False) -> None:
         raise NotImplementedError()

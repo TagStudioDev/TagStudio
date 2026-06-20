@@ -9,11 +9,12 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 
 def test_update_tags(qtbot: QtBot, library: Library):
     # Given
-    panel = TagSearchPanel(library)
+    panel = TagSearchPanel(library, view=TagSearchPanelView(is_tag_chooser=True))
 
     qtbot.addWidget(panel)
 
@@ -22,7 +23,7 @@ def test_update_tags(qtbot: QtBot, library: Library):
 
 
 def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, qt_driver: QtDriver, library: Library):
-    panel = TagSearchPanel(library)
+    panel = TagSearchPanel(library, view=TagSearchPanelView(is_tag_chooser=True))
     qtbot.addWidget(panel)
     panel.set_driver(qt_driver)
 
