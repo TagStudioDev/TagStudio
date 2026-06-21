@@ -200,7 +200,6 @@ poetry.toml
 .ruff_cache/
 
 # LSP config files
-pyrightconfig.json
 
 # Syncthing
 .stfolder/
@@ -262,7 +261,7 @@ compile_commands.json
 *_qmlcache.qrc
 
 ### VisualStudioCode ###
-.vscode/*
+/.vscode
 # !.vscode/settings.json
 # !.vscode/tasks.json
 # !.vscode/launch.json
@@ -295,3 +294,4 @@ TagStudio.ini
 
 result
 result-*
+uv.lock
