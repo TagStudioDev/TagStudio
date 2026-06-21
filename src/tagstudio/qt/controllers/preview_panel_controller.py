@@ -41,11 +41,11 @@ class PreviewPanel(PreviewPanelView):
         self.__add_tag_modal.tsp.tag_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
-        self._fields.add_field_to_selected(field_list)
+        self._fields.model.add_field_to_selected(field_list)
         if len(self._selected) == 1:
             self._fields.update_from_entry(self._selected[0])
 
     def _add_tag_to_selected(self, tag_id: int):
-        self._fields.add_tags_to_selected(tag_id)
+        self._fields.model.add_tags_to_selected(tag_id)
         if len(self._selected) == 1:
             self._fields.update_from_entry(self._selected[0])

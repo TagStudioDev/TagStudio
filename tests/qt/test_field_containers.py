@@ -17,9 +17,9 @@ def test_update_selection_empty(qt_driver: QtDriver, library: Library):
     qt_driver.toggle_item_selection(1, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
-    for container in panel.field_containers_widget.containers:
-        assert container.isHidden()
+    # FieldListController should hide all containers
+    for field_container in panel.field_list_widget.field_containers:
+        assert field_container.isHidden()
 
 
 def test_update_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
@@ -29,9 +29,9 @@ def test_update_selection_single(qt_driver: QtDriver, library: Library, entry_fu
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show all applicable tags and field containers
-    for container in panel.field_containers_widget.containers:
-        assert not container.isHidden()
+    # FieldListController should show all applicable tags and field containers
+    for field_container in panel.field_list_widget.field_containers:
+        assert not field_container.isHidden()
 
 
 def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
@@ -44,9 +44,9 @@ def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
     qt_driver.toggle_item_selection(2, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show mixed field editing
-    for container in panel.field_containers_widget.containers:
-        assert container.isHidden()
+    # FieldListController should show mixed field editing
+    for field_container in panel.field_list_widget.field_containers:
+        assert field_container.isHidden()
 
 
 def test_add_tag_to_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
@@ -59,7 +59,7 @@ def test_add_tag_to_selection_single(qt_driver: QtDriver, library: Library, entr
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel.field_containers_widget.add_tags_to_selected(2000)
+    panel.field_list_widget.model.add_tags_to_selected(2000)
 
     # Then reload entry
     refreshed_entry: Entry = next(library.all_entries(with_joins=True))
@@ -76,7 +76,7 @@ def test_add_same_tag_to_selection_single(qt_driver: QtDriver, library: Library,
     panel.set_selection(qt_driver.selected)
 
     # Add an existing tag
-    panel.field_containers_widget.add_tags_to_selected(1000)
+    panel.field_list_widget.model.add_tags_to_selected(1000)
 
     # Then reload entry
     refreshed_entry = next(library.all_entries(with_joins=True))
@@ -106,7 +106,7 @@ def test_add_tag_to_selection_multiple(qt_driver: QtDriver, library: Library):
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel.field_containers_widget.add_tags_to_selected(1000)
+    panel.field_list_widget.model.add_tags_to_selected(1000)
 
     # Then reload all entries and recheck the presence of tag 1000
     refreshed_entries = library.all_entries(with_joins=True)
@@ -133,9 +133,9 @@ def test_meta_tag_category(qt_driver: QtDriver, library: Library, entry_full: En
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
-    assert len(panel.field_containers_widget.containers) == 3
-    for i, container in enumerate(panel.field_containers_widget.containers):
+    # FieldListController should hide all containers
+    assert len(panel.field_list_widget.field_containers) == 3
+    for i, container in enumerate(panel.field_list_widget.field_containers):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
@@ -168,9 +168,9 @@ def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: 
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
-    assert len(panel.field_containers_widget.containers) == 3
-    for i, container in enumerate(panel.field_containers_widget.containers):
+    # FieldListController should hide all containers
+    assert len(panel.field_list_widget.field_containers) == 3
+    for i, container in enumerate(panel.field_list_widget.field_containers):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category

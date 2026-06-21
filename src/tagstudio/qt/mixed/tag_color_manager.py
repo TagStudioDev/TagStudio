@@ -23,9 +23,9 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.qt.controllers.field_container_controller import FieldContainer
+from tagstudio.qt.controllers.tag_color_box_controller import TagColorBoxWidget
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
-from tagstudio.qt.mixed.color_box import ColorBoxWidget
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal
 
@@ -117,20 +117,20 @@ class TagColorManager(QWidget):
             for group, colors in self.driver.lib.tag_color_groups.items():
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
-                color_box = ColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_box = TagColorBoxWidget(group, colors, self.driver.lib)
+                color_box.on_update.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.field_list_widget.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
                 )
                 field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
-                field_container.set_inner_widget(color_box)
+                field_container.set_field_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     field_container.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
@@ -141,7 +141,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.field_list_widget.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
