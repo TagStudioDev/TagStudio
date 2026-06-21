@@ -93,6 +93,7 @@ class MainMenuBar(QMenuBar):
 
     help_menu: QMenu
     about_action: QAction
+    search_syntax_action: QAction
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -396,6 +397,9 @@ class MainMenuBar(QMenuBar):
 
         self.about_action = QAction(Translations["menu.help.about"], self)
         self.help_menu.addAction(self.about_action)
+
+        self.search_syntax_action = QAction(Translations["menu.help.search_syntax"], self)
+        self.help_menu.addAction(self.search_syntax_action)
 
         assign_mnemonics(self.help_menu)
         self.addMenu(self.help_menu)
