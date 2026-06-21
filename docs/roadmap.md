@@ -50,7 +50,7 @@ An improved SQLite-based library save file format in which legacy JSON libraries
     See the "[Library](#library)" section for features related to the library database rather than the underlying schema.
 
 - [x] A SQLite-based library save file format **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-- [ ] Cached File Properties Table :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+- [ ] Cached File Properties Table :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.1]**
     - [x] Date Entry Added to Library
     - [ ] Date File Created :material-chevron-triple-up:{ .priority-high title="High Priority" }
     - [ ] Date File Modified :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -108,8 +108,8 @@ A detailed written specification for the TagStudio tag and/or library format. In
     - [x] Toggle Mute
     - [x] Timeline Scrubber
     - [ ] Fullscreen Mode :material-chevron-double-up:{ .priority-med title="Medium Priority" }
-    - [ ] Fine-Tuned UI/UX :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
-- [ ] 3D Model Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" } _(See #1231)_
+    - [ ] Fine-Tuned UI/UX :material-chevron-triple-up:{ .priority-high title="High Priority" }
+- [ ] 3D Model Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" } _(See Discussion #1231)_
     - [ ] STL File Support
     - [ ] OBJ File Support
 - [ ] Plaintext Thumbnails/Previews
@@ -167,13 +167,12 @@ A detailed written specification for the TagStudio tag and/or library format. In
 File or file-like [entries](entries.md) stored in the library.
 
 - [x] File Entries **[v1.0.0]**
-- [ ] Folder Entries :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
-- [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.7.x]**
+- [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.6.x]**
 - [x] Fields
     - [x] Text Lines
     - [x] Text Boxes
     - [x] Datetimes **[[v9.5.4](changelog.md#954-september-1st-2025)]**
-    - [ ] Numeric Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+    - [ ] Numeric Fields :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
         - [ ] Optional Units (e.g. inches, cm, height notation, degrees, bytes, etc.) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [ ] Custom Field Names :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
         - [x] Removal of Deprecated Fields **[v9.6.0]**
@@ -226,14 +225,14 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     - [x] Search by Extension (e.g. ".jpg", ".png") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
         - [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] Search by media type (e.g. "image", "video", "document") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-- [ ] Field Content Search :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+- [ ] Field Content Search :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] [Boolean Operators](search.md) **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] `AND` Operator
     - [x] `OR` Operator
     - [x] `NOT` Operator
     - [x] Parenthesis Grouping
     - [x] Character Escaping
-- [ ] `HAS` Operator (for [Component Tags](tags.md#component-tags)) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+- [ ] `HAS` Operator (for [Component Tags](tags.md#component-tags)) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
 - [ ] Conditional Search :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
     - [ ] Compare Dates :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [ ] Compare Durations :material-chevron-double-up:{ .priority-med title="Medium Priority" }
