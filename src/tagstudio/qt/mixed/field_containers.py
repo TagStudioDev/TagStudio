@@ -14,7 +14,6 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
-    QListWidgetItem,
     QMessageBox,
     QScrollArea,
     QSizePolicy,
@@ -50,7 +49,7 @@ logger = structlog.get_logger(__name__)
 class FieldContainers(QWidget):
     """The Preview Panel Widget."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
         self.lib = library
@@ -103,7 +102,7 @@ class FieldContainers(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(self.scroll_area)
 
-    def update_from_entry(self, entry_id: int, update_badges: bool = True):
+    def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
@@ -113,7 +112,7 @@ class FieldContainers(QWidget):
 
     def update_granular(
         self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
-    ):
+    ) -> None:
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
         container_index = 0
@@ -139,7 +138,7 @@ class FieldContainers(QWidget):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
-    def update_toggled_tag(self, tag_id: int, toggle_value: bool):
+    def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
         """Visually add or remove a tag from the item preview without needing to query the db."""
         entry = self.cached_entries[0]
         tag = self.lib.get_tag(tag_id)
@@ -152,7 +151,7 @@ class FieldContainers(QWidget):
 
         self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
 
-    def hide_containers(self):
+    def hide_containers(self) -> None:
         """Hide all field and tag containers."""
         for c in self.containers:
             c.setHidden(True)
@@ -203,29 +202,38 @@ class FieldContainers(QWidget):
         return dict((c, d) for c, d in categories.items() if len(d) > 0)
 
     def remove_field_prompt(self, name: str) -> str:
-        return Translations.format("library.field.confirm_remove", name=name)
+        return Translations.format("field.confirm_remove", name=name)
 
-    def add_field_to_selected(self, field_list: list[QListWidgetItem]):
-        """Add list of entry fields to one or more selected items.
+    def add_field_to_selected(
+        self, field_templates: BaseFieldTemplate | list[BaseFieldTemplate]
+    ) -> None:
+        """Add list of fields to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
         """
+        if isinstance(field_templates, BaseFieldTemplate):
+            field_templates = [field_templates]
+
+        assert isinstance(field_templates, list)
+
         logger.info(
             "[FieldContainers][add_field_to_selected]",
             selected=self.driver.selected,
-            fields=field_list,
+            fields=[
+                (field_template.class_name, field_template.id) for field_template in field_templates
+            ],
         )
+
         for entry_id in self.driver.selected:
-            for field in field_list:
-                template: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
+            for field_template in field_templates:
                 logger.info(
                     "[FieldContainers][add_field_to_selected] Adding field",
-                    name=template.name,
-                    type=template.class_name,
+                    name=field_template.name,
+                    type=field_template.class_name,
                 )
-                self.lib.add_field_to_entries(entry_id, template.to_field())
+                self.lib.add_field_to_entries(entry_id, field_template.to_field())
 
-    def add_tags_to_selected(self, tags: int | list[int]):
+    def add_tags_to_selected(self, tags: int | list[int]) -> None:
         """Add list of tags to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
@@ -239,7 +247,7 @@ class FieldContainers(QWidget):
         )
         self.driver.add_tags_to_selected_callback(tags)
 
-    def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
+    def write_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
         """Update/Create data for a FieldContainer.
 
         Args:
@@ -406,7 +414,7 @@ class FieldContainers(QWidget):
 
     def write_tag_container(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
-    ):
+    ) -> None:
         """Update/Create tag data for a FieldContainer.
 
         Args:
@@ -458,7 +466,7 @@ class FieldContainers(QWidget):
         container.set_remove_callback()
         container.setHidden(False)
 
-    def remove_field(self, field: BaseField):
+    def remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
             "[FieldContainers] Removing Field",
@@ -468,14 +476,14 @@ class FieldContainers(QWidget):
         entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
-    def update_text_field(self, field: TextField, value: str, is_multiline: bool):
+    def update_text_field(self, field: TextField, value: str, is_multiline: bool) -> None:
         """Update a text field across selected entries."""
         entry_ids = [e.id for e in self.cached_entries]
         assert entry_ids, "No entries selected"
 
         self.lib.update_text_field(entry_ids, field, value, is_multiline)
 
-    def update_datetime_field(self, field: DatetimeField, value: str):
+    def update_datetime_field(self, field: DatetimeField, value: str) -> None:
         """Update a datetime field across selected entries."""
         entry_ids = [e.id for e in self.cached_entries]
         assert entry_ids, "No entries selected"
