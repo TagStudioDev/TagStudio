@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -19,8 +19,6 @@ logger = structlog.get_logger(__name__)
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
-
-T = TypeVar("T")
 
 
 def _item_id(item: object) -> int:
@@ -41,7 +39,7 @@ def _item_name(item: object) -> str:
         raise AttributeError()
 
 
-class SearchPanel(PanelWidget, Generic[T]):
+class SearchPanel[T](PanelWidget):
     item_chosen = Signal(int)
 
     def __init__(
