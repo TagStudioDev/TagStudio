@@ -1,4 +1,5 @@
 ---
+title: Tools & Macros
 icon: material/script-text
 ---
 

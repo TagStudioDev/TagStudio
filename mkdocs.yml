@@ -41,18 +41,18 @@ nav:
           - style.md
       - Help:
           - help/ffmpeg.md
-  - Using Libraries:
+  - Using TagStudio:
       - libraries.md
       - entries.md
       - preview-support.md
       - search.md
       - ignore.md
       - macros.md
-      - Fields:
-          - fields.md
       - Tags:
           - tags.md
           - colors.md
+      - Fields:
+          - fields.md
   - Updates:
       - changelog.md
       - roadmap.md
@@ -116,6 +116,7 @@ markdown_extensions:
   - md_in_html
   - tables
   - toc:
+      title: Table of Contents
       permalink: true
       toc_depth: 3
 
@@ -133,6 +134,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.keys
   - pymdownx.mark
+  - pymdownx.magiclink:
+      repo_url_shorthand: True
+      provider: github
+      user: TagStudioDev
+      repo: TagStudio
   - pymdownx.smartsymbols
   - pymdownx.snippets
   - pymdownx.superfences:
@@ -150,6 +156,7 @@ markdown_extensions:
 plugins:
   - search
   - tags
+  - typeset
   - social: # social embed cards
       enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
   - redirects:

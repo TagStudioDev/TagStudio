@@ -87,7 +87,7 @@ hide:
 
     [:material-arrow-right: View License](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE)
 
-    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#core-library-api)
+    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#material-database-cog-core-library--cli)
 
 - :material-database:{ .lg .middle } **Central Save File**
 

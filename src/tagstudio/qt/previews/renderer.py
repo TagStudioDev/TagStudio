@@ -1216,7 +1216,7 @@ class ThumbRenderer(QObject):
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(device=buffer, format="PNG")  # pyright: ignore[reportArgumentType]
+        q_image.save(buffer, "PNG")  # pyright: ignore[reportCallIssue, reportArgumentType]
 
         # Load the image from the buffer
         im = Image.new("RGB", (size, size), color="#1e1e1e")
@@ -1888,10 +1888,11 @@ class ThumbRenderer(QObject):
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
             except (
-                UnidentifiedImageError,
-                DecompressionBombError,
-                ValueError,
+                AssertionError,
                 ChildProcessError,
+                DecompressionBombError,
+                UnidentifiedImageError,
+                ValueError,
             ) as e:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
                 image = None

@@ -1,4 +1,5 @@
 ---
+title: Colors
 icon: material/palette
 ---
 

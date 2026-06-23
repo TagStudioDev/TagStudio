@@ -1,4 +1,5 @@
 ---
+title: Developing
 icon: material/code-braces
 ---
 
@@ -11,7 +12,7 @@ If you wish to develop for TagStudio, you'll need to create a development enviro
 
 <!-- prettier-ignore -->
 !!! tip "Contributing"
-    If you wish to contribute to TagStudio's development, please read our [CONTRIBUTING.md](https://github.com/TagStudioDev/TagStudio/blob/main/CONTRIBUTING.md)!
+    If you wish to contribute to TagStudio's development, please read our [Contribution Guidelines](contributing.md)!
 
 ## Installing Python
 
@@ -49,7 +50,7 @@ git clone https://github.com/TagStudioDev/TagStudio.git
 
 ## Installing Dependencies
 
-To install the required dependencies, you can use a dependency manager such as [uv](https://docs.astral.sh/uv) or [Poetry 2.0](https://python-poetry.org). Alternatively you can create a virtual environment and manually install the dependencies yourself.
+To install the required dependencies, you can use a dependency manager such as [uv](https://docs.astral.sh/uv) (recommended) or [Poetry 2.0](https://python-poetry.org). Alternatively you can create a virtual environment and manually install the dependencies yourself.
 
 ### Installing with uv
 
@@ -59,7 +60,7 @@ If using [uv](https://docs.astral.sh/uv), you can install the dependencies for T
 uv pip install -e ".[dev]"
 ```
 
-A reference `.envrc` is provided for use with [direnv](#direnv), see [`contrib/.envrc-uv`](https://github.com/TagStudioDev/TagStudio/blob/main/contrib/.envrc-uv).
+TagStudio should now be runnable using the `tagstudio` command.
 
 ---
 
@@ -70,6 +71,8 @@ If using [Poetry](https://python-poetry.org), you can install the dependencies f
 ```sh
 poetry install --with dev
 ```
+
+TagStudio should now be runnable using the `tagstudio` command.
 
 ---
 
@@ -109,6 +112,12 @@ If you choose to manually set up a virtual environment and install dependencies 
     pip install -e ".[dev]"
     ```
 
+4.  TagStudio should now be runnable using the `tagstudio` command.
+
+<!-- prettier-ignore -->
+!!! Warning "Linux Library Dependencies"
+    If developing TagStudio on Linux, certain libraries are required that may not be included with your distribution. A full list of these can be found [here](install.md#linux).
+
 ## Nix(OS)
 
 If using [Nix](https://nixos.org/), there is a development environment already provided in the [flake](https://wiki.nixos.org/wiki/Flakes) that is accessible with the following command:
@@ -143,6 +152,51 @@ The entry point for TagStudio is `src/tagstudio/main.py`. You can target this fi
         ]
     }
     ```
+
+<!-- prettier-ignore -->
+!!! tip
+    To format the code automatically before each commit, there's a configured action available for the `pre-commit` hook. Install it by running `pre-commit install`. The hook will be executed each time on running `git commit`.
+
+### Ruff
+
+[Ruff](https://github.com/astral-sh/ruff) is a Python linter and code formatter that helps enforce a consistent formatting style across our codebase.
+
+Ruff is installed alongside the `pip install -e ".[dev]"` command, but is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
+
+```sh title="Lint Code"
+ruff check
+
+# Apply automatic fixes with
+ruff check --fix
+```
+
+```sh title="Format Code"
+ruff format
+```
+
+Ruff should automatically discover the configuration options inside the [pyproject.toml](https://github.com/TagStudioDev/TagStudio/blob/main/pyproject.toml) file. For more information, see the [ruff configuration discovery docs](https://docs.astral.sh/ruff/configuration/#config-file-discovery).
+
+### Pyright
+
+[Pyright](https://github.com/microsoft/pyright) is a static type checker for Python that helps enforce type strictness and prevent easy-to-miss errors across our codebase.
+
+Pyright is installed alongside the `pip install -e ".[dev]"` command, but is also available as VS Code extensions (see the [Pyright](https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright), [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance), and [basedpyright](https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright) extensions), a PyCharm [setting](https://www.jetbrains.com/help/pycharm/lsp-tools.html#pyright), or in the form of forks such as [basedpyright](https://docs.basedpyright.com/latest/).
+
+```sh title="Run Checks"
+pyright
+```
+
+Pyright/basedpyright should automatically discover the configuration options inside the [pyproject.toml](https://github.com/TagStudioDev/TagStudio/blob/main/pyproject.toml) file.
+
+### Pytest
+
+[Pytest](https://github.com/pytest-dev/pytest) runs our Python code against the tests inside the [`tests/`](https://github.com/TagStudioDev/TagStudio/tree/main/tests) directory.
+
+Pytest is installed alongside the `pip install -e ".[dev]"` command.
+
+```sh title="Run Tests"
+pytest tests/
+```
 
 ### pre-commit
 

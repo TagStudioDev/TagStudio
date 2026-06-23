@@ -1,4 +1,5 @@
 ---
+title: Installation
 icon: material/download
 ---
 
@@ -226,19 +227,36 @@ For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/
 To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extractor capable of handling them.
 
 - :material-penguin: On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
-
 - :fontawesome-brands-apple: On macOS `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula.
 
-    <!-- prettier-ignore -->
-    !!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
-        On macOS, you may be met with a message similar to  "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
+<!-- prettier-ignore -->
+!!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
+    On macOS, you may be met with a message similar to "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
 
 - :fontawesome-brands-windows: On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
 
-    <!-- prettier-ignore -->
-    !!! tip "WinRAR License"
-        Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
+<!-- prettier-ignore -->
+!!! tip "WinRAR License"
+    Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
 
 ### ripgrep
 
 A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
+
+## Common Error Messages
+
+### Could not load the Qt platform plugin "xcb"
+
+If you get an error message like this one:
+
+```
+qt.qpa.plugin: From 6.5.0, xcb-cursor0 or libxcb-cursor0 is needed to load the Qt xcb platform plugin.
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/tmp/_MEIayuTiW/cv2/qt/plugins" even though it was found.
+This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+Available platform plugins are: vnc, wayland-egl, offscreen, wayland, linuxfb, minimalegl, eglfs, minimal, vkkhrdisplay, xcb.
+
+Aborted (core dumped)
+```
+
+Make sure you installed `libxcb-cursor` or `xcb-util-cursor`.
