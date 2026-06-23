@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import enum
 import mimetypes
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 import structlog
@@ -23,7 +23,7 @@ FILETYPE_EQUIVALENTS = [
 ]
 
 
-class MediaType(str, Enum):
+class MediaType(enum.StrEnum):
     """Names of media types."""
 
     ADOBE_PHOTOSHOP = "adobe_photoshop"

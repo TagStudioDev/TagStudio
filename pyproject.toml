@@ -54,7 +54,7 @@ pytest = [
     "pytest-qt==4.4.0",
     "syrupy==5.1.0",
 ]
-ruff = ["ruff==0.11.8"]
+ruff = ["ruff==0.15.17"]
 
 [project.gui-scripts]
 tagstudio = "tagstudio.main:main"

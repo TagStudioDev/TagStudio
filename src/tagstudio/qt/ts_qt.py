@@ -376,8 +376,8 @@ class QtDriver(DriverMixin, QObject):
                 view=TagSearchPanelView(is_tag_chooser=False),
             ),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: (
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
             ),
             has_save=False,
         )
