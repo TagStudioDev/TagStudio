@@ -2,16 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import QVBoxLayout
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 logger = structlog.get_logger(__name__)
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
 
 def _item_id(item: object) -> int:
-    item_id: Any = getattr(item, "id")  # noqa: B009
+    item_id: Any = getattr(item, "id")  # noqa: B009  # pyright: ignore[reportExplicitAny]
 
     if isinstance(item_id, int):
         return item_id
@@ -31,7 +32,7 @@ def _item_id(item: object) -> int:
 
 
 def _item_name(item: object) -> str:
-    item_name: Any = getattr(item, "name")  # noqa: B009
+    item_name: Any = getattr(item, "name")  # noqa: B009  # pyright: ignore[reportExplicitAny]
 
     if isinstance(item_name, str):
         return item_name
@@ -93,15 +94,13 @@ class SearchPanel[T](PanelWidget):
     def clear_search_query(self) -> None:
         self.view.clear_search_query()
 
-    def get_item_widget(self, index: int, library: Any):
+    def get_item_widget(self, index: int, library: Library):
         return self.view.get_item_widget(index, library)
 
     def set_driver(self, driver: "QtDriver") -> None:
         self._driver = driver
 
     def on_limit_changed(self, index: int) -> None:
-        logger.info("[SearchPanel] Updating limit")
-
         # Method was called outside the limit_combobox callback
         if index != self.view.get_limit_index():
             self.view.set_limit_index(index)
@@ -130,8 +129,8 @@ class SearchPanel[T](PanelWidget):
         # Focus search field if no query
         if not query:
             self.search_field.setFocus()
-            parent = self.parentWidget()
-            if parent is not None:
+            parent: QWidget | None = self.parentWidget()
+            if parent is not None:  # pyright: ignore[reportUnnecessaryComparison]
                 parent.hide()
             return
 
@@ -147,16 +146,16 @@ class SearchPanel[T](PanelWidget):
     def on_item_create(self) -> None:
         raise NotImplementedError()
 
-    def on_item_edit(self, item: T) -> None:
+    def on_item_edit(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def _on_item_remove(self, item: T) -> None:
+    def _on_item_remove(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def on_item_create_and_add(self) -> None:
         raise NotImplementedError()
 
-    def _on_item_chosen(self, item: T) -> None:
+    def _on_item_chosen(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def _is_excluded(self, item: T) -> bool:
@@ -215,18 +214,20 @@ class SearchPanel[T](PanelWidget):
         if query and query.strip():
             self.view.add_create_and_add_button()
 
-    def search_items(self, query: str) -> tuple[list[T], list[T]]:
+    def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def set_item_widget(self, item: T | None, index: int) -> None:
+    def set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
+    @override
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
         self.update_items()
         self.view.scroll_to(0)
         self.view.clear_search_query()
         return super().showEvent(event)
 
+    @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         # When Escape is pressed, focus back on the search box.
         # If focus is already on the search box, close the modal.
@@ -236,8 +237,8 @@ class SearchPanel[T](PanelWidget):
             else:
                 self.view.focus_search_box(select_all=True)
 
-    def create_item(self, build_item_modal: PanelModal, choose_item: bool = False) -> None:
+    def create_item(self, edit_item_panel: PanelWidget, choose_item: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def edit_item(self, edit_item_panel: PanelWidget) -> None:
+    def edit_item(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()

@@ -25,8 +25,8 @@ class PanelModal(QWidget):
         widget: "PanelWidget",
         title: str = "",
         window_title: str | None = None,
-        done_callback: Callable[[], None] | None = None,
-        save_callback: Callable[[str], None] | None = None,
+        done_callback: Callable[..., None] | None = None,
+        save_callback: Callable[..., None] | None = None,
         has_save: bool = False,
     ):
         # [Done]
@@ -128,7 +128,7 @@ class PanelWidget(QWidget):
     def parent_post_init(self) -> None:
         pass
 
-    def add_callback(self, callback: Callable[[], None], event: str = "returnPressed"):
+    def add_callback(self, callback: Callable[..., None], event: str = "returnPressed"):  # pyright: ignore[reportUnusedParameter]
         logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
     @override

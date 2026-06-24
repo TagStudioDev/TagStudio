@@ -156,15 +156,15 @@ class TagWidget(QWidget):
         self.inner_layout.setObjectName("innerLayout")
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.remove_button = QPushButton(self)
-        self.remove_button.setFlat(True)
-        self.remove_button.setText("–")
-        self.remove_button.setHidden(True)
-        self.remove_button.setMinimumSize(22, 22)
-        self.remove_button.setMaximumSize(22, 22)
-        self.remove_button.clicked.connect(self.on_remove.emit)
-        self.remove_button.setHidden(True)
-        self.inner_layout.addWidget(self.remove_button)
+        self._delete_button = QPushButton(self)
+        self._delete_button.setFlat(True)
+        self._delete_button.setText("–")
+        self._delete_button.setHidden(True)
+        self._delete_button.setMinimumSize(22, 22)
+        self._delete_button.setMaximumSize(22, 22)
+        self._delete_button.clicked.connect(self.on_remove.emit)
+        self._delete_button.setHidden(True)
+        self.inner_layout.addWidget(self._delete_button)
         self.inner_layout.addStretch(1)
 
         self.bg_button.setLayout(self.inner_layout)
@@ -236,7 +236,7 @@ class TagWidget(QWidget):
             f"}}"
         )
 
-        self.remove_button.setStyleSheet(
+        self._delete_button.setStyleSheet(
             f"QPushButton{{"
             f"color: rgba{primary_color.toTuple()};"
             f"background: rgba{text_color.toTuple()};"
@@ -275,14 +275,14 @@ class TagWidget(QWidget):
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
         if self.has_remove:
-            self.remove_button.setHidden(False)
+            self._delete_button.setHidden(False)
         self.update()
         return super().enterEvent(event)
 
     @override
     def leaveEvent(self, event: QEvent) -> None:
         if self.has_remove:
-            self.remove_button.setHidden(True)
+            self._delete_button.setHidden(True)
         self.update()
         return super().leaveEvent(event)
 

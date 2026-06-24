@@ -130,7 +130,7 @@ class SearchPanelView(PanelWidget):
     def scroll_area(self) -> QScrollArea:
         return self.__scroll_area
 
-    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:
+    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:  # pyright: ignore[reportExplicitAny]
         self.limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
 
         self.search_field.textChanged.connect(controller.on_search_query_changed)
@@ -171,7 +171,7 @@ class SearchPanelView(PanelWidget):
     def scroll_to(self, position: int) -> None:
         self.__scroll_area.verticalScrollBar().setValue(position)
 
-    def get_item_widget(self, index: int, library: Library | None) -> Any:
+    def get_item_widget(self, index: int, library: Library | None) -> Any:  # pyright: ignore[reportUnusedParameter, reportExplicitAny]
         raise NotImplementedError()
 
     def add_create_and_add_button(self) -> None:

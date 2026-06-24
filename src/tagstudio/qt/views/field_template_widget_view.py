@@ -72,18 +72,18 @@ class FieldTemplateWidgetView(QWidget):
         self.__inner_layout.setContentsMargins(0, 0, 0, 0)
 
         # Remove button
-        self.__remove_button = QPushButton(self)
-        self.__remove_button.setFlat(True)
-        self.__remove_button.setText("–")
-        self.__remove_button.setHidden(True)
-        self.__remove_button.setMinimumSize(22, 22)
-        self.__remove_button.setMaximumSize(22, 22)
+        self._delete_button = QPushButton(self)
+        self._delete_button.setFlat(True)
+        self._delete_button.setText("–")
+        self._delete_button.setHidden(True)
+        self._delete_button.setMinimumSize(22, 22)
+        self._delete_button.setMaximumSize(22, 22)
 
-        self.__inner_layout.addWidget(self.__remove_button)
+        self.__inner_layout.addWidget(self._delete_button)
         self.__inner_layout.addStretch(1)
 
         self.__connect_callbacks()
 
     def __connect_callbacks(self) -> None:
         self._bg_button.clicked.connect(self.on_click.emit)
-        self.__remove_button.clicked.connect(self.on_remove.emit)
+        self._delete_button.clicked.connect(self.on_remove.emit)

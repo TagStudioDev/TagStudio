@@ -80,7 +80,7 @@ def test_build_tag_panel_remove_alias_callback(
 
     alias: TagAlias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
 
-    panel.remove_alias_callback(alias.name, alias.id)
+    panel.remove_alias_callback(alias.id)
 
     assert len(panel.alias_ids) == 1
     assert len(panel.alias_names) == 1
