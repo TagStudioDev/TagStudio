@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
 
 import structlog
@@ -33,9 +34,9 @@ class TagSearchModal(PanelModal):
         library: Library,
         exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
-        done_callback=None,
-        save_callback=None,
-        has_save=False,
+        done_callback: Callable[..., None] | None = None,
+        save_callback: Callable[..., None] | None = None,
+        has_save: bool = False,
     ):
         self.tsp = TagSearchPanel(
             library,
@@ -70,28 +71,31 @@ class TagSearchPanel(SearchPanel[Tag]):
         self._unlimited_limit_item_label = Translations["tag.all_tags"]
         self._create_and_add_button_label_key = "tag.create_add"
 
+    @override
     def _get_max_limit(self) -> int:
         return len(self.__lib.tags)
 
+    @override
     def on_item_create(self) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
         query: str = self.get_search_query()
 
-        build_tag_panel: BuildTagPanel = BuildTagPanel(self.__lib)
-        build_tag_modal: PanelModal = PanelModal(
-            build_tag_panel,
+        panel: BuildTagPanel = BuildTagPanel(self.__lib)
+        modal: PanelModal = PanelModal(
+            panel,
             Translations["tag.new"],
             has_save=True,
         )
 
         if query.strip():
-            build_tag_panel.name_field.setText(query)
+            panel.name_field.setText(query)
 
-        build_tag_modal.saved.connect(lambda: self.create_item(build_tag_modal))
-        build_tag_modal.show()
+        modal.saved.connect(lambda: self.create_item(panel))
+        modal.show()
 
+    @override
     def on_item_edit(self, item: Tag) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
@@ -107,6 +111,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         edit_tag_modal.saved.connect(lambda: self.edit_item(edit_tag_panel))
         edit_tag_modal.show()
 
+    @override
     def _on_item_remove(self, item: Tag) -> None:
         if self.is_chooser:
             return
@@ -115,22 +120,26 @@ class TagSearchPanel(SearchPanel[Tag]):
             return
 
         message_box = QMessageBox(
-            QMessageBox.Question,  # type: ignore
+            QMessageBox.Icon.Question,
             Translations["tag.remove"],
             Translations.format("tag.confirm_delete", tag_name=self.__lib.tag_display_name(item)),
-            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
 
         result = message_box.exec()
 
-        if result != QMessageBox.Ok:  # type: ignore
+        if result != QMessageBox.StandardButton.Ok:
             return
 
         self.__lib.remove_tag(item.id)
         self.update_items(self.get_search_query())
 
+    @override
     def on_item_create_and_add(self) -> None:
-        """Opens "Create Tag" panel to create and add a new tag with given name."""
+        """Opens "Create Tag" panel to create and add a new tag.
+
+        Populates name field using current search query.
+        """
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
@@ -138,26 +147,29 @@ class TagSearchPanel(SearchPanel[Tag]):
 
         logger.info("Create and Add Tag", name=query)
 
-        build_tag_panel: BuildTagPanel = BuildTagPanel(self.__lib)
-        build_tag_modal: PanelModal = PanelModal(
-            build_tag_panel,
+        panel: BuildTagPanel = BuildTagPanel(self.__lib)
+        modal: PanelModal = PanelModal(
+            panel,
             Translations["tag.new"],
             Translations["tag.add"],
             has_save=True,
         )
 
         if query.strip():
-            build_tag_panel.name_field.setText(query)
+            panel.name_field.setText(query)
 
-        build_tag_modal.saved.connect(lambda: self.create_item(build_tag_modal, choose_item=True))
-        build_tag_modal.show()
+        modal.saved.connect(lambda: self.create_item(panel, choose_item=True))
+        modal.show()
 
+    @override
     def _on_item_chosen(self, item: Tag) -> None:
         self.item_chosen.emit(item.id)
 
+    @override
     def search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
         return self.__lib.search_tags(name=query, limit=self._get_limit()[1])
 
+    @override
     def set_item_widget(self, item: Tag | None, index: int) -> None:
         """Set the tag of a tag widget at a specific index."""
         tag_widget: TagWidget = self.get_item_widget(index, self.__lib)
@@ -195,39 +207,41 @@ class TagSearchPanel(SearchPanel[Tag]):
         else:
             tag_widget.search_for_tag_action.setEnabled(False)
 
-    def create_item(self, build_item_modal: PanelModal, choose_item: bool = False) -> None:
+    @override
+    def create_item(self, edit_item_panel: PanelWidget, choose_item: bool = False) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
-        if isinstance(build_item_modal.widget, BuildTagPanel):
-            tag: Tag = build_item_modal.widget.build_tag()
+        if isinstance(edit_item_panel, BuildTagPanel):
+            tag: Tag = edit_item_panel.build_tag()
             self.__lib.add_tag(
                 tag,
-                parent_ids=build_item_modal.widget.parent_ids,
-                alias_names=build_item_modal.widget.alias_names,
-                alias_ids=build_item_modal.widget.alias_ids,
+                parent_ids=edit_item_panel.parent_ids,
+                alias_names=edit_item_panel.alias_names,
+                alias_ids=edit_item_panel.alias_ids,
             )
 
             if choose_item:
                 self._on_item_chosen(tag)
                 self.clear_search_query()
 
-        build_item_modal.hide()
+        edit_item_panel.hide()
         self.on_search_query_changed(self.get_search_query())
 
+    @override
     def edit_item(self, edit_item_panel: PanelWidget) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
         if not isinstance(edit_item_panel, BuildTagPanel):
             return
+
         self.__lib.update_tag(
             tag=edit_item_panel.build_tag(),
             parent_ids=edit_item_panel.parent_ids,
             alias_names=edit_item_panel.alias_names,
             alias_ids=edit_item_panel.alias_ids,
         )
-
         self.update_items(self.search_field.text())
 
     def search_for_tag(self, tag_id: int) -> None:
