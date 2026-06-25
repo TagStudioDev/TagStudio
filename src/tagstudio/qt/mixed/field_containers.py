@@ -233,19 +233,19 @@ class FieldContainers(QWidget):
                 )
                 self.lib.add_field_to_entries(entry_id, field_template.to_field())
 
-    def add_tags_to_selected(self, tags: int | list[int]) -> None:
+    def add_tags_to_selected(self, tag_ids: int | list[int]) -> None:
         """Add list of tags to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
         """
-        if isinstance(tags, int):
-            tags = [tags]
+        if isinstance(tag_ids, int):
+            tag_ids = [tag_ids]
         logger.info(
             "[FieldContainers][add_tags_to_selected]",
             selected=self.driver.selected,
-            tags=tags,
+            tag_ids=tag_ids,
         )
-        self.driver.add_tags_to_selected_callback(tags)
+        self.driver.add_tags_to_selected_callback(tag_ids)
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
         """Update/Create data for a FieldContainer.

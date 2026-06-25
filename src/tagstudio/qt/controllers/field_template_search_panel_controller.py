@@ -69,9 +69,32 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         return len(self.__lib.field_templates)
 
     @override
-    def on_item_create(self) -> None:
-        # TODO: Allow creation of field templates
-        pass
+    def on_item_create(self, add_to_entry: bool = False) -> None:
+        """Opens panel to create a new field template and optionally add it to an entry.
+
+        Populates name field using current search query.
+
+        Args:
+            add_to_entry (bool): Should this item be added to currently selected entries?
+        """
+        query: str = self.get_search_query()
+        logger.info("[FieldTemplateSearch] Create and Add Field Template", name=query)
+
+        panel: EditFieldTemplateModal = EditFieldTemplateModal()
+        modal: PanelModal = PanelModal(
+            panel,
+            Translations["field_template.new"],
+            Translations["field_template.add"]
+            if add_to_entry
+            else Translations["field_template.new"],
+            has_save=True,
+        )
+
+        if query.strip():
+            panel.name_field.setText(query)
+
+        modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
+        modal.show()
 
     @override
     def on_item_edit(self, item: BaseFieldTemplate) -> None:
@@ -89,6 +112,8 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
     @override
     def _on_item_remove(self, item: BaseFieldTemplate) -> None:
+        if self.is_chooser:
+            return
 
         message_box = QMessageBox(
             QMessageBox.Icon.Question,
@@ -104,29 +129,6 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
         self.__lib.remove_field_template(item)
         self.update_items(self.get_search_query())
-
-    @override
-    def on_item_create_and_add(self) -> None:
-        """Opens "Create Field Template" panel to create a new field template.
-
-        Populates name field using current search query.
-        """
-        query: str = self.get_search_query()
-        logger.info("[FieldTemplateSearch] Create and Add Field Template", name=query)
-
-        panel: EditFieldTemplateModal = EditFieldTemplateModal()
-        modal: PanelModal = PanelModal(
-            panel,
-            Translations["field_template.new"],
-            Translations["field.add"],
-            has_save=True,
-        )
-
-        if query.strip():
-            panel.name_field.setText(query)
-
-        modal.saved.connect(lambda: self.create_item(panel, choose_item=True))
-        modal.show()
 
     @override
     def _on_item_chosen(self, item: BaseFieldTemplate) -> None:
@@ -145,6 +147,8 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
         if item is None:
             return
+
+        field_template_widget.has_remove = not self.is_chooser
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):

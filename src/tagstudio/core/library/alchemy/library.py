@@ -1314,22 +1314,23 @@ class Library:
 
             return direct_tags, descendant_tags
 
-    def add_field_template(self, field_template: BaseFieldTemplate) -> bool:
+    def add_field_template(self, field_template: BaseFieldTemplate) -> BaseFieldTemplate | None:
         """Add a new field template to the library."""
         if not (isinstance(field_template, (TextFieldTemplate, DatetimeFieldTemplate))):
             logger.error("[Library] BaseFieldTemplate attempted to be added to the library.")
-            return False
+            return None
 
         with Session(self.engine) as session:
             try:
                 session.add(field_template)
+                session.flush()
+                make_transient(field_template)
                 session.commit()
+                return field_template
             except IntegrityError as e:
                 logger.error(e)
                 session.rollback()
-                return False
-
-        return True
+                return None
 
     def update_field_template(self, old_field_type: str, field_template: BaseFieldTemplate) -> bool:
         """Update a field template in the library.

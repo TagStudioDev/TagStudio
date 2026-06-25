@@ -136,23 +136,20 @@ class SearchPanel[T](PanelWidget):
 
         # Create and add item if no search results
         if len(self._search_results) <= 0:
-            self.on_item_create_and_add()
+            self.on_item_create(add_to_entry=True)
         elif self.is_chooser:
             self._on_item_chosen(self._search_results[0])
 
         self.clear_search_query()
         self.update_items()
 
-    def on_item_create(self) -> None:
+    def on_item_create(self, add_to_entry: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def on_item_edit(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def _on_item_remove(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
-        raise NotImplementedError()
-
-    def on_item_create_and_add(self) -> None:
         raise NotImplementedError()
 
     def _on_item_chosen(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
