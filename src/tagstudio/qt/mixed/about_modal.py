@@ -23,12 +23,12 @@ from tagstudio.core.constants import COPYRIGHT, VERSION, VERSION_BRANCH
 from tagstudio.core.enums import Theme
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.clickable_label import ClickableLabel
 
 
 class AboutModal(QWidget):

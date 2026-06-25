@@ -11,10 +11,10 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
+from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.clickable_label import ClickableLabel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

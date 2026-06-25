@@ -13,8 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.clickable_label import ClickableLabel
 from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
 
