@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from collections.abc import Callable
 from typing import override
 from warnings import catch_warnings
 
@@ -27,8 +26,6 @@ class FieldTemplateSearchModal(PanelModal):
         self,
         library: Library,
         is_field_template_chooser: bool = True,
-        done_callback: Callable[..., None] | None = None,
-        save_callback: Callable[..., None] | None = None,
         has_save: bool = False,
     ) -> None:
         self.search_panel: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
@@ -39,9 +36,7 @@ class FieldTemplateSearchModal(PanelModal):
         super().__init__(
             self.search_panel,
             Translations["field.add.plural"],
-            done_callback=done_callback,
-            save_callback=save_callback,
-            has_save=has_save,
+            is_savable=has_save,
         )
 
 
@@ -87,7 +82,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
             Translations["field_template.add"]
             if add_to_entry
             else Translations["field_template.new"],
-            has_save=True,
+            is_savable=True,
         )
 
         if query.strip():
@@ -104,7 +99,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
             panel,
             item.name,
             Translations["field_template.edit"],
-            has_save=True,
+            is_savable=True,
         )
 
         modal.saved.connect(lambda: self.edit_item(panel))

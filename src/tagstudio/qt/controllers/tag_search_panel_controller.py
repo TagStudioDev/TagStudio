@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
 
@@ -34,8 +33,6 @@ class TagSearchModal(PanelModal):
         library: Library,
         exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
-        done_callback: Callable[..., None] | None = None,
-        save_callback: Callable[..., None] | None = None,
         has_save: bool = False,
     ):
         self.tsp = TagSearchPanel(
@@ -47,9 +44,7 @@ class TagSearchModal(PanelModal):
         super().__init__(
             self.tsp,
             Translations["tag.add.plural"],
-            done_callback=done_callback,
-            save_callback=save_callback,
-            has_save=has_save,
+            is_savable=has_save,
         )
 
 
@@ -94,7 +89,7 @@ class TagSearchPanel(SearchPanel[Tag]):
             panel,
             Translations["tag.new"],
             Translations["tag.add"] if add_to_entry else Translations["tag.new"],
-            has_save=True,
+            is_savable=True,
         )
 
         if query.strip():
@@ -113,7 +108,7 @@ class TagSearchPanel(SearchPanel[Tag]):
             edit_tag_panel,
             self.__lib.tag_display_name(item),
             Translations["tag.edit"],
-            has_save=True,
+            is_savable=True,
         )
 
         edit_tag_modal.saved.connect(lambda: self.edit_item(edit_tag_panel))

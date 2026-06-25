@@ -134,7 +134,7 @@ class ColorBoxWidget(FieldWidget):
         self.edit_modal = PanelModal(
             build_color_panel,
             "Edit Color",
-            has_save=True,
+            is_savable=True,
         )
 
         self.edit_modal.saved.connect(

@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.utils.types import unwrap
@@ -39,9 +38,10 @@ from tagstudio.qt.mixed.tag_widget import (
     get_primary_color,
     get_text_color,
 )
-from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
@@ -201,9 +201,9 @@ class BuildTagPanel(PanelWidget):
             self.tag_color_selection,
             chose_tag_color_title,
             chose_tag_color_title,
-            done_callback=lambda: self.choose_color_callback(
-                self.tag_color_selection.selected_color
-            ),
+        )
+        self.choose_color_modal.done.connect(
+            lambda: self.choose_color_callback(self.tag_color_selection.selected_color)
         )
         self.color_button.button.clicked.connect(self.choose_color_modal.show)
         self.color_layout.addWidget(self.color_button)
@@ -218,38 +218,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_title = QLabel(Translations["tag.is_category"])
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
-
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-
-        self.cat_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.cat_checkbox.setStyleSheet(checkbox_style())
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
 
@@ -263,33 +232,7 @@ class BuildTagPanel(PanelWidget):
         self.hidden_title = QLabel(Translations["tag.is_hidden"])
         self.hidden_checkbox = QCheckBox()
         self.hidden_checkbox.setFixedSize(22, 22)
-
-        self.hidden_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.hidden_checkbox.setStyleSheet(checkbox_style())
         self.hidden_layout.addWidget(self.hidden_checkbox)
         self.hidden_layout.addWidget(self.hidden_title)
 

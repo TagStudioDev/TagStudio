@@ -53,7 +53,6 @@ class FieldContainer(QWidget):
         super().__init__()
         self.setObjectName("fieldContainer")
         self.title: str = title
-        self.inline: bool = inline
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
@@ -169,9 +168,6 @@ class FieldContainer(QWidget):
     def set_title(self, title: str) -> None:
         self.title = self.title = f"<h4>{title}</h4>"
         self.title_widget.setText(self.title)
-
-    def set_inline(self, inline: bool) -> None:
-        self.inline = inline
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

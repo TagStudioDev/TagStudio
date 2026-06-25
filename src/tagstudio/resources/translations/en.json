@@ -92,6 +92,7 @@
     "field.name": "Name",
     "field.paste": "Paste Field",
     "field.remove": "Remove Field",
+    "field.text.is_multiline": "Multiline",
     "field.type": "Type",
     "file.date_added": "Date Added",
     "file.date_created": "Date Created",

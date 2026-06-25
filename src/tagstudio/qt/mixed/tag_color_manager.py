@@ -176,7 +176,7 @@ class TagColorManager(QWidget):
         self.create_namespace_modal = PanelModal(
             build_namespace_panel,
             Translations["namespace.create.title"],
-            has_save=True,
+            is_savable=True,
         )
 
         self.create_namespace_modal.saved.connect(
