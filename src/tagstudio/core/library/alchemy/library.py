@@ -1540,7 +1540,12 @@ class Library:
             session.commit()
 
     def update_text_field(
-        self, entry_ids: list[int] | int, field: TextField, value: str, is_multiline: bool
+        self,
+        entry_ids: list[int] | int,
+        field: TextField,
+        name: str,
+        value: str,
+        is_multiline: bool,
     ):
         """Update a TextField field on one or more Entries."""
         if isinstance(entry_ids, int):
@@ -1552,7 +1557,7 @@ class Library:
             update_stmt = (
                 update(field_type)
                 .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
-                .values(value=value, is_multiline=is_multiline)
+                .values(name=name, value=value, is_multiline=is_multiline)
             )
 
             session.execute(update_stmt)
@@ -1562,6 +1567,7 @@ class Library:
         self,
         entry_ids: list[int] | int,
         field: DatetimeField,
+        name: str,
         value: datetime,
     ):
         """Update a DatetimeField field on one or more Entries."""
@@ -1574,7 +1580,7 @@ class Library:
             update_stmt = (
                 update(field_type)
                 .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
-                .values(value=value)
+                .values(name=name, value=value)
             )
 
             session.execute(update_stmt)

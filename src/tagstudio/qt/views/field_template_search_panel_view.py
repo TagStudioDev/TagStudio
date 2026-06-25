@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+from typing import override
+
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -16,6 +18,7 @@ class FieldTemplateSearchPanelView(SearchPanelView):
         self.search_field.setPlaceholderText(Translations["home.search_field_templates"])
         self.create_button.setText(Translations["field_template.create"])
 
+    @override
     def get_item_widget(self, index: int, library: Library | None) -> FieldTemplateWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index

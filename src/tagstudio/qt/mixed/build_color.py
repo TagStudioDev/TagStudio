@@ -32,6 +32,7 @@ from tagstudio.qt.mixed.tag_widget import (
 from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
 
 logger = structlog.get_logger(__name__)
 
@@ -135,37 +136,7 @@ class BuildColorPanel(PanelWidget):
         self.border_layout.addWidget(self.border_checkbox)
         self.border_label = QLabel(Translations["color.color_border"])
         self.border_layout.addWidget(self.border_label)
-
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-        self.border_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.border_checkbox.setStyleSheet(checkbox_style())
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.preview_widget)

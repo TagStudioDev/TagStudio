@@ -24,7 +24,7 @@ from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_size, format_timespan
+from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
@@ -45,7 +45,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-import tagstudio.qt.resources_rc  # noqa: F401
+# This import has side-effect of importing PySide resources
+import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
@@ -64,11 +65,7 @@ from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
-from tagstudio.qt.controllers.field_template_search_panel_controller import (
-    FieldTemplateSearchPanel,
-)
-
-# this import has side-effect of import PySide resources
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
@@ -376,10 +373,12 @@ class QtDriver(DriverMixin, QObject):
                 view=TagSearchPanelView(is_tag_chooser=False),
             ),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.tag_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Color Group Manager panel
@@ -393,10 +392,12 @@ class QtDriver(DriverMixin, QObject):
                 view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
             ),
             title=Translations["field_template_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.field_template_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Tag Search panel
@@ -741,7 +742,7 @@ class QtDriver(DriverMixin, QObject):
         self.ignore_modal = PanelModal(
             panel,
             Translations["menu.edit.ignore_files"],
-            has_save=True,
+            is_savable=True,
         )
         self.ignore_modal.saved.connect(panel.save)
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
@@ -880,7 +881,7 @@ class QtDriver(DriverMixin, QObject):
             panel,
             Translations["tag.new"],
             Translations["tag.add"],
-            has_save=True,
+            is_savable=True,
         )
 
         self.modal.saved.connect(
