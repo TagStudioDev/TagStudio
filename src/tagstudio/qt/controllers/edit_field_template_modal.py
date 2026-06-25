@@ -21,13 +21,13 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
         "TextFieldTemplate": Translations["field_type.text"],
         "DatetimeFieldTemplate": Translations["field_type.datetime"],
     }
+    DEFAULT_TYPE_INDEX = 0
 
     def __init__(self, field_template: BaseFieldTemplate | None = None) -> None:
         super().__init__()
         self.__field_id: int | None = field_template.id if field_template else None
         self.__field_name: str = ""
         self.__field_type: str | None = field_template.class_name if field_template else None
-        self.__text_field_is_multiline: bool = False
         self.old_field_type: str = ""
 
         for k, v in EditFieldTemplateModal.field_type_map.items():
@@ -35,6 +35,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
 
         self.__connect_callbacks()
         self.set_field_template(field_template)
+        self.__on_type_changed(EditFieldTemplateModal.DEFAULT_TYPE_INDEX)
 
     def __connect_callbacks(self) -> None:
         self.name_field.textChanged.connect(self.__on_name_changed)
@@ -47,7 +48,9 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
         # Indicates a new template, set default values
         if field_template is None:
             self.__field_name = Translations["field_template.new"]
-            self.__field_type = list(EditFieldTemplateModal.field_type_map.keys())[0]  # First index
+            self.__field_type = list(EditFieldTemplateModal.field_type_map.keys())[
+                EditFieldTemplateModal.DEFAULT_TYPE_INDEX
+            ]
             return
         # Populate common values for any field type
         else:
@@ -63,7 +66,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
 
         # Populate values for specific field types
         if isinstance(field_template, TextFieldTemplate):
-            self.__text_field_is_multiline = field_template.is_multiline
+            self._multiline_checkbox.setChecked(field_template.is_multiline)
 
     def __on_name_changed(self):
         is_empty = not self.name_field.text().strip()
@@ -78,14 +81,26 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
             self.panel_save_button.setDisabled(is_empty)
 
     def __on_type_changed(self, index: int):
+        old_type = self.__field_type
         self.__field_type = list(EditFieldTemplateModal.field_type_map.keys())[index]
+
+        if old_type == self.__field_type:
+            logger.info(f"old type {old_type}, new type {self.__field_type}")
+            return
+
+        if old_type == "TextFieldTemplate":
+            self._text_field_attributes_widget.hide()
+        # NOTE: Future options specific to other type will go here.
+
+        if self.__field_type == "TextFieldTemplate":
+            self._text_field_attributes_widget.show()
 
     def build_field_template(self) -> BaseFieldTemplate:
         if self.__field_type == "TextFieldTemplate":
             return TextFieldTemplate(
                 id=self.__field_id,
                 name=self.name_field.text(),
-                is_multiline=self.__text_field_is_multiline,
+                is_multiline=self._multiline_checkbox.isChecked(),
             )
         elif self.__field_type == "DatetimeFieldTemplate":
             return DatetimeFieldTemplate(
@@ -100,17 +115,5 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
             )
             return TextFieldTemplate(
                 name=self.name_field.text(),
-                is_multiline=self.__text_field_is_multiline,
+                is_multiline=self._multiline_checkbox.isChecked(),
             )
-
-    # def parent_post_init(self):
-    #     self.setTabOrder(self.name_field, self.shorthand_field)
-    #     self.setTabOrder(self.shorthand_field, self.aliases_add_button)
-    #     self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
-    #     self.setTabOrder(self.parent_tags_add_button, self.color_button)
-    #     self.setTabOrder(self.color_button, unwrap(self.panel_cancel_button))
-    #     self.setTabOrder(unwrap(self.panel_cancel_button), unwrap(self.panel_save_button))
-    #     self.setTabOrder(unwrap(self.panel_save_button), self.aliases_table.cellWidget(0, 1))
-    #     self.name_field.selectAll()
-    #     self.name_field.setFocus()
-    #     self._set_aliases()
