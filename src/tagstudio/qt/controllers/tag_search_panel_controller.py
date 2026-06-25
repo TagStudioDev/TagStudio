@@ -76,7 +76,14 @@ class TagSearchPanel(SearchPanel[Tag]):
         return len(self.__lib.tags)
 
     @override
-    def on_item_create(self) -> None:
+    def on_item_create(self, add_to_entry: bool = False) -> None:
+        """Opens panel to create a new tag and optionally add it to an entry.
+
+        Populates name field using current search query.
+
+        Args:
+            add_to_entry (bool): Should this item be added to currently selected entries?
+        """
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
@@ -86,13 +93,14 @@ class TagSearchPanel(SearchPanel[Tag]):
         modal: PanelModal = PanelModal(
             panel,
             Translations["tag.new"],
+            Translations["tag.add"] if add_to_entry else Translations["tag.new"],
             has_save=True,
         )
 
         if query.strip():
             panel.name_field.setText(query)
 
-        modal.saved.connect(lambda: self.create_item(panel))
+        modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
         modal.show()
 
     @override
@@ -133,33 +141,6 @@ class TagSearchPanel(SearchPanel[Tag]):
 
         self.__lib.remove_tag(item.id)
         self.update_items(self.get_search_query())
-
-    @override
-    def on_item_create_and_add(self) -> None:
-        """Opens "Create Tag" panel to create and add a new tag.
-
-        Populates name field using current search query.
-        """
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        query: str = self.get_search_query()
-
-        logger.info("Create and Add Tag", name=query)
-
-        panel: BuildTagPanel = BuildTagPanel(self.__lib)
-        modal: PanelModal = PanelModal(
-            panel,
-            Translations["tag.new"],
-            Translations["tag.add"],
-            has_save=True,
-        )
-
-        if query.strip():
-            panel.name_field.setText(query)
-
-        modal.saved.connect(lambda: self.create_item(panel, choose_item=True))
-        modal.show()
 
     @override
     def _on_item_chosen(self, item: Tag) -> None:

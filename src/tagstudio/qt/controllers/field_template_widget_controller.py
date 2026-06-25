@@ -16,6 +16,7 @@ class FieldTemplateWidget(FieldTemplateWidgetView):
         super().__init__()
 
         self.__field_template: BaseFieldTemplate | None = None
+        self.has_remove: bool = False
 
         # Add actions
         edit_action = QAction(self)
@@ -36,12 +37,14 @@ class FieldTemplateWidget(FieldTemplateWidgetView):
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
-        self._delete_button.setHidden(False)
+        if self.has_remove:
+            self._delete_button.setHidden(False)
         self.update()
         return super().enterEvent(event)
 
     @override
     def leaveEvent(self, event: QEvent) -> None:
-        self._delete_button.setHidden(True)
+        if self.has_remove:
+            self._delete_button.setHidden(True)
         self.update()
         return super().leaveEvent(event)

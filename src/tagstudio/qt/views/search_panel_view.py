@@ -139,7 +139,9 @@ class SearchPanelView(PanelWidget):
         )
 
         self.create_button.clicked.connect(controller.on_item_create)
-        self.create_and_add_button.clicked.connect(controller.on_item_create_and_add)
+        self.create_and_add_button.clicked.connect(
+            lambda: controller.on_item_create(add_to_entry=True)
+        )
 
     def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
         # Remove existing limit items

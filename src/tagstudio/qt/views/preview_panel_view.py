@@ -67,7 +67,7 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self._fields = FieldContainers(
+        self._containers = FieldContainers(
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
 
@@ -107,7 +107,7 @@ class PreviewPanelView(QWidget):
 
         preview_layout.addWidget(self.__thumb)
         info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self._fields)
+        info_layout.addWidget(self._containers)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
@@ -148,7 +148,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()
+                self._containers.hide_containers()
 
                 self.add_buttons_enabled = False
 
@@ -163,7 +163,7 @@ class PreviewPanelView(QWidget):
                     stats: FileAttributeData = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
-                self._fields.update_from_entry(entry_id)
+                self._containers.update_from_entry(entry_id)
 
                 self._set_selection_callback()
 
@@ -175,7 +175,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()  # TODO: Allow for mixed editing
+                self._containers.hide_containers()  # TODO: Allow for mixed editing
 
                 self._set_selection_callback()
 
@@ -205,7 +205,7 @@ class PreviewPanelView(QWidget):
     @property
     def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
-        return self._fields
+        return self._containers
 
     @property
     def preview_thumb(self) -> PreviewThumb:

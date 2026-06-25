@@ -24,7 +24,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
 
     def __init__(self, field_template: BaseFieldTemplate | None = None) -> None:
         super().__init__()
-        self.__field_id: int = field_template.id if field_template else -1
+        self.__field_id: int | None = field_template.id if field_template else None
         self.__field_name: str = ""
         self.__field_type: str | None = field_template.class_name if field_template else None
         self.__text_field_is_multiline: bool = False
@@ -47,7 +47,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
         # Indicates a new template, set default values
         if field_template is None:
             self.__field_name = Translations["field_template.new"]
-            self.__field_type = None
+            self.__field_type = list(EditFieldTemplateModal.field_type_map.keys())[0]  # First index
             return
         # Populate common values for any field type
         else:
