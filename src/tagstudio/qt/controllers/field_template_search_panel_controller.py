@@ -79,9 +79,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         modal: PanelModal = PanelModal(
             panel,
             Translations["field_template.new"],
-            Translations["field_template.add"]
-            if add_to_entry
-            else Translations["field_template.new"],
+            Translations["field_template.new"],
             is_savable=True,
         )
 
