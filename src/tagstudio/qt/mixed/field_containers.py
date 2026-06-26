@@ -434,7 +434,7 @@ class FieldContainers(QWidget):
             )
         else:
             text = f"<i>{Translations['field.mixed_data']}</i>"
-            inner_widget = TextContainerWidget("Mixed Tags", text)
+            inner_widget = TextContainerWidget("Mixed Tags", text)  # NOTE: Unlocalized but unused
             container.set_inner_widget(inner_widget)
 
         container.set_edit_callback()

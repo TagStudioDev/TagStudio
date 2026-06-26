@@ -10,6 +10,7 @@ from PySide6.QtCore import QDateTime
 from PySide6.QtWidgets import QDateTimeEdit, QLineEdit, QVBoxLayout
 
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import title_line_edit_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -46,7 +47,7 @@ class DatetimePicker(PanelWidget):
         self.root_layout.setContentsMargins(6, 0, 6, 0)
 
         self.name_field = QLineEdit()
-        self.name_field.setStyleSheet("font-weight:bold;font-size:14px;padding-top:6px")
+        self.name_field.setStyleSheet(title_line_edit_style())
         self.name_field.setText(name)
 
         if isinstance(datetime, str):

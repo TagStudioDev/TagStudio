@@ -9,9 +9,9 @@ from tagstudio.core.library.alchemy.fields import (
     DatetimeFieldTemplate,
     TextFieldTemplate,
 )
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_field_template_modal_view import EditFieldTemplateModalView
+from tagstudio.qt.views.stylesheets.stylesheets import line_edit_style
 
 logger = structlog.get_logger(__name__)
 
@@ -71,11 +71,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
     def __on_name_changed(self):
         is_empty = not self.name_field.text().strip()
 
-        self.name_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_empty
-            else ""
-        )
+        self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
 
         if self.panel_save_button is not None:
             self.panel_save_button.setDisabled(is_empty)

@@ -5,41 +5,19 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
-from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.models.palette import ColorType, get_tag_color
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_text_color,
+    list_button_style,
+)
 
 primary_color: QColor = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-border_color: QColor = get_border_color(primary_color)
-highlight_color: QColor = get_highlight_color(primary_color)
-text_color: QColor = get_text_color(primary_color, highlight_color)
-
-FIELD_TEMPLATE_BUTTON_STYLESHEET = f"""
-    QPushButton{{
-        background-color: {Theme.COLOR_BG.value};
-        font-weight: 600;
-        border-radius: 6px;
-        padding-right: 4px;
-        padding-left: 4px;
-        font-size: 13px;
-        text-align: center;
-    }}
-
-    QPushButton::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-
-    QPushButton::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
-        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-"""
+border_color: QColor = get_tag_border_color(primary_color)
+highlight_color: QColor = get_tag_highlight_color(primary_color)
+text_color: QColor = get_tag_text_color(primary_color, highlight_color)
 
 
 class FieldTemplateWidgetView(QWidget):
@@ -63,7 +41,7 @@ class FieldTemplateWidgetView(QWidget):
         self._bg_button.setMinimumSize(44, 22)
         self._bg_button.setMinimumHeight(22)
         self._bg_button.setMaximumHeight(22)
-        self._bg_button.setStyleSheet(FIELD_TEMPLATE_BUTTON_STYLESHEET)
+        self._bg_button.setStyleSheet(list_button_style())
 
         self.__inner_layout = QHBoxLayout()
         self.__inner_layout.setObjectName("inner_layout")
