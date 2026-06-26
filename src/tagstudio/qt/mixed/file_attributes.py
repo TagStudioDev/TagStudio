@@ -11,13 +11,12 @@ from datetime import timedelta
 from pathlib import Path
 
 import structlog
-from humanfriendly import format_size
+from humanfriendly import format_size  # pyright: ignore[reportUnknownVariableType]
 from PIL import ImageFont
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import ShowFilepathOption, Theme
+from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
@@ -25,6 +24,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper, FileOpenerLabel
+from tagstudio.qt.views.stylesheets.stylesheets import properties_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -48,26 +48,8 @@ class FileAttributes(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
-        label_bg_color = (
-            Theme.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_DARK_LABEL.value
-        )
-
-        self.date_style = "font-size:12px;"
+        self.date_style = "font-size: 12px;"
         self.file_label_style = "font-size: 12px"
-        self.properties_style = (
-            f"background-color:{label_bg_color};"
-            "color:#FFFFFF;"
-            "font-family:Oxanium;"
-            "font-weight:bold;"
-            "font-size:12px;"
-            "border-radius:3px;"
-            "padding-top: 4px;"
-            "padding-right: 1px;"
-            "padding-bottom: 1px;"
-            "padding-left: 1px;"
-        )
 
         self.file_label = FileOpenerLabel()
         self.file_label.setObjectName("filenameLabel")
@@ -93,7 +75,7 @@ class FileAttributes(QWidget):
         self.dimensions_label = QLabel()
         self.dimensions_label.setObjectName("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
-        self.dimensions_label.setStyleSheet(self.properties_style)
+        self.dimensions_label.setStyleSheet(properties_style())
         self.dimensions_label.setHidden(True)
 
         self.date_container = QWidget()

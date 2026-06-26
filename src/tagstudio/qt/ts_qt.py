@@ -99,6 +99,7 @@ from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSea
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.stylesheets.stylesheets import header
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
@@ -1014,9 +1015,8 @@ class QtDriver(DriverMixin, QObject):
         perm_warning_msg = Translations.format(
             "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
-        perm_warning: str = (
-            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
-            f"{perm_warning_msg}</h4>"
+        perm_warning: str = header(
+            perm_warning_msg, 4, get_ui_color(ColorType.PRIMARY, UiColor.RED)
         )
 
         msg = QMessageBox()
@@ -1033,8 +1033,8 @@ class QtDriver(DriverMixin, QObject):
                 "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.singular']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.singular'], 4)}"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
@@ -1045,8 +1045,8 @@ class QtDriver(DriverMixin, QObject):
                 trash_term=trash_term(),
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.plural']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.plural'], 4)}"
                 f"{perm_warning}<br>"
             )
 
@@ -1069,9 +1069,7 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(
-            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
-        )
+        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),

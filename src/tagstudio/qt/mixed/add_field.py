@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -39,10 +40,9 @@ class AddFieldModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = QLabel(Translations["field.add"])
+        self.title_widget = QLabel(header(Translations["field.add"], 3))
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px;")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_widget = QListWidget()

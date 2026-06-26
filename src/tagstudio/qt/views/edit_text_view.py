@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
-from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
+from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style, title_line_edit_style
 
 
 class EditTextView(PanelWidget):
@@ -27,7 +27,7 @@ class EditTextView(PanelWidget):
         self.root_layout.setContentsMargins(6, 0, 6, 0)
 
         self.name_field = QLineEdit()
-        self.name_field.setStyleSheet("font-weight:bold;font-size:14px;padding-top:6px")
+        self.name_field.setStyleSheet(title_line_edit_style())
 
         self.text_box = QPlainTextEdit()
         self.text_line = QLineEdit()

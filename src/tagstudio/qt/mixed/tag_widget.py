@@ -15,6 +15,14 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_primary_color,
+    get_tag_text_color,
+    tag_remove_button_style,
+    tag_style,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -188,13 +196,13 @@ class TagWidget(QWidget):
         if not tag:
             return
 
-        primary_color = get_primary_color(tag)
+        primary_color = get_tag_primary_color(tag)
         border_color = (
-            get_border_color(primary_color)
+            get_tag_border_color(primary_color)
             if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
-        highlight_color = get_highlight_color(
+        highlight_color = get_tag_highlight_color(
             primary_color
             if not (tag.color and tag.color.secondary)
             else QColor(tag.color.secondary)
@@ -203,65 +211,14 @@ class TagWidget(QWidget):
         if tag.color and tag.color.secondary:
             text_color = QColor(tag.color.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         self.bg_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"font-weight: 600;"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-left: 4px;"
-            f"font-size: 13px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{highlight_color.toTuple()};"
-            f"color: rgba{primary_color.toTuple()};"
-            f"border-color: rgba{primary_color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"padding-right: 0px;"
-            f"padding-left: 0px;"
-            f"outline-style: solid;"
-            f"outline-width: 1px;"
-            f"outline-radius: 4px;"
-            f"outline-color: rgba{text_color.toTuple()};"
-            f"}}"
+            tag_style(primary_color, text_color, border_color, highlight_color)
         )
 
         self._delete_button.setStyleSheet(
-            f"QPushButton{{"
-            f"color: rgba{primary_color.toTuple()};"
-            f"background: rgba{text_color.toTuple()};"
-            f"font-weight: 800;"
-            f"border-radius: 5px;"
-            f"border-width: 4;"
-            f"border-color: rgba(0,0,0,0);"
-            f"padding-bottom: 4px;"
-            f"font-size: 14px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"border-width: 2;"
-            f"border-radius: 6px;"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            tag_remove_button_style(primary_color, text_color, border_color, highlight_color)
         )
 
         if self.lib:
@@ -285,42 +242,3 @@ class TagWidget(QWidget):
             self._delete_button.setHidden(True)
         self.update()
         return super().leaveEvent(event)
-
-
-def get_primary_color(tag: Tag) -> QColor:
-    primary_color = QColor(
-        get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-        if not tag.color
-        else tag.color.primary
-    )
-
-    return primary_color
-
-
-def get_border_color(primary_color: QColor) -> QColor:
-    border_color: QColor = QColor(primary_color)
-    border_color.setRed(min(border_color.red() + 20, 255))
-    border_color.setGreen(min(border_color.green() + 20, 255))
-    border_color.setBlue(min(border_color.blue() + 20, 255))
-
-    return border_color
-
-
-def get_highlight_color(primary_color: QColor) -> QColor:
-    highlight_color: QColor = QColor(primary_color)
-    highlight_color = highlight_color.toHsl()
-    highlight_color.setHsl(highlight_color.hue(), min(highlight_color.saturation(), 200), 225, 255)
-    highlight_color = highlight_color.toRgb()
-
-    return highlight_color
-
-
-def get_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
-    # logger.info("[TagWidget] Evaluating tag text color", lightness=primary_color.lightness())
-    if primary_color.lightness() > 120:
-        text_color = QColor(primary_color)
-        text_color = text_color.toHsl()
-        text_color.setHsl(text_color.hue(), text_color.saturation(), 50, 255)
-        return text_color.toRgb()
-    else:
-        return highlight_color

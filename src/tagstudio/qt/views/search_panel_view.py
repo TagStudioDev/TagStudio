@@ -16,45 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import list_button_style
 
 if TYPE_CHECKING:
     from tagstudio.qt.controllers.search_panel_controller import SearchPanel
-
-CREATE_BUTTON_STYLESHEET: str = f"""
-    QPushButton{{
-        background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};
-        font-weight: 600;
-        border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};
-        border-radius: 6px;
-        border-style: dashed;
-        border-width: 2px;
-        padding-right: 4px;
-        padding-bottom: 1px;
-        padding-left: 4px;
-        font-size: 13px
-    }}
-
-    QPushButton::hover{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-    }}
-
-    QPushButton::pressed{{
-        background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-    }}
-
-    QPushButton::focus{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        outline: none;
-    }}
-"""
 
 
 class SearchPanelView(PanelWidget):
@@ -120,7 +88,7 @@ class SearchPanelView(PanelWidget):
         self.create_and_add_button = QPushButton()
         self.create_and_add_button.setFlat(True)
         self.create_and_add_button.setMinimumSize(22, 22)
-        self.create_and_add_button.setStyleSheet(CREATE_BUTTON_STYLESHEET)
+        self.create_and_add_button.setStyleSheet(list_button_style(border_style="dashed"))
 
     @property
     def scroll_layout(self) -> QVBoxLayout:

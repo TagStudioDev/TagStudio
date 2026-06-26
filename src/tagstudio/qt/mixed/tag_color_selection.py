@@ -20,11 +20,16 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
+from tagstudio.qt.mixed.tag_widget import (
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_text_color,
+)
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import color_swatch_style, header
 
 logger = structlog.get_logger(__name__)
 
@@ -67,9 +72,7 @@ class TagColorSelection(PanelWidget):
         self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
         for group, colors in tag_color_groups.items():
             display_name: str = self.lib.get_namespace_name(group)
-            self.scroll_layout.addWidget(
-                QLabel(f"<h4>{display_name if display_name else group}</h4>")
-            )
+            self.scroll_layout.addWidget(QLabel(header(display_name if display_name else group, 4)))
             color_box_widget = QWidget()
             color_group_layout = FlowLayout()
             color_group_layout.setSpacing(4)
@@ -79,54 +82,31 @@ class TagColorSelection(PanelWidget):
             for color in colors:
                 primary_color = self._get_primary_color(color)
                 border_color = (
-                    get_border_color(primary_color)
+                    get_tag_border_color(primary_color)
                     if not (color and color.secondary and color.color_border)
                     else (QColor(color.secondary))
                 )
-                highlight_color = get_highlight_color(
+                highlight_color = get_tag_highlight_color(
                     primary_color if not (color and color.secondary) else QColor(color.secondary)
                 )
                 text_color: QColor
                 if color and color.secondary:
                     text_color = QColor(color.secondary)
                 else:
-                    text_color = get_text_color(primary_color, highlight_color)
+                    text_color = get_tag_text_color(primary_color, highlight_color)
 
                 radio_button = QRadioButton()
                 radio_button.setObjectName(f"{color.namespace}.{color.slug}")
                 radio_button.setToolTip(color.name)
                 radio_button.setFixedSize(24, 24)
-                bottom_color: str = (
-                    f"border-bottom-color: rgba{text_color.toTuple()};" if color.secondary else ""
-                )
                 radio_button.setStyleSheet(
-                    f"QRadioButton{{"
-                    f"background: rgba{primary_color.toTuple()};"
-                    f"color: rgba{text_color.toTuple()};"
-                    f"border-color: rgba{border_color.toTuple()};"
-                    f"{bottom_color}"
-                    f"border-radius: 3px;"
-                    f"border-style:solid;"
-                    f"border-width: 2px;"
-                    f"}}"
-                    f"QRadioButton::indicator{{"
-                    f"width: 12px;"
-                    f"height: 12px;"
-                    f"border-radius: 1px;"
-                    f"margin: 4px;"
-                    f"}}"
-                    f"QRadioButton::indicator:checked{{"
-                    f"background: rgba{text_color.toTuple()};"
-                    f"}}"
-                    f"QRadioButton::hover{{"
-                    f"border-color: rgba{highlight_color.toTuple()};"
-                    f"}}"
-                    f"QRadioButton::focus{{"
-                    f"outline-style: solid;"
-                    f"outline-width: 2px;"
-                    f"outline-radius: 3px;"
-                    f"outline-color: rgba{highlight_color.toTuple()};"
-                    f"}}"
+                    color_swatch_style(
+                        primary_color,
+                        text_color,
+                        border_color,
+                        highlight_color,
+                        text_color if color.secondary else None,
+                    )
                 )
                 radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
                 color_group_layout.addWidget(radio_button)
@@ -136,7 +116,7 @@ class TagColorSelection(PanelWidget):
 
     def add_no_color_widget(self):
         no_color_str: str = Translations["color.title.no_color"]
-        self.scroll_layout.addWidget(QLabel(f"<h4>{no_color_str}</h4>"))
+        self.scroll_layout.addWidget(QLabel(header(no_color_str, 4)))
         color_box_widget = QWidget()
         color_group_layout = FlowLayout()
         color_group_layout.setSpacing(4)
@@ -145,45 +125,20 @@ class TagColorSelection(PanelWidget):
         color_box_widget.setLayout(color_group_layout)
         color = None
         primary_color = self._get_primary_color(color)
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
+        border_color = get_tag_border_color(primary_color)
+        highlight_color = get_tag_highlight_color(primary_color)
         text_color: QColor
         if color and color.secondary and color.color_border:
             text_color = QColor(color.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         radio_button = QRadioButton()
-        radio_button.setObjectName("None")  # NOTE: Internal use, no translation needed.
+        radio_button.setObjectName("None")
         radio_button.setToolTip(no_color_str)
         radio_button.setFixedSize(24, 24)
         radio_button.setStyleSheet(
-            f"QRadioButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 3px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QRadioButton::indicator{{"
-            f"width: 12px;"
-            f"height: 12px;"
-            f"border-radius: 1px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QRadioButton::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::focus{{"
-            f"outline-style: solid;"
-            f"outline-width: 2px;"
-            f"outline-radius: 3px;"
-            f"outline-color: rgba{highlight_color.toTuple()};"
-            f"}}"
+            color_swatch_style(primary_color, text_color, border_color, highlight_color)
         )
         radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
         color_group_layout.addWidget(radio_button)

@@ -16,44 +16,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import button_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
-
-BUTTON_STYLE: str = f"""
-    QPushButton{{
-        background-color: {Theme.COLOR_BG.value};
-        border-radius: 6px;
-        font-weight: 500;
-        text-align: center;
-    }}
-    QPushButton::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
-        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::disabled{{
-        background-color: {Theme.COLOR_DISABLED_BG.value};
-    }}
-"""
 
 
 class PreviewPanelView(QWidget):
@@ -94,13 +69,13 @@ class PreviewPanelView(QWidget):
         self.__add_tag_button.setEnabled(False)
         self.__add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.__add_tag_button.setMinimumHeight(28)
-        self.__add_tag_button.setStyleSheet(BUTTON_STYLE)
+        self.__add_tag_button.setStyleSheet(button_style())
 
         self.__add_field_button = QPushButton(Translations["field.add"])
         self.__add_field_button.setEnabled(False)
         self.__add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.__add_field_button.setMinimumHeight(28)
-        self.__add_field_button.setStyleSheet(BUTTON_STYLE)
+        self.__add_field_button.setStyleSheet(button_style())
 
         add_buttons_layout.addWidget(self.__add_tag_button)
         add_buttons_layout.addWidget(self.__add_field_button)

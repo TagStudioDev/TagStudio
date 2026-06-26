@@ -33,15 +33,19 @@ from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_widget import (
     TagWidget,
-    get_border_color,
-    get_highlight_color,
-    get_primary_color,
-    get_text_color,
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_primary_color,
+    get_tag_text_color,
 )
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
-from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    checkbox_style,
+    colored_radio_button_style,
+    header,
+    line_edit_style,
+)
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
@@ -244,7 +248,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
-        self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
+        self.root_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
 
@@ -357,13 +361,13 @@ class BuildTagPanel(PanelWidget):
         row.setSpacing(3)
 
         # Init Colors
-        primary_color = get_primary_color(tag)
+        primary_color = get_tag_primary_color(tag)
         border_color = (
-            get_border_color(primary_color)
+            get_tag_border_color(primary_color)
             if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
-        highlight_color = get_highlight_color(
+        highlight_color = get_tag_highlight_color(
             primary_color
             if not (tag.color and tag.color.secondary)
             else QColor(tag.color.secondary)
@@ -372,7 +376,7 @@ class BuildTagPanel(PanelWidget):
         if tag.color and tag.color.secondary:
             text_color = QColor(tag.color.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         # Add Tag Widget
         tag_widget = TagWidget(
@@ -395,35 +399,7 @@ class BuildTagPanel(PanelWidget):
         disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
         disam_button.setStyleSheet(
-            f"QRadioButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QRadioButton::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QRadioButton::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::pressed{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"color: rgba{primary_color.toTuple()};"
-            f"border-color: rgba{primary_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            colored_radio_button_style(primary_color, text_color, border_color, highlight_color)
         )
 
         self.disam_button_group.addButton(disam_button)
@@ -543,11 +519,7 @@ class BuildTagPanel(PanelWidget):
     def on_name_changed(self):
         is_empty = not self.name_field.text().strip()
 
-        self.name_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_empty
-            else ""
-        )
+        self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
 
         if self.panel_save_button is not None:
             self.panel_save_button.setDisabled(is_empty)

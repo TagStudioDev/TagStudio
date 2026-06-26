@@ -3,7 +3,7 @@
 
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -28,6 +28,7 @@ from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -62,7 +63,7 @@ class TagColorManager(QWidget):
         self.title_label = QLabel()
         self.title_label.setObjectName("titleLabel")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setText(f"<h3>{Translations['color_manager.title']}</h3>")
+        self.title_label.setText(header(Translations["color_manager.title"], 3))
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -189,7 +190,7 @@ class TagColorManager(QWidget):
 
         self.create_namespace_modal.show()
 
-    def delete_namespace_dialog(self, prompt: str, callback: Callable) -> None:
+    def delete_namespace_dialog(self, prompt: str, callback: Callable[..., Any]) -> None:  # pyright: ignore[reportExplicitAny]
         message_box = QMessageBox()
         message_box.setText(prompt)
         message_box.setWindowTitle(Translations["color.namespace.delete.title"])
@@ -207,13 +208,13 @@ class TagColorManager(QWidget):
         callback()
 
     @override
-    def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa N802
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
         if not self.is_initialized:
             self.setup_color_groups()
         return super().showEvent(event)
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == QtCore.Qt.Key.Key_Escape:  # noqa SIM114
             self.done_button.click()
         elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
