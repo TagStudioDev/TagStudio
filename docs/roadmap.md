@@ -12,7 +12,7 @@ This page outlines the current and planned features required for TagStudio to be
 
 This roadmap will update as new features are planned or completed. If there's a feature you'd like to see but is not listed on this page, please check the GitHub [Issues](https://github.com/TagStudioDev/TagStudio/issues) page and submit a feature request if one does not already exist!
 
-## Priority Levels
+## :material-chevron-triple-up: Priority Levels
 
 Planned features and changes are assigned **priority levels** to signify how important they are to the feature-complete version of TagStudio and to serve as a general guide for what should be worked on first, along with [version estimates](#version-estimates). When features are completed, their priority level icons are removed.
 
@@ -22,28 +22,28 @@ Planned features and changes are assigned **priority levels** to signify how imp
     - :material-chevron-double-up:{ .priority-med title="Medium Priority" } **Medium Priority** - Important, but not necessary
     - :material-chevron-up:{ .priority-low title="Low Priority" } **Low Priority** - Just nice to have
 
-## Version Estimates
+## :material-map-clock: Version Estimates
 
 Features are given rough estimations for which version they will be completed in listed next to their names (e.g. Feature **[v9.0.0]**). When the feature is completed they're linked to their respective changelog release, if applicable.
 
-| Version Cycle    | Focused Features                                         |
-| ---------------- | -------------------------------------------------------- |
-| ~~Alpha v9.5.x~~ | ~~Migrate from JSON to SQLite database format~~          |
-| Alpha v9.6.x     | Necessary database changes for upcoming features         |
-| Alpha v9.7.x     | Implement currently solidified features                  |
-| Beta v9.8.x      | Solidify remaining features and implementations          |
-| Beta v9.9.x      | Make any additions and fixes from earlier release cycles |
-| v10.0.x          | Full release                                             |
+| Version Cycle        | Goals                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Alpha v9.5.x**~~ | ~~Migrate from JSON to SQLite database format~~                                                                           |
+| **Alpha v9.6.x**     | Necessary database changes for upcoming features ([fields](#entries), [file metadata](#sql-based-library-database), etc.) |
+| **Alpha v9.7.x**     | Implement currently solidified features ([entry groups](#entries), etc.)                                                  |
+| **Beta v9.8.x**      | Solidify remaining features and implementations ([component tags](#tags), etc.)                                           |
+| **Beta v9.9.x**      | Make any additions and fixes from earlier release cycles                                                                  |
+| **v10.0.x**          | Feature complete, versioning switches to [semver](https://semver.org/)                                                    |
 
 <!-- prettier-ignore -->
 !!! tip
     For a more definitive and up-to-date list of features planned for near-future updates, please reference the current GitHub [Milestones](https://github.com/TagStudioDev/TagStudio/milestones)!
 
-## Core
+## :material-engine: Core
 
-### :material-database: SQL Library Database
+### :material-database: SQL-Based Library Database
 
-An improved SQLite-based library save file format in which legacy JSON libraries are be migrated to.
+A SQLite database file used as the [library](./libraries.md) save file format. Legacy JSON libraries are migrated to this improved format.
 
 <!-- prettier-ignore -->
 !!! note
@@ -75,13 +75,13 @@ A detailed written specification for the TagStudio tag and/or library format. In
 
 ---
 
-## Application
+## :material-application-outline: Application
 
 ### :material-button-cursor: UI/UX
 
 - [x] Library Grid View
     - [ ] Explore Filesystem in Grid View :material-chevron-double-up:{ .priority-med title="Medium Priority" }
-    - [x] Infinite Scrolling (No Pagination) **[[9.5.6](changelog.md#956-october-20th-2025)]**
+    - [x] Infinite Scrolling **[[v9.5.6](changelog.md#956-october-20th-2025)]**
 - [ ] Library List View :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [ ] Explore Filesystem in List View :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 - [ ] Lightbox View :material-chevron-double-up:{ .priority-med title="Medium Priority" }
@@ -114,9 +114,9 @@ A detailed written specification for the TagStudio tag and/or library format. In
     - [ ] OBJ File Support
 - [ ] Plaintext Thumbnails/Previews
     - [x] Basic Support
-    - [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" } **[[v9.6.x]]**
-    - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[[v9.6.x]]**
-- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[[v9.8.x]]**
+    - [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+    - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
+- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
     - [ ] Top Tags
     - [ ] Recent Tags
     - [ ] Tag Search
@@ -144,7 +144,7 @@ A detailed written specification for the TagStudio tag and/or library format. In
 
 ---
 
-## Library
+## :material-database: Library
 
 ### :material-wrench: Library Mechanics
 
@@ -200,15 +200,15 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 - [ ] Tag Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Small Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Large Icons for Profiles :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
-    - [ ] Built-in Icon Packs (i.e. Boxicons) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
+    - [ ] Built-in Icon Packs (e.g. Boxicons) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] User-Defined Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Tint Icons with Text Color :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
 - [x] [Category Property](tags.md#is-category) **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title
     - [ ] Fine-tuned exclusion from categories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
-- [x] Hidden Property **[[v9.5.7]](changelog.md#957-may-5th-2026)**
-    - [x] Built-in "Archived" tag has this property by default **[[v9.5.7]](changelog.md#957-may-5th-2026)**
-    - [x] Checkbox near search bar to show hidden tags in search **[[v9.5.7]](changelog.md#957-may-5th-2026)**
+- [x] Hidden Property **[[v9.5.7](changelog.md#957-may-5th-2026)]**
+    - [x] Built-in "Archived" tag has this property by default **[[v9.5.7](changelog.md#957-may-5th-2026)]**
+    - [x] Checkbox near search bar to show hidden tags in search **[[v9.5.7](changelog.md#957-may-5th-2026)]**
 - [ ] Tag Relationships
     - [x] [Parent Tags](tags.md#parent-tags) ([Inheritance](<https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)>) Relationship) **[v9.0.0]**
     - [ ] [Component Tags](tags.md#component-tags) ([Composition](https://en.wikipedia.org/wiki/Object_composition) Relationship) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
@@ -223,7 +223,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     - [x] Glob Search **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
 - [x] Filetype Search **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] Search by Extension (e.g. ".jpg", ".png") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-        - [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
+        - [x] Optional consolidation of extension synonyms (e.g. ".jpg" can equal ".jpeg") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] Search by media type (e.g. "image", "video", "document") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
 - [ ] Field Content Search :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] [Boolean Operators](search.md) **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
@@ -244,7 +244,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     - [x] Sort by Date Entry Added to Library **[[v9.5.2](changelog.md#952-march-31st-2025)]**
     - [ ] Sort by File Creation Date :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
     - [ ] Sort by File Modification Date :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
-    - [ ] Sort by Date Taken (Photos) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+    - [ ] Sort by Date Taken (Photos) :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
     - [x] Random/Shuffle Sort
 - [ ] OCR Search :material-chevron-up:{ .priority-low title="Low Priority" }
 - [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }

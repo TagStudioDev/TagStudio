@@ -13,7 +13,7 @@ hide:
 <link rel="stylesheet" href="stylesheets/home.css">
 
 <figure markdown="span">
-  ![TagStudio](./assets/ts-9-3_logo_text.png){ width=80% }<h2>A User-Focused Photo & File Management System</h2>
+  ![TagStudio](./assets/tagstudio_logo-text_color.png){ width=80% }<h2>A User-Focused Photo & File Management System</h2>
 </figure>
 
 <br>
@@ -87,7 +87,7 @@ hide:
 
     [:material-arrow-right: View License](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE)
 
-    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#material-database-cog-core-library--cli)
+    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#core-library-cli)
 
 - :material-database:{ .lg .middle } **Central Save File**
 
