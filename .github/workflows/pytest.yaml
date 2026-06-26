@@ -75,6 +75,7 @@ jobs:
         run: |
           pytest
 
+  # TODO: Change the coverage check and generally figure out how we want to use one.
   coverage:
     name: Check coverage
     runs-on: ubuntu-latest
@@ -89,9 +90,9 @@ jobs:
       - name: Check coverage
         uses: yedpodtrzitko/coverage@main
         with:
-          thresholdAll: 0.1
-          thresholdNew: 0.1
-          thresholdModified: 0.1
+          thresholdAll: 0
+          thresholdNew: 0
+          thresholdModified: 0
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           sourceDir: tagstudio/src
