@@ -18,6 +18,7 @@ class ResourceManager:
     _instance: ResourceManager | None
 
     # Resources IDs from "resources.json"
+    about_bg: QPixmap
     adobe_illustrator: Image.Image
     adobe_photoshop: Image.Image
     affinity_photo: Image.Image

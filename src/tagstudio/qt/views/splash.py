@@ -10,7 +10,7 @@ from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSplashScreen, QWidget
 
-from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.core.constants import COPYRIGHT, COPYRIGHT_COMPACT, VERSION, VERSION_BRANCH
 from tagstudio.qt.global_settings import Splash
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
@@ -21,9 +21,6 @@ logger = structlog.get_logger(__name__)
 class SplashScreen:
     """The custom splash screen widget for TagStudio."""
 
-    COPYRIGHT_YEARS: str = "2021-2026"
-    COPYRIGHT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien & TagStudio Contributors"
-    COPYRIGHT_COMPACT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien\n& TagStudio Contributors"
     VERSION_STR: str = f"{Translations['about.version']} {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"  # noqa: E501
     DEFAULT_SPLASH = Splash.AURORA
 
@@ -76,7 +73,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(0, -25, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    SplashScreen.COPYRIGHT,
+                    COPYRIGHT,
                 )
                 # Version
                 pen = QPen(QColor("#9782ff"))
@@ -96,7 +93,7 @@ class SplashScreen:
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(40, 450, 960, 540),
-                    SplashScreen.COPYRIGHT_COMPACT,
+                    COPYRIGHT_COMPACT,
                 )
                 # Version
                 font = painter.font()
@@ -122,7 +119,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(88, -25, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft),
-                    SplashScreen.COPYRIGHT,
+                    COPYRIGHT,
                 )
                 # Version
                 font.setPointSize(math.floor(22 * point_size_scale))
@@ -145,7 +142,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(0, -25, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    SplashScreen.COPYRIGHT,
+                    COPYRIGHT,
                 )
                 # Version
                 pen = QPen(QColor("#7758FF"))

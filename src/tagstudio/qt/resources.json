@@ -1,4 +1,8 @@
 {
+    "about_bg": {
+        "mode": "qpixmap",
+        "path": "qt/images/about_bg.jpg"
+    },
     "adobe_illustrator": {
         "mode": "pil",
         "path": "qt/images/file_icons/adobe_illustrator.png"
@@ -91,6 +95,14 @@
         "mode": "pil",
         "path": "qt/images/file_icons/model.png"
     },
+    "mute_icon": {
+        "mode": "pil",
+        "path": "qt/images/bxs-volume-mute-solid.png"
+    },
+    "pause_icon": {
+        "mode": "pil",
+        "path": "qt/images/pause.png"
+    },
     "presentation": {
         "mode": "pil",
         "path": "qt/images/file_icons/presentation.png"
@@ -158,13 +170,5 @@
     "volume_icon": {
         "mode": "pil",
         "path": "qt/images/bxs-volume-full-solid.png"
-    },
-    "mute_icon": {
-        "mode": "pil",
-        "path": "qt/images/bxs-volume-mute-solid.png"
-    },
-    "pause_icon": {
-        "mode": "pil",
-        "path": "qt/images/pause.png"
     }
 }

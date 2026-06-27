@@ -27,6 +27,7 @@ FFMPEG_MACOS_LOCATIONS: list[str] = [
 ]
 
 
+# TODO: Make this more intuitive to use in other classes
 def _get_ffprobe_location() -> str:
     cmd: str = "ffprobe"
     if platform.system() == "Darwin":
@@ -40,6 +41,7 @@ def _get_ffprobe_location() -> str:
     return cmd
 
 
+# TODO: Make this more intuitive to use in other classes
 def _get_ffmpeg_location() -> str:
     cmd: str = "ffmpeg"
     if platform.system() == "Darwin":
