@@ -48,6 +48,7 @@ from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.paged_body_wrapper import PagedBodyWrapper
 from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -364,7 +365,7 @@ class JsonMigrationModal(QObject):
             iterator = FunctionIterator(self.migration_iterator)
             iterator.value.connect(
                 lambda x: (
-                    pb.setLabelText(f"<h4>{x}</h4>"),
+                    pb.setLabelText(header(x, 4)),
                     self.update_sql_value_ui(show_msg_box=False)
                     if x == Translations["json_migration.checking_for_parity"]
                     else (),
@@ -386,7 +387,7 @@ class JsonMigrationModal(QObject):
             QThreadPool.globalInstance().start(r)
         except Exception as e:
             logger.error("[MigrationModal][Iterator] Error:", error=e)
-            pb.setLabelText(f"<h4>{type(e).__name__}</h4>")
+            pb.setLabelText(header(type(e).__name__, 4))
             pb.setMinimum(1)
             pb.setValue(1)
 
@@ -410,7 +411,7 @@ class JsonMigrationModal(QObject):
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
             yield Translations["json_migration.checking_for_parity"]
-            check_set = set()
+            check_set: set[bool] = set()
             check_set.add(self.check_field_parity())
             check_set.add(self.check_path_parity())
             check_set.add(self.check_name_parity())
@@ -522,7 +523,7 @@ class JsonMigrationModal(QObject):
     def assert_ignore_parity(self) -> None:
         compiled_pats = fnmatch.compile(
             ignore_to_glob(
-                Ignore._load_ignore_file(
+                Ignore._load_ignore_file(  # pyright: ignore[reportPrivateUsage]
                     unwrap(self.json_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
                 )
             ),

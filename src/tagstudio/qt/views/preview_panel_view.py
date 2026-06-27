@@ -16,44 +16,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import button_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
-
-BUTTON_STYLE: str = f"""
-    QPushButton{{
-        background-color: {Theme.COLOR_BG.value};
-        border-radius: 6px;
-        font-weight: 500;
-        text-align: center;
-    }}
-    QPushButton::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
-        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::disabled{{
-        background-color: {Theme.COLOR_DISABLED_BG.value};
-    }}
-"""
 
 
 class PreviewPanelView(QWidget):
@@ -67,7 +42,7 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self._fields = FieldContainers(
+        self._containers = FieldContainers(
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
 
@@ -94,20 +69,20 @@ class PreviewPanelView(QWidget):
         self.__add_tag_button.setEnabled(False)
         self.__add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.__add_tag_button.setMinimumHeight(28)
-        self.__add_tag_button.setStyleSheet(BUTTON_STYLE)
+        self.__add_tag_button.setStyleSheet(button_style())
 
         self.__add_field_button = QPushButton(Translations["field.add"])
         self.__add_field_button.setEnabled(False)
         self.__add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.__add_field_button.setMinimumHeight(28)
-        self.__add_field_button.setStyleSheet(BUTTON_STYLE)
+        self.__add_field_button.setStyleSheet(button_style())
 
         add_buttons_layout.addWidget(self.__add_tag_button)
         add_buttons_layout.addWidget(self.__add_field_button)
 
         preview_layout.addWidget(self.__thumb)
         info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self._fields)
+        info_layout.addWidget(self._containers)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
@@ -148,7 +123,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()
+                self._containers.hide_containers()
 
                 self.add_buttons_enabled = False
 
@@ -163,7 +138,7 @@ class PreviewPanelView(QWidget):
                     stats: FileAttributeData = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
-                self._fields.update_from_entry(entry_id)
+                self._containers.update_from_entry(entry_id)
 
                 self._set_selection_callback()
 
@@ -175,7 +150,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()  # TODO: Allow for mixed editing
+                self._containers.hide_containers()  # TODO: Allow for mixed editing
 
                 self._set_selection_callback()
 
@@ -205,7 +180,7 @@ class PreviewPanelView(QWidget):
     @property
     def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
-        return self._fields
+        return self._containers
 
     @property
     def preview_thumb(self) -> PreviewThumb:

@@ -24,7 +24,7 @@ from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_size, format_timespan
+from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
@@ -45,7 +45,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-import tagstudio.qt.resources_rc  # noqa: F401
+# This import has side-effect of importing PySide resources
+import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
@@ -64,11 +65,7 @@ from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
-from tagstudio.qt.controllers.field_template_search_panel_controller import (
-    FieldTemplateSearchPanel,
-)
-
-# this import has side-effect of import PySide resources
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
@@ -102,6 +99,7 @@ from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSea
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.stylesheets.stylesheets import header
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
@@ -376,10 +374,12 @@ class QtDriver(DriverMixin, QObject):
                 view=TagSearchPanelView(is_tag_chooser=False),
             ),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.tag_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Color Group Manager panel
@@ -393,10 +393,12 @@ class QtDriver(DriverMixin, QObject):
                 view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
             ),
             title=Translations["field_template_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.field_template_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Tag Search panel
@@ -741,7 +743,7 @@ class QtDriver(DriverMixin, QObject):
         self.ignore_modal = PanelModal(
             panel,
             Translations["menu.edit.ignore_files"],
-            has_save=True,
+            is_savable=True,
         )
         self.ignore_modal.saved.connect(panel.save)
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
@@ -880,7 +882,7 @@ class QtDriver(DriverMixin, QObject):
             panel,
             Translations["tag.new"],
             Translations["tag.add"],
-            has_save=True,
+            is_savable=True,
         )
 
         self.modal.saved.connect(
@@ -1013,9 +1015,8 @@ class QtDriver(DriverMixin, QObject):
         perm_warning_msg = Translations.format(
             "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
-        perm_warning: str = (
-            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
-            f"{perm_warning_msg}</h4>"
+        perm_warning: str = header(
+            perm_warning_msg, 4, get_ui_color(ColorType.PRIMARY, UiColor.RED)
         )
 
         msg = QMessageBox()
@@ -1032,8 +1033,8 @@ class QtDriver(DriverMixin, QObject):
                 "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.singular']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.singular'], 4)}"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
@@ -1044,8 +1045,8 @@ class QtDriver(DriverMixin, QObject):
                 trash_term=trash_term(),
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.plural']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.plural'], 4)}"
                 f"{perm_warning}<br>"
             )
 
@@ -1068,9 +1069,7 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(
-            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
-        )
+        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),

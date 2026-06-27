@@ -225,7 +225,9 @@ def test_remove_text_field_entry_with_multiple_fields(library: Library, entry_fu
 def test_update_entry_field(library: Library, entry_full: Entry):
     title_field = entry_full.text_fields[0]
 
-    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
 
     entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
@@ -241,7 +243,9 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
     library.add_field_to_entries(entry_full.id, field=empty_title)
 
     # update one of the fields
-    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
 
     # Then only one should be updated
     entry = next(library.all_entries(with_joins=True))

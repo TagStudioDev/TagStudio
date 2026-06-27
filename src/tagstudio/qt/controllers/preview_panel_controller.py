@@ -42,11 +42,11 @@ class PreviewPanel(PreviewPanelView):
         self.__add_tag_modal.tsp.item_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
-        self._fields.add_field_to_selected(template)
+        self._containers.add_field_to_selected(template)
         if len(self._selected) == 1:
-            self._fields.update_from_entry(self._selected[0])
+            self._containers.update_from_entry(self._selected[0])
 
     def _add_tag_to_selected(self, tag_id: int) -> None:
-        self._fields.add_tags_to_selected(tag_id)
+        self._containers.add_tags_to_selected(tag_id)
         if len(self._selected) == 1:
-            self._fields.update_from_entry(self._selected[0])
+            self._containers.update_from_entry(self._selected[0])

@@ -3,10 +3,11 @@
 
 
 import math
+from pathlib import Path
 
 from PIL import ImageQt
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -17,34 +18,28 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.constants import VERSION, VERSION_BRANCH
-from tagstudio.core.enums import Theme
+from tagstudio.core.constants import (
+    DISCORD_URL,
+    DOCS_URL,
+    GITHUB_REPO_URL,
+    VERSION,
+    VERSION_BRANCH,
+)
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import form_content_style, header
 
 
 class AboutModal(QWidget):
-    def __init__(self, config_path):
+    def __init__(self, config_path: Path | str):
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
 
         self.rm: ResourceManager = ResourceManager()
-
-        # TODO: There should be a global button theme somewhere.
-        self.form_content_style = (
-            f"background-color:{
-                Theme.COLOR_BG.value
-                if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-                else Theme.COLOR_BG_LIGHT.value
-            };"
-            "border-radius:3px;"
-            "font-weight: 500;"
-            "padding: 2px;"
-        )
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(360, 540)
@@ -72,7 +67,8 @@ class AboutModal(QWidget):
 
         # Title ----------------------------------------------------------------
         branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.title_label = QLabel(f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
+        # NOTE: Do not localize program name.
+        self.title_label = QLabel(header(f"TagStudio Alpha {VERSION}{branch}", 2))
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Description ----------------------------------------------------------
@@ -105,14 +101,18 @@ class AboutModal(QWidget):
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Version
-        version_title = QLabel("Version")
-        most_recent_release = unwrap(TagStudioCore.get_most_recent_release_version(), "UNKNOWN")
-        version_content_style = self.form_content_style
-        if most_recent_release == VERSION:
+        version_title = QLabel(Translations["about.version"])
+        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "?")
+        version_content_style = form_content_style()
+        if latest_version == VERSION:
             version_content = QLabel(f"{VERSION}")
         else:
-            version_content = QLabel(f"{VERSION} (Latest Release: {most_recent_release})")
-            version_content_style += "color: #d9534f;"
+            version_content = QLabel(
+                Translations.format(
+                    "about.version.latest", built_version=VERSION, latest_version=latest_version
+                )
+            )
+            version_content_style += f"color: {red};"
         version_content.setStyleSheet(version_content_style)
         version_content.setMaximumWidth(version_content.sizeHint().width())
         self.system_info_layout.addRow(version_title, version_content)
@@ -120,40 +120,37 @@ class AboutModal(QWidget):
         # License
         license_title = QLabel(f"{Translations['about.license']}")
         license_content = QLabel("GPLv3")
-        license_content.setStyleSheet(self.form_content_style)
+        license_content.setStyleSheet(form_content_style())
         license_content.setMaximumWidth(license_content.sizeHint().width())
         self.system_info_layout.addRow(license_title, license_content)
 
         # Config Path
         config_path_title = QLabel(f"{Translations['about.config_path']}")
         config_path_content = QLabel(f"{config_path}")
-        config_path_content.setStyleSheet(self.form_content_style)
+        config_path_content.setStyleSheet(form_content_style())
         config_path_content.setWordWrap(True)
         self.system_info_layout.addRow(config_path_title, config_path_content)
 
         # FFmpeg Status
         ffmpeg_path_title = QLabel("FFmpeg")
         ffmpeg_path_content = QLabel(f"{ffmpeg_status}")
-        ffmpeg_path_content.setStyleSheet(self.form_content_style)
+        ffmpeg_path_content.setStyleSheet(form_content_style())
         ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
 
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
         ffprobe_path_content = QLabel(f"{ffprobe_status}")
-        ffprobe_path_content.setStyleSheet(self.form_content_style)
+        ffprobe_path_content.setStyleSheet(form_content_style())
         ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
 
         # Links ----------------------------------------------------------------
-        repo_link = "https://github.com/TagStudioDev/TagStudio"
-        docs_link = "https://docs.tagstud.io"
-        discord_link = "https://discord.com/invite/hRNnVKhF2G"
 
         self.links_label = QLabel(
-            f'<p><a href="{repo_link}">GitHub</a> | '
-            f'<a href="{docs_link}">{Translations["about.documentation"]}</a> | '
-            f'<a href="{discord_link}">Discord</a></p>'
+            f'<p><a href="{GITHUB_REPO_URL}">GitHub</a> | '
+            f'<a href="{DOCS_URL}">{Translations["about.documentation"]}</a> | '
+            f'<a href="{DISCORD_URL}">Discord</a></p>'
         )
         self.links_label.setWordWrap(True)
         self.links_label.setOpenExternalLinks(True)

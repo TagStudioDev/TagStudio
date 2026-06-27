@@ -11,12 +11,14 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.helpers.escape_text import escape_text
-from tagstudio.qt.mixed.tag_widget import (
-    get_border_color,
-    get_highlight_color,
-    get_text_color,
-)
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_text_color,
+    tag_remove_button_style,
+    tag_style,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -101,76 +103,25 @@ class TagColorLabel(QWidget):
 
         primary_color = self._get_primary_color(color)
         border_color = (
-            get_border_color(primary_color)
+            get_tag_border_color(primary_color)
             if not (color and color.secondary and color.color_border)
             else (QColor(color.secondary))
         )
-        highlight_color = get_highlight_color(
+        highlight_color = get_tag_highlight_color(
             primary_color if not (color and color.secondary) else QColor(color.secondary)
         )
         text_color: QColor
         if color and color.secondary:
             text_color = QColor(color.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         self.bg_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"font-weight: 600;"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-left: 4px;"
-            f"font-size: 13px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{highlight_color.toTuple()};"
-            f"color: rgba{primary_color.toTuple()};"
-            f"border-color: rgba{primary_color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"padding-right: 0px;"
-            f"padding-left: 0px;"
-            f"outline-style: solid;"
-            f"outline-width: 1px;"
-            f"outline-radius: 4px;"
-            f"outline-color: rgba{text_color.toTuple()};"
-            f"}}"
+            tag_style(primary_color, text_color, border_color, highlight_color)
         )
 
         self.remove_button.setStyleSheet(
-            f"QPushButton{{"
-            f"color: rgba{primary_color.toTuple()};"
-            f"background: rgba{text_color.toTuple()};"
-            f"font-weight: 800;"
-            f"border-radius: 5px;"
-            f"border-width: 4;"
-            f"border-color: rgba(0,0,0,0);"
-            f"padding-bottom: 4px;"
-            f"font-size: 14px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"border-width: 2;"
-            f"border-radius: 6px;"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            tag_remove_button_style(primary_color, text_color, border_color, highlight_color)
         )
 
         self.bg_button.setText(escape_text(color.name))
@@ -183,13 +134,15 @@ class TagColorLabel(QWidget):
     def set_has_remove(self, has_remove: bool):
         self.has_remove = has_remove
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @typing.override
+    def enterEvent(self, event: QEnterEvent) -> None:
         if self.has_remove:
             self.remove_button.setHidden(False)
         self.update()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @typing.override
+    def leaveEvent(self, event: QEvent) -> None:
         if self.has_remove:
             self.remove_button.setHidden(True)
         self.update()

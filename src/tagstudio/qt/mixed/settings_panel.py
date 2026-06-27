@@ -356,9 +356,9 @@ class SettingsPanel(PanelWidget):
         modal = PanelModal(
             widget=settings_panel,
             window_title=Translations["settings.title"],
-            done_callback=lambda: settings_panel.update_settings(driver),
-            has_save=True,
+            is_savable=True,
         )
+        modal.done.connect(lambda: settings_panel.update_settings(driver))
         modal.title_widget.setVisible(False)
 
         return modal
