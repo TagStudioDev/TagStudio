@@ -5,10 +5,10 @@
 import typing
 from pathlib import Path
 from time import gmtime
-from typing import cast, override
+from typing import override
 
 import structlog
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageQt
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
 from PySide6.QtGui import (
     QAction,
@@ -18,12 +18,12 @@ from PySide6.QtGui import (
     QLinearGradient,
     QMouseEvent,
     QPen,
+    QPixmap,
     QRegion,
     QResizeEvent,
 )
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
@@ -31,10 +31,12 @@ from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QSlider,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
+from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.clickable_slider import ClickableSlider
 
@@ -55,6 +57,18 @@ class MediaPlayer(QGraphicsView):
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
         self.driver = driver
+        self.play_icon = QPixmap.fromImage(
+            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.bxs_right_arrow, use_alpha=False))
+        )
+        self.pause_icon = QPixmap.fromImage(
+            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.pause_icon, use_alpha=False))
+        )
+        self.mute_icon = QPixmap.fromImage(
+            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.mute_icon, use_alpha=False))
+        )
+        self.volume_icon = QPixmap.fromImage(
+            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.volume_icon, use_alpha=False))
+        )
 
         slider_style = """
             QSlider {
@@ -169,27 +183,27 @@ class MediaPlayer(QGraphicsView):
         self.sub_controls.setStyleSheet("background: transparent;")
         self.sub_controls.setMinimumHeight(16)
 
-        self.play_pause = QSvgWidget()
+        self.play_pause = QToolButton()
+        self.play_pause.setStyleSheet("QToolButton { border: none; background: transparent; }")
         self.play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
-        self.play_pause.setMouseTracking(True)
-        self.play_pause.installEventFilter(self)
+        self.play_pause.clicked.connect(self.toggle_play)
         self.load_toggle_play_icon(playing=False)
-        self.play_pause.resize(16, 16)
+        self.play_pause.setIconSize(QSize(20, 20))
+        self.play_pause.resize(20, 20)
         self.play_pause.setSizePolicy(fixed_policy)
-        self.play_pause.setStyleSheet("background: transparent;")
         self.play_pause.hide()
 
         sub_layout.addWidget(self.play_pause)
         sub_layout.setAlignment(self.play_pause, Qt.AlignmentFlag.AlignLeft)
 
-        self.mute_unmute = QSvgWidget()
+        self.mute_unmute = QToolButton()
+        self.mute_unmute.setStyleSheet("QToolButton { border: none; background: transparent; }")
         self.mute_unmute.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.mute_unmute.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
-        self.mute_unmute.setMouseTracking(True)
+        self.mute_unmute.clicked.connect(self.toggle_mute)
         self.mute_unmute.installEventFilter(self)
         self.load_mute_unmute_icon(muted=False)
-        self.mute_unmute.resize(16, 16)
+        self.mute_unmute.setIconSize(QSize(20, 20))
+        self.mute_unmute.resize(20, 20)
         self.mute_unmute.setSizePolicy(fixed_policy)
         self.mute_unmute.hide()
 
@@ -210,7 +224,7 @@ class MediaPlayer(QGraphicsView):
         sub_layout.addStretch()
 
         self.position_label = QLabel("0:00")
-        self.position_label.setStyleSheet("color: white;")
+        self.position_label.setStyleSheet("color: white; font-family: Oxanium; font-weight:bold;")
         sub_layout.addWidget(self.position_label)
         root_layout.setAlignment(self.position_label, Qt.AlignmentFlag.AlignRight)
         self.position_label.hide()
@@ -253,21 +267,10 @@ class MediaPlayer(QGraphicsView):
         """Apply a rounded corner effect to the video player."""
         width: int = int(max(self.contentsRect().size().width(), 0))
         height: int = int(max(self.contentsRect().size().height(), 0))
-        mask = Image.new(
-            "RGBA",
-            (
-                width,
-                height,
-            ),
-            (0, 0, 0, 255),
-        )
+        mask = Image.new("RGBA", (width, height), (0, 0, 0, 255))
         draw = ImageDraw.Draw(mask)
-        draw.rounded_rectangle(
-            (0, 0) + (width, height),
-            radius=8,
-            fill=(0, 0, 0, 0),
-        )
-        final_mask = mask.getchannel("A").toqpixmap()
+        draw.rounded_rectangle((0, 0) + (width, height), radius=8, fill=(0, 0, 0, 0))
+        final_mask: QPixmap = mask.getchannel("A").toqpixmap()  # pyright: ignore[reportUnknownVariableType]
         self.setMask(QRegion(QBitmap(final_mask)))
 
     def set_tint_opacity(self, opacity: int) -> None:
@@ -322,15 +325,7 @@ class MediaPlayer(QGraphicsView):
     @override
     def eventFilter(self, arg__1: QObject, arg__2: QEvent) -> bool:
         """Manage events for the media player."""
-        if (
-            arg__2.type() == QEvent.Type.MouseButtonPress
-            and arg__2.button() == Qt.MouseButton.LeftButton  # pyright: ignore[reportAttributeAccessIssue]
-        ):
-            if arg__1 == self.play_pause:
-                self.toggle_play()
-            elif arg__1 == self.mute_unmute:
-                self.toggle_mute()
-        elif arg__2.type() is QEvent.Type.Enter:
+        if arg__2.type() is QEvent.Type.Enter:
             if arg__1 == self or arg__1 == self.video_preview:
                 self.underMouse()
             elif arg__1 == self.mute_unmute:
@@ -414,12 +409,12 @@ class MediaPlayer(QGraphicsView):
             self.player.play()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
-        icon = cast(bytes, self.driver.rm.pause_icon if playing else self.driver.rm.play_icon)
-        self.play_pause.load(icon)
+        icon = self.pause_icon if playing else self.play_icon
+        self.play_pause.setIcon(icon)
 
     def load_mute_unmute_icon(self, muted: bool) -> None:
-        icon = cast(bytes, self.driver.rm.volume_mute_icon if muted else self.driver.rm.volume_icon)
-        self.mute_unmute.load(icon)
+        icon = self.mute_icon if muted else self.volume_icon
+        self.mute_unmute.setIcon(icon)
 
     def slider_value_changed(self, value: int) -> None:
         if self.timeline_slider.isSliderDown():

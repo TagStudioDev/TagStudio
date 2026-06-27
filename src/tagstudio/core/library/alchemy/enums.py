@@ -66,7 +66,7 @@ class TagColorEnum(enum.IntEnum):
 
 class ItemType(enum.Enum):
     ENTRY = 0
-    COLLATION = 1
+    ENTRY_GROUP = 1
     TAG_GROUP = 2
 
 

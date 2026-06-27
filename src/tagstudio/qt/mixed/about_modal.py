@@ -3,6 +3,7 @@
 
 
 import math
+from pathlib import Path
 
 from PIL import ImageQt
 from PySide6.QtCore import Qt
@@ -28,7 +29,7 @@ from tagstudio.qt.translations import Translations
 
 
 class AboutModal(QWidget):
-    def __init__(self, config_path):
+    def __init__(self, config_path: Path | str):
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
 
@@ -47,8 +48,8 @@ class AboutModal(QWidget):
         )
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(360, 540)
-        self.setMaximumSize(600, 600)
+        self.setMinimumSize(420, 500)
+        self.setMaximumSize(600, 800)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(0, 12, 0, 0)
         self.root_layout.setSpacing(0)
@@ -59,12 +60,12 @@ class AboutModal(QWidget):
         self.content_layout.setContentsMargins(12, 12, 12, 12)
         self.content_layout.setSpacing(12)
 
-        # TagStudio Icon Logo --------------------------------------------------
+        # TagStudio Logo -------------------------------------------------------
         self.logo_widget = QLabel()
-        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("icon")))
+        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.ts_logo_text_color))
         self.logo_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
-            math.floor(128 * self.devicePixelRatio()), Qt.TransformationMode.SmoothTransformation
+            math.floor(384 * self.devicePixelRatio()), Qt.TransformationMode.SmoothTransformation
         )
         self.logo_widget.setPixmap(self.logo_pixmap)
         self.logo_widget.setContentsMargins(0, 0, 0, 0)
@@ -72,7 +73,7 @@ class AboutModal(QWidget):
 
         # Title ----------------------------------------------------------------
         branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.title_label = QLabel(f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
+        self.title_label = QLabel(f"<h3>{Translations['about.version']} {VERSION} {branch}</h3>")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Description ----------------------------------------------------------
@@ -105,7 +106,7 @@ class AboutModal(QWidget):
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Version
-        version_title = QLabel("Version")
+        version_title = QLabel(Translations["about.version"])
         most_recent_release = unwrap(TagStudioCore.get_most_recent_release_version(), "UNKNOWN")
         version_content_style = self.form_content_style
         if most_recent_release == VERSION:
@@ -174,8 +175,8 @@ class AboutModal(QWidget):
         self.content_layout.addWidget(self.title_label)
         self.content_layout.addWidget(self.desc_label)
         self.content_layout.addWidget(self.system_info_widget)
-        self.content_layout.addWidget(self.links_label)
         self.content_layout.addStretch(1)
+        self.content_layout.addWidget(self.links_label)
         self.content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.root_layout.addWidget(self.content_widget)

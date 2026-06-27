@@ -56,6 +56,7 @@ class SettingsPanel(PanelWidget):
         Splash.CLASSIC: Translations["settings.splash.option.classic"],
         Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
         Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
+        Splash.AURORA: Translations["settings.splash.option.aurora"],
     }
 
     tag_click_action_map: dict[TagClickActionOption, str] = {

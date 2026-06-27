@@ -449,11 +449,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image) or icon is None
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -547,11 +546,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image)
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
@@ -1597,7 +1595,7 @@ class ThumbRenderer(QObject):
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
+            icon: Image.Image = self.rm.ignored
 
             icon = icon.resize(
                 (
