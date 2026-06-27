@@ -409,12 +409,10 @@ class MediaPlayer(QGraphicsView):
             self.player.play()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
-        icon = self.pause_icon if playing else self.play_icon
-        self.play_pause.setIcon(icon)
+        self.play_pause.setIcon(self.pause_icon if playing else self.play_icon)
 
     def load_mute_unmute_icon(self, muted: bool) -> None:
-        icon = self.mute_icon if muted else self.volume_icon
-        self.mute_unmute.setIcon(icon)
+        self.mute_unmute.setIcon(self.mute_icon if muted else self.volume_icon)
 
     def slider_value_changed(self, value: int) -> None:
         if self.timeline_slider.isSliderDown():
