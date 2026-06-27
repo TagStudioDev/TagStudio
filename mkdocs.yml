@@ -85,7 +85,7 @@ theme:
         icon: material/lightbulb-night-outline
         name: Switch to System Preference
   logo: assets/icon_mono.svg
-  favicon: assets/favicon.png
+  favicon: assets/favicon.ico
   font:
     code: Jetbrains Mono
   language: en
