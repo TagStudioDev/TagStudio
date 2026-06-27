@@ -19,6 +19,7 @@ path = [
 
     ".git-blame-ignore-revs",
     ".gitattributes",
+    ".github/ISSUE_TEMPLATE/**",
     ".gitignore",
     ".pre-commit-config.yaml",
     "flake.lock",
