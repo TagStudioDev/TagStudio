@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
 from PySide6.QtGui import QAction, QDrag, QEnterEvent, QGuiApplication, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QBoxLayout, QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
@@ -62,17 +61,7 @@ def badge_update_lock(func):
 
 
 class ItemThumb(FlowWidget):
-    """The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.)."""
-
-    collation_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[2] / "resources/qt/images/collation_icon_128.png")
-    )
-    collation_icon_128.load()
-
-    tag_group_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[2] / "resources/qt/images/tag_group_icon_128.png")
-    )
-    tag_group_icon_128.load()
+    """The thumbnail widget for a library item (Entry, Entry Group, etc.)."""
 
     small_text_style = (
         "background-color:rgba(0, 0, 0, 192);"
@@ -141,8 +130,8 @@ class ItemThumb(FlowWidget):
         # |   ARC FAV| Top Right: Favorite & Archived Badges
         # |          |
         # |          |
-        # |EXT      #| Lower Left: File Type, Tag Group Icon, or Collation Icon
-        # +----------+ Lower Right: Collation Count, Video Length, or Word Count
+        # |EXT      #| Lower Left: File Type or Entry Group Icon
+        # +----------+ Lower Right: Entry Group Count, Video Length, or Word Count
         #
         #   Filename   Underneath: (Optional) Filename
 
@@ -221,19 +210,19 @@ class ItemThumb(FlowWidget):
         # Static Badges ========================================================
 
         # Item Type Badge ------------------------------------------------------
-        # Used for showing the Tag Group / Collation icons.
+        # Used for showing the Entry Group icons.
         # Mutually exclusive with the File Extension Badge.
         self.item_type_badge = QLabel()
         self.item_type_badge.setObjectName("itemBadge")
-        self.item_type_badge.setPixmap(
-            QPixmap.fromImage(
-                ImageQt.ImageQt(
-                    ItemThumb.collation_icon_128.resize(
-                        (check_size, check_size), Image.Resampling.BILINEAR
-                    )
-                )
-            )
-        )
+        # self.item_type_badge.setPixmap(
+        #     QPixmap.fromImage(
+        #         ImageQt.ImageQt(
+        #             ItemThumb.collation_icon_128.resize(
+        #                 (check_size, check_size), Image.Resampling.BILINEAR
+        #             )
+        #         )
+        #     )
+        # )
         self.item_type_badge.setMinimumSize(check_size, check_size)
         self.item_type_badge.setMaximumSize(check_size, check_size)
         self.bottom_layout.addWidget(self.item_type_badge)
@@ -247,7 +236,7 @@ class ItemThumb(FlowWidget):
         self.bottom_layout.addStretch(2)
 
         # Count Badge ----------------------------------------------------------
-        # Used for Tag Group + Collation counts, video length, word count, etc.
+        # Used for Entry Group counts, video length, word count, etc.
         self.count_badge = QLabel()
         self.count_badge.setObjectName("countBadge")
         self.count_badge.setText("-:--")
@@ -343,20 +332,13 @@ class ItemThumb(FlowWidget):
             self.count_badge.setStyleSheet(ItemThumb.small_text_style)
             self.count_badge.setHidden(True)
             self.ext_badge.setHidden(True)
-        elif mode == ItemType.COLLATION:
+        elif mode == ItemType.ENTRY_GROUP:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
             self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
             self.ext_badge.setHidden(True)
             self.count_badge.setStyleSheet(ItemThumb.med_text_style)
-            self.count_badge.setHidden(False)
-            self.item_type_badge.setHidden(False)
-        elif mode == ItemType.TAG_GROUP:
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
-            self.thumb_button.setHidden(False)
-            self.ext_badge.setHidden(True)
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         self.mode = mode

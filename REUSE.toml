@@ -34,17 +34,18 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 [[annotations]]
 path = [
+    "src/tagstudio/resources/qt/images/bxs-clipboard-regular.png",
     "src/tagstudio/resources/qt/images/bxs-left-arrow.png",
+    "src/tagstudio/resources/qt/images/bxs-pencil-solid.png",
     "src/tagstudio/resources/qt/images/bxs-right-arrow.png",
+    "src/tagstudio/resources/qt/images/bxs-trash-solid.png",
+    "src/tagstudio/resources/qt/images/bxs-volume-full-solid.png",
     "src/tagstudio/resources/qt/images/file_icons/database.png",
 ]
 SPDX-FileCopyrightText = "(c) 2026 Boxicons"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = [
-    "src/tagstudio/resources/qt/images/volume.svg",
-    "src/tagstudio/resources/qt/images/volume_mute.svg",
-]
+path = ["src/tagstudio/resources/qt/images/dupe_file_stat.png"]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
 SPDX-License-Identifier = "Apache-2.0"

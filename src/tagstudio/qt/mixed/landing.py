@@ -4,7 +4,6 @@
 
 import sys
 import typing
-from pathlib import Path
 
 import structlog
 from PIL import Image, ImageQt
@@ -12,7 +11,8 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.clickable_label import ClickableLabel
 
@@ -24,6 +24,10 @@ logger = structlog.get_logger(__name__)
 
 
 class LandingWidget(QWidget):
+    rm: ResourceManager = ResourceManager()
+    mono_logo: Image.Image = rm.ts_logo_text_mono
+    color_logo: Image.Image = rm.ts_logo_text_color
+
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
         self.driver = driver
@@ -39,10 +43,6 @@ class LandingWidget(QWidget):
         self.setLayout(self.landing_layout)
 
         # Create landing logo --------------------------------------------------
-        # self.landing_logo_pixmap = QPixmap(":/images/tagstudio_logo_text_mono.png")
-        self.logo_raw: Image.Image = Image.open(
-            Path(__file__).parents[2] / "resources/qt/images/tagstudio_logo_text_mono.png"
-        )
         self.landing_pixmap: QPixmap = QPixmap()
         self.update_logo_color()
         self.logo_label.clicked.connect(self._update_special_click)
@@ -58,9 +58,9 @@ class LandingWidget(QWidget):
 
         # Create "Open/Create Library" button ----------------------------------
         if sys.platform == "darwin":
-            open_shortcut_text = "(⌘+O)"
+            open_shortcut_text = "(⌘ + O)"
         else:
-            open_shortcut_text = "(Ctrl+O)"
+            open_shortcut_text = "(Ctrl + O)"
         self.open_button: QPushButton = QPushButton(
             Translations.format("landing.open_create_library", shortcut=open_shortcut_text)
         )
@@ -83,21 +83,22 @@ class LandingWidget(QWidget):
         self.landing_layout.addWidget(self.open_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.landing_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    def update_logo_color(self, style: typing.Literal["mono", "gradient"] = "mono"):
+    def update_logo_color(self, style: typing.Literal["mono", "color"] = "mono"):
         """Update the color of the TagStudio logo.
 
         Args:
-            style (str): = The style of the logo. Either "mono" or "gradient".
+            style (str): = The style of the logo. Either "mono" or "color".
         """
         if style == "mono":
-            logo_im = theme_fg_overlay(self.logo_raw)
-        elif style == "gradient":
-            gradient_colors: list[str] = ["#d27bf4", "#7992f5", "#63c6e3", "#63f5cf"]
-            logo_im = gradient_overlay(self.logo_raw, gradient_colors)
+            logo_im = theme_fg_overlay(LandingWidget.mono_logo)
+        elif style == "color":
+            logo_im = LandingWidget.color_logo
 
-        logo_final: Image.Image = Image.new(mode="RGBA", size=self.logo_raw.size, color="#00000000")
+        logo_final: Image.Image = Image.new(
+            mode="RGBA", size=LandingWidget.mono_logo.size, color="#00000000"
+        )
 
-        logo_final.paste(logo_im, (0, 0), mask=self.logo_raw)
+        logo_final.paste(logo_im, (0, 0), mask=LandingWidget.mono_logo)
 
         self.landing_pixmap = QPixmap.fromImage(ImageQt.ImageQt(logo_im))
         self.landing_pixmap.setDevicePixelRatio(self._pixel_ratio)
@@ -105,7 +106,10 @@ class LandingWidget(QWidget):
             self._logo_width, Qt.TransformationMode.SmoothTransformation
         )
         self.logo_label.setMaximumHeight(
-            int(self.logo_raw.size[1] * (self.logo_raw.size[0] / self._logo_width))
+            int(
+                LandingWidget.mono_logo.size[1]
+                * (LandingWidget.mono_logo.size[0] / self._logo_width)
+            )
         )
         self.logo_label.setMaximumWidth(self._logo_width)
         self.logo_label.setPixmap(self.landing_pixmap)
@@ -119,17 +123,13 @@ class LandingWidget(QWidget):
         if self._special_click_count >= 0:
             self._special_click_count += 1
             if self._special_click_count >= 10:
-                self.update_logo_color("gradient")
+                self.update_logo_color("color")
                 self.animate_logo_pop()
                 self._special_click_count = -1
 
     def animate_logo_in(self):
-        """Animate in the TagStudio logo."""
-        # NOTE: Sometimes, mostly on startup without a library open, the
-        # y position of logo_label is something like 10. I'm not sure what
-        # the cause of this is, so I've just done this workaround to disable
-        # the animation if the y position is too incorrect.
-        if self.logo_label.y() > 50:
+        """Animate the TagStudio logo in, if not opening a library on start."""
+        if not self.driver.settings.open_last_loaded_on_startup and not self.driver.args.open:
             self.logo_pos_anim.setStartValue(QPoint(self.logo_label.x(), self.logo_label.y() - 100))
             self.logo_pos_anim.setEndValue(self.logo_label.pos())
             self.logo_pos_anim.start()

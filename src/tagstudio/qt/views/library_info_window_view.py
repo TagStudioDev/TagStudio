@@ -268,7 +268,7 @@ class LibraryInfoWindowView(QWidget):
         )
 
         self.unlinked_icon = QLabel()
-        unlinked_image: Image.Image = self.driver.rm.get("unlinked_stat")  # pyright: ignore[reportAssignmentType]
+        unlinked_image: Image.Image = self.driver.rm.unlinked_stat
         unlinked_pixmap = QPixmap.fromImage(ImageQt.ImageQt(unlinked_image))
         unlinked_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         unlinked_pixmap = unlinked_pixmap.scaledToWidth(
@@ -278,7 +278,7 @@ class LibraryInfoWindowView(QWidget):
         self.unlinked_icon.setPixmap(unlinked_pixmap)
 
         self.ignored_icon = QLabel()
-        ignored_image: Image.Image = self.driver.rm.get("ignored_stat")  # pyright: ignore[reportAssignmentType]
+        ignored_image: Image.Image = self.driver.rm.ignored_stat
         ignored_pixmap = QPixmap.fromImage(ImageQt.ImageQt(ignored_image))
         ignored_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         ignored_pixmap = ignored_pixmap.scaledToWidth(
@@ -288,7 +288,7 @@ class LibraryInfoWindowView(QWidget):
         self.ignored_icon.setPixmap(ignored_pixmap)
 
         self.dupe_file_icon = QLabel()
-        dupe_file_image: Image.Image = self.driver.rm.get("dupe_file_stat")  # pyright: ignore[reportAssignmentType]
+        dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
         dupe_file_pixmap = QPixmap.fromImage(
             ImageQt.ImageQt(theme_fg_overlay(dupe_file_image, use_alpha=False))
         )
