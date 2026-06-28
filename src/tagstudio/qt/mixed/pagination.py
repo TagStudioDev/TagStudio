@@ -11,7 +11,7 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
 
@@ -45,7 +45,7 @@ class Pagination(QWidget):
         # [<] ----------------------------------
         self.prev_button = QPushButtonWrapper()
         prev_icon: Image.Image = self.rm.bxs_left_arrow
-        prev_icon = theme_fg_overlay(prev_icon, use_alpha=False)
+        prev_icon = auto_theme_overlay(prev_icon, use_alpha=False)
         self.prev_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(prev_icon)))
         self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.button_size)
@@ -98,7 +98,7 @@ class Pagination(QWidget):
         # ---------------------------------- [>]
         self.next_button = QPushButtonWrapper()
         next_icon: Image.Image = self.rm.bxs_right_arrow
-        next_icon = theme_fg_overlay(next_icon, use_alpha=False)
+        next_icon = auto_theme_overlay(next_icon, use_alpha=False)
         self.next_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(next_icon)))
         self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.button_size)

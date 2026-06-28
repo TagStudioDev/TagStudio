@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
 
@@ -290,7 +290,7 @@ class LibraryInfoWindowView(QWidget):
         self.dupe_file_icon = QLabel()
         dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
         dupe_file_pixmap = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(dupe_file_image, use_alpha=False))
+            ImageQt.ImageQt(auto_theme_overlay(dupe_file_image, use_alpha=False))
         )
         dupe_file_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         dupe_file_pixmap = dupe_file_pixmap.scaledToWidth(

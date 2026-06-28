@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import light_overlay
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.clickable_slider import ClickableSlider
 
@@ -58,16 +58,16 @@ class MediaPlayer(QGraphicsView):
         super().__init__()
         self.driver = driver
         self.play_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.bxs_right_arrow, use_alpha=False))
+            ImageQt.ImageQt(light_overlay(self.driver.rm.bxs_right_arrow, use_alpha=False))
         )
         self.pause_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.pause_icon, use_alpha=False))
+            ImageQt.ImageQt(light_overlay(self.driver.rm.pause_icon, use_alpha=False))
         )
         self.mute_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.mute_icon, use_alpha=False))
+            ImageQt.ImageQt(light_overlay(self.driver.rm.mute_icon, use_alpha=False))
         )
         self.volume_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(self.driver.rm.volume_icon, use_alpha=False))
+            ImageQt.ImageQt(light_overlay(self.driver.rm.volume_icon, use_alpha=False))
         )
 
         slider_style = """

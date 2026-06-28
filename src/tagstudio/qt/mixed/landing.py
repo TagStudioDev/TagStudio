@@ -11,7 +11,7 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.clickable_label import ClickableLabel
@@ -90,7 +90,7 @@ class LandingWidget(QWidget):
             style (str): = The style of the logo. Either "mono" or "color".
         """
         if style == "mono":
-            logo_im = theme_fg_overlay(LandingWidget.mono_logo)
+            logo_im = auto_theme_overlay(LandingWidget.mono_logo)
         elif style == "color":
             logo_im = LandingWidget.color_logo
 

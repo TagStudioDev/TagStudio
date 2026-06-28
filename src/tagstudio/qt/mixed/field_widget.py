@@ -13,7 +13,7 @@ from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import Theme
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
 
 logger = structlog.get_logger(__name__)
@@ -21,9 +21,9 @@ logger = structlog.get_logger(__name__)
 
 class FieldContainer(QWidget):
     rm: ResourceManager = ResourceManager()
-    copy_icon = theme_fg_overlay(rm.copy, inverse=True)
-    edit_icon = theme_fg_overlay(rm.edit, inverse=True)
-    trash_icon = theme_fg_overlay(rm.trash, inverse=True)
+    copy_icon = auto_theme_overlay(rm.copy, inverse=True)
+    edit_icon = auto_theme_overlay(rm.edit, inverse=True)
+    trash_icon = auto_theme_overlay(rm.trash, inverse=True)
 
     # TODO: There should be a global button theme somewhere.
     container_style = (

@@ -73,7 +73,7 @@ from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
@@ -1100,7 +1100,7 @@ class ThumbRenderer(QObject):
                 y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
                     (0, 0), "A", font=font
                 )[-1]
-            im = theme_fg_overlay(bg, use_alpha=False)
+            im = auto_theme_overlay(bg, use_alpha=False)
         except OSError as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im

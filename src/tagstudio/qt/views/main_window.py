@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
 from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
@@ -548,7 +548,7 @@ class MainWindow(QMainWindow):
 
         self.back_button = QPushButton(self.central_widget)
         back_icon: Image.Image = self.rm.bxs_left_arrow
-        back_icon = theme_fg_overlay(back_icon, use_alpha=False)
+        back_icon = auto_theme_overlay(back_icon, use_alpha=False)
         self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
         self.back_button.setObjectName("back_button")
         self.back_button.setMinimumSize(QSize(32, 32))
@@ -557,7 +557,7 @@ class MainWindow(QMainWindow):
 
         self.forward_button = QPushButton(self.central_widget)
         forward_icon: Image.Image = self.rm.bxs_right_arrow
-        forward_icon = theme_fg_overlay(forward_icon, use_alpha=False)
+        forward_icon = auto_theme_overlay(forward_icon, use_alpha=False)
         self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
         self.forward_button.setIconSize(QSize(16, 16))
         self.forward_button.setObjectName("forward_button")
