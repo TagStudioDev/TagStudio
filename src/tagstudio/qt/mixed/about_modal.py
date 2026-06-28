@@ -41,6 +41,7 @@ class AboutModal(QWidget):
         self.setWindowTitle(Translations["about.title"])
 
         self.rm: ResourceManager = ResourceManager()
+        pixel_ratio = self.devicePixelRatio()
 
         # TODO: There should be a global button theme somewhere.
         self.form_content_style = (
@@ -72,7 +73,7 @@ class AboutModal(QWidget):
         # TagStudio Logo -------------------------------------------------------
         self.logo_widget = QLabel()
         self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.ts_logo_text_color))
-        self.logo_pixmap.setDevicePixelRatio(self.devicePixelRatio())
+        self.logo_pixmap.setDevicePixelRatio(pixel_ratio)
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
             math.floor(384 * self.devicePixelRatio()), Qt.TransformationMode.SmoothTransformation
         )
@@ -229,8 +230,14 @@ class AboutModal(QWidget):
         self.content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.bg_image = self.rm.about_bg
+        self.bg_image.setDevicePixelRatio(pixel_ratio)
         self.bg_image = self.bg_image.scaled(
-            QSize(self.width(), self.maximumHeight()), Qt.AspectRatioMode.IgnoreAspectRatio
+            QSize(
+                math.floor(self.width() * pixel_ratio),
+                math.floor(self.maximumHeight() * pixel_ratio),
+            ),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
         palette = QPalette()
         palette.setBrush(QPalette.ColorRole.Window, self.bg_image)
