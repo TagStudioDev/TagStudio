@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
