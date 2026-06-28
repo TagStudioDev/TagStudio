@@ -10,7 +10,7 @@
 [![Ruff](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml)
 
 <p align="center">
-  <img width="60%" src="docs/assets/tagstudio_logo-text_color.png">
+  <img width="60%" src="src/tagstudio/resources/qt/images/tagstudio_logo-text_color.png">
 </p>
 
 TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure. **Read the documentation and more at [docs.tagstud.io](https://docs.tagstud.io)!**
