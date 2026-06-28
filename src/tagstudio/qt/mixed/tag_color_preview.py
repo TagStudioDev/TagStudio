@@ -11,9 +11,14 @@ from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_text_color,
+    tag_style,
+)
 
 if typing.TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
@@ -66,11 +71,11 @@ class TagColorPreview(QWidget):
 
         primary_color = self._get_primary_color(color_group)
         border_color = (
-            get_border_color(primary_color)
+            get_tag_border_color(primary_color)
             if not (color_group and color_group.secondary and color_group.color_border)
             else (QColor(color_group.secondary))
         )
-        highlight_color = get_highlight_color(
+        highlight_color = get_tag_highlight_color(
             primary_color
             if not (color_group and color_group.secondary)
             else QColor(color_group.secondary)
@@ -79,32 +84,10 @@ class TagColorPreview(QWidget):
         if color_group and color_group.secondary:
             text_color = QColor(color_group.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         self.button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"font-weight: 600;"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 8px;"
-            f"padding-left: 8px;"
-            f"font-size: 14px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"padding-right: 0px;"
-            f"padding-left: 0px;"
-            f"outline-style: solid;"
-            f"outline-width: 1px;"
-            f"outline-radius: 4px;"
-            f"outline-color: rgba{text_color.toTuple()};"
-            f"}}"
+            tag_style(primary_color, text_color, border_color, highlight_color)
         )
         # Add back the padding if the hint is generated while the button has focus (no padding)
         self.button.setMinimumWidth(

@@ -29,6 +29,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -56,7 +57,7 @@ def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ..
     return branch
 
 
-@deprecated("Will be replaced with upcoming 'Macros' feature before v9.6")
+@deprecated("Will be replaced with upcoming 'Macros' feature.")
 def folders_to_tags(library: Library):
     logger.info("Converting folders to Tags")
     tree = BranchData()
@@ -177,10 +178,9 @@ class FoldersToTagsModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = QLabel(Translations["folders_to_tags.title"])
+        self.title_widget = QLabel(header(Translations["folders_to_tags.title"], 3))
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()

@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -65,7 +66,7 @@ class LibraryInfoWindowView(QWidget):
         self.stats_layout.setContentsMargins(0, 0, 0, 0)
         self.stats_layout.setSpacing(12)
 
-        self.stats_label = QLabel(f"<h3>{Translations['library_info.stats']}</h3>")
+        self.stats_label = QLabel(header(Translations["library_info.stats"], 3))
         self.stats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stats_grid: QWidget = QWidget()
@@ -223,7 +224,7 @@ class LibraryInfoWindowView(QWidget):
         self.cleanup_layout.setContentsMargins(0, 0, 0, 0)
         self.cleanup_layout.setSpacing(12)
 
-        self.cleanup_label = QLabel(f"<h3>{Translations['library_info.cleanup']}</h3>")
+        self.cleanup_label = QLabel(header(Translations["library_info.cleanup"], 3))
         self.cleanup_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.cleanup_grid: QWidget = QWidget()

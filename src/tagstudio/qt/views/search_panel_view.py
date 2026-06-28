@@ -16,45 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import list_button_style
 
 if TYPE_CHECKING:
     from tagstudio.qt.controllers.search_panel_controller import SearchPanel
-
-CREATE_BUTTON_STYLESHEET: str = f"""
-    QPushButton{{
-        background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};
-        font-weight: 600;
-        border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};
-        border-radius: 6px;
-        border-style: dashed;
-        border-width: 2px;
-        padding-right: 4px;
-        padding-bottom: 1px;
-        padding-left: 4px;
-        font-size: 13px
-    }}
-
-    QPushButton::hover{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-    }}
-
-    QPushButton::pressed{{
-        background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-    }}
-
-    QPushButton::focus{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        outline: none;
-    }}
-"""
 
 
 class SearchPanelView(PanelWidget):
@@ -120,7 +88,7 @@ class SearchPanelView(PanelWidget):
         self.create_and_add_button = QPushButton()
         self.create_and_add_button.setFlat(True)
         self.create_and_add_button.setMinimumSize(22, 22)
-        self.create_and_add_button.setStyleSheet(CREATE_BUTTON_STYLESHEET)
+        self.create_and_add_button.setStyleSheet(list_button_style(border_style="dashed"))
 
     @property
     def scroll_layout(self) -> QVBoxLayout:
@@ -130,7 +98,7 @@ class SearchPanelView(PanelWidget):
     def scroll_area(self) -> QScrollArea:
         return self.__scroll_area
 
-    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:
+    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:  # pyright: ignore[reportExplicitAny]
         self.limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
 
         self.search_field.textChanged.connect(controller.on_search_query_changed)
@@ -139,7 +107,9 @@ class SearchPanelView(PanelWidget):
         )
 
         self.create_button.clicked.connect(controller.on_item_create)
-        self.create_and_add_button.clicked.connect(controller.on_item_create_and_add)
+        self.create_and_add_button.clicked.connect(
+            lambda: controller.on_item_create(add_to_entry=True)
+        )
 
     def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
         # Remove existing limit items
@@ -171,7 +141,7 @@ class SearchPanelView(PanelWidget):
     def scroll_to(self, position: int) -> None:
         self.__scroll_area.verticalScrollBar().setValue(position)
 
-    def get_item_widget(self, index: int, library: Library | None) -> Any:
+    def get_item_widget(self, index: int, library: Library | None) -> Any:  # pyright: ignore[reportUnusedParameter, reportExplicitAny]
         raise NotImplementedError()
 
     def add_create_and_add_button(self) -> None:

@@ -8,7 +8,7 @@ from shutil import which
 
 from PIL import ImageQt
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QGuiApplication, QPalette, QPixmap
+from PySide6.QtGui import QPalette, QPixmap
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -19,16 +19,23 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.constants import COPYRIGHT, VERSION, VERSION_BRANCH
-from tagstudio.core.enums import Theme
+from tagstudio.core.constants import (
+    COPYRIGHT,
+    DISCORD_URL,
+    DOCS_URL,
+    GITHUB_REPO_URL,
+    VERSION,
+    VERSION_BRANCH,
+)
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.clickable_label import ClickableLabel
+from tagstudio.qt.views.stylesheets.stylesheets import form_content_style
 
 
 class AboutModal(QWidget):
@@ -42,18 +49,6 @@ class AboutModal(QWidget):
 
         self.rm: ResourceManager = ResourceManager()
         pixel_ratio = self.devicePixelRatio()
-
-        # TODO: There should be a global button theme somewhere.
-        self.form_content_style = (
-            f"background-color:{
-                Theme.COLOR_BG.value
-                if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-                else Theme.COLOR_BG_LIGHT.value
-            };"
-            "border-radius:3px;"
-            "font-weight: 500;"
-            "padding: 2px;"
-        )
         self.setStyleSheet("QLabel {color: white}")
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -84,7 +79,6 @@ class AboutModal(QWidget):
         # Version --------------------------------------------------------------
         self.version_label = QLabel(f"<h3>{AboutModal.VERSION_STR}</h3>")
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self.version_label.setStyleSheet("QLabel {color: #9782ff}")
 
         # Copyright ------------------------------------------------------------
         self.copyright_label = QLabel(COPYRIGHT)
@@ -128,54 +122,55 @@ class AboutModal(QWidget):
 
         # Version
         version_title = QLabel(Translations["about.version"])
-        most_recent_release = unwrap(TagStudioCore.get_most_recent_release_version(), "UNKNOWN")
-        version_content_style = self.form_content_style
-        if most_recent_release == VERSION:
+        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "?")
+        version_content_style = form_content_style()
+        if latest_version == VERSION:
             version_content = QLabel(f"{VERSION}")
         else:
-            version_content = QLabel(f"{VERSION} (Latest Release: {most_recent_release})")
-            version_content_style += "color: #d9534f;"
+            version_content = QLabel(
+                Translations.format(
+                    "about.version.latest", built_version=VERSION, latest_version=latest_version
+                )
+            )
+            version_content_style += f"color: {red};"
         version_content.setStyleSheet(version_content_style)
         version_content.setMaximumWidth(version_content.sizeHint().width())
         self.system_info_layout.addRow(version_title, version_content)
 
         # Config Path
         config_path_title = QLabel(f"{Translations['about.config_path']}")
-        config_path_content = ClickableLabel()
-        config_path_content.setText(f"{config_path}")  # TODO: Pass in constructor after #1386
+        config_path_content = ClickableLabel(f"{config_path}")
         config_path_content.clicked.connect(lambda: open_file(config_path, file_manager=True))
         config_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        config_path_content.setStyleSheet(self.form_content_style)
         config_path_content.setWordWrap(True)
+        config_path_content.setStyleSheet(form_content_style())
         self.system_info_layout.addRow(config_path_title, config_path_content)
 
         # TODO: Add row for "App Cache Path" (currently that TagStudio.ini file)
 
         # FFmpeg Status
         ffmpeg_path_title = QLabel("FFmpeg")
-        ffmpeg_path_content = ClickableLabel()
-        ffmpeg_path_content.setText(f"{ffmpeg_status}")  # TODO: Pass in constructor after #1386
+        ffmpeg_path_content = ClickableLabel(f"{ffmpeg_status}")
         ffmpeg_location = which(ffmpeg._get_ffmpeg_location())  # pyright: ignore[reportPrivateUsage]
         if ffmpeg_location:
             ffmpeg_path_content.clicked.connect(
                 lambda: open_file(ffmpeg_location, file_manager=True)
             )
             ffmpeg_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        ffmpeg_path_content.setStyleSheet(self.form_content_style)
         ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
+        ffmpeg_path_content.setStyleSheet(form_content_style())
         self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
 
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
-        ffprobe_path_content = ClickableLabel()
-        ffprobe_path_content.setText(f"{ffprobe_status}")  # TODO: Pass in constructor after #1386
+        ffprobe_path_content = ClickableLabel(f"{ffprobe_status}")
         ffprobe_location = which(ffmpeg._get_ffprobe_location())  # pyright: ignore[reportPrivateUsage]
         if ffprobe_location:
             ffprobe_path_content.clicked.connect(
                 lambda: open_file(ffprobe_location, file_manager=True)
             )
             ffprobe_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        ffprobe_path_content.setStyleSheet(self.form_content_style)
+        ffprobe_path_content.setStyleSheet(form_content_style())
         ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
 
@@ -190,19 +185,16 @@ class AboutModal(QWidget):
                 lambda: open_file(ripgrep_location, file_manager=True)
             )
             ripgrep_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        ripgrep_path_content.setStyleSheet(self.form_content_style)
+        ripgrep_path_content.setStyleSheet(form_content_style())
         ripgrep_path_content.setMaximumWidth(ripgrep_path_content.sizeHint().width())
         self.system_info_layout.addRow(ripgrep_path_title, ripgrep_path_content)
 
         # Links ----------------------------------------------------------------
-        repo_link = "https://github.com/TagStudioDev/TagStudio"
-        docs_link = "https://docs.tagstud.io"
-        discord_link = "https://discord.com/invite/hRNnVKhF2G"
 
         self.links_label = QLabel(
-            f'<p><a href="{repo_link}">GitHub</a> | '
-            f'<a href="{docs_link}">{Translations["about.documentation"]}</a> | '
-            f'<a href="{discord_link}">Discord</a></p>'
+            f'<p><a href="{GITHUB_REPO_URL}">GitHub</a> | '
+            f'<a href="{DOCS_URL}">{Translations["about.documentation"]}</a> | '
+            f'<a href="{DISCORD_URL}">Discord</a></p>'
         )
         self.links_label.setStyleSheet("QLabel {color: #809782ff}")
         self.links_label.setWordWrap(True)

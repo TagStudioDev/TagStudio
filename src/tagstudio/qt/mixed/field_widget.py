@@ -12,9 +12,9 @@ from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme
 from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.views.stylesheets.stylesheets import container_style, header
 
 logger = structlog.get_logger(__name__)
 
@@ -26,23 +26,11 @@ class FieldContainer(QWidget):
     trash_icon = auto_theme_overlay(rm.trash, inverse=True)
 
     # TODO: There should be a global button theme somewhere.
-    container_style = (
-        f"QWidget#fieldContainer{{"
-        "border-radius:4px;"
-        f"}}"
-        f"QWidget#fieldContainer::hover{{"
-        f"background-color:{Theme.COLOR_HOVER.value};"
-        f"}}"
-        f"QWidget#fieldContainer::pressed{{"
-        f"background-color:{Theme.COLOR_PRESSED.value};"
-        f"}}"
-    )
 
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
         self.setObjectName("fieldContainer")
         self.title: str = title
-        self.inline: bool = inline
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
@@ -119,7 +107,7 @@ class FieldContainer(QWidget):
         self.inner_layout.addWidget(self.field)
 
         self.set_title(title)
-        self.setStyleSheet(FieldContainer.container_style)
+        self.setStyleSheet(container_style())
 
     def set_copy_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
@@ -159,11 +147,8 @@ class FieldContainer(QWidget):
         return None
 
     def set_title(self, title: str) -> None:
-        self.title = self.title = f"<h4>{title}</h4>"
+        self.title = header(title, 4)
         self.title_widget.setText(self.title)
-
-    def set_inline(self, inline: bool) -> None:
-        self.inline = inline
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

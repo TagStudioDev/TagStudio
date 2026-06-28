@@ -3,6 +3,7 @@
 
 
 import sys
+from collections.abc import Callable
 from typing import cast, override
 
 import structlog
@@ -24,7 +25,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.utils.types import unwrap
@@ -33,27 +33,38 @@ from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_widget import (
     TagWidget,
-    get_border_color,
-    get_highlight_color,
-    get_primary_color,
-    get_text_color,
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_primary_color,
+    get_tag_text_color,
 )
-from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    checkbox_style,
+    colored_radio_button_style,
+    header,
+    line_edit_style,
+)
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
 
 
 class CustomTableItem(QLineEdit):
-    def __init__(self, text, on_return, on_backspace, parent=None):
+    def __init__(
+        self,
+        text: str,
+        on_return: Callable[..., None],
+        on_backspace: Callable[..., None],
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self.setText(text)
-        self.on_return = on_return
-        self.on_backspace = on_backspace
+        self.on_return: Callable[..., None] = on_return
+        self.on_backspace: Callable[..., None] = on_backspace
 
-    def set_id(self, id):
+    def set_id(self, id: int):
         self.id = id
 
     @override
@@ -194,9 +205,9 @@ class BuildTagPanel(PanelWidget):
             self.tag_color_selection,
             chose_tag_color_title,
             chose_tag_color_title,
-            done_callback=lambda: self.choose_color_callback(
-                self.tag_color_selection.selected_color
-            ),
+        )
+        self.choose_color_modal.done.connect(
+            lambda: self.choose_color_callback(self.tag_color_selection.selected_color)
         )
         self.color_button.button.clicked.connect(self.choose_color_modal.show)
         self.color_layout.addWidget(self.color_button)
@@ -211,38 +222,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_title = QLabel(Translations["tag.is_category"])
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
-
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-
-        self.cat_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.cat_checkbox.setStyleSheet(checkbox_style())
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
 
@@ -256,33 +236,7 @@ class BuildTagPanel(PanelWidget):
         self.hidden_title = QLabel(Translations["tag.is_hidden"])
         self.hidden_checkbox = QCheckBox()
         self.hidden_checkbox.setFixedSize(22, 22)
-
-        self.hidden_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.hidden_checkbox.setStyleSheet(checkbox_style())
         self.hidden_layout.addWidget(self.hidden_checkbox)
         self.hidden_layout.addWidget(self.hidden_title)
 
@@ -294,14 +248,14 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
-        self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
+        self.root_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
 
         self.parent_ids: set[int] = set()
         self.alias_ids: list[int] = []
         self.alias_names: list[str] = []
-        self.new_alias_names: dict = {}
+        self.new_alias_names: dict[int, str] = {}
         self.new_item_id = sys.maxsize
 
         self.set_tag(tag or Tag(name=Translations["tag.new"]))
@@ -317,7 +271,7 @@ class BuildTagPanel(PanelWidget):
             item = self.aliases_table.cellWidget(i, 1)
             if (
                 isinstance(item, CustomTableItem)
-                and cast(CustomTableItem, item).id == cast(CustomTableItem, focused_widget).id
+                and item.id == cast(CustomTableItem, focused_widget).id
             ):
                 cast(QPushButton, self.aliases_table.cellWidget(i, 0)).click()
                 remove_row = i
@@ -359,7 +313,7 @@ class BuildTagPanel(PanelWidget):
         item = self.aliases_table.cellWidget(row, 1)
         item.setFocus()
 
-    def remove_alias_callback(self, alias_name: str, alias_id: int):
+    def remove_alias_callback(self, alias_id: int):
         logger.info("remove_alias_callback")
 
         self.alias_ids.remove(alias_id)
@@ -407,13 +361,13 @@ class BuildTagPanel(PanelWidget):
         row.setSpacing(3)
 
         # Init Colors
-        primary_color = get_primary_color(tag)
+        primary_color = get_tag_primary_color(tag)
         border_color = (
-            get_border_color(primary_color)
+            get_tag_border_color(primary_color)
             if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
-        highlight_color = get_highlight_color(
+        highlight_color = get_tag_highlight_color(
             primary_color
             if not (tag.color and tag.color.secondary)
             else QColor(tag.color.secondary)
@@ -422,7 +376,7 @@ class BuildTagPanel(PanelWidget):
         if tag.color and tag.color.secondary:
             text_color = QColor(tag.color.secondary)
         else:
-            text_color = get_text_color(primary_color, highlight_color)
+            text_color = get_tag_text_color(primary_color, highlight_color)
 
         # Add Tag Widget
         tag_widget = TagWidget(
@@ -445,35 +399,7 @@ class BuildTagPanel(PanelWidget):
         disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
         disam_button.setStyleSheet(
-            f"QRadioButton{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QRadioButton::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QRadioButton::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::pressed{{"
-            f"background: rgba{border_color.toTuple()};"
-            f"color: rgba{primary_color.toTuple()};"
-            f"border-color: rgba{primary_color.toTuple()};"
-            f"}}"
-            f"QRadioButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
+            colored_radio_button_style(primary_color, text_color, border_color, highlight_color)
         )
 
         self.disam_button_group.addButton(disam_button)
@@ -530,7 +456,7 @@ class BuildTagPanel(PanelWidget):
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
-            alias_name = alias.name if alias else self.new_alias_names[alias_id]
+            alias_name: str = alias.name if alias else self.new_alias_names[alias_id]
 
             # handel when an alias name changes
             if alias_id in self.new_alias_names:
@@ -539,9 +465,7 @@ class BuildTagPanel(PanelWidget):
             self.alias_names.append(alias_name)
 
             remove_btn = QPushButton("-")
-            remove_btn.clicked.connect(
-                lambda a=alias_name, id=alias_id: self.remove_alias_callback(a, id)
-            )
+            remove_btn.clicked.connect(lambda id=alias_id: self.remove_alias_callback(id))
 
             row = self.aliases_table.rowCount()
             new_item = CustomTableItem(alias_name, self.enter, self.backspace)
@@ -595,11 +519,7 @@ class BuildTagPanel(PanelWidget):
     def on_name_changed(self):
         is_empty = not self.name_field.text().strip()
 
-        self.name_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_empty
-            else ""
-        )
+        self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
 
         if self.panel_save_button is not None:
             self.panel_save_button.setDisabled(is_empty)
@@ -619,6 +539,7 @@ class BuildTagPanel(PanelWidget):
         logger.info("built tag", tag=tag)
         return tag
 
+    @override
     def parent_post_init(self):
         self.setTabOrder(self.name_field, self.shorthand_field)
         self.setTabOrder(self.shorthand_field, self.aliases_add_button)

@@ -30,6 +30,7 @@ from sqlalchemy import (
     Engine,
     NullPool,
     ScalarResult,
+    Update,
     and_,
     asc,
     create_engine,
@@ -1313,6 +1314,114 @@ class Library:
 
             return direct_tags, descendant_tags
 
+    def add_field_template(self, field_template: BaseFieldTemplate) -> BaseFieldTemplate | None:
+        """Add a new field template to the library."""
+        if not (isinstance(field_template, (TextFieldTemplate, DatetimeFieldTemplate))):
+            logger.error("[Library] BaseFieldTemplate attempted to be added to the library.")
+            return None
+
+        with Session(self.engine) as session:
+            try:
+                session.add(field_template)
+                session.flush()
+                make_transient(field_template)
+                session.commit()
+                return field_template
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return None
+
+    def update_field_template(self, old_field_type: str, field_template: BaseFieldTemplate) -> bool:
+        """Update a field template in the library.
+
+        old_field_class:str
+        field_template: BaseFieldTemplate
+        """
+        with Session(self.engine) as session:
+            logger.warning(f"Updating old type {old_field_type} to new {field_template.class_name}")
+            is_same_type: bool = old_field_type == field_template.class_name
+            try:
+                update_stmt: Update | None = None
+                # If the template is changing type, remove the old one and add the updated
+                # template to the proper table.
+                if not is_same_type:
+                    old_template: BaseFieldTemplate | None = None
+                    if old_field_type == "TextFieldTemplate":
+                        old_template = session.scalar(
+                            select(TextFieldTemplate)
+                            .where(TextFieldTemplate.id == field_template.id)
+                            .limit(1)
+                        )
+                    elif old_field_type == "DatetimeFieldTemplate":
+                        old_template = session.scalar(
+                            select(DatetimeFieldTemplate)
+                            .where(DatetimeFieldTemplate.id == field_template.id)
+                            .limit(1)
+                        )
+                    if old_template is None:
+                        logger.error("[Library] old_template is None")
+                        return False
+                    session.delete(old_template)
+                    session.flush()
+                    field_template.id = None  # The id should not transfer between tables
+                    session.add(field_template)
+                    session.commit()
+                # Otherwise, update the existing template in-place
+                elif isinstance(field_template, TextFieldTemplate):
+                    update_stmt = (
+                        update(TextFieldTemplate)
+                        .where(TextFieldTemplate.id == field_template.id)
+                        .values(name=field_template.name, is_multiline=field_template.is_multiline)
+                    )
+                elif isinstance(field_template, DatetimeFieldTemplate):
+                    update_stmt = (
+                        update(DatetimeFieldTemplate)
+                        .where(DatetimeFieldTemplate.id == field_template.id)
+                        .values(name=field_template.name)
+                    )
+                if is_same_type:
+                    if update_stmt is None:
+                        return False
+                    session.execute(update_stmt)
+                    session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return False
+
+        return True
+
+    def remove_field_template(self, field_template: BaseFieldTemplate) -> bool:
+        """Remove a field template from the library."""
+        with Session(self.engine) as session:
+            try:
+                session_item: BaseFieldTemplate | None = None
+                if isinstance(field_template, TextFieldTemplate):
+                    session_item = session.scalar(
+                        select(TextFieldTemplate)
+                        .where(TextFieldTemplate.id == field_template.id)
+                        .limit(1)
+                    )
+                elif isinstance(field_template, DatetimeFieldTemplate):
+                    session_item = session.scalar(
+                        select(DatetimeFieldTemplate)
+                        .where(DatetimeFieldTemplate.id == field_template.id)
+                        .limit(1)
+                    )
+
+                if session_item is not None:
+                    session.delete(session_item)
+                    session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return False
+
+        return True
+
     def search_field_templates(self, name: str | None, limit: int = 100) -> list[BaseFieldTemplate]:
         """Return field template rows matching the query, detached from the session."""
         if limit <= 0:
@@ -1320,7 +1429,7 @@ class Library:
 
         search_query: str = name.lower() if name else ""
 
-        def sort_key(template: BaseFieldTemplate) -> tuple:
+        def sort_key(template: BaseFieldTemplate) -> tuple[str] | tuple[bool, int, str]:
             text = template.name.lower()
             if not search_query:
                 return (text,)
@@ -1431,7 +1540,12 @@ class Library:
             session.commit()
 
     def update_text_field(
-        self, entry_ids: list[int] | int, field: TextField, value: str, is_multiline: bool
+        self,
+        entry_ids: list[int] | int,
+        field: TextField,
+        name: str,
+        value: str,
+        is_multiline: bool,
     ):
         """Update a TextField field on one or more Entries."""
         if isinstance(entry_ids, int):
@@ -1443,7 +1557,7 @@ class Library:
             update_stmt = (
                 update(field_type)
                 .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
-                .values(value=value, is_multiline=is_multiline)
+                .values(name=name, value=value, is_multiline=is_multiline)
             )
 
             session.execute(update_stmt)
@@ -1453,6 +1567,7 @@ class Library:
         self,
         entry_ids: list[int] | int,
         field: DatetimeField,
+        name: str,
         value: datetime,
     ):
         """Update a DatetimeField field on one or more Entries."""
@@ -1465,7 +1580,7 @@ class Library:
             update_stmt = (
                 update(field_type)
                 .where(and_(field_type.id == field.id, field_type.entry_id.in_(entry_ids)))
-                .values(value=value)
+                .values(name=name, value=value)
             )
 
             session.execute(update_stmt)
