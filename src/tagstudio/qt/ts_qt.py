@@ -1,6 +1,6 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 # SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
 # https://github.com/arsenetar/dupeguru/blob/master/run.py#L71
@@ -8,7 +8,6 @@
 
 """A Qt driver for TagStudio."""
 
-import contextlib
 import ctypes
 import math
 import os
@@ -21,7 +20,7 @@ from collections import OrderedDict
 from pathlib import Path
 from queue import Queue
 from shutil import which
-from typing import Generic, TypeVar
+from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
@@ -52,20 +51,21 @@ from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
-    FieldTypeEnum,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.str_formatting import is_version_outdated, strip_web_protocol
+from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
+from tagstudio.qt.controllers.field_template_search_panel_controller import (
+    FieldTemplateSearchPanel,
+)
 
 # this import has side-effect of import PySide resources
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
@@ -73,6 +73,7 @@ from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
 from tagstudio.qt.controllers.out_of_date_message_box import OutOfDateMessageBox
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
 from tagstudio.qt.global_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     GlobalSettings,
@@ -87,17 +88,17 @@ from tagstudio.qt.mixed.item_thumb import BadgeType
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
-from tagstudio.qt.mixed.tag_database import TagDatabasePanel
-from tagstudio.qt.mixed.tag_search import TagSearchModal
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_deleter import delete_file
+from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -146,7 +147,7 @@ T = TypeVar("T")
 #                 | A   [B]<- C |
 #                 |[A]<- B    C |  Previous routes still exist
 #                 | A ->[D]     |  Stack is cut from [:A] on new route
-class History(Generic[T]):
+class History[T]:
     __history: list[T]
     __index: int = 0
 
@@ -180,8 +181,10 @@ class QtDriver(DriverMixin, QObject):
 
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
+    field_template_manager_panel: PanelModal | None = None
     ignore_modal: PanelModal | None = None
     add_tag_modal: PanelModal | None = None
+    add_field_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     ignored_modal: FixIgnoredEntriesModal
@@ -191,8 +194,8 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager
-    library_scanner: LibraryScannerController
+    cache_manager: CacheManager | None = None
+    library_scanner: LibraryScannerController | None = None
 
     browsing_history: History[BrowsingState]
 
@@ -349,7 +352,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
         self.app.setApplicationName("tagstudio")
         self.app.setApplicationDisplayName("TagStudio")
@@ -363,10 +366,14 @@ class QtDriver(DriverMixin, QObject):
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
-            widget=TagDatabasePanel(self, self.lib),
+            widget=TagSearchPanel(
+                self.lib,
+                is_tag_chooser=False,
+                view=TagSearchPanelView(is_tag_chooser=False),
+            ),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: (
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
             ),
             has_save=False,
         )
@@ -374,10 +381,24 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Color Group Manager panel
         self.color_manager_panel = TagColorManager(self)
 
+        # Initialize the Field Template Manager panel
+        self.field_template_manager_panel = PanelModal(
+            widget=FieldTemplateSearchPanel(
+                self.lib,
+                is_field_template_chooser=False,
+                view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
+            ),
+            title=Translations["field_template_manager.title"],
+            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
+            ),
+            has_save=False,
+        )
+
         # Initialize the Tag Search panel
         self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
         self.add_tag_modal.tsp.set_driver(self)
-        self.add_tag_modal.tsp.tag_chosen.connect(
+        self.add_tag_modal.tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
                 self.main_window.preview_panel.set_selection(self.selected),
@@ -467,6 +488,10 @@ class QtDriver(DriverMixin, QObject):
             self.color_manager_panel.show
         )
 
+        self.main_window.menu_bar.field_template_manager_action.triggered.connect(
+            self.field_template_manager_panel.show
+        )
+
         # endregion
 
         # region View Menu ============================================================
@@ -511,7 +536,7 @@ class QtDriver(DriverMixin, QObject):
         # region Tools Menu ===========================================================
 
         self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
-            lambda: self.library_scanner.open_unlinked_view()
+            lambda: unwrap(self.library_scanner).open_unlinked_view()
         )
 
         def create_ignored_entries_modal():
@@ -532,7 +557,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: self.cache_manager.clear_cache()
+            lambda: unwrap(self.cache_manager).clear_cache()
         )
 
         # endregion
@@ -789,6 +814,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
+            self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
             self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
@@ -891,7 +917,7 @@ class QtDriver(DriverMixin, QObject):
         selected: list[int] = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
-        self.emit_badge_signals(tag_ids)
+        self.emit_badge_signals(tag_ids, emit_on_absent=False)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -907,7 +933,7 @@ class QtDriver(DriverMixin, QObject):
             origin_id(id): The entry ID associated with the widget making the call.
         """
         entry: Entry | None = None
-        pending: list[tuple[int, Path]] = []
+        pending: list[tuple[int | None, Path]] = []
         deleted_count: int = 0
 
         selected = self.selected
@@ -915,14 +941,13 @@ class QtDriver(DriverMixin, QObject):
 
         if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
-            if not origin_id_:
-                with contextlib.suppress(IndexError):
-                    origin_id_ = selected[0]
+            if origin_id_ is None:
+                origin_id_ = selected[0] if len(selected) > 0 else None
 
             pending.append((origin_id_, Path(origin_path)))
         else:
             for item in selected:
-                entry = self.lib.get_entry(item)
+                entry = unwrap(self.lib.get_entry(item))
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
@@ -944,7 +969,8 @@ class QtDriver(DriverMixin, QObject):
                     self.main_window.status_bar.showMessage(msg)
                     self.main_window.status_bar.repaint()
 
-                    self.lib.remove_entries([e_id])
+                    if e_id is not None:
+                        self.lib.remove_entries([e_id])
                     if delete_file(library_dir / f):
                         deleted_count += 1
 
@@ -1022,15 +1048,16 @@ class QtDriver(DriverMixin, QObject):
         return msg.exec()
 
     def on_library_scan(self):
-        unlinked_entries = self.library_scanner.unlinked_entries_count
+        scanner = unwrap(self.library_scanner)
+        unlinked_entries = scanner.unlinked_entries_count
         self.lib.unlinked_entries_count = unlinked_entries
         if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
             self.library_info_window.update_cleanup()
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        if hasattr(self, "library_scanner"):
-            self.library_scanner.scan()
+        if scanner := self.library_scanner:
+            scanner.scan()
 
     def new_file_macros_runnable(self, new_ids):
         """Threaded method that runs macros on a set of Entry IDs."""
@@ -1048,7 +1075,6 @@ class QtDriver(DriverMixin, QObject):
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
         entry: Entry = unwrap(self.lib.get_entry(entry_id))
-        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
@@ -1064,32 +1090,6 @@ class QtDriver(DriverMixin, QObject):
                 if macro_id == MacroID.AUTOFILL:
                     continue
                 self.run_macro(macro_id, entry_id)
-
-        elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
-            for field_id, value in parsed_items.items():
-                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
-                    value = self.lib.tag_from_strings(value)
-                self.lib.add_field_to_entry(
-                    entry.id,
-                    field_id=field_id,
-                    value=value,
-                )
-
-        elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry, source)
-            if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
-        elif name == MacroID.MATCH:
-            TagStudioCore.match_conditions(self.lib, entry.id)
-        elif name == MacroID.CLEAN_URL:
-            for field in entry.text_fields:
-                if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
-                    self.lib.update_entry_field(
-                        entry_ids=entry.id,
-                        field=field,
-                        content=strip_web_protocol(field.value),
-                    )
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
@@ -1179,10 +1179,10 @@ class QtDriver(DriverMixin, QObject):
             for field in self.copy_buffer["fields"]:
                 exists = False
                 for e in existing_fields:
-                    if field.type_key == e.type_key and field.value == e.value:
+                    if field == e:
                         exists = True
                 if not exists:
-                    self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+                    self.lib.add_field_to_entries(id, field=field)
             self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:
@@ -1575,8 +1575,7 @@ class QtDriver(DriverMixin, QObject):
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
-        # TODO - make this call optional
-        if self.lib.entries_count < 10000:
+        if self.settings.scan_files_on_open:
             self.add_new_files_callback()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
@@ -1602,6 +1601,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
+        self.main_window.menu_bar.field_template_manager_action.setEnabled(True)
         self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)

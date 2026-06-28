@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import traceback
@@ -34,6 +33,7 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import SQL_FILENAME
+from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
@@ -364,7 +364,7 @@ class JsonMigrationModal(QObject):
             iterator = FunctionIterator(self.migration_iterator)
             iterator.value.connect(
                 lambda x: (
-                    pb.setLabelText(f"<h4>{x}</h4>"),  # type: ignore
+                    pb.setLabelText(f"<h4>{x}</h4>"),
                     self.update_sql_value_ui(show_msg_box=False)
                     if x == Translations["json_migration.checking_for_parity"]
                     else (),
@@ -377,8 +377,8 @@ class JsonMigrationModal(QObject):
             r.done.connect(
                 lambda: (
                     self.update_sql_value_ui(show_msg_box=not skip_ui),
-                    pb.setMinimum(1),  # type: ignore
-                    pb.setValue(1),  # type: ignore
+                    pb.setMinimum(1),
+                    pb.setValue(1),
                     # Enable the finish button
                     cast(QPushButtonWrapper, self.stack[1].buttons[4]).setDisabled(False),
                 )
@@ -483,26 +483,26 @@ class JsonMigrationModal(QObject):
 
     def update_json_entry_count(self, value: int):
         self.old_entry_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_default(value))
 
     def update_json_tag_count(self, value: int):
         self.old_tag_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_default(value))
 
     def update_sql_value(self, row: int, value: int | bool, old_value: int | bool):
-        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
         label.setText(self.color_value_conditional(old_value, value))
         warning_icon.setText("" if old_value == value else self.warning)
 
     def update_parity_value(self, row: int, value: bool):
         result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
         old_label.setText(self.color_value_conditional(self.match_text, result))
         new_label.setText(self.color_value_conditional(self.match_text, result))
         old_warning_icon.setText("" if value else self.warning)
@@ -544,9 +544,6 @@ class JsonMigrationModal(QObject):
     def check_field_parity(self) -> bool:
         """Check if all JSON field and tag data matches the new SQL data."""
 
-        def sanitize_field(entry: Entry, value, type, type_key):
-            return value if value else None
-
         def sanitize_json_field(value):
             if isinstance(value, list):
                 return set(value) if value else None
@@ -557,7 +554,7 @@ class JsonMigrationModal(QObject):
             sql_fields: list[tuple] = []
             json_fields: list[tuple] = []
 
-            sql_entry: Entry = unwrap(self.sql_lib.get_entry_full(json_entry.id + 1))
+            sql_entry: Entry | None = self.sql_lib.get_entry_full(json_entry.id + 1)
             if not sql_entry:
                 logger.info(
                     "[Field Comparison]",
@@ -570,14 +567,13 @@ class JsonMigrationModal(QObject):
                 return self.field_parity
 
             for sf in sql_entry.fields:
-                if sf.type.type.value not in LEGACY_TAG_FIELD_IDS:
-                    sql_fields.append(
-                        (
-                            sql_entry.id,
-                            sf.type.key,
-                            sanitize_field(sql_entry, sf.value, sf.type.type, sf.type_key),
-                        )
+                sql_fields.append(
+                    (
+                        sql_entry.id,
+                        sf.name.upper().replace(" ", "_"),
+                        sf.value if sf.value else None,
                     )
+                )
             sql_fields.sort()
 
             # NOTE: The JSON database stored tags inside of special "tag field" types which
@@ -591,7 +587,7 @@ class JsonMigrationModal(QObject):
                     tags_count += 1
                     json_tags = json_tags.union(value or [])
                 else:
-                    key: str = unwrap(self.sql_lib.get_field_name_from_id(int_key)).name
+                    key: str = str(LEGACY_FIELD_MAP[int_key]["name"]).upper().replace(" ", "_")
                     json_fields.append((json_entry.id + 1, key, value))
             json_fields.sort()
 

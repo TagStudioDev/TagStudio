@@ -1,6 +1,6 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.mixed.folders_to_tags import folders_to_tags

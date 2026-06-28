@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import sys
@@ -11,6 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 from PySide6.QtWidgets import QScrollArea
+
+from tagstudio.core.library.alchemy.fields import TextField
 
 CWD = Path(__file__).parent
 # this needs to be above `src` imports
@@ -40,19 +41,19 @@ def file_mediatypes_library():
     entry1 = Entry(
         folder=folder,
         path=Path("foo.png"),
-        fields=lib.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     entry2 = Entry(
         folder=folder,
         path=Path("bar.png"),
-        fields=lib.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     entry3 = Entry(
         folder=folder,
         path=Path("baz.apng"),
-        fields=lib.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     assert lib.add_entries([entry1, entry2, entry3])
@@ -117,7 +118,7 @@ def library(request, library_dir: Path):  # pyright: ignore
         id=1,
         folder=folder,
         path=Path("foo.txt"),
-        fields=lib.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
     assert lib.add_tags_to_entries(entry.id, tag.id)
 
@@ -125,7 +126,7 @@ def library(request, library_dir: Path):  # pyright: ignore
         id=2,
         folder=folder,
         path=Path("one/two/bar.md"),
-        fields=lib.default_fields,
+        fields=[TextField(name="Title", value="I'm a Test Title")],
     )
     assert lib.add_tags_to_entries(entry2.id, tag2.id)
 

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -19,7 +23,7 @@ dependencies = [
     "Pillow>=10.2,<12",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
-    "py7zr==1.0.0",
+    "py7zr~=1.1.3",
     "pydantic~=2.10",
     "pydub~=0.25",
     "PySide6==6.8.0.*",
@@ -38,19 +42,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
-mkdocs = ["mkdocs-material[imaging]>=9.6.14", "mkdocs-redirects~=1.2"]
-mypy = ["mypy==1.15.0", "mypy-extensions==1.*", "types-ujson~=5.10"]
+dev = ["tagstudio[mkdocs,pyright,pre-commit,pyinstaller,pytest,ruff]"]
+mkdocs = ["mkdocs-material[imaging]>=9.7", "mkdocs-redirects~=1.2"]
+pyright = ["pyright~=1.1.409"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]
 pytest = [
-    "pytest==8.3.5",
+    "pytest==9.0.3",
     "pytest-cov==6.1.1",
     "pytest-mock==3.15.1",
     "pytest-qt==4.4.0",
-    "syrupy==4.9.1",
+    "syrupy==5.1.0",
 ]
-ruff = ["ruff==0.11.8"]
+ruff = ["ruff==0.15.17"]
 
 [project.gui-scripts]
 tagstudio = "tagstudio.main:main"
@@ -58,35 +62,11 @@ tagstudio = "tagstudio.main:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/tagstudio"]
 
-[tool.mypy]
-mypy_path = ["src/tagstudio"]
-disable_error_code = [
-    "annotation-unchecked",
-    "func-returns-value",
-    "import-untyped",
-]
-explicit_package_bases = true
-ignore_missing_imports = true
-implicit_optional = true
-strict_optional = false
-warn_unused_ignores = true
-exclude = ["build", "dist"]
-
-[[tool.mypy.overrides]]
-module = "tagstudio.qt.main_window"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tagstudio.qt.ui.home_ui"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tagstudio.core.ts_core"
-ignore_errors = true
 
 [tool.pytest.ini_options]
 #addopts = "-m 'not qt'"
 qt_api = "pyside6"
+pythonpath = ["src"]
 
 [tool.pyright]
 ignore = [
@@ -95,17 +75,20 @@ ignore = [
     "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
+# reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
+reportImportCycles = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
-reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
+reportUnannotatedClassAttribute = false
+reportUninitializedInstanceVariable = false
 
 [tool.ruff]
 exclude = ["home_ui.py", "resources.py", "resources_rc.py"]

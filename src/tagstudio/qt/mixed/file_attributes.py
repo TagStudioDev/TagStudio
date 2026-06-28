@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import os
@@ -115,6 +114,7 @@ class FileAttributes(QWidget):
         if filepath and filepath.is_file():
             created: dt
             if platform.system() == "Windows" or platform.system() == "Darwin":
+                # NOTE: Accessing stat().st_birthtime causes linter checks to fail on some systems.
                 created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)

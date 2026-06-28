@@ -1,5 +1,6 @@
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import traceback
 import typing
@@ -30,7 +31,7 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-BUTTON_STYLE = f"""
+BUTTON_STYLE: str = f"""
     QPushButton{{
         background-color: {Theme.COLOR_BG.value};
         border-radius: 6px;
@@ -60,7 +61,7 @@ class PreviewPanelView(QWidget):
 
     _selected: list[int]
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
         self.lib = library
 
@@ -95,7 +96,7 @@ class PreviewPanelView(QWidget):
         self.__add_tag_button.setMinimumHeight(28)
         self.__add_tag_button.setStyleSheet(BUTTON_STYLE)
 
-        self.__add_field_button = QPushButton(Translations["library.field.add"])
+        self.__add_field_button = QPushButton(Translations["field.add"])
         self.__add_field_button.setEnabled(False)
         self.__add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.__add_field_button.setMinimumHeight(28)
@@ -119,20 +120,20 @@ class PreviewPanelView(QWidget):
 
         self.__connect_callbacks()
 
-    def __connect_callbacks(self):
+    def __connect_callbacks(self) -> None:
         self.__add_field_button.clicked.connect(self._add_field_button_callback)
         self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
 
-    def _add_field_button_callback(self):
+    def _add_field_button_callback(self) -> None:
         raise NotImplementedError()
 
-    def _add_tag_button_callback(self):
+    def _add_tag_button_callback(self) -> None:
         raise NotImplementedError()
 
-    def _set_selection_callback(self):
+    def _set_selection_callback(self) -> None:
         raise NotImplementedError()
 
-    def set_selection(self, selected: list[int], update_preview: bool = True):
+    def set_selection(self, selected: list[int], update_preview: bool = True) -> None:
         """Render the panel widgets with the newest data from the Library.
 
         Args:
@@ -192,7 +193,7 @@ class PreviewPanelView(QWidget):
         return field
 
     @add_buttons_enabled.setter
-    def add_buttons_enabled(self, enabled: bool):
+    def add_buttons_enabled(self, enabled: bool) -> None:
         self.__add_field_button.setEnabled(enabled)
         self.__add_tag_button.setEnabled(enabled)
 

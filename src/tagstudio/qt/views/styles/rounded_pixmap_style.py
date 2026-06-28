@@ -1,8 +1,6 @@
-# Based on the implementation by eyllanesc:
-# https://stackoverflow.com/questions/54230005/qmovie-with-border-radius
-# Licensed under the Creative Commons CC BY-SA 4.0 License:
-# https://creativecommons.org/licenses/by-sa/4.0/
-# Modified for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) 2019 Edwin Yllanes
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# See: https://stackoverflow.com/questions/54230005/qmovie-with-border-radius/54231484#54231484
 
 
 from typing import override

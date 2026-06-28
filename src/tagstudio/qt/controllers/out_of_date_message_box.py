@@ -1,8 +1,12 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox
 
-from tagstudio.core.constants import VERSION
+from tagstudio.core.constants import GITHUB_RELEASE_URL, VERSION
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
@@ -37,4 +41,7 @@ class OutOfDateMessageBox(QMessageBox):
             installed_version=f"<span style='color:{red}'>{VERSION}</span>",
             latest_release_version=f"<span style='color:{green}'>{latest_release_version}</span>",
         )
-        self.setText(f"{Translations['version_modal.description']}<br><br>{status}")
+        description = Translations.format(
+            "version_modal.description", github_url=GITHUB_RELEASE_URL
+        )
+        self.setText(f"{description}<br><br>{status}")

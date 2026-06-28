@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import sys
@@ -29,9 +28,9 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
-from tagstudio.qt.mixed.tag_search import TagSearchModal, TagSearchPanel
 from tagstudio.qt.mixed.tag_widget import (
     TagWidget,
     get_border_color,
@@ -42,6 +41,7 @@ from tagstudio.qt.mixed.tag_widget import (
 from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
 
@@ -168,7 +168,7 @@ class BuildTagPanel(PanelWidget):
             exclude_ids.append(tag.id)
 
         self.add_tag_modal = TagSearchModal(self.lib, exclude_ids)
-        self.add_tag_modal.tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
+        self.add_tag_modal.tsp.item_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
@@ -432,7 +432,11 @@ class BuildTagPanel(PanelWidget):
             has_remove=True,
         )
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
-        tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).edit_tag(t))
+        tag_widget.on_edit.connect(
+            lambda t=tag: TagSearchPanel(
+                library=self.lib, view=TagSearchPanelView(is_tag_chooser=True)
+            ).on_item_edit(t)
+        )
         row.addWidget(tag_widget)
 
         # Add Disambiguation Tag Button

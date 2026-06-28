@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from pathlib import Path
@@ -47,6 +46,6 @@ class IgnoreModal(IgnoreModalView):
         Ignore.write_ignore_file(self.lib.library_dir, lines)
 
     @override
-    def showEvent(self, event: QShowEvent) -> None:  # type: ignore
+    def showEvent(self, event: QShowEvent) -> None:
         self.__load_file()
         return super().showEvent(event)

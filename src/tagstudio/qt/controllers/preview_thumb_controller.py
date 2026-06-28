@@ -1,9 +1,10 @@
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import io
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import cv2
 import rawpy
@@ -11,6 +12,10 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
+from rawpy import (
+    LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
+    LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
+)
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -49,8 +54,8 @@ class PreviewThumb(PreviewThumbView):
                     stats.width = image.width
                     stats.height = image.height
             except (
-                rawpy.LibRawIOError,
-                rawpy.LibRawFileUnsupportedError,
+                LibRawIOError,
+                LibRawFileUnsupportedError,
                 FileNotFoundError,
             ):
                 pass
@@ -143,18 +148,22 @@ class PreviewThumb(PreviewThumbView):
             self._display_image(filepath)
             return self.__get_image_stats(filepath)
 
+    @override
     def _open_file_action_callback(self):
         open_file(
             self.__current_file, windows_start_command=self.__driver.settings.windows_start_command
         )
 
+    @override
     def _open_explorer_action_callback(self):
         open_file(self.__current_file, file_manager=True)
 
+    @override
     def _delete_action_callback(self):
         if bool(self.__current_file):
             self.__driver.delete_files_callback(self.__current_file)
 
+    @override
     def _button_wrapper_callback(self):
         open_file(
             self.__current_file, windows_start_command=self.__driver.settings.windows_start_command

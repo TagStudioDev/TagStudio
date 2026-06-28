@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from sqlalchemy import text
@@ -10,7 +9,7 @@ JSON_FILENAME: str = "ts_library.json"
 
 DB_VERSION_CURRENT_KEY: str = "CURRENT"
 DB_VERSION_INITIAL_KEY: str = "INITIAL"
-DB_VERSION: int = 104
+DB_VERSION: int = 201
 
 TAG_CHILDREN_QUERY = text("""
 WITH RECURSIVE ChildTags AS (
