@@ -4,6 +4,10 @@
 
 VERSION: str = "9.5.7"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
+COPYRIGHT_YEARS: str = "2021-2026"
+COPYRIGHT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien & TagStudio Contributors"
+COPYRIGHT_COMPACT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien\n& TagStudio Contributors"
+
 GITHUB_RELEASE_URL = "https://github.com/TagStudioDev/TagStudio/releases/latest"
 
 # The folder & file names where TagStudio keeps its data relative to a library.

@@ -73,7 +73,7 @@ from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
@@ -449,11 +449,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image) or icon is None
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -547,11 +546,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image)
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
@@ -1102,7 +1100,7 @@ class ThumbRenderer(QObject):
                 y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
                     (0, 0), "A", font=font
                 )[-1]
-            im = theme_fg_overlay(bg, use_alpha=False)
+            im = auto_theme_overlay(bg, use_alpha=False)
         except OSError as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1597,7 +1595,7 @@ class ThumbRenderer(QObject):
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
+            icon: Image.Image = self.rm.ignored
 
             icon = icon.resize(
                 (

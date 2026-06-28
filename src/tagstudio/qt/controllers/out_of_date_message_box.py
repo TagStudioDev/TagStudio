@@ -2,14 +2,19 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import math
+
 import structlog
+from PIL import ImageQt
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import GITHUB_RELEASE_URL, VERSION
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
@@ -21,9 +26,19 @@ class OutOfDateMessageBox(QMessageBox):
     def __init__(self):
         super().__init__()
 
-        title = Translations.format("version_modal.title")
+        rm = ResourceManager()
+
+        title = Translations["version_modal.title"]
         self.setWindowTitle(title)
-        self.setIcon(QMessageBox.Icon.Warning)
+        pixel_ratio = self.devicePixelRatio()
+        icon = QPixmap.fromImage(ImageQt.ImageQt(rm.icon)).scaled(
+            math.floor(48 * pixel_ratio),
+            math.floor(48 * pixel_ratio),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        icon.setDevicePixelRatio(pixel_ratio)
+        self.setIconPixmap(icon)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         self.setStandardButtons(

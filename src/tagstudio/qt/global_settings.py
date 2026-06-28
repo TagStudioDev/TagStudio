@@ -43,6 +43,7 @@ class Splash(StrEnum):
     CLASSIC = "classic"
     GOO_GEARS = "goo_gears"
     NINETY_FIVE = "95"
+    AURORA = "aurora"
 
 
 class TomlEnumEncoder(toml.TomlEncoder):
