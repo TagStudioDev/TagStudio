@@ -160,13 +160,6 @@ class ThumbRenderer(QObject):
         super().__init__()
         self.driver = driver
 
-        settings_res = self.driver.settings.cached_thumb_resolution
-        self.cached_img_res = (
-            settings_res
-            if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
-            else DEFAULT_CACHED_THUMB_RES
-        )
-
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
         #      (Ex. (512, 512, 1.25, 4))
@@ -1652,13 +1645,20 @@ class ThumbRenderer(QObject):
             image = fetch_cached_image(file_name)
 
             if not image and self.driver.settings.generate_thumbs:
+                settings_res = self.driver.settings.cached_thumb_resolution
+                thumb_res = (
+                    settings_res
+                    if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
+                    else DEFAULT_CACHED_THUMB_RES
+                )
+
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
                 image = self._render(
                     timestamp,
                     filepath,
-                    (self.cached_img_res, self.cached_img_res),
+                    (thumb_res, thumb_res),
                     1,
                     is_grid_thumb,
                     save_to_file=file_name,
