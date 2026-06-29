@@ -18,11 +18,11 @@ class ResourceManager:
     _instance: ResourceManager | None
 
     # Resources IDs from "resources.json"
-    alert: QPixmap
     about_bg: QPixmap
     adobe_illustrator: Image.Image
     adobe_photoshop: Image.Image
     affinity_photo: Image.Image
+    alert: QPixmap
     archive: Image.Image
     audio: Image.Image
     broken_link_icon: Image.Image
