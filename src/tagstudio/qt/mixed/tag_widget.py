@@ -110,14 +110,7 @@ class TagWidget(QWidget):
     tag: Tag | None
 
     def __init__(
-        self,
-        tag: Tag | None,
-        has_edit: bool,
-        has_remove: bool,
-        library: "Library | None" = None,
-        on_remove_callback: Callable[[], None] | None = None,
-        on_click_callback: Callable[[], None] | None = None,
-        on_edit_callback: Callable[[], None] | None = None,
+        self, tag: Tag | None, has_edit: bool, has_remove: bool, library: "Library | None" = None
     ) -> None:
         super().__init__()
         self.tag = tag
@@ -133,14 +126,6 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-
-        # add callbacks
-        if on_remove_callback is not None:
-            self.on_remove.connect(on_remove_callback)
-        if on_click_callback is not None:
-            self.on_click.connect(on_click_callback)
-        if on_edit_callback is not None:
-            self.on_edit.connect(on_edit_callback)
 
         # add edit action
         if has_edit:

@@ -163,6 +163,7 @@ class Tag(Base):
     def __hash__(self) -> int:
         return hash(self.id)
 
+    @override
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, Tag):
             return False

@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 
+import structlog
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
@@ -11,6 +12,8 @@ from tagstudio.core.library.alchemy.models import Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.build_tag import BuildTagPanel, CustomTableItem
 from tagstudio.qt.translations import Translations
+
+logger = structlog.get_logger(__name__)
 
 
 def test_build_tag_panel_add_sub_tag_callback(
@@ -22,7 +25,7 @@ def test_build_tag_panel_add_sub_tag_callback(
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    panel.add_parent_tag_callback(parent.id)
+    panel._add_parent_tag_callback(parent.id)  # pyright: ignore[reportPrivateUsage]
 
     assert len(panel.parent_ids) == 1
 
@@ -33,14 +36,14 @@ def test_build_tag_panel_remove_subtag_callback(
     parent = unwrap(library.add_tag(generate_tag("xxx", id=123)))
     child = unwrap(library.add_tag(generate_tag("xx", id=124)))
 
-    library.update_tag(child, {parent.id}, [], [])
+    library.update_tag(child, {parent.id}, [])
 
     child = unwrap(library.get_tag(child.id))
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    panel.remove_parent_tag_callback(parent.id)
+    panel._remove_parent_tag_callback(parent.id)  # pyright: ignore[reportPrivateUsage]
 
     assert len(panel.parent_ids) == 0
 
@@ -58,7 +61,7 @@ def test_build_tag_panel_add_alias_callback(
     panel: BuildTagPanel = BuildTagPanel(library, tag)
     qtbot.addWidget(panel)
 
-    panel.add_alias_callback()
+    panel._create_alias_callback()  # pyright: ignore[reportPrivateUsage]
 
     assert panel.aliases_table.rowCount() == 1
 
@@ -68,9 +71,12 @@ def test_build_tag_panel_remove_alias_callback(
 ):
     tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
-    library.update_tag(tag, [], {"alias", "alias_2"}, {123, 124})
+    alias_1 = TagAlias("alias", tag.id)
+    alias_2 = TagAlias("alias_2", tag.id)
+    library.update_tag(tag, [], {alias_1, alias_2})
 
     tag = unwrap(library.get_tag(tag.id))
+    logger.info(tag.aliases)
 
     assert "alias" in tag.alias_strings
     assert "alias_2" in tag.alias_strings
@@ -79,12 +85,15 @@ def test_build_tag_panel_remove_alias_callback(
     qtbot.addWidget(panel)
 
     alias: TagAlias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
+    logger.info(f"test side: {alias.id}:{alias.name}")
 
-    panel.remove_alias_callback(alias.id)
+    logger.info(f"panel before {[(a.id, a.name) for a in panel.aliases]}")
+    panel.remove_alias_callback(alias)
+    logger.info(f"panel after {panel.aliases}")
 
-    assert len(panel.alias_ids) == 1
-    assert len(panel.alias_names) == 1
-    assert alias.name not in panel.alias_names
+    assert len(panel.aliases) == 1
+    assert alias not in panel.aliases
+    assert (alias.id, alias.name) not in [(a.id, a.name) for a in panel.aliases]
 
 
 def test_build_tag_panel_set_parent_tags(
@@ -109,7 +118,9 @@ def test_build_tag_panel_add_aliases(
 ):
     tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
-    library.update_tag(tag, [], {"alias", "alias_2"}, {123, 124})
+    alias_1 = TagAlias("alias", tag.id)
+    alias_2 = TagAlias("alias_2", tag.id)
+    library.update_tag(tag, [], {alias_1, alias_2})
 
     tag = unwrap(library.get_tag(tag.id))
 
@@ -132,22 +143,13 @@ def test_build_tag_panel_add_aliases(
     assert "alias" in alias_names
     assert "alias_2" in alias_names
 
-    old_text = widget.text()
-    widget.setText("alias_update")
-
-    panel.add_aliases()
-
-    assert old_text not in panel.alias_names
-    assert "alias_update" in panel.alias_names
-    assert len(panel.alias_names) == 2
-
 
 def test_build_tag_panel_set_aliases(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
     tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
-
-    library.update_tag(tag, [], {"alias"}, {123})
+    alias_1 = TagAlias("Alias 1", tag.id)
+    library.update_tag(tag, [], [alias_1])
 
     tag = unwrap(library.get_tag(tag.id))
 
@@ -157,8 +159,7 @@ def test_build_tag_panel_set_aliases(
     qtbot.addWidget(panel)
 
     assert panel.aliases_table.rowCount() == 1
-    assert len(panel.alias_names) == 1
-    assert len(panel.alias_ids) == 1
+    assert len(panel.aliases) == 1
 
 
 def test_build_tag_panel_set_tag(qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]):
