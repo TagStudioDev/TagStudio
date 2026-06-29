@@ -2065,7 +2065,7 @@ class Library:
                 for old_alias in old_aliases:
                     if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
                         logger.warning(
-                            "[Library]Deleting removed alias", id=old_alias.id, name=old_alias.name
+                            "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
                         )
                         session.delete(old_alias)
                 session.commit()
