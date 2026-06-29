@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -21,7 +21,10 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.qt.global_settings import (
+    DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
     Splash,
     Theme,
@@ -159,8 +162,10 @@ class SettingsPanel(PanelWidget):
         self.thumb_cache_size_layout.setSpacing(6)
         self.thumb_cache_size = QLineEdit()
         self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2)  # High limit
-        self.thumb_cache_size.setValidator(self.validator)
+        self.thumb_cache_size_validator = QDoubleValidator(
+            MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2
+        )  # High limit
+        self.thumb_cache_size.setValidator(self.thumb_cache_size_validator)
         self.thumb_cache_size.setText(
             str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
         )
@@ -169,6 +174,23 @@ class SettingsPanel(PanelWidget):
         self.thumb_cache_size_layout.addWidget(QLabel("MiB"))
         form_layout.addRow(
             Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
+        )
+
+        # Cached Thumbnail Resolution
+        self.cached_thumb_res_container = QWidget()
+        self.cached_thumb_res_layout = QHBoxLayout(self.cached_thumb_res_container)
+        self.cached_thumb_res_layout.setContentsMargins(0, 0, 0, 0)
+        self.cached_thumb_res_layout.setSpacing(6)
+        self.cached_thumb_res = QLineEdit()
+        self.cached_thumb_res.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.cached_thumb_res_validator = QIntValidator(MIN_CACHED_THUMB_RES, MAX_CACHED_THUMB_RES)
+        self.cached_thumb_res.setValidator(self.cached_thumb_res_validator)
+        self.cached_thumb_res.setText(str(self.driver.settings.cached_thumb_resolution))
+        self.cached_thumb_res_layout.addWidget(self.cached_thumb_res)
+        self.cached_thumb_res_layout.setStretch(1, 2)
+        self.cached_thumb_res_layout.addWidget(QLabel("px"))
+        form_layout.addRow(
+            Translations["settings.cached_thumb_resolution.label"], self.cached_thumb_res_container
         )
 
         # Autoplay
@@ -298,8 +320,15 @@ class SettingsPanel(PanelWidget):
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "generate_thumbs": self.generate_thumbs.isChecked(),
             "thumb_cache_size": max(
-                float(self.thumb_cache_size.text()) or DEFAULT_THUMB_CACHE_SIZE,
+                float(self.thumb_cache_size.text() or DEFAULT_THUMB_CACHE_SIZE),
                 MIN_THUMB_CACHE_SIZE,
+            ),
+            "cached_thumb_resolution": min(
+                max(
+                    int(self.cached_thumb_res.text() or DEFAULT_CACHED_THUMB_RES),
+                    MIN_CACHED_THUMB_RES,
+                ),
+                MAX_CACHED_THUMB_RES,
             ),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "scan_files_on_open": self.scan_files_on_open_checkbox.isChecked(),
@@ -324,6 +353,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.scan_files_on_open = settings["scan_files_on_open"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.thumb_cache_size = settings["thumb_cache_size"]
+        driver.settings.cached_thumb_resolution = settings["cached_thumb_resolution"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.infinite_scroll = settings["infinite_scroll"]
@@ -333,7 +363,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
-        driver.settings.splash = settings["splash"]
+        driver.settings.splash = Splash(settings["splash"]) or Splash.DEFAULT
 
         driver.settings.save()
 
@@ -359,7 +389,7 @@ class SettingsPanel(PanelWidget):
             window_title=Translations["settings.title"],
             is_savable=True,
         )
-        modal.done.connect(lambda: settings_panel.update_settings(driver))
+        modal.saved.connect(lambda: settings_panel.update_settings(driver))
         modal.title_widget.setVisible(False)
 
         return modal

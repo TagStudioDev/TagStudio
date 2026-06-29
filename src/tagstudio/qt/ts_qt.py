@@ -412,7 +412,7 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.call_if_library_open(self.backup_library)
         )
 
-        # Settings...
+        # Settings
         self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
 
         # Open Library on Start

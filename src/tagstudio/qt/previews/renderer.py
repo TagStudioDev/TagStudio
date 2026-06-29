@@ -72,7 +72,11 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
+from tagstudio.qt.global_settings import (
+    DEFAULT_CACHED_THUMB_RES,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
+)
 from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
@@ -159,8 +163,8 @@ class ThumbRenderer(QObject):
         settings_res = self.driver.settings.cached_thumb_resolution
         self.cached_img_res = (
             settings_res
-            if settings_res >= 16 and settings_res <= 2048
-            else DEFAULT_CACHED_IMAGE_RES
+            if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
+            else DEFAULT_CACHED_THUMB_RES
         )
 
         # Cached thumbnail elements.

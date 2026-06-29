@@ -277,6 +277,7 @@
     "select.all": "Select All",
     "select.clear": "Clear Selection",
     "select.inverse": "Invert Selection",
+    "settings.cached_thumb_resolution.label": "Cached Thumbnail Resolution",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
     "settings.dateformat.english": "English",
     "settings.dateformat.international": "International",
