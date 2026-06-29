@@ -21,7 +21,7 @@ path = [
     ".gitattributes",
     ".github/FUNDING.yml",
     ".github/ISSUE_TEMPLATE/**",
-    ".github/PULL_REQUEST_TEMPLATE",
+    ".github/PULL_REQUEST_TEMPLATE.md",
     ".gitignore",
     ".pre-commit-config.yaml",
     "flake.lock",
