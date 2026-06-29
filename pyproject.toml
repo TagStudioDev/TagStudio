@@ -47,7 +47,7 @@ dev = ["tagstudio[mkdocs,pyright,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material[imaging]>=9.7", "mkdocs-redirects~=1.2"]
 pyright = ["pyright~=1.1.409"]
 pre-commit = ["pre-commit~=4.2"]
-pyinstaller = ["Pyinstaller~=6.13"]
+pyinstaller = ["Pyinstaller~=6.21"]
 pytest = [
     "pytest==9.0.3",
     "pytest-cov==6.1.1",
