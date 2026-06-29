@@ -312,10 +312,6 @@ class BuildTagPanel(PanelWidget):
         self.color_button.set_tag_color_group(tag_color_group)
 
     def set_parent_tags(self):
-        # self.parent_ids.clear()
-        # for parent_id in self.tag.parent_ids:
-        #     self.parent_ids.add(parent_id)
-
         while self.parent_tags_scroll_layout.itemAt(0):
             self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
 
