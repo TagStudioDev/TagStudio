@@ -1568,11 +1568,11 @@ class QtDriver(DriverMixin, QObject):
         if latest_version and is_version_outdated(VERSION, latest_version):
             update_box = UpdateAvailableMessageBox()
             update_box.button(QMessageBox.StandardButton.Ignore).clicked.connect(
-                partial(self.ignore_update, str(latest_version))
+                partial(self.dismiss_update, str(latest_version))
             )
             update_box.exec()
 
-    def ignore_update(self, version: str):
+    def dismiss_update(self, version: str):
         """Dismiss an update notification for a specific new version of TagStudio."""
         self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
 
