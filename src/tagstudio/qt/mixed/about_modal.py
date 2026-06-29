@@ -28,6 +28,7 @@ from tagstudio.core.constants import (
     VERSION_BRANCH,
 )
 from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
@@ -122,9 +123,9 @@ class AboutModal(QWidget):
 
         # Version
         version_title = QLabel(Translations["about.version"])
-        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "?")
+        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
         version_content_style = form_content_style()
-        if latest_version == VERSION:
+        if not is_version_outdated(VERSION, latest_version):
             version_content = QLabel(f"{VERSION}")
         else:
             version_content = QLabel(
