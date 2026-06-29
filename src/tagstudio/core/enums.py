@@ -5,11 +5,12 @@
 import enum
 
 
-class SettingItems(enum.StrEnum):
+class AppCacheItems(enum.StrEnum):
     """List of setting item names."""
 
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
+    DISMISSED_UPDATE = "dismissed_update"
 
 
 class ShowFilepathOption(enum.IntEnum):

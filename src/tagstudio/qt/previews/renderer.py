@@ -98,9 +98,9 @@ Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 
 try:
-    import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
-except ImportError:
-    logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
+    import pillow_jxl  # noqa: F401 # pyright: ignore
+except ImportError as e:
+    logger.error('[ThumbRenderer] Could not import the "pillow_jxl" module', error=e)
 
 
 class _SevenZipFile(py7zr.SevenZipFile):

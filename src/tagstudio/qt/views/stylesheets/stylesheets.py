@@ -372,6 +372,15 @@ def title_line_edit_style() -> str:
     """
 
 
+def preview_warning_style() -> str:
+    return f"""
+    QWidget#ffmpeg_widget {{
+        background: {get_ui_color(ColorType.DARK_ACCENT, UiColor.RED)};
+        border-radius: 6px;
+        }}
+    """
+
+
 def header(string: str, level: int, color: str | None = None) -> str:
     """Wrap a string in HTML header tags.
 
