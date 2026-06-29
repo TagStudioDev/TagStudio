@@ -944,9 +944,10 @@ class ThumbRenderer(QObject):
         if cover is not None:
             pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
             page_name = pages[int(unwrap(cover.get("Image")))]
-            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            ext = ThumbRenderer.__suffix(page_name)
+            if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
                 image_data = archive.read(page_name)
-                im = Image.open(BytesIO(image_data))
+                im = ThumbRenderer.__load_raster_image(BytesIO(image_data))
 
         return im
 
@@ -1001,9 +1002,10 @@ class ThumbRenderer(QObject):
             Image: The first renderable image in the archive.
         """
         for file_name in archive.namelist():
-            if file_name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            ext = ThumbRenderer.__suffix(file_name)
+            if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
                 image_data = archive.read(file_name)
-                return Image.open(BytesIO(image_data))
+                return ThumbRenderer.__load_raster_image(BytesIO(image_data))
 
         return None
 
@@ -1167,14 +1169,8 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            im = Image.open(filepath)
-            if im.mode != "RGB" and im.mode != "RGBA":
-                im = im.convert(mode="RGBA")
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-            im = unwrap(ImageOps.exif_transpose(im))
+            with filepath.open("rb") as file:
+                im = ThumbRenderer.__load_raster_image(BytesIO(file.read()))
         except (
             FileNotFoundError,
             UnidentifiedImageError,
@@ -1529,6 +1525,43 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
         return im
+
+    @staticmethod
+    def __suffix(archive_path: str) -> str:
+        """Read the files' extension.
+
+        See pathlib.Path.suffix.
+
+        Args:
+            archive_path (str): The path of the file in the archive.
+
+        Returns:
+            str: The file extension.
+        """
+        i = archive_path.rfind(".")
+        if 0 < i < len(archive_path) - 1:
+            return archive_path[i:]
+        else:
+            return ""
+
+    @staticmethod
+    def __load_raster_image(image_data: BytesIO) -> Image.Image:
+        """Load a raster image and add a background if it's transparent.
+
+        Args:
+            image_data (BytesIO): The binary image data.
+
+        Returns:
+            Image.Image: The loaded raster image, with a background if needed.
+        """
+        im: Image.Image = Image.open(image_data)
+        if im.mode != "RGB" and im.mode != "RGBA":
+            im = im.convert(mode="RGBA")
+        if im.mode == "RGBA":
+            new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+            new_bg.paste(im, mask=im.getchannel(3))
+            im = new_bg
+        return unwrap(ImageOps.exif_transpose(im))
 
     def render(
         self,
