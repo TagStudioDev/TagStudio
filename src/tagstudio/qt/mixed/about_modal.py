@@ -135,8 +135,8 @@ class AboutModal(QWidget):
             )
             version_content_style += f"color: {red};"
         version_content.setStyleSheet(version_content_style)
-        version_content.setMaximumWidth(version_content.sizeHint().width())
         self.system_info_layout.addRow(version_title, version_content)
+        version_content.setMaximumWidth(version_content.sizeHint().width())
 
         # Config Path
         config_path_title = QLabel(f"{Translations['about.config_path']}")
@@ -158,9 +158,9 @@ class AboutModal(QWidget):
                 lambda: open_file(ffmpeg_location, file_manager=True)
             )
             ffmpeg_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
         ffmpeg_path_content.setStyleSheet(form_content_style())
         self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
+        ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
 
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
@@ -172,8 +172,8 @@ class AboutModal(QWidget):
             )
             ffprobe_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
         ffprobe_path_content.setStyleSheet(form_content_style())
-        ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
+        ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
 
         # ripgrep Status
         # TODO: Add a central class to find ripgrep info, similar to ffmpeg
