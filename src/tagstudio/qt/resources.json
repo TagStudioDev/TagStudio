@@ -15,6 +15,10 @@
         "mode": "pil",
         "path": "qt/images/file_icons/affinity_photo.png"
     },
+    "alert": {
+        "mode": "qpixmap",
+        "path": "qt/images/alert.png"
+    },
     "archive": {
         "mode": "pil",
         "path": "qt/images/file_icons/archive.png"

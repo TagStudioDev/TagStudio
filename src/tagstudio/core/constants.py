@@ -11,6 +11,7 @@ COPYRIGHT_COMPACT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien\n& TagStudio C
 GITHUB_REPO_URL = "https://github.com/TagStudioDev/TagStudio"
 GITHUB_RELEASE_URL = "https://github.com/TagStudioDev/TagStudio/releases/latest"
 DOCS_URL = "https://docs.tagstud.io"
+FFMPEG_HELP_URL = "https://docs.tagstud.io/help/ffmpeg"
 DISCORD_URL = "https://discord.com/invite/hRNnVKhF2G"
 
 # The folder & file names where TagStudio keeps its data relative to a library.

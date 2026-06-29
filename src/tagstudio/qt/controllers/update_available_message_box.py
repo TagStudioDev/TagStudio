@@ -3,11 +3,12 @@
 
 
 import math
+from functools import partial
 
 import structlog
 from PIL import ImageQt
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import GITHUB_RELEASE_URL, VERSION
@@ -20,14 +21,13 @@ from tagstudio.qt.translations import Translations
 logger = structlog.get_logger(__name__)
 
 
-class OutOfDateMessageBox(QMessageBox):
+class UpdateAvailableMessageBox(QMessageBox):
     """A warning dialog for if the TagStudio is not running under the latest release version."""
 
     def __init__(self):
         super().__init__()
 
         rm = ResourceManager()
-
         title = Translations["version_modal.title"]
         self.setWindowTitle(title)
         pixel_ratio = self.devicePixelRatio()
@@ -40,13 +40,19 @@ class OutOfDateMessageBox(QMessageBox):
         icon.setDevicePixelRatio(pixel_ratio)
         self.setIconPixmap(icon)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setStyleSheet("QPushButton {padding: 3px 8px;}")
 
         self.setStandardButtons(
-            QMessageBox.StandardButton.Ignore | QMessageBox.StandardButton.Cancel
+            QMessageBox.StandardButton.Close
+            | QMessageBox.StandardButton.Ignore
+            | QMessageBox.StandardButton.Ok
         )
-        self.setDefaultButton(QMessageBox.StandardButton.Ignore)
-        # Enables the cancel button but hides it to allow for click X to close dialog
-        self.button(QMessageBox.StandardButton.Cancel).hide()
+        self.setDefaultButton(QMessageBox.StandardButton.Ok)
+        self.button(QMessageBox.StandardButton.Ok).setText(Translations["update.view_update"])
+        self.button(QMessageBox.StandardButton.Ok).clicked.connect(
+            partial(QDesktopServices.openUrl, GITHUB_RELEASE_URL)
+        )
+        self.button(QMessageBox.StandardButton.Ignore).setText(Translations["generic.dont_remind"])
 
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
