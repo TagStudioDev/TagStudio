@@ -65,11 +65,11 @@ A separated, UI agnostic core library that would be used to interface with the T
 
 - [ ] Core Library :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.9.0]**
 - [ ] CLI :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]**
-- [ ] MIT License :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]**
+- [ ] MIT License _(Core Library + CLI)_ :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]**
 
 ### :material-clipboard-text: Format Specification
 
-A detailed written specification for the TagStudio tag and/or library format. Intended for used by third-parties to build alternative cores or protocols that can remain interoperable.
+A detailed specification written for the TagStudio tag and/or library format. Intended for used by third-parties to build alternative cores or protocols that can remain interoperable.
 
 - [ ] Format Specification Established :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v10.0.0]**
 

@@ -172,7 +172,6 @@ See the [**Roadmap**](docs/roadmap.md) on the documentation site for a complete 
 - To provide powerful methods for organization, notably the concept of tag inheritance, or "taggable tags" _(and in the near future, the combination of composition-based tags)._
 - To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or requiring them to change their existing file structures and workflows.
 - To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
-- To make the dang thing look nice, too. It’s 2025, not 1995.
 
 ### Project Priorities
 

@@ -35,7 +35,7 @@ nav:
   - Getting Started:
       - install.md
       - usage.md
-      - Developing:
+      - Developers:
           - developing.md
           - contributing.md
           - style.md
@@ -48,15 +48,14 @@ nav:
       - search.md
       - ignore.md
       - macros.md
-      - Tags:
+      - Tags & Fields:
           - tags.md
           - colors.md
-      - Fields:
           - fields.md
   - Updates:
       - changelog.md
       - roadmap.md
-      - Schema History:
+      - Format History:
           - library-changes.md
 
 theme:
