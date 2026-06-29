@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-VERSION: str = "9.5.7"  # Major.Minor.Patch
+VERSION: str = "9.6.0"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 COPYRIGHT_YEARS: str = "2021-2026"
 COPYRIGHT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien & TagStudio Contributors"
