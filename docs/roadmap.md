@@ -174,8 +174,8 @@ File or file-like [entries](entries.md) stored in the library.
     - [x] Datetimes **[[v9.5.4](changelog.md#954-september-1st-2025)]**
     - [ ] Numeric Fields :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
         - [ ] Optional Units (e.g. inches, cm, height notation, degrees, bytes, etc.) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
-    - [ ] Custom Field Names :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
-        - [x] Removal of Deprecated Fields **[v9.6.0]**
+    - [x] Custom Field Names **[[v9.6.0](changelog.md#960-june-29th-2026)]**
+        - [x] Removal of Deprecated Fields **[[v9.6.0](changelog.md#960-june-29th-2026)]**
 - [ ] Entry Groups :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Non-exclusive; Entries can be in multiple groups :material-chevron-triple-up:{ .priority-high title="High Priority" }
     - [ ] Ability to number entries within group :material-chevron-triple-up:{ .priority-high title="High Priority" }
