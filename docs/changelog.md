@@ -15,9 +15,9 @@ toc_depth: 2
     <img width="480" alt="aurora" src="https://github.com/user-attachments/assets/6103bb88-bc66-4222-9844-ed64d27dd2e7" />
 </p>
 
-## Added
+### Added
 
-### Customizable Fields
+#### Customizable Fields
 
 [Fields](fields.md) are now fully customizable!
 
@@ -34,13 +34,13 @@ toc_depth: 2
 - feat: field template manager by @TrigamDev in #1374
 - feat: add field template editor, editable field names by @CyanVoxel in #1396
 
-### Other Additions
+#### Other Additions
 
 - feat: add ability to configure automatic loading of new files over 10000 by @socalledtheraven in #1349
 - feat: dismiss update notification, change missing ffmpeg popup to banner by @CyanVoxel in #1400
 - feat: allow all raster images to be used as archive thumbnails. by @Sola-ris in #1373
 
-## Fixed
+### Fixed
 
 - fix: Fix update notification crash by @Sola-ris in #1278
 - fix: correct ESCAPABLE_CHARS in query_lang tokenizer by @hieuit095 in #1334
@@ -51,11 +51,11 @@ toc_depth: 2
 - fix: fix faulty progress bars by @ludvig-sandh in #1293
 - perf: Optimize searching tags with DB indexes by @TheBobBobs in #1129
 
-## Changed
+### Changed
 
 - ui: add v9.6 assets, update misc resources by @CyanVoxel in #1398
 
-### Internal Changes
+#### Internal Changes
 
 - minor refactor: cleanup parameters of open_library and open_sqlite_library by @Computerdores in #1294
 - refactor: sql migrations by @Computerdores in #1295
@@ -72,7 +72,7 @@ toc_depth: 2
 - chore(ci): bump ruff to 0.15.17 by @CyanVoxel in #1393
 - fix(pyproject): allow Python 3.13 to function by @xarvex in #1047
 
-### Translations
+#### Translations
 
 - **Amharic** added by @Birhant _(11%, can manually enable in settings file)_
 - **Hebrew** added by @JonathanGlixman _(2%, can manually enable in settings file)_
