@@ -53,7 +53,7 @@ class ProgressWidget(QWidget):
         self, function: Callable, update_label_callback: Callable | None, *done_callbacks
     ):
         """Display the progress widget from a threaded iterable function.
-        
+
         Method expects the iterable to yield the number of completed objects.
         """
         iterator = FunctionIterator(function)
