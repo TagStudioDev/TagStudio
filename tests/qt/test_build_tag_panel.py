@@ -4,7 +4,6 @@
 
 from collections.abc import Callable
 
-import structlog
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
@@ -12,8 +11,6 @@ from tagstudio.core.library.alchemy.models import Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.build_tag import BuildTagPanel, CustomTableItem
 from tagstudio.qt.translations import Translations
-
-logger = structlog.get_logger(__name__)
 
 
 def test_build_tag_panel_add_sub_tag_callback(
@@ -76,7 +73,6 @@ def test_build_tag_panel_remove_alias_callback(
     library.update_tag(tag, [], {alias_1, alias_2})
 
     tag = unwrap(library.get_tag(tag.id))
-    logger.info(tag.aliases)
 
     assert "alias" in tag.alias_strings
     assert "alias_2" in tag.alias_strings
@@ -85,11 +81,7 @@ def test_build_tag_panel_remove_alias_callback(
     qtbot.addWidget(panel)
 
     alias: TagAlias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
-    logger.info(f"test side: {alias.id}:{alias.name}")
-
-    logger.info(f"panel before {[(a.id, a.name) for a in panel.aliases]}")
     panel.remove_alias_callback(alias)
-    logger.info(f"panel after {panel.aliases}")
 
     assert len(panel.aliases) == 1
     assert alias not in panel.aliases
