@@ -890,8 +890,7 @@ class QtDriver(DriverMixin, QObject):
                 self.lib.add_tag(
                     panel.build_tag(),
                     set(panel.parent_ids),
-                    set(panel.alias_names),
-                    set(panel.alias_ids),
+                    set(panel.aliases),
                 ),
                 self.modal.hide(),
             )

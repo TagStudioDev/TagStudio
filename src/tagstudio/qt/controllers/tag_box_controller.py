@@ -87,8 +87,7 @@ class TagBoxWidget(TagBoxWidgetView):
         self.__driver.lib.update_tag(
             build_tag_panel.build_tag(),
             parent_ids=set(build_tag_panel.parent_ids),
-            alias_names=set(build_tag_panel.alias_names),
-            alias_ids=set(build_tag_panel.alias_ids),
+            aliases=set(build_tag_panel.aliases),
         )
         self.on_update.emit()
 

@@ -1710,8 +1710,7 @@ class Library:
         self,
         tag: Tag,
         parent_ids: list[int] | set[int] | None = None,
-        alias_names: list[str] | set[str] | None = None,
-        alias_ids: list[int] | set[int] | None = None,
+        aliases: Iterable[TagAlias] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1721,8 +1720,8 @@ class Library:
                 if parent_ids is not None:
                     self.update_parent_tags(tag, parent_ids, session)
 
-                if alias_ids is not None and alias_names is not None:
-                    self.update_aliases(tag, alias_ids, alias_names, session)
+                if aliases is not None:
+                    self.update_aliases(tag, aliases)
 
                 session.commit()
                 session.expunge(tag)
@@ -2000,11 +1999,10 @@ class Library:
         self,
         tag: Tag,
         parent_ids: list[int] | set[int] | None = None,
-        alias_names: list[str] | set[str] | None = None,
-        alias_ids: list[int] | set[int] | None = None,
+        aliases: Iterable[TagAlias] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
-        self.add_tag(tag, parent_ids, alias_names, alias_ids)
+        self.add_tag(tag, parent_ids, aliases)
 
     def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
         """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
@@ -2055,25 +2053,50 @@ class Library:
             else:
                 self.add_color(new_color_group)
 
-    def update_aliases(
-        self,
-        tag: Tag,
-        alias_ids: list[int] | set[int],
-        alias_names: list[str] | set[str],
-        session: Session,
-    ):
-        prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
+    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias]) -> bool:
+        """Update TagAliases for a given Tag."""
+        with Session(self.engine) as session:
+            # Remove aliases that are no longer on the Tag
+            try:
+                old_aliases = session.scalars(
+                    select(TagAlias).where(TagAlias.tag_id == tag.id)
+                ).all()
+                old_alias_ids: list[int] = [a.id for a in old_aliases]
+                for old_alias in old_aliases:
+                    if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
+                        logger.warning(
+                            "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
+                        )
+                        session.delete(old_alias)
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                logger.error("[Library] Could not update aliases", error=e)
+                return False
 
-        for alias in prev_aliases:
-            if alias.id not in alias_ids or alias.name not in alias_names:
-                session.delete(alias)
-            else:
-                alias_ids.remove(alias.id)
-                alias_names.remove(alias.name)
+            # Update or Add aliases
+            for alias in aliases:
+                # Sanitize alias names
+                alias.name = alias.name.strip()
+                if not alias.name:
+                    continue
 
-        for alias_name in alias_names:
-            alias = TagAlias(alias_name, tag.id)
-            session.add(alias)
+                try:
+                    if alias.id in old_alias_ids:
+                        stmt = (
+                            update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
+                        )
+                        session.execute(stmt)
+                    else:
+                        session.add(alias)
+                except IntegrityError as e:
+                    session.rollback()
+                    logger.error("[Library] Could not update or add alias", error=e)
+                    return False
+
+            session.commit()
+
+        return True
 
     def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
         if tag.id in parent_ids:

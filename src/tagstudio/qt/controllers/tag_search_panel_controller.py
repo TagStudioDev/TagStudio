@@ -110,7 +110,6 @@ class TagSearchPanel(SearchPanel[Tag]):
             Translations["tag.edit"],
             is_savable=True,
         )
-
         edit_tag_modal.saved.connect(lambda: self.edit_item(edit_tag_panel))
         edit_tag_modal.show()
 
@@ -191,10 +190,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         if isinstance(edit_item_panel, BuildTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self.__lib.add_tag(
-                tag,
-                parent_ids=edit_item_panel.parent_ids,
-                alias_names=edit_item_panel.alias_names,
-                alias_ids=edit_item_panel.alias_ids,
+                tag, parent_ids=edit_item_panel.parent_ids, aliases=edit_item_panel.aliases
             )
 
             if choose_item:
@@ -215,8 +211,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         self.__lib.update_tag(
             tag=edit_item_panel.build_tag(),
             parent_ids=edit_item_panel.parent_ids,
-            alias_names=edit_item_panel.alias_names,
-            alias_ids=edit_item_panel.alias_ids,
+            aliases=edit_item_panel.aliases,
         )
         self.update_items(self.search_field.text())
 
