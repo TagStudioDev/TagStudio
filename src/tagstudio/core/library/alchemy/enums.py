@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import enum
 import random
 from dataclasses import dataclass, field, replace
@@ -62,7 +66,7 @@ class TagColorEnum(enum.IntEnum):
 
 class ItemType(enum.Enum):
     ENTRY = 0
-    COLLATION = 1
+    ENTRY_GROUP = 1
     TAG_GROUP = 2
 
 
@@ -153,11 +157,3 @@ class BrowsingState:
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
         return replace(self, show_hidden_entries=show_hidden_entries)
-
-
-class FieldTypeEnum(enum.Enum):
-    TEXT_LINE = "Text Line"
-    TEXT_BOX = "Text Box"
-    TAGS = "Tags"
-    DATETIME = "Datetime"
-    BOOLEAN = "Checkbox"

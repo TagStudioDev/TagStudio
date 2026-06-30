@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from pathlib import Path
@@ -66,8 +65,3 @@ def make_tables(engine: Engine) -> None:
             except OperationalError as e:
                 logger.error("Could not initialize built-in tags", error=e)
                 conn.rollback()
-
-
-def drop_tables(engine: Engine) -> None:
-    logger.info("dropping db tables")
-    Base.metadata.drop_all(engine)

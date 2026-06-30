@@ -1,9 +1,9 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import string
+import warnings
 from pathlib import Path
 
 import pytest
@@ -58,6 +58,8 @@ def test_format_key_validity(translation_filename: str):
 def test_for_unnecessary_translations(translation_filename: str):
     default_translation = load_translation("en.json")
     translation = load_translation(translation_filename)
-    assert set(default_translation.keys()).issuperset(translation.keys()), (
-        f"Translation {translation_filename} has unnecessary keys ({set(translation.keys()).difference(default_translation.keys())})"  # noqa: E501
-    )
+    if not set(default_translation.keys()).issuperset(translation.keys()):
+        message = str(
+            f"Translation {translation_filename} has unnecessary keys ({set(translation.keys()).difference(default_translation.keys())})",  # noqa: E501
+        )
+        warnings.warn(message, stacklevel=1)

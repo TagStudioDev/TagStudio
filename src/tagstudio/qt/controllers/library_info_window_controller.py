@@ -1,6 +1,7 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, override
@@ -21,6 +22,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils import file_opener
 from tagstudio.qt.views.library_info_window_view import LibraryInfoWindowView
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -60,12 +62,12 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         title: str = Translations.format(
             "library_info.title", library_dir=self.lib.library_dir.stem
         )
-        self.title_label.setText(f"<h2>{title}</h2>")
+        self.title_label.setText(header(title, 2))
 
     def update_stats(self):
         self.entry_count_label.setText(f"<b>{self.lib.entries_count}</b>")
         self.tag_count_label.setText(f"<b>{len(self.lib.tags)}</b>")
-        self.field_count_label.setText(f"<b>{len(self.lib.field_types)}</b>")
+        self.field_count_label.setText(f"<b>{len(self.lib.field_templates)}</b>")
         self.namespaces_count_label.setText(f"<b>{len(self.lib.namespaces)}</b>")
         colors_total = 0
         for c in self.lib.tag_color_groups.values():
@@ -161,6 +163,6 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         return size
 
     @override
-    def showEvent(self, event: QtGui.QShowEvent):  # type: ignore
+    def showEvent(self, event: QtGui.QShowEvent):
         self.refresh()
         return super().showEvent(event)

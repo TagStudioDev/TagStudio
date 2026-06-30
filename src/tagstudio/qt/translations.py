@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from collections import defaultdict
 from pathlib import Path
 from platform import system
@@ -13,6 +17,8 @@ logger = structlog.get_logger(__name__)
 DEFAULT_TRANSLATION = "en"
 
 LANGUAGES = {
+    # "Amharic": "am",  # Minimal
+    "Cebuano": "ceb",
     "Chinese (Simplified)": "zh_Hans",
     "Chinese (Traditional)": "zh_Hant",
     "Czech": "cs",
@@ -20,9 +26,12 @@ LANGUAGES = {
     "Dutch": "nl",
     "English": "en",
     "Filipino": "fil",
+    "Finnish": "fi",
     "French": "fr",
     "German": "de",
+    "Greek": "el",
     "Hungarian": "hu",
+    # "Icelandic": "is",  # Minimal
     "Italian": "it",
     "Japanese": "ja",
     "Norwegian Bokmål": "nb_NO",
@@ -34,9 +43,18 @@ LANGUAGES = {
     "Spanish": "es",
     "Swedish": "sv",
     "Tamil": "ta",
+    # "Thai": "th",  # Minimal
     "Toki Pona": "tok",
     "Turkish": "tr",
     "Viossa": "qpv",
+}
+
+# A map of field class names to their respective translation keys.
+FIELD_TYPE_KEYS = {
+    "DatetimeField": "field_type.datetime",
+    "DatetimeFieldTemplate": "field_type.datetime",
+    "TextField": "field_type.text",
+    "TextFieldTemplate": "field_type.text",
 }
 
 
@@ -65,7 +83,7 @@ class Translator:
             for k, v in self._strings.items():
                 self._strings[k] = remove_mnemonic_marker(v)
 
-    def __format(self, text: str, **kwargs) -> str:
+    def __format(self, text: str, **kwargs: ...) -> str:
         try:
             return text.format(**kwargs)
         except (KeyError, ValueError):
@@ -75,11 +93,11 @@ class Translator:
                 kwargs=kwargs,
                 language=self.__lang,
             )
-            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
+            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")  # pyright: ignore[reportExplicitAny]
             params.update(kwargs)
             return text.format_map(params)
 
-    def format(self, key: str, **kwargs) -> str:
+    def format(self, key: str, **kwargs: ...) -> str:
         return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:

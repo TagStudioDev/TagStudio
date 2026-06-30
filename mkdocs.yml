@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 # MkDocs: https://www.mkdocs.org/
@@ -32,29 +35,28 @@ nav:
   - Getting Started:
       - install.md
       - usage.md
-      - Developing:
-        - developing.md
-        - contributing.md
-        - style.md
+      - Developers:
+          - developing.md
+          - contributing.md
+          - style.md
       - Help:
           - help/ffmpeg.md
-  - Using Libraries:
+  - Using TagStudio:
       - libraries.md
       - entries.md
       - preview-support.md
       - search.md
       - ignore.md
       - macros.md
-      - Fields:
-        - fields.md
-      - Tags:
+      - Tags & Fields:
           - tags.md
           - colors.md
+          - fields.md
   - Updates:
       - changelog.md
       - roadmap.md
-      - Schema History:
-        - library-changes.md
+      - Format History:
+          - library-changes.md
 
 theme:
   name: material
@@ -82,7 +84,7 @@ theme:
         icon: material/lightbulb-night-outline
         name: Switch to System Preference
   logo: assets/icon_mono.svg
-  favicon: assets/icon.ico
+  favicon: assets/favicon.ico
   font:
     code: Jetbrains Mono
   language: en
@@ -104,7 +106,6 @@ theme:
       upcoming: material/flask-outline
 
 markdown_extensions:
-
   # Python Markdown
   - abbr
   - admonition
@@ -114,6 +115,7 @@ markdown_extensions:
   - md_in_html
   - tables
   - toc:
+      title: Table of Contents
       permalink: true
       toc_depth: 3
 
@@ -131,6 +133,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.keys
   - pymdownx.mark
+  - pymdownx.magiclink:
+      repo_url_shorthand: True
+      provider: github
+      user: TagStudioDev
+      repo: TagStudio
   - pymdownx.smartsymbols
   - pymdownx.snippets
   - pymdownx.superfences:
@@ -148,8 +155,9 @@ markdown_extensions:
 plugins:
   - search
   - tags
-  - social:  # social embed cards
-      enabled: !ENV [CI, false]  # enabled only when running in CI (eg GitHub Actions)
+  - typeset
+  - social: # social embed cards
+      enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
   - redirects:
       redirect_maps:
         "develop.md": "developing.md"

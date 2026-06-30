@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: MIT
+
+# EditorConfig https://editorconfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+insert_final_newline = true
+max_line_length = 100
+trim_trailing_whitespace = true
+
+[*.{css,json,md}]
+indent_size = 4
+
+[*.{yaml,yml}]
+indent_size = 2

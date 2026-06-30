@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from typing import TYPE_CHECKING, override
@@ -20,6 +19,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.mixed.mirror_entries_modal import MirrorEntriesModal
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -50,7 +50,6 @@ class FixDupeFilesModal(QWidget):
 
         self.dupe_count = QLabel()
         self.dupe_count.setObjectName("dupeCountLabel")
-        self.dupe_count.setStyleSheet("font-weight:bold;font-size:14px;")
         self.dupe_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.file_label = QLabel(Translations["file.duplicates.dupeguru.no_file"])
@@ -120,13 +119,19 @@ class FixDupeFilesModal(QWidget):
     def set_dupe_count(self, count: int):
         if count < 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText(Translations["file.duplicates.matches_uninitialized"])
+            self.dupe_count.setText(
+                header(Translations["file.duplicates.matches_uninitialized"], 4)
+            )
         elif count == 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText(Translations.format("file.duplicates.matches", count=count))
+            self.dupe_count.setText(
+                header(Translations.format("file.duplicates.matches", count=count), 4)
+            )
         else:
             self.mirror_button.setDisabled(False)
-            self.dupe_count.setText(Translations.format("file.duplicates.matches", count=count))
+            self.dupe_count.setText(
+                header(Translations.format("file.duplicates.matches", count=count), 4)
+            )
 
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802

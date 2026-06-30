@@ -1,16 +1,24 @@
 ---
+title: Basic Usage
 icon: material/mouse
 ---
 
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+
 # :material-mouse: Basic Usage
 
-## Creating/Opening a Library
+## :material-database-plus: Creating/Opening a Library
 
-With TagStudio opened, start by creating a new library or opening an existing one using File -> Open/Create Library from the menu bar. TagStudio will automatically create a new library from the chosen directory if one does not already exist. Upon creating a new library, TagStudio will automatically scan your folders for files and add those to your library (no files are moved during this process!).
+To create or open a [library](libraries.md), go to **File -> Open/Create Library** in the menu bar or use <kbd>Ctrl</kbd>+<kbd>O</kbd> (<kbd>⌘ Command </kbd>+<kbd>O</kbd> on macOS) and chose a folder with file contents you'd like to use as a TagStudio library. If a `.TagStudio` folder doesn't already exist inside the directory, TagStudio will create one and automatically scan the folder for files to include. Otherwise, the pre-existing library is opened.
 
-## Refreshing the Library
+### :material-database-refresh: Refreshing Directories
 
-Libraries under 10,000 files automatically scan for new or modified files when opened. In order to refresh the library manually, select "Refresh Directories" under the File menu.
+TagStudio automatically scans for new or updated files when opening a library by default. Manually refresh by going to **File -> Refresh Directories** in the menu or by using <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘ Command </kbd>+<kbd>R</kbd> on macOS).
+
+<!-- prettier-ignore -->
+!!! tip "TagStudio Libraries"
+    To learn more about how TagStudio libraries work and how to use them, visit the **[Libraries](libraries.md)** page.
 
 ## Adding Tags to File Entries
 
@@ -34,14 +42,14 @@ Hover over the field and click the pencil icon. From there, add or edit text in 
 
 Create a new tag by accessing the "New Tag" option from the Edit menu or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>. In the tag creation panel, enter a tag name, optional shorthand name, optional tag aliases, optional parent tags, and an optional color.
 
--   The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
--   The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
--   **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
--   **Parent Tags** are tags in which this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
-    -   Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
-    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
--   The **color** option lets you select an optional color palette to use for your tag.
--   The **"Is Category"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
+- The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
+- The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
+- **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
+- **Parent Tags** are tags in which this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
+    - Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
+    - For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
+- The **color** option lets you select an optional color palette to use for your tag.
+- The **"Is Category"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
 
 ### Tag Manager
 

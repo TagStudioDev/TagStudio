@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import re
@@ -11,8 +10,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel
 from tagstudio.qt.mixed.field_widget import FieldWidget
 
 
-class TextWidget(FieldWidget):
-    def __init__(self, title, text: str) -> None:
+class TextContainerWidget(FieldWidget):
+    def __init__(self, title: str, text: str) -> None:
         super().__init__(title)
         self.setObjectName("textBox")
         self.base_layout = QHBoxLayout()

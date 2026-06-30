@@ -1,6 +1,6 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 
 import math
 from collections.abc import Iterable
@@ -12,7 +12,7 @@ import structlog
 from PIL import Image
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
-from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_QUALITY, DEFAULT_THUMB_CACHE_SIZE
+from tagstudio.qt.global_settings import DEFAULT_CACHED_THUMB_QUALITY, DEFAULT_THUMB_CACHE_SIZE
 
 logger = structlog.get_logger(__name__)
 
@@ -31,7 +31,7 @@ class CacheManager:
         self,
         library_dir: Path,
         max_size: int | float = DEFAULT_THUMB_CACHE_SIZE,
-        img_quality: int = DEFAULT_CACHED_IMAGE_QUALITY,
+        img_quality: int = DEFAULT_CACHED_THUMB_QUALITY,
     ):
         """A class for managing frontend caches, such as for file thumbnails.
 
@@ -47,7 +47,7 @@ class CacheManager:
             math.floor(CacheManager.MAX_FOLDER_SIZE * CacheManager.STAT_MULTIPLIER),
         )
         self.img_quality = (
-            img_quality if img_quality >= 0 and img_quality <= 100 else DEFAULT_CACHED_IMAGE_QUALITY
+            img_quality if img_quality >= 0 and img_quality <= 100 else DEFAULT_CACHED_THUMB_QUALITY
         )
 
         self.folders: list[CacheFolder] = []

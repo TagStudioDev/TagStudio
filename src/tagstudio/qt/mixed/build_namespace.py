@@ -1,9 +1,9 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import contextlib
+from typing import override
 from uuid import uuid4
 
 import structlog
@@ -13,9 +13,9 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceError, slugify
 from tagstudio.core.library.alchemy.models import Namespace
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import line_edit_style
 
 logger = structlog.get_logger(__name__)
 
@@ -112,17 +112,9 @@ class BuildNamespacePanel(PanelWidget):
         is_slug_empty = not slug
         is_invalid = False
 
-        self.name_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_name_empty
-            else ""
-        )
+        self.name_field.setStyleSheet(line_edit_style() if is_name_empty else "")
 
-        self.slug_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_slug_empty or is_invalid
-            else ""
-        )
+        self.slug_field.setStyleSheet(line_edit_style() if is_slug_empty or is_invalid else "")
 
         self.slug_field.setText(slug)
 
@@ -157,6 +149,7 @@ class BuildNamespacePanel(PanelWidget):
         logger.info("[BuildNamespacePanel] Built Namespace", slug=slug, name=name)
         return namespace
 
+    @override
     def parent_post_init(self):
         self.setTabOrder(self.name_field, self.slug_field)
         self.name_field.selectAll()

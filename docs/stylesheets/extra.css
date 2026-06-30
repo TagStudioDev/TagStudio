@@ -1,3 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: (c) TagStudio Contributors
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
 /* Dark Theme */
 [data-md-color-scheme="slate"] {
     --md-default-bg-color: #060617;
@@ -58,11 +62,7 @@
 
 /* Mobile Nav Header */
 .md-nav__source {
-    background: linear-gradient(
-        60deg,
-        rgb(205, 78, 255) 0%,
-        rgb(116, 123, 255) 100%
-    );
+    background: linear-gradient(60deg, rgb(205, 78, 255) 0%, rgb(116, 123, 255) 100%);
     border-style: solid;
     border-width: 0 0 2px 0;
     border-color: #ffffff33;
@@ -142,6 +142,11 @@ h1 > .twemoji {
 
 h2 > .twemoji {
     margin-top: 0.08rem;
+}
+
+td code {
+    margin-right: 0.3rem;
+    padding: 0 !important;
 }
 
 /* Matches the palette used by mkdocs-material */

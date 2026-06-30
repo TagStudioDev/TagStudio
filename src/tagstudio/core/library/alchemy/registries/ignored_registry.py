@@ -1,18 +1,15 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from pathlib import Path
 
 import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -36,15 +33,14 @@ class IgnoredRegistry:
         logger.info("[IgnoredRegistry] Refreshing ignored entries...")
 
         self.ignored_entries = []
-        library_dir: Path = unwrap(self.lib.library_dir)
 
         for i, entry in enumerate(self.lib.all_entries()):
+            yield i
             if not Ignore.compiled_patterns:
                 # If the compiled_patterns has malfunctioned, don't consider that a false positive
                 yield i
-            elif Ignore.compiled_patterns.match(library_dir / entry.path):
+            elif Ignore.compiled_patterns.match(entry.path):
                 self.ignored_entries.append(entry)
-            yield i
 
     def remove_ignored_entries(self) -> None:
         self.lib.remove_entries(list(map(lambda ignored: ignored.id, self.ignored_entries)))

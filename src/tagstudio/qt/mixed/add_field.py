@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from typing import override
@@ -19,7 +18,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.translations import Translations
+from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -34,16 +34,15 @@ class AddFieldModal(QWidget):
         # [Cancel] [Save]
         super().__init__()
         self.lib = library
-        self.setWindowTitle(Translations["library.field.add"])
+        self.setWindowTitle(Translations["field.add"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = QLabel(Translations["library.field.add"])
+        self.title_widget = QLabel(header(Translations["field.add"], 3))
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px;")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_widget = QListWidget()
@@ -73,13 +72,18 @@ class AddFieldModal(QWidget):
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.button_container)
 
+    @override
     def show(self):
         self.list_widget.clear()
-        for df in self.lib.field_types.values():
-            item = QListWidgetItem(f"{df.name} ({df.type.value})")
-            item.setData(Qt.ItemDataRole.UserRole, df.key)
+        for field_template in self.lib.field_templates:
+            field_name_key: str = FIELD_TYPE_KEYS.get(
+                field_template.class_name, "field_type.unknown"
+            )
+            item = QListWidgetItem(f"{field_template.name} ({Translations[field_name_key]})")
+            item.setData(Qt.ItemDataRole.UserRole, field_template)
             self.list_widget.addItem(item)
         self.list_widget.setFocus()
+        self.list_widget.setCurrentRow(0)
 
         super().show()
 

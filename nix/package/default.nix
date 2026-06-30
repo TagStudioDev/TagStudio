@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 {
   ffmpeg-headless,
   lib,
@@ -91,6 +95,7 @@ python3Packages.buildPythonApplication {
   dependencies =
     with python3Packages;
     [
+      audioop-lts
       chardet
       ffmpeg-python
       humanfriendly

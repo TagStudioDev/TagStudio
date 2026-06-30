@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from PIL import Image
@@ -17,11 +16,14 @@ _THEME_DARK_BG: str = "#000000DD"
 _THEME_LIGHT_BG: str = "#FFFFFF55"
 
 
-def theme_fg_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
-    """Overlay the foreground theme color onto an image.
+def auto_theme_overlay(
+    image: Image.Image, inverse: bool = False, use_alpha: bool = True
+) -> Image.Image:
+    """Overlay the current foreground theme color onto an image.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
+        inverse (bool): Option inverse the overlay color relative to the current theme.
         use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
     """
     dark_fg: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG
@@ -30,7 +32,33 @@ def theme_fg_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
     overlay_color = (
         dark_fg if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark else light_fg
     )
+    if inverse:
+        overlay_color = light_fg if overlay_color == dark_fg else dark_fg
 
+    im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
+    return _apply_overlay(image, im)
+
+
+def light_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
+    """Overlay the light theme foreground color onto an image.
+
+    Args:
+        image (Image): The PIL Image object to apply an overlay to.
+        use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
+    """
+    overlay_color: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG
+    im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
+    return _apply_overlay(image, im)
+
+
+def dark_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
+    """Overlay the dark theme foreground color onto an image.
+
+    Args:
+        image (Image): The PIL Image object to apply an overlay to.
+        use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
+    """
+    overlay_color: str = _THEME_LIGHT_FG[:-2] if not use_alpha else _THEME_LIGHT_FG
     im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
     return _apply_overlay(image, im)
 

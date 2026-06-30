@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+
 # TagStudio: A User-Focused Photo & File Management System
 
 [![Downloads](https://img.shields.io/github/downloads/TagStudioDev/TagStudio/total.svg?maxAge=2592001)](https://github.com/TagStudioDev/TagStudio/releases)
@@ -7,7 +10,7 @@
 [![Ruff](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml)
 
 <p align="center">
-  <img width="60%" src="docs/assets/ts-9-3_logo_text.png">
+  <img width="60%" src="src/tagstudio/resources/qt/images/tagstudio_logo-text_color.png">
 </p>
 
 TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure. **Read the documentation and more at [docs.tagstud.io](https://docs.tagstud.io)!**
@@ -21,11 +24,11 @@ TagStudio is a photo & file organization application with an underlying tag-base
 
 ## Contents
 
--   [Feature Highlights](#feature-highlights)
--   [Basic Usage](#basic-usage)
--   [Installation](#installation)
--   [Goals & Priorities](#goals--priorities)
--   [FAQ](#faq)
+- [Feature Highlights](#feature-highlights)
+- [Basic Usage](#basic-usage)
+- [Installation](#installation)
+- [Goals & Priorities](#goals--priorities)
+- [FAQ](#faq)
 
 Translation hosting generously provided by [Weblate](https://weblate.org/en/). Check out our [project page](https://hosted.weblate.org/projects/tagstudio/) to help translate TagStudio!
 
@@ -43,16 +46,16 @@ All file types are supported in TagStudio libraries, just not all have dedicated
 
 For a generalized list of what's currently supported:
 
--   **Images**
-    -   Raster Images (JPEG, PNG, etc.)
-    -   Vector (SVG)
-    -   Animated (GIF, WEBP, APNG)
-    -   RAW Formats
--   **Videos**
--   **Plaintext Files**
--   **Documents** _(If supported)_
--   **eBooks** _(If supported)_
--   **Photoshop PSDs**, **Blender Projects**, **Krita Projects**, and more!
+- **Images**
+    - Raster Images (JPEG, PNG, etc.)
+    - Vector (SVG)
+    - Animated (GIF, WEBP, APNG)
+    - RAW Formats
+- **Videos**
+- **Plaintext Files**
+- **Documents** _(If supported)_
+- **eBooks** _(If supported)_
+- **Photoshop PSDs**, **Blender Projects**, **Krita Projects**, and more!
 
 ### [Tags](https://docs.tagstud.io/tags) and [Fields](https://docs.tagstud.io/fields)
 
@@ -60,28 +63,28 @@ Tags represent an object or attribute - this could be a person, place, object, c
 
 Tags currently consist of the following attributes:
 
--   **Name**: The full name for your tag. **_This does NOT have to be unique!_**
--   **Shorthand Name**: The shortest alternate name for your tag, used for abbreviations.
--   **Aliases**: Alternate names your tag goes by.
--   **Color**: The display color of your tag.
--   **Parent Tags**: Other tags in which this tag inherits from. In practice, this means that this tag can be substituted in searches for any listed parent tags.
-    -   Parent tags checked with the "disambiguation" checkbox next to them will be used to help disambiguate tag names that may not be unique.
-    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
--   **Is Category**: A property that when checked, treats this tag as a category in the preview panel.
+- **Name**: The full name for your tag. **_This does NOT have to be unique!_**
+- **Shorthand Name**: The shortest alternate name for your tag, used for abbreviations.
+- **Aliases**: Alternate names your tag goes by.
+- **Color**: The display color of your tag.
+- **Parent Tags**: Other tags in which this tag inherits from. In practice, this means that this tag can be substituted in searches for any listed parent tags.
+    - Parent tags checked with the "disambiguation" checkbox next to them will be used to help disambiguate tag names that may not be unique.
+    - For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
+- **Is Category**: A property that when checked, treats this tag as a category in the preview panel.
 
 Fields, like tags, are additional pieces of custom metadata that you can add to your file entries. Fields currently have several hardcoded names (e.g. "Title", "Author", "Series") but custom field names are planned for an upcoming update.
 
 Field types currently include:
 
--   **Text Lines**: Single lines of text.
--   **Text Boxes**: Multi-line pieces of text.
--   **Datetimes**: Dates and times.
+- **Text Lines**: Single lines of text.
+- **Text Boxes**: Multi-line pieces of text.
+- **Datetimes**: Dates and times.
 
 ### [Search](https://docs.tagstud.io/search)
 
--   Search for file entries based on tags, file path (`path:`), file types (`filetype:`), and even media types! (`mediatype:`). Path searches currently use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax, so you may need to wrap your filename or filepath in asterisks while searching. This will not be strictly necessary in future versions of the program.
--   Use and combine boolean operators (`AND`, `OR`, `NOT`) along with parentheses groups, quotation escaping, and underscore substitution to create detailed search queries
--   Use special search conditions (`special:untagged` and `special:empty`) to find file entries without tags or fields, respectively
+- Search for file entries based on tags, file path (`path:`), file types (`filetype:`), and even media types! (`mediatype:`). Path searches currently use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax, so you may need to wrap your filename or filepath in asterisks while searching. This will not be strictly necessary in future versions of the program.
+- Use and combine boolean operators (`AND`, `OR`, `NOT`) along with parentheses groups, quotation escaping, and underscore substitution to create detailed search queries
+- Use special search conditions (`special:untagged` and `special:empty`) to find file entries without tags or fields, respectively
 
 ## Basic Usage
 
@@ -165,11 +168,10 @@ See the [**Roadmap**](docs/roadmap.md) on the documentation site for a complete 
 
 ### Overall Goals
 
--   To achieve a portable, private, extensible, open-format, and feature-rich system of organizing and rediscovering files.
--   To provide powerful methods for organization, notably the concept of tag inheritance, or "taggable tags" _(and in the near future, the combination of composition-based tags)._
--   To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or requiring them to change their existing file structures and workflows.
--   To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
--   To make the dang thing look nice, too. It’s 2025, not 1995.
+- To achieve a portable, private, extensible, open-format, and feature-rich system of organizing and rediscovering files.
+- To provide powerful methods for organization, notably the concept of tag inheritance, or "taggable tags" _(and in the near future, the combination of composition-based tags)._
+- To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or requiring them to change their existing file structures and workflows.
+- To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
 
 ### Project Priorities
 
@@ -197,29 +199,29 @@ See the [roadmap](https://docs.tagstud.io/roadmap) page for the core features be
 
 The most important remaining features before I consider the program to be "feature complete" are:
 
--   Custom names for Fields
--   List views for files
--   Multiple root directory support for libraries
--   Improved file entry relinking
--   File entry groups
--   Sorting by file date modified and created
--   Macros
--   Improved search bar with visualized tags and improved autocomplete
--   Side panel for easier tagging (pinned tags, recent tags, tag search, tag palette)
--   Improved tag management interface
--   Improved and finalized Tag Categories
--   Fixed and improved mixed entry data displays (see: [#337](https://github.com/TagStudioDev/TagStudio/issues/337))
--   Sharable tag data
--   Separate core library + API
+- Custom names for Fields
+- List views for files
+- Multiple root directory support for libraries
+- Improved file entry relinking
+- File entry groups
+- Sorting by file date modified and created
+- Macros
+- Improved search bar with visualized tags and improved autocomplete
+- Side panel for easier tagging (pinned tags, recent tags, tag search, tag palette)
+- Improved tag management interface
+- Improved and finalized Tag Categories
+- Fixed and improved mixed entry data displays (see: [#337](https://github.com/TagStudioDev/TagStudio/issues/337))
+- Sharable tag data
+- Separate core library + API
 
 ### What features will NOT be added?
 
--   Native Cloud Integration
-    -   There are plenty of services already (native or third-party) that allow you to mount your cloud drives as virtual drives on your system. Hosting a TagStudio library on one of these mounts should function similarly to what native integration would look like.
-    -   Supporting native cloud integrations such as these would be an unnecessary "reinventing the wheel" burden for us that is outside the scope of this project.
--   Native ChatGPT/Claude/Gemini/_Non-Local_ LLM Integration
-    -   This could mean different things depending on your intentions. Whether it's trying to use an LLM to replace the native search, or to trying to use a model for image recognition, I'm not interested in hooking people's TagStudio libraries into non-local LLMs such as ChatGPT and/or turn the program into a "chatbot" interface (see: [Overall Goals/Privacy](#overall-goals)).
-    -   With that being said, the future TagStudio API should be well-suited to connect to any sort of service you'd like, including machine learning models if so you choose. I just won't _personally_ add any native integrations with online services.
+- Native Cloud Integration
+    - There are plenty of services already (native or third-party) that allow you to mount your cloud drives as virtual drives on your system. Hosting a TagStudio library on one of these mounts should function similarly to what native integration would look like.
+    - Supporting native cloud integrations such as these would be an unnecessary "reinventing the wheel" burden for us that is outside the scope of this project.
+- Native ChatGPT/Claude/Gemini/_Non-Local_ LLM Integration
+    - This could mean different things depending on your intentions. Whether it's trying to use an LLM to replace the native search, or to trying to use a model for image recognition, I'm not interested in hooking people's TagStudio libraries into non-local LLMs such as ChatGPT and/or turn the program into a "chatbot" interface (see: [Overall Goals/Privacy](#overall-goals)).
+    - With that being said, the future TagStudio API should be well-suited to connect to any sort of service you'd like, including machine learning models if so you choose. I just won't _personally_ add any native integrations with online services.
 
 ### Is a Rust port coming?
 

@@ -8,10 +8,7 @@
             "program": "${workspaceRoot}/src/tagstudio/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": [
-                "-o",
-                "~/Documents/Example"
-            ]
+            "args": ["-o", "~/Documents/Example"]
         }
     ]
 }

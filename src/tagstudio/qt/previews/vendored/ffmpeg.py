@@ -1,6 +1,8 @@
-# Copyright (C) 2022  Karl Kroening (kkroening).
-# Licensed under the GPL-3.0 License.
+# SPDX-FileCopyrightText: (c) 2022  Karl Kroening (kkroening)
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 # Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
+
 
 import contextlib
 import json
@@ -25,6 +27,7 @@ FFMPEG_MACOS_LOCATIONS: list[str] = [
 ]
 
 
+# TODO: Make this more intuitive to use in other classes
 def _get_ffprobe_location() -> str:
     cmd: str = "ffprobe"
     if platform.system() == "Darwin":
@@ -38,6 +41,7 @@ def _get_ffprobe_location() -> str:
     return cmd
 
 
+# TODO: Make this more intuitive to use in other classes
 def _get_ffmpeg_location() -> str:
     cmd: str = "ffmpeg"
     if platform.system() == "Darwin":

@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from typing import TYPE_CHECKING, override
@@ -16,6 +15,7 @@ from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.relink_entries_modal import RelinkUnlinkedEntries
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -149,7 +149,7 @@ class FixUnlinkedEntriesModal(QWidget):
         count_text: str = Translations.format(
             "entries.unlinked.unlinked_count", count=count if count >= 0 else "—"
         )
-        self.unlinked_count_label.setText(f"<h3>{count_text}</h3>")
+        self.unlinked_count_label.setText(header(count_text, 3))
 
     @override
     def showEvent(self, event: QtGui.QShowEvent) -> None:

@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import shutil
@@ -27,6 +26,11 @@ EMPTY_LIBRARIES = "empty_libraries"
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_8")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_9")),
         str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_100")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_101")),
+        # str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_102")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_103")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_200")),
+        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_201")),
     ],
 )
 def test_library_migrations(path: str):
@@ -46,9 +50,9 @@ def test_library_migrations(path: str):
     try:
         status = library.open_library(library_dir=temp_path)
         library.close()
-        shutil.rmtree(temp_path)
         assert status.success
     except Exception as e:
         library.close()
-        shutil.rmtree(temp_path)
         raise (e)
+    finally:
+        shutil.rmtree(temp_path)

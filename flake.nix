@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 {
   description = "TagStudio";
 
@@ -28,7 +32,7 @@
       perSystem =
         { pkgs, ... }:
         let
-          python3 = pkgs.python312;
+          python3 = pkgs.python313;
         in
         {
           packages =

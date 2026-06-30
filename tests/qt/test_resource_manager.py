@@ -1,6 +1,5 @@
-# Copyright (C) 2025
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import structlog
@@ -14,6 +13,6 @@ logger = structlog.get_logger()
 def test_get():
     rm = ResourceManager()
 
-    for res in rm._map:  # pyright: ignore[reportPrivateUsage]
+    for res in rm._map:
         assert rm.get(res), f"Could not get resource '{res}'"
         assert unwrap(rm.get_path(res)).exists(), f"Filepath for resource '{res}' does not exist"

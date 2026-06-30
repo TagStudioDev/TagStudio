@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import typing
@@ -11,16 +10,15 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.mixed.field_widget import FieldWidget
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
-from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.stylesheets.stylesheets import add_button_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
@@ -43,34 +41,6 @@ class ColorBoxWidget(FieldWidget):
 
         title = "" if not self.lib.engine else self.lib.get_namespace_name(group)
         super().__init__(title)
-
-        self.add_button_stylesheet = (
-            f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
-            f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-bottom: 2px;"
-            f"padding-left: 4px;"
-            f"font-size: 15px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"outline:none;"
-            f"}}"
-        )
 
         self.setObjectName("colorBox")
         self.base_layout = FlowLayout()
@@ -115,7 +85,7 @@ class ColorBoxWidget(FieldWidget):
             add_button.setText("+")
             add_button.setFlat(True)
             add_button.setFixedSize(22, 22)
-            add_button.setStyleSheet(self.add_button_stylesheet)
+            add_button.setStyleSheet(add_button_style())
             add_button.clicked.connect(
                 lambda: self.edit_color(
                     TagColorGroup(
@@ -135,11 +105,11 @@ class ColorBoxWidget(FieldWidget):
         self.edit_modal = PanelModal(
             build_color_panel,
             "Edit Color",
-            has_save=True,
+            is_savable=True,
         )
 
         self.edit_modal.saved.connect(
-            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())  # type: ignore
+            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())
         )
         self.edit_modal.show()
 

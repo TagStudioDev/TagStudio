@@ -1,13 +1,12 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 from typing import TYPE_CHECKING, Any
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -22,7 +21,10 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.qt.global_settings import (
+    DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
     Splash,
     Theme,
@@ -57,6 +59,7 @@ class SettingsPanel(PanelWidget):
         Splash.CLASSIC: Translations["settings.splash.option.classic"],
         Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
         Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
+        Splash.AURORA: Translations["settings.splash.option.aurora"],
     }
 
     tag_click_action_map: dict[TagClickActionOption, str] = {
@@ -159,8 +162,10 @@ class SettingsPanel(PanelWidget):
         self.thumb_cache_size_layout.setSpacing(6)
         self.thumb_cache_size = QLineEdit()
         self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2)  # High limit
-        self.thumb_cache_size.setValidator(self.validator)
+        self.thumb_cache_size_validator = QDoubleValidator(
+            MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2
+        )  # High limit
+        self.thumb_cache_size.setValidator(self.thumb_cache_size_validator)
         self.thumb_cache_size.setText(
             str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
         )
@@ -171,10 +176,34 @@ class SettingsPanel(PanelWidget):
             Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
         )
 
+        # Cached Thumbnail Resolution
+        self.cached_thumb_res_container = QWidget()
+        self.cached_thumb_res_layout = QHBoxLayout(self.cached_thumb_res_container)
+        self.cached_thumb_res_layout.setContentsMargins(0, 0, 0, 0)
+        self.cached_thumb_res_layout.setSpacing(6)
+        self.cached_thumb_res = QLineEdit()
+        self.cached_thumb_res.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.cached_thumb_res_validator = QIntValidator(MIN_CACHED_THUMB_RES, MAX_CACHED_THUMB_RES)
+        self.cached_thumb_res.setValidator(self.cached_thumb_res_validator)
+        self.cached_thumb_res.setText(str(self.driver.settings.cached_thumb_resolution))
+        self.cached_thumb_res_layout.addWidget(self.cached_thumb_res)
+        self.cached_thumb_res_layout.setStretch(1, 2)
+        self.cached_thumb_res_layout.addWidget(QLabel("px"))
+        form_layout.addRow(
+            Translations["settings.cached_thumb_resolution.label"], self.cached_thumb_res_container
+        )
+
         # Autoplay
         self.autoplay_checkbox = QCheckBox()
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
         form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
+
+        # Scan for new files when a library is opened
+        self.scan_files_on_open_checkbox = QCheckBox()
+        self.scan_files_on_open_checkbox.setChecked(self.driver.settings.scan_files_on_open)
+        form_layout.addRow(
+            Translations["settings.scan_files_on_open"], self.scan_files_on_open_checkbox
+        )
 
         # Show Filenames in Grid
         self.show_filenames_checkbox = QCheckBox()
@@ -291,10 +320,18 @@ class SettingsPanel(PanelWidget):
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "generate_thumbs": self.generate_thumbs.isChecked(),
             "thumb_cache_size": max(
-                float(self.thumb_cache_size.text()) or DEFAULT_THUMB_CACHE_SIZE,
+                float(self.thumb_cache_size.text() or DEFAULT_THUMB_CACHE_SIZE),
                 MIN_THUMB_CACHE_SIZE,
             ),
+            "cached_thumb_resolution": min(
+                max(
+                    int(self.cached_thumb_res.text() or DEFAULT_CACHED_THUMB_RES),
+                    MIN_CACHED_THUMB_RES,
+                ),
+                MAX_CACHED_THUMB_RES,
+            ),
             "autoplay": self.autoplay_checkbox.isChecked(),
+            "scan_files_on_open": self.scan_files_on_open_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
             "infinite_scroll": self.infinite_scroll.isChecked(),
@@ -313,8 +350,10 @@ class SettingsPanel(PanelWidget):
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
+        driver.settings.scan_files_on_open = settings["scan_files_on_open"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.thumb_cache_size = settings["thumb_cache_size"]
+        driver.settings.cached_thumb_resolution = settings["cached_thumb_resolution"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.infinite_scroll = settings["infinite_scroll"]
@@ -324,7 +363,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
-        driver.settings.splash = settings["splash"]
+        driver.settings.splash = Splash(settings["splash"]) or Splash.DEFAULT
 
         driver.settings.save()
 
@@ -348,9 +387,9 @@ class SettingsPanel(PanelWidget):
         modal = PanelModal(
             widget=settings_panel,
             window_title=Translations["settings.title"],
-            done_callback=lambda: settings_panel.update_settings(driver),
-            has_save=True,
+            is_savable=True,
         )
+        modal.saved.connect(lambda: settings_panel.update_settings(driver))
         modal.title_widget.setVisible(False)
 
         return modal

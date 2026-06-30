@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -34,10 +38,10 @@ class UnlinkedRegistry:
 
         self.unlinked_entries = []
         for i, entry in enumerate(self.lib.all_entries()):
+            yield i
             full_path = unwrap(self.lib.library_dir) / entry.path
             if not full_path.exists() or not full_path.is_file():
                 self.unlinked_entries.append(entry)
-            yield i
 
     def match_unlinked_file_entry(self, match_entry: Entry) -> list[Path]:
         """Try and match unlinked file entries with matching results in the library directory.
@@ -68,6 +72,7 @@ class UnlinkedRegistry:
         self.files_fixed_count = 0
         matched_entries: list[Entry] = []
         for i, entry in enumerate(self.unlinked_entries):
+            yield i
             item_matches = self.match_unlinked_file_entry(entry)
             if len(item_matches) == 1:
                 logger.info(
@@ -84,7 +89,6 @@ class UnlinkedRegistry:
                         continue
                 self.files_fixed_count += 1
                 matched_entries.append(entry)
-            yield i
 
         for entry in matched_entries:
             self.unlinked_entries.remove(entry)

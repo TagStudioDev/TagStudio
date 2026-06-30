@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 """A pagination widget created for TagStudio."""
@@ -12,7 +11,7 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
 
@@ -45,8 +44,8 @@ class Pagination(QWidget):
 
         # [<] ----------------------------------
         self.prev_button = QPushButtonWrapper()
-        prev_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
-        prev_icon = theme_fg_overlay(prev_icon, use_alpha=False)
+        prev_icon: Image.Image = self.rm.bxs_left_arrow
+        prev_icon = auto_theme_overlay(prev_icon, use_alpha=False)
         self.prev_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(prev_icon)))
         self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.button_size)
@@ -98,8 +97,8 @@ class Pagination(QWidget):
 
         # ---------------------------------- [>]
         self.next_button = QPushButtonWrapper()
-        next_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
-        next_icon = theme_fg_overlay(next_icon, use_alpha=False)
+        next_icon: Image.Image = self.rm.bxs_right_arrow
+        next_icon = auto_theme_overlay(next_icon, use_alpha=False)
         self.next_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(next_icon)))
         self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.button_size)
@@ -219,7 +218,7 @@ class Pagination(QWidget):
                 if i < index:
                     if (i != 0) and i >= index - 4:
                         self.start_buffer_layout.itemAt(i - start_offset).widget().setHidden(False)
-                        self.start_buffer_layout.itemAt(i - start_offset).widget().setText(  # type: ignore
+                        self.start_buffer_layout.itemAt(i - start_offset).widget().setText(  # pyright: ignore[reportAttributeAccessIssue]
                             str(i + 1)
                         )
                         self._assign_click(
@@ -238,9 +237,7 @@ class Pagination(QWidget):
                 elif i > index:
                     if i != page_count - 1 and i <= index + 4:
                         self.end_buffer_layout.itemAt(i - end_offset).widget().setHidden(False)
-                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(  # type: ignore
-                            str(i + 1)
-                        )
+                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(str(i + 1))  # pyright: ignore[reportAttributeAccessIssue]
                         self._assign_click(
                             cast(
                                 QPushButtonWrapper,

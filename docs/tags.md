@@ -1,6 +1,10 @@
 ---
+title: Tags
 icon: material/tag-text
 ---
+
+<!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
 
 # :material-tag-text: Tags
 
@@ -10,9 +14,9 @@ Tags are discrete objects that represent some attribute. This could be a person,
 
 TagStudio tags do not share the same naming limitations of many other tagging solutions. The key standouts of tag names in TagStudio are:
 
--   Tag names do **NOT** have to be unique
--   Tag names are **NOT** limited to specific characters
--   Tags can have **aliases**, a.k.a. alternate names to go by
+- Tag names do **NOT** have to be unique
+- Tag names are **NOT** limited to specific characters
+- Tags can have **aliases**, a.k.a. alternate names to go by
 
 ### Name
 
@@ -66,7 +70,7 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 <!-- prettier-ignore -->
 !!! warning ""
-    **_Coming in version 9.6.x_**
+    **_Planned for future version_** *(See the [Roadmap](roadmap.md))*
 
 Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming "Tag Override" feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 

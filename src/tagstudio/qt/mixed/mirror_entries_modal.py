@@ -1,6 +1,5 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
 import typing
@@ -74,7 +73,7 @@ class MirrorEntriesModal(QWidget):
     def mirror_entries(self):
         def displayed_text(x):
             return Translations.format(
-                "entries.mirror.label", idx=x + 1, count=self.tracker.groups_count
+                "entries.mirror.label", idx=x, total=self.tracker.groups_count
             )
 
         pw = ProgressWidget(
@@ -95,9 +94,9 @@ class MirrorEntriesModal(QWidget):
         mirrored: list = []
         lib = self.driver.lib
         for i, entries in enumerate(self.tracker.groups):
-            lib.mirror_entry_fields(*entries)
-            sleep(0.005)
             yield i
+            lib.mirror_entry_fields(entries)
+            sleep(0.005)
 
         for d in mirrored:
             self.tracker.groups.remove(d)

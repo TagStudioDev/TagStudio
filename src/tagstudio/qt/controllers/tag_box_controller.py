@@ -1,7 +1,8 @@
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
 
+from functools import partial
 from typing import TYPE_CHECKING, override
 
 import structlog
@@ -34,7 +35,7 @@ class TagBoxWidget(TagBoxWidgetView):
         self.__entries = entries
 
     @override
-    def _on_click(self, tag: Tag) -> None:  # type: ignore[misc]
+    def _on_click(self, tag: Tag) -> None:
         match self.__driver.settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
@@ -58,7 +59,7 @@ class TagBoxWidget(TagBoxWidgetView):
                 )
 
     @override
-    def _on_remove(self, tag: Tag) -> None:  # type: ignore[misc]
+    def _on_remove(self, tag: Tag) -> None:
         logger.info(
             "[TagBoxWidget] remove_tag",
             selected=self.__entries,
@@ -70,29 +71,28 @@ class TagBoxWidget(TagBoxWidgetView):
         self.on_update.emit()
 
     @override
-    def _on_edit(self, tag: Tag) -> None:  # type: ignore[misc]
+    def _on_edit(self, tag: Tag) -> None:
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
 
         edit_modal = PanelModal(
             build_tag_panel,
             self.__driver.lib.tag_display_name(tag),
             "Edit Tag",
-            done_callback=self.on_update.emit,
-            has_save=True,
+            is_savable=True,
         )
-        # TODO - this was update_tag()
-        edit_modal.saved.connect(
-            lambda: self.__driver.lib.update_tag(
-                build_tag_panel.build_tag(),
-                parent_ids=set(build_tag_panel.parent_ids),
-                alias_names=set(build_tag_panel.alias_names),
-                alias_ids=set(build_tag_panel.alias_ids),
-            )
-        )
+        edit_modal.saved.connect(partial(self._update_tag_callback, build_tag_panel))
         edit_modal.show()
 
+    def _update_tag_callback(self, build_tag_panel: BuildTagPanel):
+        self.__driver.lib.update_tag(
+            build_tag_panel.build_tag(),
+            parent_ids=set(build_tag_panel.parent_ids),
+            aliases=set(build_tag_panel.aliases),
+        )
+        self.on_update.emit()
+
     @override
-    def _on_search(self, tag: Tag) -> None:  # type: ignore[misc]
+    def _on_search(self, tag: Tag) -> None:
         self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
         self.__driver.update_browsing_state(
             BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
