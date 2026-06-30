@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
 {
   ffmpeg-headless,
   lib,
@@ -84,8 +83,10 @@ python3Packages.buildPythonApplication {
     "py7zr"
     "pyside6"
     "rarfile"
+    "rawpy"
     "requests"
     "semver"
+    "Send2Trash"
     "structlog"
     "typing-extensions"
   ];
@@ -130,6 +131,7 @@ python3Packages.buildPythonApplication {
     "test_close_library" # TODO: Look into segfault.
     "test_flow_layout_happy_path"
     "test_get" # TODO: Look further into, might be possible to run.
+    "test_github_api_unavailable"
     "test_json_migration"
     "test_library_migrations"
     "test_update_tags"
