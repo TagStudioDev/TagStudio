@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QProgressDialog,
+    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -47,7 +48,6 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.paged_body_wrapper import PagedBodyWrapper
-from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
@@ -99,8 +99,8 @@ class JsonMigrationModal(QObject):
         body_wrapper.layout().addWidget(body_label)
         body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
 
-        cancel_button = QPushButtonWrapper(Translations["generic.cancel"])
-        next_button = QPushButtonWrapper(Translations["generic.continue"])
+        cancel_button = QPushButton(Translations["generic.cancel"])
+        next_button = QPushButton(Translations["generic.continue"])
         cancel_button.clicked.connect(self.migration_cancelled.emit)
 
         self.stack.append(
@@ -289,14 +289,12 @@ class JsonMigrationModal(QObject):
         self.body_wrapper_01.layout().addWidget(desc_label)
         self.body_wrapper_01.layout().setSpacing(12)
 
-        back_button = QPushButtonWrapper(Translations["generic.navigation.back"])
-        start_button = QPushButtonWrapper(Translations["json_migration.start_and_preview"])
+        back_button = QPushButton(Translations["generic.navigation.back"])
+        start_button = QPushButton(Translations["json_migration.start_and_preview"])
         start_button.setMinimumWidth(120)
         start_button.clicked.connect(self.migrate)
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
-        finish_button: QPushButtonWrapper = QPushButtonWrapper(
-            Translations["json_migration.finish_migration"]
-        )
+        finish_button = QPushButton(Translations["json_migration.finish_migration"])
         finish_button.setMinimumWidth(120)
         finish_button.setDisabled(True)
         finish_button.clicked.connect(self.finish_migration)
@@ -381,7 +379,7 @@ class JsonMigrationModal(QObject):
                     pb.setMinimum(1),
                     pb.setValue(1),
                     # Enable the finish button
-                    cast(QPushButtonWrapper, self.stack[1].buttons[4]).setDisabled(False),
+                    cast(QPushButton, self.stack[1].buttons[4]).setDisabled(False),
                 )
             )
             QThreadPool.globalInstance().start(r)
