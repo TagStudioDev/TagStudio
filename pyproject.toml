@@ -65,9 +65,11 @@ packages = ["src/tagstudio"]
 
 
 [tool.pytest.ini_options]
-#addopts = "-m 'not qt'"
 qt_api = "pyside6"
 pythonpath = ["src"]
+filterwarnings = [
+    "ignore:DISTINCT ON is currently supported only by the PostgreSQL dialect:sqlalchemy.exc.SADeprecationWarning",
+]
 
 [tool.pyright]
 ignore = [
@@ -76,7 +78,8 @@ ignore = [
     "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
-# reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+# Reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+# Some rules exclusive to basedpyright: https://docs.basedpyright.com/latest/benefits-over-pyright/new-diagnostic-rules/
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
