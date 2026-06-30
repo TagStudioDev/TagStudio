@@ -1275,9 +1275,7 @@ class Library:
         library_dir = unwrap(self.library_dir)
 
         with Session(unwrap(self.engine)) as session:
-            rows = session.execute(
-                select(Entry.id, Entry.path).where(Entry.id.in_(ids))
-            ).fetchall()
+            rows = session.execute(select(Entry.id, Entry.path).where(Entry.id.in_(ids))).fetchall()
 
         id_to_path: dict[int, Path] = {row[0]: row[1] for row in rows}
 

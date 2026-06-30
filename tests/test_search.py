@@ -174,7 +174,7 @@ def _make_size_library(files: list[tuple[str, bytes]]) -> tuple[Library, Tempora
         full = lib_path / rel_path
         full.parent.mkdir(parents=True, exist_ok=True)
         full.write_bytes(content)
-        entries.append(Entry(folder=folder, path=Path(rel_path), fields=lib.default_fields))
+        entries.append(Entry(folder=folder, path=Path(rel_path), fields=[]))
 
     lib.add_entries(entries)
     return lib, tmp
@@ -223,11 +223,8 @@ def test_sort_by_size_descending():
             assert entry is not None
             sizes.append((unwrap(lib.library_dir) / entry.path).stat().st_size)
 
-        assert (
-            sizes == sorted(sizes, reverse=True)
-        ), (
-            f"Expected descending order, "
-            f"got sizes: {sizes}"
+        assert sizes == sorted(sizes, reverse=True), (
+            f"Expected descending order, got sizes: {sizes}"
         )
     finally:
         tmp.cleanup()
@@ -258,7 +255,7 @@ def test_sort_by_size_missing_file_sorts_to_start_ascending():
     try:
         folder = unwrap(lib.folder)
         # Add an entry for a file that doesn't exist on disk
-        ghost = Entry(folder=folder, path=Path("ghost.bin"), fields=lib.default_fields)
+        ghost = Entry(folder=folder, path=Path("ghost.bin"), fields=[])
         lib.add_entries([ghost])
 
         state = BrowsingState(sorting_mode=SortingModeEnum.SIZE, ascending=True)
