@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 if TYPE_CHECKING:
     from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
@@ -75,7 +76,7 @@ class UnlinkedEntriesModal(QWidget):
         count_text: str = Translations.format(
             "entries.unlinked.unlinked_count", count=count if count >= 0 else "—"
         )
-        self.unlinked_count_label.setText(f"<h3>{count_text}</h3>")
+        self.unlinked_count_label.setText(header(count_text, 3))
 
     def _on_refresh(self):
         self.scanner.scan(on_finish=self.update_unlinked_count)

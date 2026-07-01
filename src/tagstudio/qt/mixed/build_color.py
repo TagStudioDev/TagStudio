@@ -3,6 +3,7 @@
 
 
 import contextlib
+from typing import override
 
 import structlog
 from PySide6.QtCore import Qt, Signal
@@ -24,14 +25,14 @@ from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
-from tagstudio.qt.mixed.tag_widget import (
-    get_border_color,
-    get_highlight_color,
-    get_text_color,
-)
-from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    checkbox_style,
+    line_edit_style,
+    list_button_style,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -129,43 +130,12 @@ class BuildColorPanel(PanelWidget):
                 color=QColor(unwrap(self.preview_button.tag_color_group).secondary)
                 if unwrap(self.preview_button.tag_color_group).secondary
                 else None,
-                color_border=checked,
             )
         )
         self.border_layout.addWidget(self.border_checkbox)
         self.border_label = QLabel(Translations["color.color_border"])
         self.border_layout.addWidget(self.border_label)
-
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-        self.border_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.border_checkbox.setStyleSheet(checkbox_style())
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.preview_widget)
@@ -222,89 +192,20 @@ class BuildColorPanel(PanelWidget):
     def update_primary(self, color: QColor):
         logger.info("[BuildColorPanel] Updating Primary", primary_color=color)
 
-        highlight_color = get_highlight_color(color)
-        text_color = get_text_color(color, highlight_color)
-        border_color = get_border_color(color)
-
         hex_code = color.name().upper()
+
         self.primary_button.setText(hex_code)
-        self.primary_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: rgba{color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"font-weight: 600;"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-bottom: 1px;"
-            f"padding-left: 4px;"
-            f"font-size: 13px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{highlight_color.toTuple()};"
-            f"color: rgba{color.toTuple()};"
-            f"border-color: rgba{color.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"padding-right: 0px;"
-            f"padding-left: 0px;"
-            f"outline-style: solid;"
-            f"outline-width: 1px;"
-            f"outline-radius: 4px;"
-            f"outline-color: rgba{text_color.toTuple()};"
-            f"}}"
-        )
+        self.primary_button.setStyleSheet(list_button_style(color))
         self.preview_button.set_tag_color_group(self.build_color()[1])
 
-    def update_secondary(self, color: QColor | None = None, color_border: bool = False):
+    def update_secondary(self, color: QColor | None = None):
         logger.info("[BuildColorPanel] Updating Secondary", color=color)
 
         color_ = color or QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-
-        highlight_color = get_highlight_color(color_)
-        text_color = get_text_color(color_, highlight_color)
-        border_color = get_border_color(color_)
-
         hex_code = "" if not color else color.name().upper()
-        self.secondary_button.setText(
-            Translations["color.title.no_color"] if not color else hex_code
-        )
-        self.secondary_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: rgba{color_.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"font-weight: 600;"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"padding-right: 4px;"
-            f"padding-bottom: 1px;"
-            f"padding-left: 4px;"
-            f"font-size: 13px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QPushButton::pressed{{"
-            f"background: rgba{highlight_color.toTuple()};"
-            f"color: rgba{color_.toTuple()};"
-            f"border-color: rgba{color_.toTuple()};"
-            f"}}"
-            f"QPushButton::focus{{"
-            f"padding-right: 0px;"
-            f"padding-left: 0px;"
-            f"outline-style: solid;"
-            f"outline-width: 1px;"
-            f"outline-radius: 4px;"
-            f"outline-color: rgba{text_color.toTuple()};"
-            f"}}"
-        )
+
+        self.secondary_button.setText(hex_code if color else Translations["color.title.no_color"])
+        self.secondary_button.setStyleSheet(list_button_style(color_))
         self.preview_button.set_tag_color_group(self.build_color()[1])
 
     def update_known_colors(self):
@@ -346,17 +247,9 @@ class BuildColorPanel(PanelWidget):
         is_slug_empty = not slug
         is_invalid = False
 
-        self.name_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_name_empty
-            else ""
-        )
+        self.name_field.setStyleSheet(line_edit_style() if is_name_empty else "")
 
-        self.slug_field.setStyleSheet(
-            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
-            if is_slug_empty or is_invalid
-            else ""
-        )
+        self.slug_field.setStyleSheet(line_edit_style() if is_slug_empty or is_invalid else "")
 
         self.slug_field.setText(slug)
         self.update_preview_text()
@@ -393,13 +286,7 @@ class BuildColorPanel(PanelWidget):
         )
         return (self.color_group, new_color)
 
+    @override
     def parent_post_init(self):
-        # self.setTabOrder(self.name_field, self.shorthand_field)
-        # self.setTabOrder(self.shorthand_field, self.aliases_add_button)
-        # self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
-        # self.setTabOrder(self.parent_tags_add_button, self.color_button)
-        # self.setTabOrder(self.color_button, self.panel_cancel_button)
-        # self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
-        # self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()
         self.name_field.setFocus()

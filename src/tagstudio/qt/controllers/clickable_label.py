@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import override
+from typing import Any, override
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QMouseEvent
@@ -14,8 +14,8 @@ class ClickableLabel(QLabel):
 
     clicked = Signal()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args: Any, **kwarg: Any):  # pyright: ignore[reportExplicitAny]
+        super().__init__(*args, **kwarg)
 
     @override
     def mousePressEvent(self, ev: QMouseEvent):

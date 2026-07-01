@@ -26,8 +26,10 @@ DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
 MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
 
 # See: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp-saving
-DEFAULT_CACHED_IMAGE_QUALITY = 80
-DEFAULT_CACHED_IMAGE_RES = 256
+DEFAULT_CACHED_THUMB_QUALITY = 80  # WebP Compression Quality
+MIN_CACHED_THUMB_RES = 32  # Pixels
+MAX_CACHED_THUMB_RES = 1024  # Pixels
+DEFAULT_CACHED_THUMB_RES = 256  # Pixels
 
 
 class Theme(IntEnum):
@@ -43,6 +45,7 @@ class Splash(StrEnum):
     CLASSIC = "classic"
     GOO_GEARS = "goo_gears"
     NINETY_FIVE = "95"
+    AURORA = "aurora"
 
 
 class TomlEnumEncoder(toml.TomlEncoder):
@@ -61,8 +64,8 @@ class GlobalSettings(BaseModel):
     open_last_loaded_on_startup: bool = Field(default=True)
     generate_thumbs: bool = Field(default=True)
     thumb_cache_size: float = Field(default=DEFAULT_THUMB_CACHE_SIZE)
-    cached_thumb_quality: int = Field(default=DEFAULT_CACHED_IMAGE_QUALITY)
-    cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_IMAGE_RES)
+    cached_thumb_quality: int = Field(default=DEFAULT_CACHED_THUMB_QUALITY)
+    cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_THUMB_RES)
     autoplay: bool = Field(default=True)
     scan_files_on_open: bool = Field(default=True)
     loop: bool = Field(default=True)

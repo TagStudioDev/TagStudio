@@ -17,14 +17,14 @@ import sys
 import time
 from argparse import Namespace
 from collections import OrderedDict
+from functools import partial
 from pathlib import Path
 from queue import Queue
-from shutil import which
 from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_size, format_timespan
+from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
@@ -37,22 +37,14 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPalette,
 )
-from PySide6.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-)
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
-import tagstudio.qt.resources_rc  # noqa: F401
+# This import has side-effect of importing PySide resources
+import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.library.alchemy.enums import (
-    BrowsingState,
-    SortingModeEnum,
-)
+from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
+from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -62,23 +54,14 @@ from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
-from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
-from tagstudio.qt.controllers.field_template_search_panel_controller import (
-    FieldTemplateSearchPanel,
-)
-
-# this import has side-effect of import PySide resources
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
-from tagstudio.qt.controllers.out_of_date_message_box import OutOfDateMessageBox
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
-from tagstudio.qt.global_settings import (
-    DEFAULT_GLOBAL_SETTINGS_PATH,
-    GlobalSettings,
-    Theme,
-)
+from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
+from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.qt.mixed.about_modal import AboutModal
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
@@ -90,7 +73,6 @@ from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
-from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_deleter import delete_file
@@ -98,6 +80,7 @@ from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSea
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.stylesheets.stylesheets import header
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
@@ -110,9 +93,9 @@ BADGE_TAGS = {
 if sys.platform == "win32":
     from signal import SIGINT, SIGTERM, signal
 
-    SIGQUIT = SIGTERM
+    SIGQUIT = SIGTERM  # pyright: ignore
 else:
-    from signal import SIGINT, SIGQUIT, SIGTERM, signal
+    from signal import SIGINT, SIGQUIT, SIGTERM, signal  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
 
@@ -372,10 +355,12 @@ class QtDriver(DriverMixin, QObject):
                 view=TagSearchPanelView(is_tag_chooser=False),
             ),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.tag_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Color Group Manager panel
@@ -389,10 +374,12 @@ class QtDriver(DriverMixin, QObject):
                 view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
             ),
             title=Translations["field_template_manager.title"],
-            done_callback=lambda checked=False: self.main_window.preview_panel.set_selection(
+            is_savable=False,
+        )
+        self.field_template_manager_panel.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
-            ),
-            has_save=False,
+            )
         )
 
         # Initialize the Tag Search panel
@@ -421,7 +408,7 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.call_if_library_open(self.backup_library)
         )
 
-        # Settings...
+        # Settings
         self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
 
         # Open Library on Start
@@ -625,14 +612,7 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        # Check if FFmpeg or FFprobe are missing and show warning if so
-        if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
-            FfmpegMissingMessageBox().show()
-
-        latest_version = TagStudioCore.get_most_recent_release_version()
-        if latest_version and is_version_outdated(VERSION, latest_version):
-            OutOfDateMessageBox().exec()
-
+        self.check_for_update()
         self.app.exec()
         self.shutdown()
 
@@ -732,7 +712,7 @@ class QtDriver(DriverMixin, QObject):
         self.ignore_modal = PanelModal(
             panel,
             Translations["menu.edit.ignore_files"],
-            has_save=True,
+            is_savable=True,
         )
         self.ignore_modal.saved.connect(panel.save)
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
@@ -772,7 +752,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.cached_values.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.cached_values.sync()
 
         # Reset library state
@@ -872,7 +852,7 @@ class QtDriver(DriverMixin, QObject):
             panel,
             Translations["tag.new"],
             Translations["tag.add"],
-            has_save=True,
+            is_savable=True,
         )
 
         self.modal.saved.connect(
@@ -880,8 +860,7 @@ class QtDriver(DriverMixin, QObject):
                 self.lib.add_tag(
                     panel.build_tag(),
                     set(panel.parent_ids),
-                    set(panel.alias_names),
-                    set(panel.alias_ids),
+                    set(panel.aliases),
                 ),
                 self.modal.hide(),
             )
@@ -1005,9 +984,8 @@ class QtDriver(DriverMixin, QObject):
         perm_warning_msg = Translations.format(
             "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
-        perm_warning: str = (
-            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
-            f"{perm_warning_msg}</h4>"
+        perm_warning: str = header(
+            perm_warning_msg, 4, get_ui_color(ColorType.PRIMARY, UiColor.RED)
         )
 
         msg = QMessageBox()
@@ -1024,8 +1002,8 @@ class QtDriver(DriverMixin, QObject):
                 "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.singular']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.singular'], 4)}"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
@@ -1036,8 +1014,8 @@ class QtDriver(DriverMixin, QObject):
                 trash_term=trash_term(),
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.plural']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.plural'], 4)}"
                 f"{perm_warning}<br>"
             )
 
@@ -1440,7 +1418,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def remove_recent_library(self, item_key: str):
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
         self.cached_values.remove(item_key)
         self.cached_values.endGroup()
         self.cached_values.sync()
@@ -1450,7 +1428,7 @@ class QtDriver(DriverMixin, QObject):
         item_limit: int = 10
         path = Path(path)
 
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
 
         all_libs = {str(time.time()): str(path)}
 
@@ -1477,7 +1455,7 @@ class QtDriver(DriverMixin, QObject):
         lib_items: dict[str, tuple[str, str]] = {}
 
         # get recent libraries sorted by timestamp
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
         for item_tstamp in self.cached_values.allKeys():
             val = str(self.cached_values.value(item_tstamp, type=str))
             cut_val = val
@@ -1498,8 +1476,8 @@ class QtDriver(DriverMixin, QObject):
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
-        settings = self.cached_values
-        settings.beginGroup(SettingItems.LIBS_LIST)
+        cache = self.cached_values
+        cache.beginGroup(AppCacheItems.LIBS_LIST)
         self.cached_values.remove("")
         self.cached_values.endGroup()
         self.cached_values.sync()
@@ -1507,6 +1485,23 @@ class QtDriver(DriverMixin, QObject):
 
     def open_settings_modal(self):
         SettingsPanel.build_modal(self).show()
+
+    def check_for_update(self):
+        """Check for an update to TagStudio and display a message box if there is one."""
+        latest_version = TagStudioCore.get_most_recent_release_version()
+        if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
+            return
+
+        if latest_version and is_version_outdated(VERSION, latest_version):
+            update_box = UpdateAvailableMessageBox()
+            update_box.button(QMessageBox.StandardButton.Ignore).clicked.connect(
+                partial(self.dismiss_update, str(latest_version))
+            )
+            update_box.exec()
+
+    def dismiss_update(self, version: str):
+        """Dismiss an update notification for a specific new version of TagStudio."""
+        self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""

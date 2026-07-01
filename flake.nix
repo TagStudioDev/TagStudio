@@ -32,7 +32,7 @@
       perSystem =
         { pkgs, ... }:
         let
-          python3 = pkgs.python312;
+          python3 = pkgs.python313;
         in
         {
           packages =

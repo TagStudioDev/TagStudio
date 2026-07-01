@@ -9,6 +9,85 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+## 9.6.0 <small>June 29th, 2026</small>
+
+<p align="center">
+    <img width="480" alt="aurora" src="https://github.com/user-attachments/assets/6103bb88-bc66-4222-9844-ed64d27dd2e7" />
+</p>
+
+### Added
+
+#### Customizable Fields
+
+[Fields](fields.md) are now fully customizable!
+
+- The built-in list of fields (now referred to as "field templates") has been reduced to a list of handy essential templates that can be fully modified or deleted
+- "Text Line" and "Text Box" field types have been combined into a single "Text" type with a "Multiline" option that can be configured on templates or toggled dynamically on existing text fields
+- You can now create your own field templates in with custom names, types, and other options
+- Fields applied to file entries can now have their names edited
+
+<img width="314" height="507" alt="field_template_manager" src="https://github.com/user-attachments/assets/523fac64-e0d6-4697-ba25-6ff89273d0cb" />
+<img width="494" height="342" alt="text_field_editor" src="https://github.com/user-attachments/assets/918956ee-647b-43ca-9843-e8acb67ee58f" />
+
+- refactor!: uncouple fields from hard-coded values by @CyanVoxel in #1354
+- fix: drop type_key column from text_fields and datetime_fields tables by @CyanVoxel in #1370
+- feat: field template manager by @TrigamDev in #1374
+- feat: add field template editor, editable field names by @CyanVoxel in #1396
+
+#### Other Additions
+
+- feat: add ability to configure automatic loading of new files over 10000 by @socalledtheraven in #1349
+- feat: dismiss update notification, change missing ffmpeg popup to banner by @CyanVoxel in #1400
+- feat: allow all raster images to be used as archive thumbnails. by @Sola-ris in #1373
+
+### Fixed
+
+- fix: Fix update notification crash by @Sola-ris in #1278
+- fix: correct ESCAPABLE_CHARS in query_lang tokenizer by @hieuit095 in #1334
+- fix: empty ORLists now return false by @TheBobBobs in #1297
+- fix: update thumb grid when adding tags from preview panel by @TheBobBobs in #1245
+- fix: match against the correct path in the ignore registry by @TrigamDev in #1382
+- fix: fix tag aliases by @CyanVoxel in #1399
+- fix: fix faulty progress bars by @ludvig-sandh in #1293
+- perf: Optimize searching tags with DB indexes by @TheBobBobs in #1129
+
+### Changed
+
+- ui: add v9.6 assets, update misc resources by @CyanVoxel in #1398
+
+#### Internal Changes
+
+- minor refactor: cleanup parameters of open_library and open_sqlite_library by @Computerdores in #1294
+- refactor: sql migrations by @Computerdores in #1295
+- fix: remove preferences table by @Computerdores in #1298
+- doc: add REUSE license information by @Computerdores in #1361
+- docs/chore: add .editorconfig and .prettierrc.toml configs by @CyanVoxel in #1362
+- refactor(docs): uniform formatting pass by @CyanVoxel in #1363
+- fix: pyright errors in ts_qt.py by @Computerdores in #1237
+- fix(ci): address remaining pyright errors by @CyanVoxel in #1368
+- ci: add pyright workflow by @Computerdores in #1232
+- refactor(ci): remove mypy by @CyanVoxel in #1371
+- chore(deps-dev): bump pytest from 8.3.5 to 9.0.3 by @dependabot[bot] in #1372
+- doc(install): add common error message help text by @Computerdores in #1369
+- chore(ci): bump ruff to 0.15.17 by @CyanVoxel in #1393
+- fix(pyproject): allow Python 3.13 to function by @xarvex in #1047
+
+#### Translations
+
+- **Amharic** added by @Birhant _(11%, can manually enable in settings file)_
+- **Hebrew** added by @JonathanGlixman _(2%, can manually enable in settings file)_
+- **French** updated by @SodiumBismuth, @kitsumed
+- **Russian** updated by @WerDei, @NikitaNik-of, @Dott-rus
+- **Hungarian** updated by @smileyhead
+- **Japanese** updated by wany-oh
+- **Italian** updated by @EdelFlosWeiss
+- **Spanish** updated by @JulArr22
+- **Toki Pona** updated by Cyborus
+- **Viossa** updated by @Nginearing
+- **Portuguese** updated by ssantos
+
+---
+
 ## 9.5.7 <small>May 5th, 2026</small>
 
 This update adds several bugfixes and additions that have been sitting on the main branch for quite some time.
@@ -67,12 +146,6 @@ This update adds several bugfixes and additions that have been sitting on the ma
 - **Swedish** updated by @vimml
 - **Tamil** updated by @TamilNeram
 - **Toki Pona** updated by @Math-Bee, Star Athendwyl
-
-### New Contributors
-
-- @Ambossmann made their first contribution in #1189
-- @CallMeHein made their first contribution in #1173
-- @terahidro2003 made their first contribution in #1328
 
 ---
 
@@ -422,7 +495,9 @@ A new "Library Information" window has been added and is accessible under the "V
 
 ## 9.5.0 <small>March 3rd, 2025</small>
 
-<img width="500" src="https://github.com/user-attachments/assets/858f1494-216f-4521-aefe-d0aa4f754b9e" alt="TagStudio 9.5 Banner" />
+<p align="center">
+    <img width="480" alt="TagStudio 9.5 Banner" src="https://github.com/user-attachments/assets/858f1494-216f-4521-aefe-d0aa4f754b9e" />
+</p>
 
 ### Added
 

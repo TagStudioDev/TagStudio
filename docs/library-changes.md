@@ -1,12 +1,12 @@
 ---
-title: Library Format
+title: Library Changes
 icon: material/database-edit
 ---
 
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
-# :material-database-edit: Library Format
+# :material-database-edit: Library Changes
 
 This page outlines the various changes made to the TagStudio library save file format over time, sometimes referred to as the "database" or "database file".
 

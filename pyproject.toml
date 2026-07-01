@@ -9,11 +9,12 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.7"
+version = "9.6.0"
 license = "GPL-3.0-only"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12,<3.14"
 dependencies = [
+    "audioop-lts; python_version >= '3.13'",
     "chardet~=5.2",
     "ffmpeg-python~=0.2",
     "humanfriendly==10.*",
@@ -46,7 +47,7 @@ dev = ["tagstudio[mkdocs,pyright,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material[imaging]>=9.7", "mkdocs-redirects~=1.2"]
 pyright = ["pyright~=1.1.409"]
 pre-commit = ["pre-commit~=4.2"]
-pyinstaller = ["Pyinstaller~=6.13"]
+pyinstaller = ["Pyinstaller~=6.21"]
 pytest = [
     "pytest==9.0.3",
     "pytest-cov==6.1.1",
@@ -64,9 +65,11 @@ packages = ["src/tagstudio"]
 
 
 [tool.pytest.ini_options]
-#addopts = "-m 'not qt'"
 qt_api = "pyside6"
 pythonpath = ["src"]
+filterwarnings = [
+    "ignore:DISTINCT ON is currently supported only by the PostgreSQL dialect:sqlalchemy.exc.SADeprecationWarning",
+]
 
 [tool.pyright]
 ignore = [
@@ -75,7 +78,8 @@ ignore = [
     "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
-# reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+# Reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+# Some rules exclusive to basedpyright: https://docs.basedpyright.com/latest/benefits-over-pyright/new-diagnostic-rules/
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false

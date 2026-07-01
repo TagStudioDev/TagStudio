@@ -16,12 +16,10 @@ from PySide6.QtGui import (
     QPalette,
     QPen,
 )
-from PySide6.QtWidgets import QWidget
-
-from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
+from PySide6.QtWidgets import QPushButton, QWidget
 
 
-class ThumbButton(QPushButtonWrapper):
+class ThumbButton(QPushButton):
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size

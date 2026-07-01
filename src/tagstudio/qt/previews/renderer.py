@@ -72,8 +72,12 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.global_settings import (
+    DEFAULT_CACHED_THUMB_RES,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
+)
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
@@ -98,9 +102,9 @@ Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 
 try:
-    import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
-except ImportError:
-    logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
+    import pillow_jxl  # noqa: F401 # pyright: ignore
+except ImportError as e:
+    logger.error('[ThumbRenderer] Could not import the "pillow_jxl" module', error=e)
 
 
 class _SevenZipFile(py7zr.SevenZipFile):
@@ -155,13 +159,6 @@ class ThumbRenderer(QObject):
         """Initialize the class."""
         super().__init__()
         self.driver = driver
-
-        settings_res = self.driver.settings.cached_thumb_resolution
-        self.cached_img_res = (
-            settings_res
-            if settings_res >= 16 and settings_res <= 2048
-            else DEFAULT_CACHED_IMAGE_RES
-        )
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -449,11 +446,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image) or icon is None
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -547,11 +543,10 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image)
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
@@ -949,9 +944,10 @@ class ThumbRenderer(QObject):
         if cover is not None:
             pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
             page_name = pages[int(unwrap(cover.get("Image")))]
-            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            ext = ThumbRenderer.__suffix(page_name)
+            if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
                 image_data = archive.read(page_name)
-                im = Image.open(BytesIO(image_data))
+                im = ThumbRenderer.__load_raster_image(BytesIO(image_data))
 
         return im
 
@@ -1006,9 +1002,10 @@ class ThumbRenderer(QObject):
             Image: The first renderable image in the archive.
         """
         for file_name in archive.namelist():
-            if file_name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            ext = ThumbRenderer.__suffix(file_name)
+            if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
                 image_data = archive.read(file_name)
-                return Image.open(BytesIO(image_data))
+                return ThumbRenderer.__load_raster_image(BytesIO(image_data))
 
         return None
 
@@ -1102,7 +1099,7 @@ class ThumbRenderer(QObject):
                 y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
                     (0, 0), "A", font=font
                 )[-1]
-            im = theme_fg_overlay(bg, use_alpha=False)
+            im = auto_theme_overlay(bg, use_alpha=False)
         except OSError as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1172,14 +1169,8 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            im = Image.open(filepath)
-            if im.mode != "RGB" and im.mode != "RGBA":
-                im = im.convert(mode="RGBA")
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-            im = unwrap(ImageOps.exif_transpose(im))
+            with filepath.open("rb") as file:
+                im = ThumbRenderer.__load_raster_image(BytesIO(file.read()))
         except (
             FileNotFoundError,
             UnidentifiedImageError,
@@ -1535,6 +1526,43 @@ class ThumbRenderer(QObject):
 
         return im
 
+    @staticmethod
+    def __suffix(archive_path: str) -> str:
+        """Read the files' extension.
+
+        See pathlib.Path.suffix.
+
+        Args:
+            archive_path (str): The path of the file in the archive.
+
+        Returns:
+            str: The file extension.
+        """
+        i = archive_path.rfind(".")
+        if 0 < i < len(archive_path) - 1:
+            return archive_path[i:]
+        else:
+            return ""
+
+    @staticmethod
+    def __load_raster_image(image_data: BytesIO) -> Image.Image:
+        """Load a raster image and add a background if it's transparent.
+
+        Args:
+            image_data (BytesIO): The binary image data.
+
+        Returns:
+            Image.Image: The loaded raster image, with a background if needed.
+        """
+        im: Image.Image = Image.open(image_data)
+        if im.mode != "RGB" and im.mode != "RGBA":
+            im = im.convert(mode="RGBA")
+        if im.mode == "RGBA":
+            new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+            new_bg.paste(im, mask=im.getchannel(3))
+            im = new_bg
+        return unwrap(ImageOps.exif_transpose(im))
+
     def render(
         self,
         timestamp: float,
@@ -1597,7 +1625,7 @@ class ThumbRenderer(QObject):
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
+            icon: Image.Image = self.rm.ignored
 
             icon = icon.resize(
                 (
@@ -1650,13 +1678,20 @@ class ThumbRenderer(QObject):
             image = fetch_cached_image(file_name)
 
             if not image and self.driver.settings.generate_thumbs:
+                settings_res = self.driver.settings.cached_thumb_resolution
+                thumb_res = (
+                    settings_res
+                    if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
+                    else DEFAULT_CACHED_THUMB_RES
+                )
+
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
                 image = self._render(
                     timestamp,
                     filepath,
-                    (self.cached_img_res, self.cached_img_res),
+                    (thumb_res, thumb_res),
                     1,
                     is_grid_thumb,
                     save_to_file=file_name,

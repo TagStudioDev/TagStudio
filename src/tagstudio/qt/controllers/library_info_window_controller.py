@@ -22,6 +22,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils import file_opener
 from tagstudio.qt.views.library_info_window_view import LibraryInfoWindowView
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         title: str = Translations.format(
             "library_info.title", library_dir=self.lib.library_dir.stem
         )
-        self.title_label.setText(f"<h2>{title}</h2>")
+        self.title_label.setText(header(title, 2))
 
     def update_stats(self):
         self.entry_count_label.setText(f"<b>{self.lib.entries_count}</b>")

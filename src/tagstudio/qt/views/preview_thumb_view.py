@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
 from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
 
@@ -19,7 +19,7 @@ from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.previews.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.styles.rounded_pixmap_style import RoundedPixmapStyle
+from tagstudio.qt.views.stylesheets.rounded_pixmap_style import RoundedPixmapStyle
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -32,6 +32,8 @@ THUMB_SIZE_FACTOR = 2
 
 class PreviewThumbView(QWidget):
     """The Preview Panel Widget."""
+
+    check_ffmpeg = Signal(bool)
 
     __img_button_size: tuple[int, int]
     __image_ratio: float
@@ -133,12 +135,7 @@ class PreviewThumbView(QWidget):
 
     def __thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
         self.__image_ratio = ratio
-        self.__update_image_size(
-            (
-                self.size().width(),
-                self.size().height(),
-            )
-        )
+        self.__update_image_size((self.size().width(), self.size().height()))
 
     def __stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:
         layout = QHBoxLayout(page)
@@ -186,9 +183,11 @@ class PreviewThumbView(QWidget):
         if preview in [MediaType.AUDIO, MediaType.VIDEO]:
             self.__media_player.show()
             self.__image_layout.setCurrentWidget(self.__media_player_page)
+            self.check_ffmpeg.emit(True)  # noqa: FBT003
         else:
             self.__media_player.stop()
             self.__media_player.hide()
+            self.check_ffmpeg.emit(False)  # noqa: FBT003
 
         if preview in [MediaType.IMAGE, MediaType.AUDIO]:
             self.__button_wrapper.show()
