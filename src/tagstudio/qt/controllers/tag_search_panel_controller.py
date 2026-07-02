@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING, override
+from typing import override
 from warnings import catch_warnings
 
 import structlog
@@ -19,10 +19,6 @@ from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
-
-# Only import for type checking/autocompletion, will not be imported at runtime.
-if TYPE_CHECKING:
-    pass
 
 
 class TagSearchModal(PanelModal):
@@ -176,10 +172,13 @@ class TagSearchPanel(SearchPanel[Tag]):
         # Connect search action
         if self._driver is not None:
             tag_widget.search_for_tag_action.triggered.connect(
-                lambda tag_id=item.id: self.search_for_tag(tag_id)
+                lambda checked=False, tag_id=item.id: self.search_for_tag(tag_id)
             )
             tag_widget.search_for_tag_action.setEnabled(True)
         else:
+            logger.warning(
+                "[TagSearchPanel] No driver was set for this TagSearchPanel. Was this on purpose?"
+            )
             tag_widget.search_for_tag_action.setEnabled(False)
 
     @override
