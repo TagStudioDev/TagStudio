@@ -16,38 +16,38 @@ logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
-LANGUAGES = {
-    # "Amharic": "am",  # Minimal
-    "Cebuano": "ceb",
-    "Chinese (Simplified)": "zh_Hans",
-    "Chinese (Traditional)": "zh_Hant",
-    "Czech": "cs",
-    # "Danish": "da",  # Minimal
-    "Dutch": "nl",
-    "English": "en",
-    "Filipino": "fil",
-    "Finnish": "fi",
-    "French": "fr",
-    "German": "de",
-    "Greek": "el",
-    "Hungarian": "hu",
-    # "Icelandic": "is",  # Minimal
-    "Italian": "it",
-    "Japanese": "ja",
-    "Norwegian Bokmål": "nb_NO",
-    "Polish": "pl",
-    "Portuguese (Brazil)": "pt_BR",
-    "Portuguese (Portugal)": "pt",
-    "Romanian": "ro",
-    "Russian": "ru",
-    "Spanish": "es",
-    "Swedish": "sv",
-    "Tamil": "ta",
-    # "Thai": "th",  # Minimal
-    "Toki Pona": "tok",
-    "Turkish": "tr",
-    "Viossa": "qpv",
-}
+LANGUAGES = [
+    # "am",  # Minimal
+    "ceb",
+    "cs",
+    # "da",  # Minimal
+    "de",
+    "el",
+    "en",
+    "es",
+    "fi",
+    "fil",
+    "fr",
+    "hu",
+    # "is",  # Minimal
+    "it",
+    "ja",
+    "nb_NO",
+    "nl",
+    "pl",
+    "pt_BR",
+    "pt",
+    "qpv",
+    "ro",
+    "ru",
+    "sv",
+    "ta",
+    # "th",  # Minimal
+    "tok",
+    "tr",
+    "zh_Hans",
+    "zh_Hant",
+]
 
 # A map of field class names to their respective translation keys.
 FIELD_TYPE_KEYS = {
