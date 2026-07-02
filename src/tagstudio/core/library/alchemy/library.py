@@ -1719,9 +1719,11 @@ class Library:
 
                 if parent_ids is not None:
                     self.update_parent_tags(tag, parent_ids, session)
+                    session.flush()
 
                 if aliases is not None:
-                    self.update_aliases(tag, aliases)
+                    self.update_aliases(tag, aliases, session)
+                    session.flush()
 
                 session.commit()
                 session.expunge(tag)
@@ -2053,48 +2055,45 @@ class Library:
             else:
                 self.add_color(new_color_group)
 
-    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias]) -> bool:
+    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> bool:
         """Update TagAliases for a given Tag."""
-        with Session(self.engine) as session:
-            # Remove aliases that are no longer on the Tag
+        unique_alias_names: set[str] = set()
+        # Remove aliases that are no longer on the Tag
+        try:
+            old_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
+            unique_alias_names = set([x.name for x in old_aliases])
+            old_alias_ids: list[int] = [a.id for a in old_aliases]
+            for old_alias in old_aliases:
+                if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
+                    logger.warning(
+                        "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
+                    )
+                    session.delete(old_alias)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            logger.error("[Library] Could not update aliases", error=e)
+            return False
+
+        # Update or Add aliases
+        for alias in aliases:
+            # Sanitize alias names
+            alias.name = alias.name.strip()
+            if not alias.name or alias.name in unique_alias_names:
+                continue
+
             try:
-                old_aliases = session.scalars(
-                    select(TagAlias).where(TagAlias.tag_id == tag.id)
-                ).all()
-                old_alias_ids: list[int] = [a.id for a in old_aliases]
-                for old_alias in old_aliases:
-                    if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
-                        logger.warning(
-                            "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
-                        )
-                        session.delete(old_alias)
-                session.commit()
+                if alias.id in old_alias_ids:
+                    stmt = update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
+                    session.execute(stmt)
+                else:
+                    session.add(alias)
             except IntegrityError as e:
                 session.rollback()
-                logger.error("[Library] Could not update aliases", error=e)
+                logger.error("[Library] Could not update or add alias", error=e)
                 return False
 
-            # Update or Add aliases
-            for alias in aliases:
-                # Sanitize alias names
-                alias.name = alias.name.strip()
-                if not alias.name:
-                    continue
-
-                try:
-                    if alias.id in old_alias_ids:
-                        stmt = (
-                            update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
-                        )
-                        session.execute(stmt)
-                    else:
-                        session.add(alias)
-                except IntegrityError as e:
-                    session.rollback()
-                    logger.error("[Library] Could not update or add alias", error=e)
-                    return False
-
-            session.commit()
+        session.commit()
 
         return True
 
