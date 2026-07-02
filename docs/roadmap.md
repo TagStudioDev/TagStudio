@@ -122,7 +122,6 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [ ] Tag Search
     - [ ] Pinned Tags
 - [ ] New Tabbed Tag Building UI to Support New Tag Features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
-- [ ] Custom Thumbnail Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
 - [ ] Media Duration Labels :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
 - [ ] Word/Line Count Labels :material-chevron-up:{ .priority-low title="Low Priority" }
 - [ ] Custom Tag Badges :material-chevron-up:{ .priority-low title="Low Priority" }
@@ -176,12 +175,12 @@ File or file-like [entries](entries.md) stored in the library.
         - [ ] Optional Units (e.g. inches, cm, height notation, degrees, bytes, etc.) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [x] Custom Field Names **[[v9.6.0](changelog.md#960-june-29th-2026)]**
         - [x] Removal of Deprecated Fields **[[v9.6.0](changelog.md#960-june-29th-2026)]**
+- [ ] Custom Thumbnail Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
 - [ ] Entry Groups :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Non-exclusive; Entries can be in multiple groups :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Ability to number entries within group :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    - [ ] Ability to number entries within group (i.e. page numbers) :material-chevron-triple-up:{ .priority-high title="High Priority" }
     - [ ] Ability to set sorting method for group :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Ability to set custom thumbnail for group :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Group is treated as entry with tags and metadata :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    - [ ] Ability to set custom thumbnail for group :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [ ] Nested groups :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 
 ### :material-tag-text: Tags
