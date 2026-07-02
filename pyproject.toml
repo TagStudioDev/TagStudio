@@ -69,6 +69,7 @@ qt_api = "pyside6"
 pythonpath = ["src"]
 filterwarnings = [
     "ignore:DISTINCT ON is currently supported only by the PostgreSQL dialect:sqlalchemy.exc.SADeprecationWarning",
+    'ignore:Invoking or_\(\) without arguments is deprecated:sqlalchemy.exc.SADeprecationWarning',
 ]
 
 [tool.pyright]
