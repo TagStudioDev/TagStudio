@@ -169,9 +169,14 @@ class TagSearchPanel(SearchPanel[Tag]):
         # Connect callbacks
         tag_widget.on_edit.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
         tag_widget.on_remove.connect(lambda remove_tag=item: self._on_item_remove(remove_tag))
-        tag_widget.bg_button.clicked.connect(
-            lambda checked=False, tag=item: self._on_item_chosen(tag)
-        )
+        if self.is_chooser:
+            tag_widget.bg_button.clicked.connect(
+                lambda checked=False, tag=item: self._on_item_chosen(tag)
+            )
+        else:
+            tag_widget.bg_button.clicked.connect(
+                lambda checked=False, edit_tag=item: self.on_item_edit(edit_tag)
+            )
 
         # Connect search action
         if self._driver is not None:
