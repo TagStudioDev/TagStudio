@@ -81,6 +81,7 @@ pkgs.mkShellNoCC {
     ruff
   ];
   buildInputs = [
+    pkgs.pyright
     python3Wrapped
   ]
   ++ (with pkgs; [
