@@ -351,8 +351,11 @@ class QtDriver(DriverMixin, QObject):
                 self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
-        self.tag_manager_panel = TagSearchModal(self.lib, is_tag_chooser=False)
-        self.tag_manager_panel.title_widget.setText(Translations["tag_manager.title"])
+        self.tag_manager_panel = TagSearchModal(
+            self.lib,
+            title=Translations["tag_manager.title"],
+            is_tag_chooser=False,
+        )
         self.tag_manager_panel.tsp.set_driver(self)
 
         self.tag_manager_panel.done.connect(
@@ -381,7 +384,9 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Initialize the "Add Tag" panel
-        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
+        self.add_tag_modal = TagSearchModal(
+            self.lib, title=Translations["tag.add.plural"], is_tag_chooser=True
+        )
         self.add_tag_modal.tsp.set_driver(self)
         self.add_tag_modal.tsp.item_chosen.connect(
             lambda chosen_tag: (
@@ -853,7 +858,7 @@ class QtDriver(DriverMixin, QObject):
         self.modal = PanelModal(
             panel,
             Translations["tag.new"],
-            Translations["tag.add"],
+            Translations["tag.create"],
             is_savable=True,
         )
 

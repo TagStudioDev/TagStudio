@@ -27,6 +27,7 @@ class TagSearchModal(PanelModal):
     def __init__(
         self,
         library: Library,
+        title: str,
         exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
         has_save: bool = False,
@@ -38,8 +39,8 @@ class TagSearchModal(PanelModal):
             view=TagSearchPanelView(is_tag_chooser),
         )
         super().__init__(
-            self.tsp,
-            Translations["tag.add.plural"],
+            widget=self.tsp,
+            title=title,
             is_savable=has_save,
         )
 
