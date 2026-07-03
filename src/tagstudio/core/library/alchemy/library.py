@@ -235,7 +235,6 @@ class Library:
     library_dir: Path | None = None
     engine: Engine | None = None
     folder: Folder | None = None
-    included_files: set[Path] = set()
 
     def __init__(self) -> None:
         self.dupe_entries_count: int = -1  # NOTE: For internal management.
@@ -248,7 +247,6 @@ class Library:
             self.engine.dispose()
         self.library_dir = None
         self.folder = None
-        self.included_files = set()
 
         self.dupe_entries_count = -1
         self.dupe_files_count = -1
