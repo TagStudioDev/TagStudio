@@ -300,11 +300,20 @@ class ItemThumb(FlowWidget):
         # NOTE: self.item_id seems to act as a reference here and does not need to be updated inside
         # QtDriver.update_thumbs() while item_thumb.delete_action does.
         # If this behavior ever changes, move this method back to QtDriver.update_thumbs().
-        self.thumb_button.clicked.connect(
-            lambda: self.driver.toggle_item_selection(
-                self.item_id,
-                append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
-                bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+        self.thumb_button.pressed.connect(
+            lambda: (
+                self.driver.toggle_item_selection(
+                    self.item_id,
+                    append=(
+                        QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                    ),
+                    bridge=(
+                        QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier
+                    ),
+                )
+                if QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                or not self.thumb_button.selected
+                else None
             )
         )
         self.set_mode(mode)
