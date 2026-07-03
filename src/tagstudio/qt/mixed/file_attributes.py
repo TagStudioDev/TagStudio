@@ -7,7 +7,6 @@ import platform
 import typing
 from dataclasses import dataclass
 from datetime import datetime as dt
-from datetime import timedelta
 from pathlib import Path
 
 import structlog
@@ -37,6 +36,21 @@ class FileAttributeData:
     width: int | None = None
     height: int | None = None
     duration: int | None = None
+
+
+def _format_duration(duration: int | float) -> str:
+    """Format a duration in seconds as M:SS or H:MM:SS."""
+    try:
+        seconds = int(float(duration))
+        hours, seconds = divmod(seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+        return (
+            f"{hours}:{minutes:02}:{seconds:02}"
+            if hours
+            else f"{minutes}:{seconds:02}"
+        )
+    except (OverflowError, ValueError):
+        return "-:--"
 
 
 class FileAttributes(QWidget):
@@ -224,15 +238,7 @@ class FileAttributes(QWidget):
 
             if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
-                try:
-                    dur_str = str(timedelta(seconds=float(stats.duration)))[:-7]
-                    if dur_str.startswith("0:"):
-                        dur_str = dur_str[2:]
-                    if dur_str.startswith("0"):
-                        dur_str = dur_str[1:]
-                except OverflowError:
-                    dur_str = "-:--"
-                stats_label_text += f"{dur_str}"
+                stats_label_text += _format_duration(stats.duration)
 
             if font_family:
                 stats_label_text = add_newline(stats_label_text)

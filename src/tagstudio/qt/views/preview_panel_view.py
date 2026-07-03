@@ -51,6 +51,8 @@ class PreviewPanelView(QWidget):
         self._containers = FieldContainers(
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
+        self.__current_stats: FileAttributeData | None = None
+        self.__current_stats_filepath: Path | None = None
 
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
@@ -132,12 +134,32 @@ class PreviewPanelView(QWidget):
     def __connect_callbacks(self) -> None:
         self.__add_field_button.clicked.connect(self._add_field_button_callback)
         self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
+        self._thumb.stats_updated.connect(self.__thumb_stats_updated_callback)
 
     def _add_field_button_callback(self) -> None:
         raise NotImplementedError()
 
     def _add_tag_button_callback(self) -> None:
         raise NotImplementedError()
+
+    def __thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
+        if len(self._selected) != 1:
+            return
+
+        if filepath != self.__current_stats_filepath:
+            return
+
+        if self.__current_stats is None:
+            self.__current_stats = FileAttributeData()
+
+        if stats.width is not None:
+            self.__current_stats.width = stats.width
+        if stats.height is not None:
+            self.__current_stats.height = stats.height
+        if stats.duration is not None:
+            self.__current_stats.duration = stats.duration
+
+        self._file_attrs.update_stats(filepath, self.__current_stats)
 
     def _set_selection_callback(self) -> None:
         raise NotImplementedError()
@@ -155,6 +177,8 @@ class PreviewPanelView(QWidget):
             # No Items Selected
             if len(selected) == 0:
                 self._thumb.hide_preview()
+                self.__current_stats = None
+                self.__current_stats_filepath = None
                 self._file_attrs.update_stats()
                 self._file_attrs.update_date_label()
                 self._containers.hide_containers()
@@ -167,9 +191,13 @@ class PreviewPanelView(QWidget):
                 entry: Entry = unwrap(self.lib.get_entry(entry_id))
 
                 filepath: Path = unwrap(self.lib.library_dir) / entry.path
+                if filepath != self.__current_stats_filepath:
+                    self.__current_stats = None
+                    self.__current_stats_filepath = filepath
 
                 if update_preview:
                     stats: FileAttributeData = self._thumb.display_file(filepath)
+                    self.__current_stats = stats
                     self._file_attrs.update_stats(filepath, stats)
                 self._file_attrs.update_date_label(filepath)
                 self._containers.update_from_entry(entry_id)
@@ -182,6 +210,8 @@ class PreviewPanelView(QWidget):
             elif len(selected) > 1:
                 # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
                 self._thumb.hide_preview()  # TODO: Render mixed selection
+                self.__current_stats = None
+                self.__current_stats_filepath = None
                 self._file_attrs.update_multi_selection(len(selected))
                 self._file_attrs.update_date_label()
                 self._containers.hide_containers()  # TODO: Allow for mixed editing
