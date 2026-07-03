@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
 {
   lib,
   pkgs,
@@ -78,6 +77,7 @@ pkgs.mkShellNoCC {
     coreutils
     uv
 
+    pyright
     ruff
   ];
   buildInputs = [
