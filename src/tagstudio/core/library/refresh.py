@@ -3,6 +3,7 @@
 
 
 import shutil
+import subprocess
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -15,7 +16,7 @@ from wcmatch import glob
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
-from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
+from tagstudio.core.utils.silent_subprocess import silent_popen
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
@@ -134,88 +135,83 @@ class RefreshTracker:
         ignore_patterns = Ignore.get_patterns(library_dir)
 
         yield 0
-        progress = None
+        raw_paths = None
         if not force_internal_tools:
-            progress = self.__rg(library_dir, ignore_patterns)
+            raw_paths = self.__rg(library_dir, ignore_patterns)
 
         # Use ripgrep if it was found and working, else fallback to wcmatch.
-        if progress is None:
-            progress = self.__wc(library_dir, ignore_patterns)
-        yield from progress
+        if raw_paths is None:
+            raw_paths = self.__wc(library_dir, ignore_patterns)
 
-    def __rg(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[int] | None:
+        start_time = time()
+        last_update = time()
+
+        normalized_paths = set()
+        for raw_path in raw_paths:
+            # TODO: normalize path
+            path = Path(raw_path)
+            normalized_paths.add(path)
+
+            if (time() - last_update) >= 0.033:
+                last_update = time()
+                yield len(normalized_paths)
+
+        logger.info(
+            "[Refresh]: Library scan time",
+            duration=(time() - start_time),
+        )
+        yield len(normalized_paths)
+
+        self.__add(library_dir, normalized_paths)
+
+    def __rg(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str] | None:
         """Use ripgrep to return a list of matched directories and files.
 
         Return `None` if ripgrep not found on system.
         """
         rg_path = shutil.which("rg")
-        # Use ripgrep if found on system
-        if rg_path is not None:
-            logger.info("[Refresh: Using ripgrep for scanning]")
-
-            compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
-
-            # Write compiled ignore patterns (built-in + user) to a temp file to pass to ripgrep
-            with open(compiled_ignore_path, "w") as pattern_file:
-                pattern_file.write("\n".join(ignore_patterns))
-
-            start_time = time()
-            result = silent_run(
-                " ".join(
-                    [
-                        "rg",
-                        "--files",
-                        "--follow",
-                        "--hidden",
-                        "--ignore-file",
-                        f'"{str(compiled_ignore_path)}"',
-                    ]
-                ),
-                cwd=library_dir,
-                capture_output=True,
-                shell=True,
-            )
-            logger.info(
-                "[Refresh]: ripgrep scan time",
-                duration=(time() - start_time),
-            )
-            compiled_ignore_path.unlink()
-
-            if result.stderr:
-                logger.error(result.stderr)
-
-            paths = set(Path(p) for p in result.stdout.decode("utf-8").splitlines())
-            self.__add(library_dir, paths)
-            yield len(paths)
+        if rg_path is None:
+            logger.warning("[Refresh: ripgrep not found on system]")
             return None
 
-        logger.warning("[Refresh: ripgrep not found on system]")
-        return None
+        logger.info("[Refresh: Using ripgrep for scanning]")
 
-    def __wc(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[int]:
+        compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
+
+        # Write compiled ignore patterns (built-in + user) to a temp file to pass to ripgrep
+        with open(compiled_ignore_path, "w") as pattern_file:
+            pattern_file.write("\n".join(ignore_patterns))
+
+        with silent_popen(
+            " ".join(
+                [
+                    "rg",
+                    "--files",
+                    "--follow",
+                    "--hidden",
+                    "--ignore-file",
+                    f'"{str(compiled_ignore_path)}"',
+                ]
+            ),
+            cwd=library_dir,
+            shell=True,
+            stdout=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+        ) as proc:
+            assert proc.stdout
+            for line in proc.stdout:
+                yield line[:-1]  # exclude newline
+
+        compiled_ignore_path.unlink()
+
+    def __wc(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str]:
         logger.info("[Refresh]: Falling back to wcmatch for scanning")
 
         ignore_patterns = ignore_to_glob(ignore_patterns)
-        try:
-            paths: set[Path] = set()
-
-            start_time = time()
-            search = glob.iglob(
-                "***/*", root_dir=library_dir, flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
-            )
-            for i, path in enumerate(search):
-                if i < 100 or (i % 100) == 0:
-                    yield i
-                paths.add(Path(path))
-            logger.info(
-                "[Refresh]: wcmatch scan time",
-                duration=(time() - start_time),
-            )
-            yield len(paths)
-
-            self.__add(library_dir, paths)
-        except ValueError:
-            logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
+        return glob.iglob(
+            "***/*", root_dir=library_dir, flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
+        )
 
     def __add(self, library_dir: Path, paths: set[Path]):
         start_time_total = time()
@@ -227,7 +223,7 @@ class RefreshTracker:
 
         end_time_total = time()
         logger.info(
-            "[Refresh]: Directory scan time",
+            "[Refresh]: Calculate new/missing paths",
             path=library_dir,
             duration=(end_time_total - start_time_total),
             files_scanned=len(paths),
