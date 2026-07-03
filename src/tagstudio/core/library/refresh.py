@@ -4,6 +4,7 @@
 
 import shutil
 import subprocess
+import unicodedata
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -31,6 +32,10 @@ class RefreshTracker:
 
     _missing_paths: dict[Path, int] = field(default_factory=dict)
     _new_paths: set[Path] = field(default_factory=set)
+
+    @staticmethod
+    def _normalize(path: Path) -> Path:
+        return Path(unicodedata.normalize("NFC", str(path)))
 
     @property
     def missing_files_count(self) -> int:
@@ -78,9 +83,13 @@ class RefreshTracker:
     def fix_unlinked_entries(self):
         """Attempt to fix unlinked file entries by finding a match in the library directory."""
         new_paths: dict[Path, list[Path]] = {}
+        new_normalized_paths: dict[Path, list[Path]] = {}
         for path in self._new_paths:
             name = path.relative_to(path.parent)
             new_paths.setdefault(name, []).append(path)
+            normalized_name = self._normalize(name)
+            if normalized_name != name:
+                new_normalized_paths.setdefault(normalized_name, []).append(name)
 
         fixed: list[tuple[int, Path, Path]] = []
         for (
@@ -88,6 +97,11 @@ class RefreshTracker:
             entry_id,
         ) in self._missing_paths.items():
             name = Path(path.name)
+            if name not in new_paths:
+                name = self._normalize(name)
+                if (names := new_normalized_paths.get(name)) and len(names) == 1:
+                    name = names[0]
+
             if name not in new_paths or len(new_paths[name]) != 1:
                 continue
             new_path = new_paths.pop(name)[0]
@@ -146,23 +160,20 @@ class RefreshTracker:
         start_time = time()
         last_update = time()
 
-        normalized_paths = set()
+        paths = set()
         for raw_path in raw_paths:
-            # TODO: normalize path
-            path = Path(raw_path)
-            normalized_paths.add(path)
-
+            paths.add(Path(raw_path))
             if (time() - last_update) >= 0.033:
                 last_update = time()
-                yield len(normalized_paths)
+                yield len(paths)
 
         logger.info(
             "[Refresh]: Library scan time",
             duration=(time() - start_time),
         )
-        yield len(normalized_paths)
+        yield len(paths)
 
-        self.__add(library_dir, normalized_paths)
+        self.__add(library_dir, paths)
 
     def __rg(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str] | None:
         """Use ripgrep to return a list of matched directories and files.
