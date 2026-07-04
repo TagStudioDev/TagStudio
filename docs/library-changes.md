@@ -193,3 +193,11 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 - Drops `type_key` columns from `text_fields` and `datetime_fields` tables.
 - Enforces column positions for `text_fields` and `datetime_fields` tables.
+
+#### Version 202
+
+| Added in Commit | Introduced in Release                                                   | Format |
+| --------------- | ----------------------------------------------------------------------- | ------ |
+|                 | [v9.6.1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.1) | SQLite |
+
+- Applies repairs to the `tag_parents` table, removing rows that reference child tags that have been deleted.

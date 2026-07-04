@@ -571,12 +571,16 @@ class Library:
                     self.__apply_db103_migration(session)
                 if loaded_db_version < 104:
                     # changes: deletes preferences
-                    self.__apply_db104_migrations(session, library_dir)
+                    self.__apply_db104_migration(session, library_dir)
                 if loaded_db_version < 200:
-                    self.__apply_db200_migrations(session)
                     # changes: field tables
+                    self.__apply_db200_migration(session)
                 if initial_db_version < 200 and loaded_db_version < 201:
-                    self.__apply_db201_migrations(session)
+                    # changes: field tables
+                    self.__apply_db201_migration(session)
+                if loaded_db_version < 202:
+                    # changes: tag_parents
+                    self.__apply_db202_migration(session)
 
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
@@ -719,8 +723,7 @@ class Library:
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
         with session:
-            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-            stmt = delete(TagParent).where(TagParent.parent_id.not_in(all_tag_ids))
+            stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
@@ -754,7 +757,7 @@ class Library:
             )
             session.rollback()
 
-    def __apply_db104_migrations(self, session: Session, library_dir: Path):
+    def __apply_db104_migration(self, session: Session, library_dir: Path):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
         self.__migrate_sql_to_ts_ignore(library_dir)
@@ -779,7 +782,7 @@ class Library:
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
-    def __apply_db200_migrations(self, session: Session):
+    def __apply_db200_migration(self, session: Session):
         """Migrate DB to DB_VERSION 200."""
         with session:
             # Drop unused 'boolean_fields' and 'value_type' tables
@@ -866,7 +869,7 @@ class Library:
 
             session.commit()
 
-    def __apply_db201_migrations(self, session: Session):
+    def __apply_db201_migration(self, session: Session):
         """Migrate DB to DB_VERSION 201."""
         with session:
             create_text_fields_table = text("""
@@ -916,6 +919,14 @@ class Library:
             session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
 
             session.commit()
+
+    def __apply_db202_migration(self, session: Session):
+        """Migrate DB to DB_VERSION 202."""
+        with session:
+            stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
+            session.execute(stmt)
+            session.commit()
+            logger.info("[Library][Migration] Verified TagParent table data")
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
