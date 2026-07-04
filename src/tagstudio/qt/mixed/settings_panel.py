@@ -98,12 +98,24 @@ class SettingsPanel(PanelWidget):
         self.root_layout.setContentsMargins(0, 6, 0, 0)
 
         self.library_settings_container = QWidget()
+        self.appearence_settings_container = QWidget()
+        self.localization_settings_container = QWidget()
+        self.media_settings_container = QWidget()
 
         # Tabs
         self.tab_widget = QTabWidget()
 
         self.__build_global_settings()
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
+
+        self.__build_appearence_settings()
+        self.tab_widget.addTab(self.appearence_settings_container, "Appearence")
+
+        self.__build_localization_settings()
+        self.tab_widget.addTab(self.localization_settings_container, "Localization")
+
+        self.__build_media_settings()
+        self.tab_widget.addTab(self.media_settings_container, "Media")
 
         # self.__build_library_settings()
         # self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
@@ -152,54 +164,6 @@ class SettingsPanel(PanelWidget):
         form_layout.addRow(
             Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
         )
-
-        # Generate Thumbnails
-        self.generate_thumbs = QCheckBox()
-        self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
-        form_layout.addRow(Translations["settings.generate_thumbs"], self.generate_thumbs)
-
-        # Thumbnail Cache Size
-        self.thumb_cache_size_container = QWidget()
-        self.thumb_cache_size_layout = QHBoxLayout(self.thumb_cache_size_container)
-        self.thumb_cache_size_layout.setContentsMargins(0, 0, 0, 0)
-        self.thumb_cache_size_layout.setSpacing(6)
-        self.thumb_cache_size = QLineEdit()
-        self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.thumb_cache_size_validator = QDoubleValidator(
-            MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2
-        )  # High limit
-        self.thumb_cache_size.setValidator(self.thumb_cache_size_validator)
-        self.thumb_cache_size.setText(
-            str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
-        )
-        self.thumb_cache_size_layout.addWidget(self.thumb_cache_size)
-        self.thumb_cache_size_layout.setStretch(1, 2)
-        self.thumb_cache_size_layout.addWidget(QLabel("MiB"))
-        form_layout.addRow(
-            Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
-        )
-
-        # Cached Thumbnail Resolution
-        self.cached_thumb_res_container = QWidget()
-        self.cached_thumb_res_layout = QHBoxLayout(self.cached_thumb_res_container)
-        self.cached_thumb_res_layout.setContentsMargins(0, 0, 0, 0)
-        self.cached_thumb_res_layout.setSpacing(6)
-        self.cached_thumb_res = QLineEdit()
-        self.cached_thumb_res.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.cached_thumb_res_validator = QIntValidator(MIN_CACHED_THUMB_RES, MAX_CACHED_THUMB_RES)
-        self.cached_thumb_res.setValidator(self.cached_thumb_res_validator)
-        self.cached_thumb_res.setText(str(self.driver.settings.cached_thumb_resolution))
-        self.cached_thumb_res_layout.addWidget(self.cached_thumb_res)
-        self.cached_thumb_res_layout.setStretch(1, 2)
-        self.cached_thumb_res_layout.addWidget(QLabel("px"))
-        form_layout.addRow(
-            Translations["settings.cached_thumb_resolution.label"], self.cached_thumb_res_container
-        )
-
-        # Autoplay
-        self.autoplay_checkbox = QCheckBox()
-        self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
-        form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
 
         # Scan for new files when a library is opened
         self.scan_files_on_open_checkbox = QCheckBox()
@@ -262,26 +226,69 @@ class SettingsPanel(PanelWidget):
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
         )
 
-        # Dark Mode
-        self.theme_combobox = QComboBox()
-        for k in SettingsPanel.theme_map:
-            self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
-        theme = self.driver.settings.theme
-        if theme not in SettingsPanel.theme_map:
-            theme = Theme.DEFAULT
-        self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
-        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
-        form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
+    # TODO: Implement Library Settings
+    def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
+        form_layout = QFormLayout(self.library_settings_container)
+        form_layout.setContentsMargins(6, 6, 6, 6)
 
-        # Splash Screen
-        self.splash_combobox = QComboBox()
-        for k in SettingsPanel.splash_map:
-            self.splash_combobox.addItem(SettingsPanel.splash_map[k], k)
-        splash = self.driver.settings.splash
-        if splash not in SettingsPanel.splash_map:
-            splash = Splash.DEFAULT
-        self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
-        form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
+        todo_label = QLabel("TODO")
+        form_layout.addRow(todo_label)
+
+    def __build_media_settings(self):
+        form_layout = QFormLayout(self.media_settings_container)
+        form_layout.setContentsMargins(6, 6, 6, 6)
+
+        # Autoplay
+        self.autoplay_checkbox = QCheckBox()
+        self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
+        form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
+
+        # Generate Thumbnails
+        self.generate_thumbs = QCheckBox()
+        self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
+        form_layout.addRow(Translations["settings.generate_thumbs"], self.generate_thumbs)
+
+        # Thumbnail Cache Size
+        self.thumb_cache_size_container = QWidget()
+        self.thumb_cache_size_layout = QHBoxLayout(self.thumb_cache_size_container)
+        self.thumb_cache_size_layout.setContentsMargins(0, 0, 0, 0)
+        self.thumb_cache_size_layout.setSpacing(6)
+        self.thumb_cache_size = QLineEdit()
+        self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.thumb_cache_size_validator = QDoubleValidator(
+            MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2
+        )  # High limit
+        self.thumb_cache_size.setValidator(self.thumb_cache_size_validator)
+        self.thumb_cache_size.setText(
+            str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
+        )
+        self.thumb_cache_size_layout.addWidget(self.thumb_cache_size)
+        self.thumb_cache_size_layout.setStretch(1, 2)
+        self.thumb_cache_size_layout.addWidget(QLabel("MiB"))
+        form_layout.addRow(
+            Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
+        )
+
+        # Cached Thumbnail Resolution
+        self.cached_thumb_res_container = QWidget()
+        self.cached_thumb_res_layout = QHBoxLayout(self.cached_thumb_res_container)
+        self.cached_thumb_res_layout.setContentsMargins(0, 0, 0, 0)
+        self.cached_thumb_res_layout.setSpacing(6)
+        self.cached_thumb_res = QLineEdit()
+        self.cached_thumb_res.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.cached_thumb_res_validator = QIntValidator(MIN_CACHED_THUMB_RES, MAX_CACHED_THUMB_RES)
+        self.cached_thumb_res.setValidator(self.cached_thumb_res_validator)
+        self.cached_thumb_res.setText(str(self.driver.settings.cached_thumb_resolution))
+        self.cached_thumb_res_layout.addWidget(self.cached_thumb_res)
+        self.cached_thumb_res_layout.setStretch(1, 2)
+        self.cached_thumb_res_layout.addWidget(QLabel("px"))
+        form_layout.addRow(
+            Translations["settings.cached_thumb_resolution.label"], self.cached_thumb_res_container
+        )
+
+    def __build_localization_settings(self):
+        form_layout = QFormLayout(self.localization_settings_container)
+        form_layout.setContentsMargins(6, 6, 6, 6)
 
         # Date Format
         self.dateformat_combobox = QComboBox()
@@ -306,13 +313,30 @@ class SettingsPanel(PanelWidget):
         self.zeropadding_checkbox.setChecked(self.driver.settings.zero_padding)
         form_layout.addRow(Translations["settings.zeropadding.label"], self.zeropadding_checkbox)
 
-    # TODO: Implement Library Settings
-    def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
-        form_layout = QFormLayout(self.library_settings_container)
+    def __build_appearence_settings(self):
+        form_layout = QFormLayout(self.appearence_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
-        todo_label = QLabel("TODO")
-        form_layout.addRow(todo_label)
+        # Dark Mode
+        self.theme_combobox = QComboBox()
+        for k in SettingsPanel.theme_map:
+            self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
+        theme = self.driver.settings.theme
+        if theme not in SettingsPanel.theme_map:
+            theme = Theme.DEFAULT
+        self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
+        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
+
+        # Splash Screen
+        self.splash_combobox = QComboBox()
+        for k in SettingsPanel.splash_map:
+            self.splash_combobox.addItem(SettingsPanel.splash_map[k], k)
+        splash = self.driver.settings.splash
+        if splash not in SettingsPanel.splash_map:
+            splash = Splash.DEFAULT
+        self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
+        form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
 
     def get_settings(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         return {
