@@ -105,6 +105,8 @@ Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 
 _stl_render_lock = threading.Lock()
+_MAX_STL_FILE_SIZE = 256 * 1024 * 1024  # 256 MB
+_MAX_STL_TRIANGLES = 5_000_000
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore
@@ -1275,9 +1277,25 @@ class ThumbRenderer(QObject):
         )
         im: Image.Image | None = None
         try:
+            if filepath.stat().st_size > _MAX_STL_FILE_SIZE:
+                logger.info(
+                    "Skipping STL thumbnail, file too large",
+                    filepath=filepath,
+                    max_size=_MAX_STL_FILE_SIZE,
+                )
+                return im
+
             mesh = o3d.io.read_triangle_mesh(str(filepath))
             if not mesh.has_triangles():
                 raise ValueError("STL file contains no mesh data")
+            if len(mesh.triangles) > _MAX_STL_TRIANGLES:
+                logger.info(
+                    "Skipping STL thumbnail, too many triangles",
+                    filepath=filepath,
+                    triangles=len(mesh.triangles),
+                    max_triangles=_MAX_STL_TRIANGLES,
+                )
+                return im
 
             mesh.compute_vertex_normals()
             mesh.translate(-mesh.get_center())
