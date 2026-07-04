@@ -4,7 +4,6 @@
 
 import math
 from pathlib import Path
-from shutil import which
 
 from PIL import ImageQt
 from PySide6.QtCore import QSize, Qt
@@ -28,11 +27,12 @@ from tagstudio.core.constants import (
     VERSION_BRANCH,
 )
 from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import open_file
@@ -94,7 +94,9 @@ class AboutModal(QWidget):
         self.desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # System Info ----------------------------------------------------------
-        ff_version = ffmpeg.version()
+        ffmpeg_ver = FfmpegStatus.version()
+        ffprobe_ver = FfprobeStatus.version()
+        ripgrep_ver = RipgrepStatus.version()
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
         amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
@@ -102,20 +104,16 @@ class AboutModal(QWidget):
         found = Translations["about.module.found"]
 
         ffmpeg_status = f'<span style="color:{red}">{missing}</span>'
-        if ff_version["ffmpeg"] is not None:
-            ffmpeg_status = (
-                f'<span style="color:{green}">{found}</span> (' + ff_version["ffmpeg"] + ")"
-            )
+        if ffmpeg_ver is not None:
+            ffmpeg_status = f'<span style="color:{green}">{found}</span> (' + ffmpeg_ver + ")"
 
         ffprobe_status = f'<span style="color:{red}">{missing}</span>'
-        if ff_version["ffprobe"] is not None:
-            ffprobe_status = (
-                f'<span style="color:{green}">{found}</span> (' + ff_version["ffprobe"] + ")"
-            )
+        if ffprobe_ver is not None:
+            ffprobe_status = f'<span style="color:{green}">{found}</span> (' + ffprobe_ver + ")"
 
         ripgrep_status = f'<span style="color:{amber}">{missing}</span>'
-        if which("rg") is not None:
-            ripgrep_status = f'<span style="color:{green}">{found}</span>'
+        if ripgrep_ver is not None:
+            ripgrep_status = f'<span style="color:{green}">{found}</span> (' + ripgrep_ver + ")"
 
         self.system_info_widget = QWidget()
         self.system_info_layout = QFormLayout(self.system_info_widget)
@@ -152,7 +150,7 @@ class AboutModal(QWidget):
         # FFmpeg Status
         ffmpeg_path_title = QLabel("FFmpeg")
         ffmpeg_path_content = ClickableLabel(f"{ffmpeg_status}")
-        ffmpeg_location = which(ffmpeg._get_ffmpeg_location())  # pyright: ignore[reportPrivateUsage]
+        ffmpeg_location = FfmpegStatus.which()
         if ffmpeg_location:
             ffmpeg_path_content.clicked.connect(
                 lambda: open_file(ffmpeg_location, file_manager=True)
@@ -165,7 +163,7 @@ class AboutModal(QWidget):
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
         ffprobe_path_content = ClickableLabel(f"{ffprobe_status}")
-        ffprobe_location = which(ffmpeg._get_ffprobe_location())  # pyright: ignore[reportPrivateUsage]
+        ffprobe_location = FfprobeStatus.which()
         if ffprobe_location:
             ffprobe_path_content.clicked.connect(
                 lambda: open_file(ffprobe_location, file_manager=True)
@@ -180,7 +178,7 @@ class AboutModal(QWidget):
         ripgrep_path_title = QLabel("ripgrep")  # NOTE: Don't localize
         ripgrep_path_content = ClickableLabel()
         ripgrep_path_content.setText(f"{ripgrep_status}")  # TODO: Pass in constructor after #1386
-        ripgrep_location = which("rg")
+        ripgrep_location = RipgrepStatus.which()
         if ripgrep_location:
             ripgrep_path_content.clicked.connect(
                 lambda: open_file(ripgrep_location, file_manager=True)

@@ -39,7 +39,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
-# This import has side-effect of importing PySide resources
 import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
@@ -52,6 +51,10 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
+
+# This import has side-effect of importing PySide resources
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
@@ -319,6 +322,9 @@ class QtDriver(DriverMixin, QObject):
         timer = QTimer()
         timer.start(500)
         timer.timeout.connect(lambda: None)
+
+        # Detect optional modules and versions for logging
+        self.log_optional_modules()
 
         # self.main_window = loader.load(home_path)
         self.main_window = MainWindow(self)
@@ -1755,3 +1761,32 @@ class QtDriver(DriverMixin, QObject):
     def clear_selected(self):
         self._selected.clear()
         self.main_window.thumb_layout.update_selected()
+
+    def log_optional_modules(self) -> None:
+        """Logs the status of optional modules."""
+        if FfmpegStatus.which():
+            logger.info(
+                "[QtDriver] FFmpeg found",
+                bin_location=FfmpegStatus.which(),
+                version=FfmpegStatus.version(),
+            )
+        else:
+            logger.warning("[QtDriver] FFmpeg not found")
+
+        if FfprobeStatus.which():
+            logger.info(
+                "[QtDriver] FFprobe found",
+                bin_location=FfprobeStatus.which(),
+                version=FfprobeStatus.version(),
+            )
+        else:
+            logger.warning("[QtDriver] FFprobe not found")
+
+        if RipgrepStatus.which():
+            logger.info(
+                "[QtDriver] ripgrep found",
+                bin_location=RipgrepStatus.which(),
+                version=RipgrepStatus.version(),
+            )
+        else:
+            logger.warning("[QtDriver] ripgrep not found")
