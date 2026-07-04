@@ -311,8 +311,14 @@ class ItemThumb(FlowWidget):
                         QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier
                     ),
                 )
-                if QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
-                or not self.thumb_button.selected
+                if (
+                    QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                    or not self.thumb_button.selected
+                )
+                or (
+                    QGuiApplication.keyboardModifiers() != Qt.KeyboardModifier.ControlModifier
+                    and self.thumb_button.selected
+                )
                 else None
             )
         )
