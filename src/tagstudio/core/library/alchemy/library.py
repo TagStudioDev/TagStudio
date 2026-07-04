@@ -723,9 +723,7 @@ class Library:
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
         with session:
-            stmt = delete(TagParent).where(
-                TagParent.parent_id.not_in(session.scalars(select(Tag.id).distinct()).all())
-            )
+            stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
@@ -925,9 +923,7 @@ class Library:
     def __apply_db202_migration(self, session: Session):
         """Migrate DB to DB_VERSION 202."""
         with session:
-            stmt = delete(TagParent).where(
-                TagParent.child_id.not_in(session.scalars(select(Tag.id).distinct()).all())
-            )
+            stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
