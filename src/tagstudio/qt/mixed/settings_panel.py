@@ -98,7 +98,7 @@ class SettingsPanel(PanelWidget):
         self.root_layout.setContentsMargins(0, 6, 0, 0)
 
         self.library_settings_container = QWidget()
-        self.appearence_settings_container = QWidget()
+        self.appearance_settings_container = QWidget()
         self.localization_settings_container = QWidget()
         self.media_settings_container = QWidget()
 
@@ -108,8 +108,8 @@ class SettingsPanel(PanelWidget):
         self.__build_global_settings()
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
 
-        self.__build_appearence_settings()
-        self.tab_widget.addTab(self.appearence_settings_container, "Appearence")
+        self.__build_appearance_settings()
+        self.tab_widget.addTab(self.appearance_settings_container, "Appearance")
 
         self.__build_localization_settings()
         self.tab_widget.addTab(self.localization_settings_container, "Localization")
@@ -313,8 +313,8 @@ class SettingsPanel(PanelWidget):
         self.zeropadding_checkbox.setChecked(self.driver.settings.zero_padding)
         form_layout.addRow(Translations["settings.zeropadding.label"], self.zeropadding_checkbox)
 
-    def __build_appearence_settings(self):
-        form_layout = QFormLayout(self.appearence_settings_container)
+    def __build_appearance_settings(self):
+        form_layout = QFormLayout(self.appearance_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
         # Dark Mode
