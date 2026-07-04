@@ -148,20 +148,6 @@ class SettingsPanel(PanelWidget):
         form_layout = QFormLayout(self.global_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
-        # Language
-        self.language_combobox = QComboBox()
-        translated_langs = [(Translations[f"language.{lang}"], lang) for lang in LANGUAGES]
-        translated_langs.sort(key=lambda x: x[0])
-
-        for lang in translated_langs:
-            self.language_combobox.addItem(lang[0], lang[1])
-        current_lang: str = self.driver.settings.language
-        if current_lang not in LANGUAGES:
-            current_lang = DEFAULT_TRANSLATION
-        self.language_combobox.setCurrentIndex([x[1] for x in translated_langs].index(current_lang))
-        self.language_combobox.currentIndexChanged.connect(self.__update_restart_label)
-        form_layout.addRow(Translations["settings.language"], self.language_combobox)
-
         # Open Last Library on Start
         self.open_last_lib_checkbox = QCheckBox()
         self.open_last_lib_checkbox.setChecked(self.driver.settings.open_last_loaded_on_startup)
@@ -293,6 +279,20 @@ class SettingsPanel(PanelWidget):
     def __build_localization_settings(self):
         form_layout = QFormLayout(self.localization_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
+
+        # Language
+        self.language_combobox = QComboBox()
+        translated_langs = [(Translations[f"language.{lang}"], lang) for lang in LANGUAGES]
+        translated_langs.sort(key=lambda x: x[0])
+
+        for lang in translated_langs:
+            self.language_combobox.addItem(lang[0], lang[1])
+        current_lang: str = self.driver.settings.language
+        if current_lang not in LANGUAGES:
+            current_lang = DEFAULT_TRANSLATION
+        self.language_combobox.setCurrentIndex([x[1] for x in translated_langs].index(current_lang))
+        self.language_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.language"], self.language_combobox)
 
         # Date Format
         self.dateformat_combobox = QComboBox()
