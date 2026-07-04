@@ -109,13 +109,17 @@ class SettingsPanel(PanelWidget):
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
 
         self.__build_appearance_settings()
-        self.tab_widget.addTab(self.appearance_settings_container, "Appearance")
+        self.tab_widget.addTab(
+            self.appearance_settings_container, Translations["settings.appearance"]
+        )
 
         self.__build_localization_settings()
-        self.tab_widget.addTab(self.localization_settings_container, "Localization")
+        self.tab_widget.addTab(
+            self.localization_settings_container, Translations["settings.localization"]
+        )
 
         self.__build_media_settings()
-        self.tab_widget.addTab(self.media_settings_container, "Media")
+        self.tab_widget.addTab(self.media_settings_container, Translations["settings.media"])
 
         # self.__build_library_settings()
         # self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
