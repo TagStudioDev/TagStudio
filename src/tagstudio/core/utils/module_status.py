@@ -53,7 +53,7 @@ class ModuleStatus:
         """
         if platform.system() == "Darwin":
             for loc in _MACOS_BIN_LOCATIONS:
-                if which(loc + cmd):
-                    cmd = loc + cmd
-                    break
-        return cmd
+                full_command = which(loc + cmd)
+                if full_command:
+                    return full_command
+        return which(cmd)
