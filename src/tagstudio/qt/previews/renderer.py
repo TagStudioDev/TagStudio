@@ -10,6 +10,7 @@ import os
 import sqlite3
 import struct
 import tarfile
+import threading
 import xml.etree.ElementTree as ET
 import zipfile
 import zlib
@@ -22,6 +23,8 @@ from xml.etree.ElementTree import Element
 
 import cv2
 import numpy as np
+import open3d as o3d
+import open3d.visualization.rendering as o3d_rendering  # pyright: ignore[reportMissingImports]
 import py7zr
 import py7zr.io
 import rarfile
@@ -55,7 +58,7 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
 from rawpy import (
@@ -100,6 +103,8 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
+
+_stl_render_lock = threading.Lock()
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore
@@ -1256,35 +1261,52 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:  # pyright: ignore[reportUnusedParameter]
+    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for an STL file.
 
         Args:
             filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the icon.
+            size (int): The size of the icon.
         """
-        # TODO: Implement.
-        # The following commented code describes a method for rendering via
-        # matplotlib.
-        # This implementation did not play nice with multithreading.
+        bg_color: str = (
+            "#1e1e1e"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
+        )
         im: Image.Image | None = None
-        # # Create a new plot
-        # matplotlib.use('agg')
-        # figure = plt.figure()
-        # axes = figure.add_subplot(projection='3d')
+        try:
+            mesh = o3d.io.read_triangle_mesh(str(filepath))
+            if not mesh.has_triangles():
+                raise ValueError("STL file contains no mesh data")
 
-        # # Load the STL files and add the vectors to the plot
-        # your_mesh = mesh.Mesh.from_file(_filepath)
+            mesh.compute_vertex_normals()
+            mesh.translate(-mesh.get_center())
+            extent = float(np.linalg.norm(mesh.get_max_bound() - mesh.get_min_bound()))
+            if extent <= 0:
+                raise ValueError("STL mesh has zero extent")
 
-        # poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-        # poly_collection.set_color((0,0,1))  # play with color
-        # scale = your_mesh.points.flatten()
-        # axes.auto_scale_xyz(scale, scale, scale)
-        # axes.add_collection3d(poly_collection)
-        # # plt.show()
-        # img_buf = io.BytesIO()
-        # plt.savefig(img_buf, format='png')
-        # im = Image.open(img_buf)
+            material = o3d_rendering.MaterialRecord()
+            material.shader = "defaultLit"
+            material.base_color = [0.6, 0.6, 0.65, 1.0]
+
+            # open3d's offscreen renderer isn't thread safe.
+            with _stl_render_lock:
+                renderer = o3d_rendering.OffscreenRenderer(size, size)
+                try:
+                    renderer.scene.set_background(QColor(bg_color).getRgbF())
+                    renderer.scene.add_geometry("mesh", mesh, material)
+                    renderer.scene.scene.enable_sun_light(True)  # noqa: FBT003
+                    renderer.scene.scene.set_sun_light([0.5, -0.5, -1], [1, 1, 1], 75000)
+
+                    eye = mesh.get_center() + np.array([extent, -extent, extent])
+                    renderer.setup_camera(60.0, mesh.get_center(), eye, [0, 0, 1])
+
+                    o3d_image = renderer.render_to_image()
+                    im = Image.fromarray(np.asarray(o3d_image), mode="RGB")
+                finally:
+                    del renderer
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
         return im
 
@@ -1897,6 +1919,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
                     image = self._blender(_filepath)
+                # 3D Models ====================================================
+                elif ext == ".stl":
+                    image = self._model_stl_thumb(_filepath, adj_size)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
