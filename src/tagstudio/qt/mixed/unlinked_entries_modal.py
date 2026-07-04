@@ -91,7 +91,7 @@ class UnlinkedEntriesModal(QWidget):
 
     def _on_done(self):
         self.hide()
-        if self.scanner.new_files_count and self.scanner.unlinked_entries_count == 0:
+        if self.scanner.new_files_count:
             self.scanner.save_new_files()
         else:
             self.driver.update_browsing_state()
