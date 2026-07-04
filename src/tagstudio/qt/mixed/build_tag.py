@@ -176,7 +176,9 @@ class BuildTagPanel(PanelWidget):
         if tag is not None:
             exclude_ids.append(tag.id)
 
-        self.add_tag_modal = TagSearchModal(self.lib, exclude_ids)
+        self.add_tag_modal = TagSearchModal(
+            self.lib, title=Translations["tag.add.plural"], exclude=exclude_ids
+        )
         self.add_tag_modal.tsp.item_chosen.connect(lambda x: self._add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
