@@ -12,12 +12,21 @@ user = os.environ.get("USER", None)
 
 # NOTE: macOS does not make its PATH variable available to processes started outside the terminal.
 # The following is a list of common directories to search for binaries in.
-MACOS_BIN_LOCATIONS: list[str] = [
-    "",
-    "/opt/homebrew/bin/",
-    "/usr/local/bin/",
-    f"/etc/profiles/per-user/{user}/bin/",
-    "~/.nix-profile/bin/",
+# TODO: Use a library for XDG compliance
+_MACOS_BIN_LOCATIONS: list[str] = [
+    "",  # Equates to PATH itself
+    # User level
+    "~/.local/share/bin/",  # XDG-compliant user-created bin
+    "~/.local/bin/",  # Fallback user-created bin
+    "~/.local/state/nix/profile/bin/",  # XDG-compliant home Nix bin
+    "~/.nix-profile/bin/",  # Fallback home Nix bin
+    # System level
+    f"/etc/profiles/per-user/{user}/bin/",  # Per-user Nix bin
+    "/nix/var/nix/profiles/default/bin/",  # Inherited Nix bin
+    "/opt/homebrew/bin/",  # Homebrew bin
+    "/usr/local/bin/",  # Administrator-configured bin
+    "/usr/bin/",  # System bin
+    "/bin/",  # Core system bin
 ]
 
 
@@ -43,7 +52,7 @@ class ModuleStatus:
             cmd (str): The process command to search for.
         """
         if platform.system() == "Darwin":
-            for loc in MACOS_BIN_LOCATIONS:
+            for loc in _MACOS_BIN_LOCATIONS:
                 if which(loc + cmd):
                     cmd = loc + cmd
                     break
