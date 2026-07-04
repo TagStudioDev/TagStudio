@@ -1767,7 +1767,7 @@ class QtDriver(DriverMixin, QObject):
         if FfmpegStatus.which():
             logger.info(
                 "[QtDriver] FFmpeg found",
-                bin_location=FfmpegStatus.which(),
+                which=FfmpegStatus.which(),
                 version=FfmpegStatus.version(),
             )
         else:
@@ -1776,7 +1776,7 @@ class QtDriver(DriverMixin, QObject):
         if FfprobeStatus.which():
             logger.info(
                 "[QtDriver] FFprobe found",
-                bin_location=FfprobeStatus.which(),
+                which=FfprobeStatus.which(),
                 version=FfprobeStatus.version(),
             )
         else:
@@ -1785,7 +1785,7 @@ class QtDriver(DriverMixin, QObject):
         if RipgrepStatus.which():
             logger.info(
                 "[QtDriver] ripgrep found",
-                bin_location=RipgrepStatus.which(),
+                which=RipgrepStatus.which(),
                 version=RipgrepStatus.version(),
             )
         else:

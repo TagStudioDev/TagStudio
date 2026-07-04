@@ -4,6 +4,7 @@
     "about.description": "TagStudio is a photo and file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.",
     "about.documentation": "Documentation",
     "about.module.found": "Found",
+    "about.modules.title": "Optional Modules",
     "about.title": "About TagStudio",
     "about.version": "Version",
     "about.version.latest": "{built_version} (Latest Release: {latest_version})",
