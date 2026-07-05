@@ -10,6 +10,7 @@ import os
 import sqlite3
 import struct
 import tarfile
+import threading
 import xml.etree.ElementTree as ET
 import zipfile
 import zlib
@@ -83,6 +84,7 @@ from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.previews.stl_renderer import StlRenderError, render_stl_thumbnail
 from tagstudio.qt.previews.vendored.blender_renderer import (
     blend_thumb,  # pyright: ignore[reportUnknownVariableType]
 )
@@ -100,6 +102,11 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
+
+# TODO: Make these parameters configurable
+_MAX_STL_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+_MAX_STL_TRIANGLES = 100_000
+_pixmap_conversion_lock = threading.Lock()
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore
@@ -1256,37 +1263,32 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:  # pyright: ignore[reportUnusedParameter]
+    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for an STL file.
 
         Args:
             filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the icon.
+            size (int): The size of the icon.
         """
-        # TODO: Implement.
-        # The following commented code describes a method for rendering via
-        # matplotlib.
-        # This implementation did not play nice with multithreading.
-        im: Image.Image | None = None
-        # # Create a new plot
-        # matplotlib.use('agg')
-        # figure = plt.figure()
-        # axes = figure.add_subplot(projection='3d')
+        bg_color: str = (
+            "#1e1e1e"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
+        )
+        try:
+            return render_stl_thumbnail(
+                filepath=filepath,
+                size=size,
+                bg_color=bg_color,
+                max_file_size=_MAX_STL_FILE_SIZE,
+                max_triangles=_MAX_STL_TRIANGLES,
+            )
+        except StlRenderError as e:
+            logger.info("Skipping STL thumbnail", filepath=filepath, error=str(e))
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
-        # # Load the STL files and add the vectors to the plot
-        # your_mesh = mesh.Mesh.from_file(_filepath)
-
-        # poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-        # poly_collection.set_color((0,0,1))  # play with color
-        # scale = your_mesh.points.flatten()
-        # axes.auto_scale_xyz(scale, scale, scale)
-        # axes.add_collection3d(poly_collection)
-        # # plt.show()
-        # img_buf = io.BytesIO()
-        # plt.savefig(img_buf, format='png')
-        # im = Image.open(img_buf)
-
-        return im
+        return None
 
     @staticmethod
     def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
@@ -1760,9 +1762,10 @@ class ThumbRenderer(QObject):
             image = Image.new("RGBA", (128, 128), color="#FF00FF")
 
         # Convert the final image to a pixmap to emit.
-        qim = ImageQt.ImageQt(image)
-        pixmap = QPixmap.fromImage(qim)
-        pixmap.setDevicePixelRatio(pixel_ratio)
+        with _pixmap_conversion_lock:
+            qim = ImageQt.ImageQt(image)
+            pixmap = QPixmap.fromImage(qim)
+            pixmap.setDevicePixelRatio(pixel_ratio)
         self.updated_ratio.emit(image.size[0] / image.size[1])
         if pixmap:
             self.updated.emit(
@@ -1897,6 +1900,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
                     image = self._blender(_filepath)
+                # 3D Models ====================================================
+                elif ext == ".stl":
+                    image = self._model_stl_thumb(_filepath, adj_size)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
