@@ -54,6 +54,7 @@ from tagstudio.core.ts_core import TagStudioCore
 
 # This import has side-effect of importing PySide resources
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.module_status import ModuleStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
@@ -1764,29 +1765,14 @@ class QtDriver(DriverMixin, QObject):
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""
-        if FfmpegStatus.which():
-            logger.info(
-                "[QtDriver] FFmpeg found",
-                which=FfmpegStatus.which(),
-                version=FfmpegStatus.version(),
-            )
-        else:
-            logger.warning("[QtDriver] FFmpeg not found")
+        status_classes: list[tuple[str, type[ModuleStatus]]] = [
+            ("FFmpeg", FfmpegStatus),
+            ("FFprobe", FfprobeStatus),
+            ("ripgrep", RipgrepStatus),
+        ]
 
-        if FfprobeStatus.which():
-            logger.info(
-                "[QtDriver] FFprobe found",
-                which=FfprobeStatus.which(),
-                version=FfprobeStatus.version(),
-            )
-        else:
-            logger.warning("[QtDriver] FFprobe not found")
-
-        if RipgrepStatus.which():
-            logger.info(
-                "[QtDriver] ripgrep found",
-                which=RipgrepStatus.which(),
-                version=RipgrepStatus.version(),
-            )
-        else:
-            logger.warning("[QtDriver] ripgrep not found")
+        for name, sc in status_classes:
+            if sc.which():
+                logger.info(f"[QtDriver] {name} found", which=sc.which(), version=sc.version())
+            else:
+                logger.warning(f"[QtDriver] {sc} not found")

@@ -21,22 +21,14 @@ class RipgrepStatus(ModuleStatus):
     @override
     @classmethod
     def which(cls):
-        if cls._cached_location:
-            return cls._cached_location
-
-        cls._cached_location = cls._which("rg")
-        return cls._cached_location
+        return cls._which("rg")
 
     @override
     @classmethod
-    def version(cls):
-        if cls._cached_version:
-            return cls._cached_version
-
-        ripgrep_cmd = cls._which("rg")
+    def _version(cls):
+        ripgrep_cmd = cls.which()
         if ripgrep_cmd:
             out = silent_run([ripgrep_cmd, "-V"], shell=False, capture_output=True, text=True)
             if out.returncode == 0:
                 with contextlib.suppress(Exception):
-                    cls._cached_version = str(out.stdout).split(" ")[1].rstrip("\n")
-                    return cls._cached_version
+                    return str(out.stdout).split(" ")[1].rstrip("\n")

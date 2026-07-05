@@ -33,27 +33,43 @@ _MACOS_BIN_LOCATIONS: list[str] = [
 class ModuleStatus:
     """An abstract base class for module status logic including the binary location and version."""
 
-    _cached_location: str | None = None
-    _cached_version: str | None = None
+    __cached_location: str | None = None
+    __cached_version: str | None = None
 
     @classmethod
     def which(cls) -> str | None:
         raise NotImplementedError()
 
     @classmethod
-    def version(cls) -> str | None:
+    def _cache_location(cls) -> str | None:
         raise NotImplementedError()
 
-    @staticmethod
-    def _which(cmd: str) -> str | None:
+    @classmethod
+    def version(cls) -> str | None:
+        if cls.__cached_version is None:
+            cls.__cached_version = cls._version()
+        return cls.__cached_version
+
+    @classmethod
+    def _version(cls) -> str | None:
+        raise NotImplementedError()
+
+    @classmethod
+    def _which(cls, cmd: str) -> str | None:
         """Internal method for determining the correct location for which().
 
         Args:
             cmd (str): The process command to search for.
         """
+        if cls.__cached_location:
+            return cls.__cached_location
+
         if platform.system() == "Darwin":
             for loc in _MACOS_BIN_LOCATIONS:
                 full_command = which(loc + cmd)
                 if full_command:
+                    cls.__cached_location = full_command
                     return full_command
-        return which(cmd)
+
+        cls.__cached_location = which(cmd)
+        return cls.__cached_location
