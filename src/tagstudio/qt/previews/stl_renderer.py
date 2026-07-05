@@ -34,7 +34,6 @@ _ASCII_VERTEX_RE = re.compile(
 )
 _MODEL_PADDING = 0.86
 _MIN_TRIANGLE_AREA = 1e-12
-_MIN_RENDER_TRIANGLES = 12_000
 _BENCHMARK_STL_RENDERER = True
 _benchmark_print_lock = threading.Lock()
 
@@ -63,8 +62,6 @@ def render_stl_thumbnail(
     )
     load_time = perf_counter()
     loaded_triangle_count = len(triangles)
-    triangles = _sample_triangles(triangles, _target_triangle_count(size, max_triangles))
-    sampled_triangle_count = len(triangles)
     triangles, normals = _prepare_triangles(triangles)
     prepare_time = perf_counter()
     if len(triangles) == 0:
@@ -72,7 +69,7 @@ def render_stl_thumbnail(
 
     projected, depths, normals = _project_triangles(triangles, normals, size)
     project_time = perf_counter()
-    image = _rasterize(projected, depths, normals, size, bg_color)
+    image, drawn_triangle_count = _rasterize(projected, depths, normals, size, bg_color)
     raster_time = perf_counter()
 
     if _BENCHMARK_STL_RENDERER:
@@ -82,8 +79,8 @@ def render_stl_thumbnail(
             file_size=file_size,
             source_triangle_count=source_triangle_count,
             loaded_triangle_count=loaded_triangle_count,
-            sampled_triangle_count=sampled_triangle_count,
             renderable_triangle_count=len(triangles),
+            drawn_triangle_count=drawn_triangle_count,
             read_seconds=read_time - start_time,
             load_seconds=load_time - read_time,
             prepare_seconds=prepare_time - load_time,
@@ -110,22 +107,24 @@ def _load_stl_triangles(
     expected_size = _BINARY_STL_HEADER_SIZE + (triangle_count * _BINARY_STL_TRIANGLE_SIZE)
 
     if expected_size == file_size:
-        triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
+        if triangle_count > max_triangles:
+            raise StlRenderError("STL file contains too many triangles")
+        triangles = _load_binary_stl_triangles(filepath, triangle_count)
         return triangles, triangle_count, "binary"
 
     data = filepath.read_bytes()
     trailing = data[expected_size:] if expected_size <= file_size else b""
     if expected_size < file_size and not trailing.strip(b"\x00\r\n\t "):
-        triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
+        if triangle_count > max_triangles:
+            raise StlRenderError("STL file contains too many triangles")
+        triangles = _load_binary_stl_triangles(filepath, triangle_count)
         return triangles, triangle_count, "binary"
 
     triangles, source_triangle_count = _load_ascii_stl_triangles(data, max_triangles)
     return triangles, source_triangle_count, "ascii"
 
 
-def _load_binary_stl_triangles(
-    filepath: Path, triangle_count: int, max_triangles: int
-) -> np.ndarray:
+def _load_binary_stl_triangles(filepath: Path, triangle_count: int) -> np.ndarray:
     records = np.memmap(
         filepath,
         dtype=_BINARY_STL_DTYPE,
@@ -134,43 +133,27 @@ def _load_binary_stl_triangles(
         shape=(triangle_count,),
     )
     vertices = records["vertices"]
-    if triangle_count > max_triangles:
-        sample_indexes = np.linspace(0, triangle_count - 1, max_triangles, dtype=np.intp)
-        vertices = vertices[sample_indexes]
-
     triangles = vertices.astype(np.float32, copy=True)
     del records
     return triangles
 
 
 def _load_ascii_stl_triangles(data: bytes, max_triangles: int) -> tuple[np.ndarray, int]:
-    max_vertices = max_triangles * 3
     vertex_lines = _ASCII_VERTEX_RE.findall(data)
-    loaded_vertices = min(len(vertex_lines), max_vertices)
-    loaded_vertices -= loaded_vertices % 3
+    source_triangle_count = len(vertex_lines) // 3
 
-    if loaded_vertices == 0:
+    if len(vertex_lines) == 0 or len(vertex_lines) % 3:
         raise StlRenderError("STL file contains no complete triangles")
+    if source_triangle_count > max_triangles:
+        raise StlRenderError("STL file contains too many triangles")
 
-    vertex_text = b" ".join(vertex_lines[:loaded_vertices]).decode("ascii")
+    vertex_text = b" ".join(vertex_lines).decode("ascii")
     values = np.fromstring(vertex_text, dtype=np.float32, sep=" ")
-    if len(values) != loaded_vertices * 3:
+    if len(values) != len(vertex_lines) * 3:
         raise StlRenderError("STL file contains an invalid vertex")
 
     triangles = values.reshape((-1, 3, 3))
-    return triangles, len(vertex_lines) // 3
-
-
-def _target_triangle_count(size: int, max_triangles: int) -> int:
-    return max_triangles  # min(max_triangles, max(_MIN_RENDER_TRIANGLES, (size * size) // 2))
-
-
-def _sample_triangles(triangles: np.ndarray, target_count: int) -> np.ndarray:
-    if len(triangles) <= target_count:
-        return triangles
-
-    sample_indexes = np.linspace(0, len(triangles) - 1, target_count, dtype=np.intp)
-    return triangles[sample_indexes]
+    return triangles, source_triangle_count
 
 
 def _print_benchmark(
@@ -179,8 +162,8 @@ def _print_benchmark(
     file_size: int,
     source_triangle_count: int,
     loaded_triangle_count: int,
-    sampled_triangle_count: int,
     renderable_triangle_count: int,
+    drawn_triangle_count: int,
     read_seconds: float,
     load_seconds: float,
     prepare_seconds: float,
@@ -196,8 +179,8 @@ def _print_benchmark(
         print(f"  size:       {file_size / (1024 * 1024):.2f} MiB")
         print(f"  triangles:  source={source_triangle_count:,}")
         print(f"              loaded={loaded_triangle_count:,}")
-        print(f"              sampled={sampled_triangle_count:,}")
         print(f"              renderable={renderable_triangle_count:,}")
+        print(f"              drawn={drawn_triangle_count:,}")
         print("  timings:")
         print(f"    read:     {read_seconds * 1000:8.2f} ms")
         print(f"    load:     {load_seconds * 1000:8.2f} ms")
@@ -279,7 +262,7 @@ def _rasterize(
     normals: np.ndarray,
     size: int,
     bg_color: str,
-) -> Image.Image:
+) -> tuple[Image.Image, int]:
     image = Image.new("RGB", (size, size), color=bg_color)
     draw = ImageDraw.Draw(image)
     base_color = np.asarray([150.0, 153.0, 163.0], dtype=np.float32)
@@ -288,8 +271,10 @@ def _rasterize(
 
     intensities = 0.34 + (0.66 * np.abs(normals @ light))
     colors = np.clip(base_color * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
-    triangle_order = np.argsort(depths.mean(axis=1))
+    triangle_indexes = _visible_triangle_indexes(normals, depths)
+    triangle_order = triangle_indexes[np.argsort(depths[triangle_indexes].mean(axis=1))]
     rendered_any = False
+    drawn_triangle_count = 0
 
     for index in triangle_order:
         tri = projected[index]
@@ -304,8 +289,24 @@ def _rasterize(
         color = tuple(int(channel) for channel in colors[index])
         draw.polygon([tuple(point) for point in tri], fill=color)
         rendered_any = True
+        drawn_triangle_count += 1
 
     if not rendered_any:
         raise StlRenderError("STL mesh is outside the thumbnail frame")
 
-    return image
+    return image, drawn_triangle_count
+
+
+def _visible_triangle_indexes(normals: np.ndarray, depths: np.ndarray) -> np.ndarray:
+    front_facing = normals[:, 2] > 0
+    front_count = int(np.count_nonzero(front_facing))
+    back_count = len(normals) - front_count
+
+    if front_count > len(normals) * 0.25 and back_count > len(normals) * 0.25:
+        front_indexes = np.flatnonzero(front_facing)
+        back_indexes = np.flatnonzero(~front_facing)
+        front_depth = float(depths[front_indexes].mean())
+        back_depth = float(depths[back_indexes].mean())
+        return front_indexes if front_depth >= back_depth else back_indexes
+
+    return np.arange(len(normals))
