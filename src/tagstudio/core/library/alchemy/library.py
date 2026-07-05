@@ -428,36 +428,37 @@ class Library:
             connection_string=connection_string,
         )
         self.engine = create_engine(connection_string, poolclass=poolclass)
+
+        # Don't check DB version when creating new library
+        if not is_new:
+            loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
+            initial_db_version = self.get_version(DB_VERSION_INITIAL_KEY)
+
+            # ======================== Library Database Version Checking =======================
+            # DB_VERSION 6 is the first supported SQLite DB version.
+            # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
+            #   - Dividing by 100 and flooring gives the major (breaking changes) version.
+            #   - If a DB has major version higher than the current program, don't load it.
+            #   - If only the minor version is higher, it's still allowed to load.
+            if loaded_db_version < 6 or (
+                loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
+            ):
+                mismatch_text = Translations["status.library_version_mismatch"]
+                found_text = Translations["status.library_version_found"]
+                expected_text = Translations["status.library_version_expected"]
+                return LibraryStatus(
+                    success=False,
+                    message=(
+                        f"{mismatch_text}\n"
+                        f"{found_text} v{loaded_db_version}, "
+                        f"{expected_text} v{DB_VERSION}"
+                    ),
+                )
+
+        logger.info(f"[Library] Library DB version: {loaded_db_version}")
+        make_tables(self.engine)
+
         with Session(self.engine) as session:
-            # Don't check DB version when creating new library
-            if not is_new:
-                loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
-                initial_db_version = self.get_version(DB_VERSION_INITIAL_KEY)
-
-                # ======================== Library Database Version Checking =======================
-                # DB_VERSION 6 is the first supported SQLite DB version.
-                # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
-                #   - Dividing by 100 and flooring gives the major (breaking changes) version.
-                #   - If a DB has major version higher than the current program, don't load it.
-                #   - If only the minor version is higher, it's still allowed to load.
-                if loaded_db_version < 6 or (
-                    loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
-                ):
-                    mismatch_text = Translations["status.library_version_mismatch"]
-                    found_text = Translations["status.library_version_found"]
-                    expected_text = Translations["status.library_version_expected"]
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            f"{mismatch_text}\n"
-                            f"{found_text} v{loaded_db_version}, "
-                            f"{expected_text} v{DB_VERSION}"
-                        ),
-                    )
-
-            logger.info(f"[Library] Library DB version: {loaded_db_version}")
-            make_tables(self.engine)
-
             if is_new:
                 # Add default tag color namespaces.
                 namespaces = default_color_groups.namespaces()
@@ -491,8 +492,7 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
-            # Add default field templates
-            if is_new:
+                # Add default field templates
                 for template in get_default_field_templates():
                     try:
                         session.add(template)
