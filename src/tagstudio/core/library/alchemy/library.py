@@ -407,6 +407,213 @@ class Library:
     def open_sqlite_library(
         self, library_dir: Path, is_new: bool, storage_path: str
     ) -> LibraryStatus:
+        if is_new:
+            return self.new_lib(library_dir, storage_path)
+        else:
+            return self.migrate_lib(library_dir, storage_path)
+
+    def new_lib(self, library_dir: Path, storage_path: str) -> LibraryStatus:
+        is_new = True
+        connection_string = URL.create(
+            drivername="sqlite",
+            database=storage_path,
+        )
+        # NOTE: File-based databases should use NullPool to create new DB connection in order to
+        # keep connections on separate threads, which prevents the DB files from being locked
+        # even after a connection has been closed.
+        # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
+        # More info can be found on the SQLAlchemy docs:
+        # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
+        # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
+        poolclass = None if storage_path == ":memory:" else NullPool
+        loaded_db_version: int = 0
+        initial_db_version: int = DB_VERSION
+
+        logger.info(
+            "[Library] Opening SQLite Library",
+            library_dir=library_dir,
+            connection_string=connection_string,
+        )
+        self.engine = create_engine(connection_string, poolclass=poolclass)
+
+        # Don't check DB version when creating new library
+        if not is_new:
+            loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
+            initial_db_version = self.get_version(DB_VERSION_INITIAL_KEY)
+
+            # ======================== Library Database Version Checking =======================
+            # DB_VERSION 6 is the first supported SQLite DB version.
+            # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
+            #   - Dividing by 100 and flooring gives the major (breaking changes) version.
+            #   - If a DB has major version higher than the current program, don't load it.
+            #   - If only the minor version is higher, it's still allowed to load.
+            if loaded_db_version < 6 or (
+                loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
+            ):
+                mismatch_text = Translations["status.library_version_mismatch"]
+                found_text = Translations["status.library_version_found"]
+                expected_text = Translations["status.library_version_expected"]
+                return LibraryStatus(
+                    success=False,
+                    message=(
+                        f"{mismatch_text}\n"
+                        f"{found_text} v{loaded_db_version}, "
+                        f"{expected_text} v{DB_VERSION}"
+                    ),
+                )
+
+        logger.info(f"[Library] Library DB version: {loaded_db_version}")
+        make_tables(self.engine)
+
+        with Session(self.engine) as session:
+            if is_new:
+                # Add default tag color namespaces.
+                namespaces = default_color_groups.namespaces()
+                try:
+                    session.add_all(namespaces)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error("[Library] Couldn't add default tag color namespaces", error=e)
+                    session.rollback()
+
+                # Add default tag colors.
+                tag_colors: list[TagColorGroup] = default_color_groups.standard()
+                tag_colors += default_color_groups.pastels()
+                tag_colors += default_color_groups.shades()
+                tag_colors += default_color_groups.grayscale()
+                tag_colors += default_color_groups.earth_tones()
+                tag_colors += default_color_groups.neon()
+                if is_new:
+                    try:
+                        session.add_all(tag_colors)
+                        session.commit()
+                    except IntegrityError as e:
+                        logger.error("[Library] Couldn't add default tag colors", error=e)
+                        session.rollback()
+
+                # Add default tags.
+                tags = get_default_tags()
+                try:
+                    session.add_all(tags)
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+                # Add default field templates
+                for template in get_default_field_templates():
+                    try:
+                        session.add(template)
+                        session.commit()
+                    except IntegrityError:
+                        logger.info(
+                            "[Library] FieldTemplate already exists", field_template=template
+                        )
+                        session.rollback()
+
+            # Ensure version rows are present
+            with catch_warnings(record=True):
+                try:
+                    initial = DB_VERSION if is_new else 100
+                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+                try:
+                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+            # check if folder matching current path exists already
+            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
+            if not self.folder:
+                folder = Folder(
+                    path=library_dir,
+                    uuid=str(uuid4()),
+                )
+                session.add(folder)
+                session.expunge(folder)
+                session.commit()
+                self.folder = folder
+
+            # Generate default .ts_ignore file
+            if is_new:
+                try:
+                    ts_ignore_template = (
+                        Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
+                    )
+                    shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+                except Exception as e:
+                    logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+
+            # Apply any post-SQL migration patches.
+            if not is_new:
+                assert loaded_db_version >= 6
+
+                # save backup if patches will be applied
+                if loaded_db_version < DB_VERSION:
+                    self.library_dir = library_dir
+                    self.save_library_backup_to_disk()
+                    self.library_dir = None
+
+                # migrate DB step by step from one version to the next
+                if loaded_db_version < 7:
+                    # changes: value_type, tags
+                    self.__apply_db7_migration(session)
+                if loaded_db_version < 8:
+                    # changes: tag_colors
+                    self.__apply_db8_migration(session)
+                if loaded_db_version < 9:
+                    # changes: entries
+                    self.__apply_db9_migration(session)
+                if loaded_db_version < 100:
+                    # changes: tag_parents
+                    self.__apply_db100_migration(session)
+                if loaded_db_version < 102:
+                    # changes: tag_parents
+                    self.__apply_db102_migration(session)
+                if loaded_db_version < 103:
+                    # changes: tags
+                    self.__apply_db103_migration(session)
+                if loaded_db_version < 104:
+                    # changes: deletes preferences
+                    self.__apply_db104_migration(session, library_dir)
+                if loaded_db_version < 200:
+                    # changes: field tables
+                    self.__apply_db200_migration(session)
+                if initial_db_version < 200 and loaded_db_version < 201:
+                    # changes: field tables
+                    self.__apply_db201_migration(session)
+                if loaded_db_version < 202:
+                    # changes: tag_parents
+                    self.__apply_db202_migration(session)
+
+            session.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
+                )
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
+                )
+            )
+
+            # Update DB_VERSION
+            if loaded_db_version < DB_VERSION:
+                logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
+                self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
+
+        # everything is fine, set the library path
+        self.library_dir = library_dir
+        return LibraryStatus(success=True, library_path=library_dir)
+
+    def migrate_lib(self, library_dir: Path, storage_path: str) -> LibraryStatus:
+        is_new = False
         connection_string = URL.create(
             drivername="sqlite",
             database=storage_path,
