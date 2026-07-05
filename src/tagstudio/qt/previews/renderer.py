@@ -623,7 +623,7 @@ class ThumbRenderer(QObject):
             image (Image.Image): The image to apply the edge to.
             edge (tuple[Image.Image, Image.Image]): The edge images to apply.
                 Item 0 is the inner highlight, and item 1 is the outer shadow.
-            faded (bool): Whether or not to apply a faded version of the edge.
+            faded (bool): Whether to apply a faded version of the edge.
                 Used for light themes.
         """
         opacity: float = 1.0 if not faded else 0.8
@@ -847,7 +847,7 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def _krita_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Krita file.
+        """Extract and render a thumbnail for a Krita file.
 
         Args:
             filepath (Path): The path of the file.
@@ -1219,13 +1219,17 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def _iwork_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
+        """Render a thumbnail for an Apple iWork (Pages, Numbers, Keynote, Pixelmator) file.
 
         Args:
             filepath (Path): The path of the file.
         """
-        preview_thumb_dir = "preview.jpg"
-        quicklook_thumb_dir = "QuickLook/Thumbnail.jpg"
+        thumb_files: list[str] = [
+            "preview.jpg",
+            "QuickLook/Preview.heic",
+            "QuickLook/Thumbnail.jpg",
+            "QuickLook/Thumbnail.heic",
+        ]
         im: Image.Image | None = None
 
         def get_image(path: str) -> Image.Image | None:
@@ -1240,10 +1244,9 @@ class ThumbRenderer(QObject):
                 thumb: Image.Image | None = None
 
                 # Check if the file exists in the zip
-                if preview_thumb_dir in zip_file.namelist():
-                    thumb = get_image(preview_thumb_dir)
-                elif quicklook_thumb_dir in zip_file.namelist():
-                    thumb = get_image(quicklook_thumb_dir)
+                for thumb_file in thumb_files:
+                    if thumb_file in zip_file.namelist():
+                        thumb = get_image(thumb_file)
                 else:
                     logger.error("Couldn't render thumbnail", filepath=filepath)
 
@@ -1317,7 +1320,7 @@ class ThumbRenderer(QObject):
         # Enlarge image for antialiasing
         scale_factor = 2.5
         page_size *= scale_factor
-        # Render image with no anti-aliasing for speed
+        # Render image with no antialiasing for speed
         render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
         render_options.setRenderFlags(
             QPdfDocumentRenderOptions.RenderFlag.TextAliased

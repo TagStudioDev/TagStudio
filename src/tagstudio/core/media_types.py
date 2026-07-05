@@ -12,14 +12,14 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 FILETYPE_EQUIVALENTS = [
-    set(["aif", "aiff", "aifc"]),
-    set(["html", "htm", "xhtml", "shtml", "dhtml"]),
-    set(["jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"]),
-    set(["json", "jsonc", "json5"]),
-    set(["md", "markdown", "mkd", "rmd"]),
-    set(["tar.gz", "tgz"]),
-    set(["xml", "xul"]),
-    set(["yaml", "yml"]),
+    {"aif", "aiff", "aifc"},
+    {"html", "htm", "xhtml", "shtml", "dhtml"},
+    {"jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"},
+    {"json", "jsonc", "json5"},
+    {"md", "markdown", "mkd", "rmd"},
+    {"tar.gz", "tgz"},
+    {"xml", "xul"},
+    {"yaml", "yml"},
 ]
 
 
@@ -75,7 +75,7 @@ class MediaCategory:
         extensions (set[str]): The set of file extensions associated with this category.
             Includes leading ".", all lowercase, and does not need to be unique to this category.
 
-        is_iana (bool): Represents whether or not this is an IANA registered category.
+        is_iana (bool): Represents whether this is an IANA registered category.
     """
 
     media_type: MediaType
@@ -336,7 +336,7 @@ class MediaCategories:
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
-    _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
+    _IWORK_SET: set[str] = {".key", ".numbers", ".pages", ".pxd"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MDIPACK_SET: set[str] = {".mdp"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
