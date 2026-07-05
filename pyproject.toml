@@ -20,7 +20,6 @@ dependencies = [
     "humanfriendly==10.*",
     "mutagen~=1.47",
     "numpy~=2.2",
-    "open3d~=0.19",
     "opencv_python~=4.11",
     "Pillow>=10.2,<12",
     "pillow-heif~=0.22",

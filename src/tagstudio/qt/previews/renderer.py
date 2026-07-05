@@ -23,8 +23,6 @@ from xml.etree.ElementTree import Element
 
 import cv2
 import numpy as np
-import open3d as o3d
-import open3d.visualization.rendering as o3d_rendering  # pyright: ignore[reportMissingImports]
 import py7zr
 import py7zr.io
 import rarfile
@@ -58,7 +56,7 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPixmap
+from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
 from rawpy import (
@@ -86,6 +84,7 @@ from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.previews.stl_renderer import StlRenderError, render_stl_thumbnail
 from tagstudio.qt.previews.vendored.blender_renderer import (
     blend_thumb,  # pyright: ignore[reportUnknownVariableType]
 )
@@ -104,9 +103,9 @@ logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 
-_stl_render_lock = threading.Lock()
 _MAX_STL_FILE_SIZE = 256 * 1024 * 1024  # 256 MB
-_MAX_STL_TRIANGLES = 5_000_000
+_MAX_STL_TRIANGLES = 250_000
+_pixmap_conversion_lock = threading.Lock()
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore
@@ -1275,58 +1274,20 @@ class ThumbRenderer(QObject):
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else "#FFFFFF"
         )
-        im: Image.Image | None = None
         try:
-            if filepath.stat().st_size > _MAX_STL_FILE_SIZE:
-                logger.info(
-                    "Skipping STL thumbnail, file too large",
-                    filepath=filepath,
-                    max_size=_MAX_STL_FILE_SIZE,
-                )
-                return im
-
-            mesh = o3d.io.read_triangle_mesh(str(filepath))
-            if not mesh.has_triangles():
-                raise ValueError("STL file contains no mesh data")
-            if len(mesh.triangles) > _MAX_STL_TRIANGLES:
-                logger.info(
-                    "Skipping STL thumbnail, too many triangles",
-                    filepath=filepath,
-                    triangles=len(mesh.triangles),
-                    max_triangles=_MAX_STL_TRIANGLES,
-                )
-                return im
-
-            mesh.compute_vertex_normals()
-            mesh.translate(-mesh.get_center())
-            extent = float(np.linalg.norm(mesh.get_max_bound() - mesh.get_min_bound()))
-            if extent <= 0:
-                raise ValueError("STL mesh has zero extent")
-
-            material = o3d_rendering.MaterialRecord()
-            material.shader = "defaultLit"
-            material.base_color = [0.6, 0.6, 0.65, 1.0]
-
-            # open3d's offscreen renderer isn't thread safe.
-            with _stl_render_lock:
-                renderer = o3d_rendering.OffscreenRenderer(size, size)
-                try:
-                    renderer.scene.set_background(QColor(bg_color).getRgbF())
-                    renderer.scene.add_geometry("mesh", mesh, material)
-                    renderer.scene.scene.enable_sun_light(True)  # noqa: FBT003
-                    renderer.scene.scene.set_sun_light([0.5, -0.5, -1], [1, 1, 1], 75000)
-
-                    eye = mesh.get_center() + np.array([extent, -extent, extent])
-                    renderer.setup_camera(60.0, mesh.get_center(), eye, [0, 0, 1])
-
-                    o3d_image = renderer.render_to_image()
-                    im = Image.fromarray(np.asarray(o3d_image), mode="RGB")
-                finally:
-                    del renderer
+            return render_stl_thumbnail(
+                filepath=filepath,
+                size=size,
+                bg_color=bg_color,
+                max_file_size=_MAX_STL_FILE_SIZE,
+                max_triangles=_MAX_STL_TRIANGLES,
+            )
+        except StlRenderError as e:
+            logger.info("Skipping STL thumbnail", filepath=filepath, error=str(e))
         except Exception as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
-        return im
+        return None
 
     @staticmethod
     def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
@@ -1800,9 +1761,10 @@ class ThumbRenderer(QObject):
             image = Image.new("RGBA", (128, 128), color="#FF00FF")
 
         # Convert the final image to a pixmap to emit.
-        qim = ImageQt.ImageQt(image)
-        pixmap = QPixmap.fromImage(qim)
-        pixmap.setDevicePixelRatio(pixel_ratio)
+        with _pixmap_conversion_lock:
+            qim = ImageQt.ImageQt(image)
+            pixmap = QPixmap.fromImage(qim)
+            pixmap.setDevicePixelRatio(pixel_ratio)
         self.updated_ratio.emit(image.size[0] / image.size[1])
         if pixmap:
             self.updated.emit(
