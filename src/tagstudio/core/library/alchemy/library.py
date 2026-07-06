@@ -566,9 +566,6 @@ class Library:
                 self.library_dir = None
 
             # migrate DB step by step from one version to the next
-            # TODO: every migration step should either complete sucessfully or be aborted fully
-            #  - the migration steps seem to have try-except cases to catch a previously failed
-            #    migration
             # (migration_method, db_version, initial_db_version)
             # TODO: log statements in migrations are inconsistent
             migrations = [
@@ -587,6 +584,7 @@ class Library:
             for migration, v, iv in migrations:
                 if loaded_db_version < v and (iv is None or initial_db_version < iv):
                     with session:
+                        # any error causes transaction to rollback
                         migration(session)
                         loaded_db_version = v
                         self.set_version(session, DB_VERSION_CURRENT_KEY, v)
@@ -624,24 +622,16 @@ class Library:
             .values(disambiguation_id=None)
         )
         session.execute(disam_stmt)
-        session.commit()
+        session.flush()
 
     def __apply_db8_migration(self, session: Session):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
-        color_border_stmt = text(
-            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
+        session.execute(
+            text("ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL")
         )
-        try:
-            session.execute(color_border_stmt)
-            session.commit()
-            logger.info("[Library][Migration] Added color_border column to tag_colors table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create color_border column in tag_colors table!",
-                error=e,
-            )
-            session.rollback()
+        session.flush()
+        logger.info("[Library][Migration] Added color_border column to tag_colors table")
 
         # collect new default tag colors
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
@@ -653,44 +643,34 @@ class Library:
 
         # Add any new default colors introduced in DB_VERSION 8
         for color in tag_colors:
-            try:
-                session.add(color)
-                logger.info(
-                    "[Library][Migration] Migrated tag color to DB_VERSION 8+",
-                    color_name=color.name,
-                )
-                session.commit()
-            except IntegrityError:
-                session.rollback()
+            session.add(color)
+        session.flush()
+        logger.info(
+            "[Library][Migration] Migrated tag colors to DB_VERSION 8+",
+            color_name=tag_colors,
+        )
 
         # Update Neon colors to use the the color_border property
         for color in default_color_groups.neon():
-            try:
-                neon_stmt = (
-                    update(TagColorGroup)
-                    .where(
-                        and_(
-                            TagColorGroup.namespace == color.namespace,
-                            TagColorGroup.slug == color.slug,
-                        )
-                    )
-                    .values(
-                        slug=color.slug,
-                        namespace=color.namespace,
-                        name=color.name,
-                        primary=color.primary,
-                        secondary=color.secondary,
-                        color_border=color.color_border,
+            neon_stmt = (
+                update(TagColorGroup)
+                .where(
+                    and_(
+                        TagColorGroup.namespace == color.namespace,
+                        TagColorGroup.slug == color.slug,
                     )
                 )
-                session.execute(neon_stmt)
-                session.commit()
-            except IntegrityError as e:
-                logger.error(
-                    "[Library] Could not migrate Neon colors to DB_VERSION 8+!",
-                    error=e,
+                .values(
+                    slug=color.slug,
+                    namespace=color.namespace,
+                    name=color.name,
+                    primary=color.primary,
+                    secondary=color.secondary,
+                    color_border=color.color_border,
                 )
-                session.rollback()
+            )
+            session.execute(neon_stmt)
+        session.flush()
 
     def __apply_db9_migration(self, session: Session):
         """Migrate DB from DB_VERSION 8 to 9."""
@@ -698,21 +678,14 @@ class Library:
         add_filename_column = text(
             "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
         )
-        try:
-            session.execute(add_filename_column)
-            session.commit()
-            logger.info("[Library][Migration] Added filename column to entries table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create filename column in entries table!",
-                error=e,
-            )
-            session.rollback()
+        session.execute(add_filename_column)
+        session.flush()
+        logger.info("[Library][Migration] Added filename column to entries table")
 
         # Populate the new filename column.
         for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
-        session.commit()
+        session.flush()
         logger.info("[Library][Migration] Populated filename column in entries table")
 
     def __apply_db100_migration(self, session: Session):
@@ -723,57 +696,40 @@ class Library:
             child_id=TagParent.parent_id,
         )
         session.execute(stmt)
-        session.commit()
+        session.flush()
         logger.info("[Library][Migration] Refactored TagParent table")
 
     def __apply_db101_migration(self, session: Session):
         """Migrate DB to DB_VERSION 101."""
         # Ensure version rows are present
         session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-        session.commit()
+        session.flush()
 
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
-        session.commit()
+        session.flush()
         logger.info("[Library][Migration] Verified TagParent table data")
 
     def __apply_db103_migration(self, session: Session):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
-        add_is_hidden_column = text(
-            "ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"
-        )
-        try:
-            session.execute(add_is_hidden_column)
-            session.commit()
-            logger.info("[Library][Migration] Added is_hidden column to tags table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create is_hidden column in tags table!",
-                error=e,
-            )
-            session.rollback()
+        session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
+        session.flush()
+        logger.info("[Library][Migration] Added is_hidden column to tags table")
 
         # mark the "Archived" tag as hidden
-        try:
-            session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
-            session.commit()
-            logger.info("[Library][Migration] Updated archived tag to be hidden")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not update archived tag to be hidden!",
-                error=e,
-            )
-            session.rollback()
+        session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
+        session.flush()
+        logger.info("[Library][Migration] Updated archived tag to be hidden")
 
     def __apply_db104_migration(self, session: Session, library_dir: Path):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
         self.__migrate_sql_to_ts_ignore(session, library_dir)
         session.execute(text("DROP TABLE preferences"))
-        session.commit()
+        session.flush()
 
     def __migrate_sql_to_ts_ignore(self, session: Session, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
@@ -865,14 +821,8 @@ class Library:
         # Add default field templates
         logger.info("[Library][Migration][200] Adding default field templates...")
         for template in get_default_field_templates():
-            try:
-                session.add(template)
-                session.flush()
-            except IntegrityError:
-                logger.error("[Library] FieldTemplate already exists", field_template=template)
-                session.rollback()
-
-        session.commit()
+            session.add(template)
+        session.flush()
 
         # DB indices for improved performance
         session.execute(
@@ -933,13 +883,13 @@ class Library:
         session.execute(text("DROP TABLE datetime_fields"))
         session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
 
-        session.commit()
+        session.flush()
 
     def __apply_db202_migration(self, session: Session):
         """Migrate DB to DB_VERSION 202."""
         stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
-        session.commit()
+        session.flush()
         logger.info("[Library][Migration] Verified TagParent table data")
 
     @property
