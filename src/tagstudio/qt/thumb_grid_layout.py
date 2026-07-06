@@ -215,7 +215,8 @@ class ThumbGridLayout(QLayout):
         start = offset * per_row
         end = start + (visible_rows * per_row)
 
-        self.visible_changed.emit(self._entry_ids[start])
+        first_visible = self._entry_ids[start] if 0 <= start < len(self._entry_ids) else None
+        self.visible_changed.emit(first_visible)
 
         # Load closest off screen rows
         start -= per_row * 3
