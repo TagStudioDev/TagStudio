@@ -385,19 +385,20 @@ class Library:
         Handles in-memory storage and checks whether a JSON-migration is necessary.
         """
         assert isinstance(library_dir, Path)
-        self.verify_ts_folder(library_dir)  # ensure .TagStudio directory exists
 
         sql_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
         json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
 
         is_new = not sql_path.exists()
-        if not in_memory and is_new and json_path.exists():
-            return LibraryStatus(
-                success=False,
-                library_path=library_dir,
-                message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
-                json_migration_req=True,
-            )
+        if not in_memory:
+            self.verify_ts_folder(library_dir)  # ensure .TagStudio directory exists
+            if is_new and json_path.exists():
+                return LibraryStatus(
+                    success=False,
+                    library_path=library_dir,
+                    message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                    json_migration_req=True,
+                )
 
         if is_new:
             return self.create_sqlite_library(library_dir, in_memory)
