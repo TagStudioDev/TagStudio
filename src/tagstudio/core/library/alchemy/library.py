@@ -469,7 +469,7 @@ class Library:
             session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
             session.commit()
 
-            # check if folder matching current path exists already
+            # add folder for current path
             folder = Folder(
                 path=library_dir,
                 uuid=str(uuid4()),
@@ -571,19 +571,6 @@ class Library:
                 session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
                 session.commit()
 
-            # TODO ASSURANCE 2: version check + reordering
-            # check if folder matching current path exists already
-            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
-            if not self.folder:
-                folder = Folder(
-                    path=library_dir,
-                    uuid=str(uuid4()),
-                )
-                session.add(folder)
-                session.expunge(folder)
-                session.commit()
-                self.folder = folder
-
             # save backup if patches will be applied
             if loaded_db_version < DB_VERSION:
                 self.library_dir = library_dir
@@ -643,6 +630,18 @@ class Library:
             if loaded_db_version < DB_VERSION:
                 logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
                 self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
+
+            # check if folder matching current path exists already
+            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
+            if not self.folder:
+                folder = Folder(
+                    path=library_dir,
+                    uuid=str(uuid4()),
+                )
+                session.add(folder)
+                session.expunge(folder)
+                session.commit()
+                self.folder = folder
 
         # everything is fine, set the library path
         self.library_dir = library_dir
