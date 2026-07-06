@@ -538,7 +538,6 @@ class Library:
         return LibraryStatus(success=True, library_path=library_dir)
 
     def migrate_lib(self, library_dir: Path, storage_path: str) -> LibraryStatus:
-        is_new = False
         connection_string = URL.create(
             drivername="sqlite",
             database=storage_path,
@@ -591,24 +590,18 @@ class Library:
         # without considering what version the DB is currently on and then doing all of the
         # migrations after that seems like it could cause problems in some scenarios.
         # instead only have this on creation and create new tables as part of migrations
+        # Note: this actually produces an error and fails to initialise built-in tags when opening
+        # a library that doesn't yet have the is_hidden property on the tags table
         make_tables(self.engine)
 
         with Session(self.engine) as session:
-            # TODO ASSURANCE 1: version check + reordering
+            # TODO ASSURANCE 1: reordering
             # Ensure version rows are present
-            with catch_warnings(record=True):
-                try:
-                    initial = DB_VERSION if is_new else 100
-                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
+            if loaded_db_version < 101:
+                session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
 
-                try:
-                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
+                session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+                session.commit()
 
             # TODO ASSURANCE 2: version check + reordering
             # check if folder matching current path exists already
