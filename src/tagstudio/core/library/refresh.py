@@ -85,7 +85,7 @@ class RefreshTracker:
         new_paths: dict[Path, list[Path]] = {}
         new_normalized_paths: dict[Path, list[Path]] = {}
         for path in self._new_paths:
-            name = path.relative_to(path.parent)
+            name = Path(path.name)
             new_paths.setdefault(name, []).append(path)
             normalized_name = self._normalize(name)
             if normalized_name != name:
@@ -151,7 +151,11 @@ class RefreshTracker:
         yield 0
         raw_paths = None
         if not force_internal_tools:
-            raw_paths = self.__rg(library_dir, ignore_patterns)
+            rg_path = shutil.which("rg")
+            if rg_path is None:
+                logger.warning("[Refresh: ripgrep not found on system]")
+            else:
+                raw_paths = self.__rg(rg_path, library_dir, ignore_patterns)
 
         # Use ripgrep if it was found and working, else fallback to wcmatch.
         if raw_paths is None:
@@ -175,16 +179,8 @@ class RefreshTracker:
 
         self.__add(library_dir, paths)
 
-    def __rg(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str] | None:
-        """Use ripgrep to return a list of matched directories and files.
-
-        Return `None` if ripgrep not found on system.
-        """
-        rg_path = shutil.which("rg")
-        if rg_path is None:
-            logger.warning("[Refresh: ripgrep not found on system]")
-            return None
-
+    def __rg(self, rg_path: str, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str]:
+        """Use ripgrep to return a list of matched directories and files."""
         logger.info("[Refresh: Using ripgrep for scanning]")
 
         compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
@@ -196,7 +192,7 @@ class RefreshTracker:
         with silent_popen(
             " ".join(
                 [
-                    "rg",
+                    f'"{rg_path}"',
                     "--files",
                     "--follow",
                     "--hidden",
