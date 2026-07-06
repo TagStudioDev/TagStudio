@@ -1,0 +1,5 @@
+{
+    "about.version": "Versioon",
+    "about.version.latest": "{built_version} (Viimane versioon: {latest_version})",
+    "about.website": "Veebisait"
+}
