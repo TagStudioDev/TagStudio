@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import math
-import re
 import struct
 import threading
 from pathlib import Path
@@ -14,7 +13,9 @@ import numpy as np
 from PIL import Image, ImageColor
 
 _BINARY_STL_HEADER_SIZE = 84
+_BINARY_STL_TRIANGLE_COUNT_OFFSET = 80
 _BINARY_STL_TRIANGLE_SIZE = 50
+_BINARY_STL_TRAILING_CHARS_TO_IGNORE = b"\x00\r\n\t "
 _BINARY_STL_DTYPE = np.dtype(
     [
         ("normal", "<f4", (3,)),
@@ -22,16 +23,7 @@ _BINARY_STL_DTYPE = np.dtype(
         ("attribute_byte_count", "<u2"),
     ]
 )
-_ASCII_FLOAT_PATTERN = rb"[-+]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][-+]?\d+)?"
-_ASCII_VERTEX_RE = re.compile(
-    rb"(?im)^\s*vertex\s+("
-    + _ASCII_FLOAT_PATTERN
-    + rb"\s+"
-    + _ASCII_FLOAT_PATTERN
-    + rb"\s+"
-    + _ASCII_FLOAT_PATTERN
-    + rb")"
-)
+_ASCII_VERTEX_MARKERS = (b"vertex", b"VERTEX", b"Vertex")
 _MODEL_PADDING = 0.86
 _MIN_TRIANGLE_AREA = 1e-12
 _BENCHMARK_STL_RENDERER = True
@@ -93,6 +85,7 @@ def render_stl_thumbnail(
 
 
 def _read_stl_header(filepath: Path) -> bytes:
+    """Reads the header of an STL file, avoiding a full file read."""
     with filepath.open("rb") as file:
         return file.read(_BINARY_STL_HEADER_SIZE)
 
@@ -100,31 +93,35 @@ def _read_stl_header(filepath: Path) -> bytes:
 def _load_stl_triangles(
     filepath: Path, header: bytes, file_size: int, max_triangles: int
 ) -> tuple[np.ndarray, int, str]:
+    """STL files come in either binary or ascii format. Figure out the format and parse the
+    triangles from the file."""
     if len(header) < _BINARY_STL_HEADER_SIZE:
         raise StlRenderError("STL file is too small")
 
-    triangle_count = struct.unpack_from("<I", header, 80)[0]
-    expected_size = _BINARY_STL_HEADER_SIZE + (triangle_count * _BINARY_STL_TRIANGLE_SIZE)
+    # Assume binary format. Validate by reading tri count and checking against file size.
+    triangle_count = struct.unpack_from("<I", header, _BINARY_STL_TRIANGLE_COUNT_OFFSET)[0]
+    expected_size_if_binary = _BINARY_STL_HEADER_SIZE + (triangle_count * _BINARY_STL_TRIANGLE_SIZE)
 
-    if expected_size == file_size:
-        if triangle_count > max_triangles:
-            raise StlRenderError("STL file contains too many triangles")
-        triangles = _load_binary_stl_triangles(filepath, triangle_count)
+    if file_size == expected_size_if_binary:
+        triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
         return triangles, triangle_count, "binary"
 
     data = filepath.read_bytes()
-    trailing = data[expected_size:] if expected_size <= file_size else b""
-    if expected_size < file_size and not trailing.strip(b"\x00\r\n\t "):
-        if triangle_count > max_triangles:
-            raise StlRenderError("STL file contains too many triangles")
-        triangles = _load_binary_stl_triangles(filepath, triangle_count)
+    rest = data[expected_size_if_binary:] if expected_size_if_binary <= file_size else b""
+    rest_is_just_whitespaces = not rest.strip(_BINARY_STL_TRAILING_CHARS_TO_IGNORE)
+    if file_size > expected_size_if_binary and rest_is_just_whitespaces:
+        triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
         return triangles, triangle_count, "binary"
 
+    # No sign of binary format found. Try parsing ascii-format instead.
     triangles, source_triangle_count = _load_ascii_stl_triangles(data, max_triangles)
     return triangles, source_triangle_count, "ascii"
 
 
-def _load_binary_stl_triangles(filepath: Path, triangle_count: int) -> np.ndarray:
+def _load_binary_stl_triangles(filepath: Path, triangle_count: int, max_triangles: int) -> np.ndarray:
+    if triangle_count > max_triangles:
+        raise StlRenderError("STL file contains too many triangles")
+
     records = np.memmap(
         filepath,
         dtype=_BINARY_STL_DTYPE,
@@ -138,19 +135,38 @@ def _load_binary_stl_triangles(filepath: Path, triangle_count: int) -> np.ndarra
     return triangles
 
 
-def _load_ascii_stl_triangles(data: bytes, max_triangles: int) -> tuple[np.ndarray, int]:
-    vertex_lines = _ASCII_VERTEX_RE.findall(data)
-    source_triangle_count = len(vertex_lines) // 3
+def _split_on_vertex_marker(data: bytes) -> list[bytes]:
+    """Split on the "vertex" keyword, tolerating the upper/mixed case some exporters use."""
+    for marker in _ASCII_VERTEX_MARKERS:
+        chunks = data.split(marker)
+        if len(chunks) > 1:
+            return chunks
+    return [data]
 
-    if len(vertex_lines) == 0 or len(vertex_lines) % 3:
-        raise StlRenderError("STL file contains no complete triangles")
+
+def _load_ascii_stl_triangles(data: bytes, max_triangles: int) -> tuple[np.ndarray, int]:
+    chunks = _split_on_vertex_marker(data)
+    vertex_count = len(chunks) - 1
+    source_triangle_count = vertex_count // 3
+
+    if vertex_count == 0:
+        raise StlRenderError("STL file contains no triangles")
+    if vertex_count % 3:
+        raise StlRenderError("STL file contains incomplete triangles")
     if source_triangle_count > max_triangles:
         raise StlRenderError("STL file contains too many triangles")
 
-    vertex_text = b" ".join(vertex_lines).decode("ascii")
-    values = np.fromstring(vertex_text, dtype=np.float32, sep=" ")
-    if len(values) != len(vertex_lines) * 3:
-        raise StlRenderError("STL file contains an invalid vertex")
+    values = np.empty(vertex_count * 3, dtype=np.float32)
+    index = 0
+    try:
+        for chunk in chunks[1:]:
+            x, y, z = chunk.split(None, 3)[:3]
+            values[index] = float(x)
+            values[index + 1] = float(y)
+            values[index + 2] = float(z)
+            index += 3
+    except ValueError as error:
+        raise StlRenderError("STL file contains an invalid vertex") from error
 
     triangles = values.reshape((-1, 3, 3))
     return triangles, source_triangle_count
