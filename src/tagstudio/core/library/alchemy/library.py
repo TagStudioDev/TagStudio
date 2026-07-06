@@ -22,6 +22,7 @@ from uuid import uuid4
 
 import sqlalchemy
 import structlog
+import ujson
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
     URL,
@@ -712,6 +713,7 @@ class Library:
 
     def __apply_db102_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 102."""
+        # delete TagParents with a dangling parent reference
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
@@ -743,8 +745,10 @@ class Library:
             return
 
         # Load legacy extension data
-        extensions: list[str] = unwrap(
-            session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
+        extensions: list[str] = ujson.loads(
+            unwrap(
+                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
+            )
         )
         is_exclude_list: bool = unwrap(
             session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
