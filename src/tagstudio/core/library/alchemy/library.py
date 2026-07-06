@@ -559,13 +559,6 @@ class Library:
         make_tables(self.engine)
 
         with Session(self.engine) as session:
-            # TODO ASSURANCE 1: reordering
-            # Ensure version rows are present
-            if loaded_db_version < 101:
-                session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-                session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
-                session.commit()
-
             # save backup if patches will be applied
             if loaded_db_version < DB_VERSION:
                 self.library_dir = library_dir
@@ -574,6 +567,8 @@ class Library:
 
             # migrate DB step by step from one version to the next
             # TODO: every migration step should either complete sucessfully or be aborted fully
+            #  - the migration steps seem to have try-except cases to catch a previously failed
+            #    migration
             if loaded_db_version < 7:
                 # changes: value_type, tags
                 self.__apply_db7_migration(session)
@@ -586,6 +581,9 @@ class Library:
             if loaded_db_version < 100:
                 # changes: tag_parents
                 self.__apply_db100_migration(session)
+            if loaded_db_version < 101:
+                # changes: versions
+                self.__apply_db101_migration(session)
             if loaded_db_version < 102:
                 # changes: tag_parents
                 self.__apply_db102_migration(session)
@@ -741,6 +739,14 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Refactored TagParent table")
+
+    def __apply_db101_migration(self, session: Session):
+        """Migrate DB to DB_VERSION 101."""
+        with session:
+            # Ensure version rows are present
+            session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
+            session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+            session.commit()
 
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
