@@ -633,12 +633,11 @@ class Library:
         logger.info("[Library][Migration][8] Added color_border column to tag_colors table")
 
         # collect new default tag colors
-        tag_colors: list[TagColorGroup] = default_color_groups.standard()
-        tag_colors += default_color_groups.pastels()
-        tag_colors += default_color_groups.shades()
-        tag_colors += default_color_groups.grayscale()
-        tag_colors += default_color_groups.earth_tones()
-        # tag_colors += default_color_groups.neon() # NOTE: Neon is handled separately
+        tag_colors: list[TagColorGroup] = [
+            color
+            for color in default_color_groups.shades()
+            if color.slug in ["burgundy", "dark-teal", "dark_lavender"]
+        ]
 
         # Add any new default colors introduced in DB_VERSION 8
         for color in tag_colors:
