@@ -427,7 +427,9 @@ class Library:
             connection_string=connection_string,
             poolclass=poolclass,
         )
-        return create_engine(connection_string, poolclass=poolclass)
+        return create_engine(
+            connection_string, poolclass=poolclass, connect_args={"autocommit": False}
+        )
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
@@ -615,6 +617,7 @@ class Library:
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info("[Library][Migration][7] Applying patches to DB_VERSION: 6 library...")
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
+        # TODO: combine into single sql statement
         all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
         disam_stmt = (
             update(Tag)
@@ -682,7 +685,7 @@ class Library:
         logger.info("[Library][Migration][9] Added filename column to entries table")
 
         # Populate the new filename column.
-        for entry in self.all_entries():
+        for entry in self.__all_entries(session):
             session.merge(entry).filename = entry.path.name
         session.flush()
         logger.info("[Library][Migration][9] Populated filename column in entries table")
@@ -1038,32 +1041,36 @@ class Library:
         with Session(self.engine) as session:
             return unwrap(session.scalar(select(func.count(Entry.id))))
 
+    def __all_entries(self, session: Session, with_joins: bool = False) -> Iterator[Entry]:
+        """Load entries without joins."""
+        stmt = select(Entry)
+        if with_joins:
+            # load Entry with all joins and all tags
+            stmt = (
+                stmt.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.datetime_fields)
+                .outerjoin(Entry.tags)
+            )
+            stmt = stmt.options(
+                contains_eager(Entry.text_fields),
+                contains_eager(Entry.datetime_fields),
+                contains_eager(Entry.tags),
+            )
+
+        stmt = stmt.distinct()
+
+        entries = session.execute(stmt).scalars()
+        if with_joins:
+            entries = entries.unique()
+
+        for entry in entries:
+            yield entry
+            session.expunge(entry)
+
     def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
-            stmt = select(Entry)
-            if with_joins:
-                # load Entry with all joins and all tags
-                stmt = (
-                    stmt.outerjoin(Entry.text_fields)
-                    .outerjoin(Entry.datetime_fields)
-                    .outerjoin(Entry.tags)
-                )
-                stmt = stmt.options(
-                    contains_eager(Entry.text_fields),
-                    contains_eager(Entry.datetime_fields),
-                    contains_eager(Entry.tags),
-                )
-
-            stmt = stmt.distinct()
-
-            entries = session.execute(stmt).scalars()
-            if with_joins:
-                entries = entries.unique()
-
-            for entry in entries:
-                yield entry
-                session.expunge(entry)
+            return self.__all_entries(session, with_joins)
 
     @property
     def tags(self) -> list[Tag]:
