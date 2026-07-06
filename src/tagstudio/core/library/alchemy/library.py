@@ -587,9 +587,14 @@ class Library:
             )
 
         logger.info(f"[Library] Library DB version: {loaded_db_version}")
+        # TODO: this is very sketchy; blindly creating all tables the newest DB version should have
+        # without considering what version the DB is currently on and then doing all of the
+        # migrations after that seems like it could cause problems in some scenarios.
+        # instead only have this on creation and create new tables as part of migrations
         make_tables(self.engine)
 
         with Session(self.engine) as session:
+            # TODO ASSURANCE 1: version check + reordering
             # Ensure version rows are present
             with catch_warnings(record=True):
                 try:
@@ -605,6 +610,7 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
+            # TODO ASSURANCE 2: version check + reordering
             # check if folder matching current path exists already
             self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
             if not self.folder:
@@ -617,9 +623,6 @@ class Library:
                 session.commit()
                 self.folder = folder
 
-            # Apply any post-SQL migration patches.
-            assert loaded_db_version >= 6
-
             # save backup if patches will be applied
             if loaded_db_version < DB_VERSION:
                 self.library_dir = library_dir
@@ -627,6 +630,7 @@ class Library:
                 self.library_dir = None
 
             # migrate DB step by step from one version to the next
+            # TODO: every migration step should either complete sucessfully or be aborted fully
             if loaded_db_version < 7:
                 # changes: value_type, tags
                 self.__apply_db7_migration(session)
@@ -658,6 +662,7 @@ class Library:
                 # changes: tag_parents
                 self.__apply_db202_migration(session)
 
+            # TODO ASSURANCE 3: version check + reordering
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
             )
@@ -672,6 +677,7 @@ class Library:
                 )
             )
 
+            # TODO: instead update DB version after every migration and abort on first fail
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
                 logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
