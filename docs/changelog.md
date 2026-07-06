@@ -9,6 +9,37 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+## 9.6.1 <small>July 6th, 2026</small>
+
+### Changed
+
+- feat(ui): organize settings into panels by @purpletennisball in #1425
+- feat(ui): left click to edit tag in tag manager by @purpletennisball in #1416
+
+### Fixed
+
+- fix: fix issues with updating tag aliases causing freezes by @CyanVoxel in #1412
+- fix: make TagStudio python package executable by @Computerdores in #1414
+- fix: use optimized SQL when selecting non-hidden entries by @racerand in #1240
+- fix: fix ripgrep not being located for macOS builds by @CyanVoxel in #1427
+- fix: remove invalid child_id relationships from tag_parents by @CyanVoxel in #1423
+- fix(ui): fix "search for tag" function in tag manager by @CyanVoxel in #1411
+- fix(ui): mouse down selects thumbnail instead of mouse up by @purpletennisball in #1420
+- fix(ui): thumbnail grid not resizing to fill width by @TheBobBobs in #1433
+
+#### Internal Changes
+
+- fix(nix): add pyright to devshell by @Computerdores in #1415
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hungarian** updated by @smileyhead
+- **Russian** updated by @romandobra
+- **Spanish** updated by @JCC1998
+
+---
+
 ## 9.6.0 <small>June 29th, 2026</small>
 
 <p align="center">
