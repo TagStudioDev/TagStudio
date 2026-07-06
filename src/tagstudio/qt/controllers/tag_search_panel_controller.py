@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING, override
+from typing import override
 from warnings import catch_warnings
 
 import structlog
@@ -20,10 +20,6 @@ from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
-if TYPE_CHECKING:
-    pass
-
 
 class TagSearchModal(PanelModal):
     tsp: "TagSearchPanel"
@@ -31,6 +27,7 @@ class TagSearchModal(PanelModal):
     def __init__(
         self,
         library: Library,
+        title: str,
         exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
         has_save: bool = False,
@@ -42,8 +39,8 @@ class TagSearchModal(PanelModal):
             view=TagSearchPanelView(is_tag_chooser),
         )
         super().__init__(
-            self.tsp,
-            Translations["tag.add.plural"],
+            widget=self.tsp,
+            title=title,
             is_savable=has_save,
         )
 
@@ -169,17 +166,25 @@ class TagSearchPanel(SearchPanel[Tag]):
         # Connect callbacks
         tag_widget.on_edit.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
         tag_widget.on_remove.connect(lambda remove_tag=item: self._on_item_remove(remove_tag))
-        tag_widget.bg_button.clicked.connect(
-            lambda checked=False, tag=item: self._on_item_chosen(tag)
-        )
+        if self.is_chooser:
+            tag_widget.bg_button.clicked.connect(
+                lambda checked=False, tag=item: self._on_item_chosen(tag)
+            )
+        else:
+            tag_widget.bg_button.clicked.connect(
+                lambda checked=False, edit_tag=item: self.on_item_edit(edit_tag)
+            )
 
         # Connect search action
         if self._driver is not None:
             tag_widget.search_for_tag_action.triggered.connect(
-                lambda tag_id=item.id: self.search_for_tag(tag_id)
+                lambda checked=False, tag_id=item.id: self.search_for_tag(tag_id)
             )
             tag_widget.search_for_tag_action.setEnabled(True)
         else:
+            logger.warning(
+                "[TagSearchPanel] No driver was set for this TagSearchPanel. Was this on purpose?"
+            )
             tag_widget.search_for_tag_action.setEnabled(False)
 
     @override

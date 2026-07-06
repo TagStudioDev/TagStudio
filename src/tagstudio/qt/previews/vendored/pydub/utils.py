@@ -14,13 +14,13 @@ from pydub.utils import (
     get_extra_info,
 )
 
+from tagstudio.core.utils.ffmpeg_status import FfprobeStatus
 from tagstudio.core.utils.silent_subprocess import silent_popen
-from tagstudio.qt.previews.vendored.ffmpeg import FFPROBE_CMD
 
 
 def _mediainfo_json(filepath, read_ahead_limit=-1):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath."""
-    prober = FFPROBE_CMD
+    prober = FfprobeStatus.which()
     command_args = [
         "-v",
         "info",

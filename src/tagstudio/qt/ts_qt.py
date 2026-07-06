@@ -39,7 +39,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
-# This import has side-effect of importing PySide resources
 import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
@@ -51,6 +50,11 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
+
+# This import has side-effect of importing PySide resources
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.module_status import ModuleStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
@@ -59,7 +63,7 @@ from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntr
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
-from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal, TagSearchPanel
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.qt.mixed.about_modal import AboutModal
@@ -81,7 +85,6 @@ from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
 from tagstudio.qt.views.stylesheets.stylesheets import header
-from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -317,6 +320,9 @@ class QtDriver(DriverMixin, QObject):
         timer.start(500)
         timer.timeout.connect(lambda: None)
 
+        # Detect optional modules and versions for logging
+        self.log_optional_modules()
+
         # self.main_window = loader.load(home_path)
         self.main_window = MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
@@ -348,15 +354,13 @@ class QtDriver(DriverMixin, QObject):
                 self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
-        self.tag_manager_panel = PanelModal(
-            widget=TagSearchPanel(
-                self.lib,
-                is_tag_chooser=False,
-                view=TagSearchPanelView(is_tag_chooser=False),
-            ),
+        self.tag_manager_panel = TagSearchModal(
+            self.lib,
             title=Translations["tag_manager.title"],
-            is_savable=False,
+            is_tag_chooser=False,
         )
+        self.tag_manager_panel.tsp.set_driver(self)
+
         self.tag_manager_panel.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
@@ -382,8 +386,10 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
-        # Initialize the Tag Search panel
-        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
+        # Initialize the "Add Tag" panel
+        self.add_tag_modal = TagSearchModal(
+            self.lib, title=Translations["tag.add.plural"], is_tag_chooser=True
+        )
         self.add_tag_modal.tsp.set_driver(self)
         self.add_tag_modal.tsp.item_chosen.connect(
             lambda chosen_tag: (
@@ -851,7 +857,7 @@ class QtDriver(DriverMixin, QObject):
         self.modal = PanelModal(
             panel,
             Translations["tag.new"],
-            Translations["tag.add"],
+            Translations["tag.create"],
             is_savable=True,
         )
 
@@ -1684,3 +1690,17 @@ class QtDriver(DriverMixin, QObject):
     def clear_selected(self):
         self._selected.clear()
         self.main_window.thumb_layout.update_selected()
+
+    def log_optional_modules(self) -> None:
+        """Logs the status of optional modules."""
+        status_classes: list[tuple[str, type[ModuleStatus]]] = [
+            ("FFmpeg", FfmpegStatus),
+            ("FFprobe", FfprobeStatus),
+            ("ripgrep", RipgrepStatus),
+        ]
+
+        for name, sc in status_classes:
+            if sc.which():
+                logger.info(f"[QtDriver] {name} found", which=sc.which(), version=sc.version())
+            else:
+                logger.warning(f"[QtDriver] {sc} not found")

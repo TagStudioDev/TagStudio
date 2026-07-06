@@ -205,14 +205,16 @@ def container_style() -> str:
 
 def form_content_style() -> str:
     return f"""
-    background-color: {
+    QLabel{{
+        background-color: {
         Theme.COLOR_BG.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         else Theme.COLOR_BG_LIGHT.value
     };
-    border-radius: 3px;
-    font-weight: 500;
-    padding: 1px;
+        border-radius: 3px;
+        font-weight: 500;
+        padding: 1px;
+    }}
     """
 
 

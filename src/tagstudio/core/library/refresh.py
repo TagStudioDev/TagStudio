@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import shutil
 import subprocess
 import unicodedata
 from collections.abc import Iterator
@@ -17,6 +16,7 @@ from wcmatch import glob
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.silent_subprocess import silent_popen
 from tagstudio.core.utils.types import unwrap
 
@@ -151,7 +151,7 @@ class RefreshTracker:
         yield 0
         raw_paths = None
         if not force_internal_tools:
-            rg_path = shutil.which("rg")
+            rg_path = RipgrepStatus.which()
             if rg_path is None:
                 logger.warning("[Refresh: ripgrep not found on system]")
             else:

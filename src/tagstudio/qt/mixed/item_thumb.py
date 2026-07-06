@@ -300,11 +300,25 @@ class ItemThumb(FlowWidget):
         # NOTE: self.item_id seems to act as a reference here and does not need to be updated inside
         # QtDriver.update_thumbs() while item_thumb.delete_action does.
         # If this behavior ever changes, move this method back to QtDriver.update_thumbs().
+        self.thumb_button.pressed.connect(
+            lambda: (
+                self.toggle_item_selection()
+                if (
+                    QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                    or not self.thumb_button.selected
+                )
+                else None
+            )
+        )
+
         self.thumb_button.clicked.connect(
-            lambda: self.driver.toggle_item_selection(
-                self.item_id,
-                append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
-                bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+            lambda: (
+                self.toggle_item_selection()
+                if (
+                    QGuiApplication.keyboardModifiers() != Qt.KeyboardModifier.ControlModifier
+                    and self.thumb_button.selected
+                )
+                else None
             )
         )
         self.set_mode(mode)
@@ -316,6 +330,13 @@ class ItemThumb(FlowWidget):
     @property
     def is_archived(self) -> bool:
         return self.badge_active[BadgeType.ARCHIVED]
+
+    def toggle_item_selection(self):
+        self.driver.toggle_item_selection(
+            self.item_id,
+            append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
+            bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+        )
 
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:

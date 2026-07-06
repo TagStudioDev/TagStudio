@@ -18,7 +18,7 @@ from tempfile import NamedTemporaryFile
 from pydub.logging_utils import log_conversion, log_subprocess_output
 from pydub.utils import fsdecode
 
-from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus
 
 try:
     from itertools import izip
@@ -161,7 +161,7 @@ class _AudioSegment:
         slice = a[5000:10000] # get a slice from 5 to 10 seconds of an mp3
     """
 
-    converter = FFMPEG_CMD
+    converter = FfmpegStatus.which()
 
     # TODO: remove in 1.0 release
     # maintain backwards compatibility for ffmpeg attr (now called converter)
@@ -727,7 +727,7 @@ class _AudioSegment:
             stdin_parameter = None
             stdin_data = None
         else:
-            if cls.converter == FFMPEG_CMD:
+            if cls.converter == FfmpegStatus.which():
                 conversion_command += [
                     "-read_ahead_limit",
                     str(read_ahead_limit),

@@ -9,7 +9,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.6.0"
+version = "9.6.1"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
@@ -30,7 +30,7 @@ dependencies = [
     "PySide6==6.8.0.*",
     "rarfile==4.2",
     "rawpy~=0.27",
-    "Send2Trash~=1.8",
+    "Send2Trash>=1.8,<3",
     "SQLAlchemy~=2.0",
     "srctools~=2.6",
     "structlog~=25.3",
@@ -69,6 +69,7 @@ qt_api = "pyside6"
 pythonpath = ["src"]
 filterwarnings = [
     "ignore:DISTINCT ON is currently supported only by the PostgreSQL dialect:sqlalchemy.exc.SADeprecationWarning",
+    'ignore:Invoking or_\(\) without arguments is deprecated:sqlalchemy.exc.SADeprecationWarning',
 ]
 
 [tool.pyright]

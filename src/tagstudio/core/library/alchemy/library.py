@@ -569,12 +569,16 @@ class Library:
                     self.__apply_db103_migration(session)
                 if loaded_db_version < 104:
                     # changes: deletes preferences
-                    self.__apply_db104_migrations(session, library_dir)
+                    self.__apply_db104_migration(session, library_dir)
                 if loaded_db_version < 200:
-                    self.__apply_db200_migrations(session)
                     # changes: field tables
+                    self.__apply_db200_migration(session)
                 if initial_db_version < 200 and loaded_db_version < 201:
-                    self.__apply_db201_migrations(session)
+                    # changes: field tables
+                    self.__apply_db201_migration(session)
+                if loaded_db_version < 202:
+                    # changes: tag_parents
+                    self.__apply_db202_migration(session)
 
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
@@ -717,8 +721,7 @@ class Library:
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
         with session:
-            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-            stmt = delete(TagParent).where(TagParent.parent_id.not_in(all_tag_ids))
+            stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
@@ -752,7 +755,7 @@ class Library:
             )
             session.rollback()
 
-    def __apply_db104_migrations(self, session: Session, library_dir: Path):
+    def __apply_db104_migration(self, session: Session, library_dir: Path):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
         self.__migrate_sql_to_ts_ignore(library_dir)
@@ -777,7 +780,7 @@ class Library:
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
-    def __apply_db200_migrations(self, session: Session):
+    def __apply_db200_migration(self, session: Session):
         """Migrate DB to DB_VERSION 200."""
         with session:
             # Drop unused 'boolean_fields' and 'value_type' tables
@@ -864,7 +867,7 @@ class Library:
 
             session.commit()
 
-    def __apply_db201_migrations(self, session: Session):
+    def __apply_db201_migration(self, session: Session):
         """Migrate DB to DB_VERSION 201."""
         with session:
             create_text_fields_table = text("""
@@ -914,6 +917,14 @@ class Library:
             session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
 
             session.commit()
+
+    def __apply_db202_migration(self, session: Session):
+        """Migrate DB to DB_VERSION 202."""
+        with session:
+            stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
+            session.execute(stmt)
+            session.commit()
+            logger.info("[Library][Migration] Verified TagParent table data")
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
@@ -1195,7 +1206,11 @@ class Library:
             ast = search.ast
 
             if not search.show_hidden_entries:
-                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
+                hidden_tag_ids = select(Tag.id).where(Tag.is_hidden)
+                hidden_entry_ids = select(TagEntry.entry_id).where(
+                    TagEntry.tag_id.in_(hidden_tag_ids)
+                )
+                statement = statement.where(Entry.id.not_in(hidden_entry_ids))
 
             if ast:
                 start_time = time.time()
@@ -1738,9 +1753,11 @@ class Library:
 
                 if parent_ids is not None:
                     self.update_parent_tags(tag, parent_ids, session)
+                    session.flush()
 
                 if aliases is not None:
-                    self.update_aliases(tag, aliases)
+                    self.update_aliases(tag, aliases, session)
+                    session.flush()
 
                 session.commit()
                 session.expunge(tag)
@@ -2072,48 +2089,45 @@ class Library:
             else:
                 self.add_color(new_color_group)
 
-    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias]) -> bool:
+    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> bool:
         """Update TagAliases for a given Tag."""
-        with Session(self.engine) as session:
-            # Remove aliases that are no longer on the Tag
+        unique_alias_names: set[str] = set()
+        # Remove aliases that are no longer on the Tag
+        try:
+            old_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
+            unique_alias_names = set([x.name for x in old_aliases])
+            old_alias_ids: list[int] = [a.id for a in old_aliases]
+            for old_alias in old_aliases:
+                if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
+                    logger.warning(
+                        "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
+                    )
+                    session.delete(old_alias)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            logger.error("[Library] Could not update aliases", error=e)
+            return False
+
+        # Update or Add aliases
+        for alias in aliases:
+            # Sanitize alias names
+            alias.name = alias.name.strip()
+            if not alias.name or alias.name in unique_alias_names:
+                continue
+
             try:
-                old_aliases = session.scalars(
-                    select(TagAlias).where(TagAlias.tag_id == tag.id)
-                ).all()
-                old_alias_ids: list[int] = [a.id for a in old_aliases]
-                for old_alias in old_aliases:
-                    if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
-                        logger.warning(
-                            "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
-                        )
-                        session.delete(old_alias)
-                session.commit()
+                if alias.id in old_alias_ids:
+                    stmt = update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
+                    session.execute(stmt)
+                else:
+                    session.add(alias)
             except IntegrityError as e:
                 session.rollback()
-                logger.error("[Library] Could not update aliases", error=e)
+                logger.error("[Library] Could not update or add alias", error=e)
                 return False
 
-            # Update or Add aliases
-            for alias in aliases:
-                # Sanitize alias names
-                alias.name = alias.name.strip()
-                if not alias.name:
-                    continue
-
-                try:
-                    if alias.id in old_alias_ids:
-                        stmt = (
-                            update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
-                        )
-                        session.execute(stmt)
-                    else:
-                        session.add(alias)
-                except IntegrityError as e:
-                    session.rollback()
-                    logger.error("[Library] Could not update or add alias", error=e)
-                    return False
-
-            session.commit()
+        session.commit()
 
         return True
 

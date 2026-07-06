@@ -48,8 +48,8 @@ class ThumbGridLayout(QLayout):
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
 
-        # _entry_ids[StartIndex:EndIndex]
-        self._last_page_update: tuple[int, int] | None = None
+        # _entry_ids[StartIndex:EndIndex], per_row
+        self._last_page_update: tuple[int, int, int] | None = None
 
         self._scroll_to: int | None = None
 
@@ -215,7 +215,8 @@ class ThumbGridLayout(QLayout):
         start = offset * per_row
         end = start + (visible_rows * per_row)
 
-        self.visible_changed.emit(self._entry_ids[start])
+        first_visible = self._entry_ids[start] if 0 <= start < len(self._entry_ids) else None
+        self.visible_changed.emit(first_visible)
 
         # Load closest off screen rows
         start -= per_row * 3
@@ -223,9 +224,9 @@ class ThumbGridLayout(QLayout):
 
         start = max(0, start)
         end = min(len(self._entry_ids), end)
-        if (start, end) == self._last_page_update:
+        if (start, end, per_row) == self._last_page_update:
             return
-        self._last_page_update = (start, end)
+        self._last_page_update = (start, end, per_row)
 
         # Clear render queue if len > 2 pages
         if len(self.driver.thumb_job_queue.queue) > (per_row * visible_rows * 2):

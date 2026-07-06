@@ -3,14 +3,14 @@
 
 
 import typing
-from shutil import which
 from warnings import catch_warnings
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchModal
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
-from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
@@ -22,7 +22,10 @@ class PreviewPanel(PreviewPanelView):
         super().__init__(library, driver)
 
         self.__add_field_modal = FieldTemplateSearchModal(self.lib, is_field_template_chooser=True)
-        self.__add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
+        self.__add_tag_modal = TagSearchModal(
+            self.lib, title=Translations["tag.add.plural"], is_tag_chooser=True
+        )
+        self.__add_tag_modal.tsp.set_driver(driver)
         self._thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
 
     @typing.override
@@ -55,7 +58,7 @@ class PreviewPanel(PreviewPanelView):
             self._containers.update_from_entry(self._selected[0])
 
     def _toggle_ffmpeg_warning(self, enable_warning: bool = True) -> None:
-        if enable_warning and (not which(FFMPEG_CMD) or not which(FFPROBE_CMD)):
+        if enable_warning and (not FfmpegStatus.which() or not FfprobeStatus.which()):
             self._ffmpeg_warning_widget.show()
             return
 
