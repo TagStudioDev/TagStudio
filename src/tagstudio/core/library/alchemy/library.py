@@ -19,7 +19,6 @@ from os import makedirs
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
-from warnings import catch_warnings
 
 import sqlalchemy
 import structlog
@@ -441,14 +440,9 @@ class Library:
             # Add default tag color namespaces.
             namespaces = default_color_groups.namespaces()
 
-            # TODO: do these try excepts even make sense? Shouldn't library creation just fail
-            # in these cases?
-            try:
-                session.add_all(namespaces)
-                session.commit()
-            except IntegrityError as e:
-                logger.error("[Library] Couldn't add default tag color namespaces", error=e)
-                session.rollback()
+            # TODO: are all of these commits necessary?
+            session.add_all(namespaces)
+            session.commit()
 
             # Add default tag colors.
             tag_colors: list[TagColorGroup] = default_color_groups.standard()
@@ -458,45 +452,22 @@ class Library:
             tag_colors += default_color_groups.earth_tones()
             tag_colors += default_color_groups.neon()
 
-            try:
-                session.add_all(tag_colors)
-                session.commit()
-            except IntegrityError as e:
-                logger.error("[Library] Couldn't add default tag colors", error=e)
-                session.rollback()
+            session.add_all(tag_colors)
+            session.commit()
 
             # Add default tags.
-            tags = get_default_tags()
-            try:
-                session.add_all(tags)
-                session.commit()
-            except IntegrityError:
-                session.rollback()
+            session.add_all(get_default_tags())
+            session.commit()
 
             # Add default field templates
             for template in get_default_field_templates():
-                try:
-                    session.add(template)
-                    session.commit()
-                except IntegrityError:
-                    logger.info("[Library] FieldTemplate already exists", field_template=template)
-                    session.rollback()
+                session.add(template)
+                session.commit()
 
             # Ensure version rows are present
-            with catch_warnings(record=True):
-                try:
-                    initial = DB_VERSION
-                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-                try:
-                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-            self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
+            session.add(Version(key=DB_VERSION_INITIAL_KEY, value=DB_VERSION))
+            session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+            session.commit()
 
             # check if folder matching current path exists already
             self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
@@ -2257,7 +2228,7 @@ class Library:
                 session.add(version)
                 session.commit()
             except (IntegrityError, AssertionError) as e:
-                logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
+                logger.error("[Library][ERROR] Couldn't set DB version value", error=e)
                 session.rollback()
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
