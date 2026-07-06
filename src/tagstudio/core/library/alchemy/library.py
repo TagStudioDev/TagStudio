@@ -613,7 +613,7 @@ class Library:
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def __apply_db7_migration(self, session: Session, library_dir: Path):
+    def __apply_db7_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info("[Library][Migration][7] Applying patches to DB_VERSION: 6 library...")
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
@@ -627,7 +627,7 @@ class Library:
         session.execute(disam_stmt)
         session.flush()
 
-    def __apply_db8_migration(self, session: Session, library_dir: Path):
+    def __apply_db8_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
         session.execute(
@@ -674,7 +674,7 @@ class Library:
             session.execute(neon_stmt)
         session.flush()
 
-    def __apply_db9_migration(self, session: Session, library_dir: Path):
+    def __apply_db9_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB from DB_VERSION 8 to 9."""
         # Apply database schema changes
         add_filename_column = text(
@@ -690,7 +690,7 @@ class Library:
         session.flush()
         logger.info("[Library][Migration][9] Populated filename column in entries table")
 
-    def __apply_db100_migration(self, session: Session, library_dir: Path):
+    def __apply_db100_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 100."""
         # Repair parent-child tag relationships that are the wrong way around.
         stmt = update(TagParent).values(
@@ -701,20 +701,20 @@ class Library:
         session.flush()
         logger.info("[Library][Migration][100] Refactored TagParent table")
 
-    def __apply_db101_migration(self, session: Session, library_dir: Path):
+    def __apply_db101_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 101."""
         # Ensure version rows are present
         session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
         session.flush()
 
-    def __apply_db102_migration(self, session: Session, library_dir: Path):
+    def __apply_db102_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 102."""
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
         logger.info("[Library][Migration][102] Verified TagParent table data")
 
-    def __apply_db103_migration(self, session: Session, library_dir: Path):
+    def __apply_db103_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
         session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
@@ -750,7 +750,7 @@ class Library:
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
-    def __apply_db200_migration(self, session: Session, library_dir: Path):
+    def __apply_db200_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 200."""
         # Drop unused 'boolean_fields' and 'value_type' tables
         logger.info("[Library][Migration][200] Dropping boolean_fields and value_type tables...")
@@ -837,7 +837,7 @@ class Library:
             text("CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)")
         )
 
-    def __apply_db201_migration(self, session: Session, library_dir: Path):
+    def __apply_db201_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 201."""
         create_text_fields_table = text("""
         CREATE TABLE text_fields_new (
@@ -887,7 +887,7 @@ class Library:
 
         session.flush()
 
-    def __apply_db202_migration(self, session: Session, library_dir: Path):
+    def __apply_db202_migration(self, session: Session, __library_dir__: Path):
         """Migrate DB to DB_VERSION 202."""
         stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
