@@ -35,7 +35,7 @@ class RefreshTracker:
 
     @staticmethod
     def _normalize(path: Path) -> Path:
-        return Path(unicodedata.normalize("NFC", str(path)))
+        return Path(unicodedata.normalize("NFD", str(path)))
 
     @property
     def missing_files_count(self) -> int:
