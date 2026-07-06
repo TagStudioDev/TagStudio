@@ -570,6 +570,7 @@ class Library:
             #  - the migration steps seem to have try-except cases to catch a previously failed
             #    migration
             # (migration_method, db_version, initial_db_version)
+            # TODO: log statements in migrations are inconsistent
             migrations = [
                 (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
                 (self.__apply_db8_migration, 8, None),  # changes: tag_colors
@@ -585,10 +586,11 @@ class Library:
             ]
             for migration, v, iv in migrations:
                 if loaded_db_version < v and (iv is None or initial_db_version < iv):
-                    migration(session)
-                    loaded_db_version = v
-                    self.set_version(session, DB_VERSION_CURRENT_KEY, v)
-                    session.commit()
+                    with session:
+                        migration(session)
+                        loaded_db_version = v
+                        self.set_version(session, DB_VERSION_CURRENT_KEY, v)
+                        session.commit()
 
             assert loaded_db_version == DB_VERSION, (
                 "Ran all migrations, but the DB is still not on the newest version"
@@ -614,16 +616,15 @@ class Library:
     def __apply_db7_migration(self, session: Session):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
-        with session:
-            # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-            disam_stmt = (
-                update(Tag)
-                .where(Tag.disambiguation_id.not_in(all_tag_ids))
-                .values(disambiguation_id=None)
-            )
-            session.execute(disam_stmt)
-            session.commit()
+        # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
+        all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
+        disam_stmt = (
+            update(Tag)
+            .where(Tag.disambiguation_id.not_in(all_tag_ids))
+            .values(disambiguation_id=None)
+        )
+        session.execute(disam_stmt)
+        session.commit()
 
     def __apply_db8_migration(self, session: Session):
         """Migrate DB from DB_VERSION 7 to 8."""
@@ -716,30 +717,27 @@ class Library:
 
     def __apply_db100_migration(self, session: Session):
         """Migrate DB to DB_VERSION 100."""
-        with session:
-            # Repair parent-child tag relationships that are the wrong way around.
-            stmt = update(TagParent).values(
-                parent_id=TagParent.child_id,
-                child_id=TagParent.parent_id,
-            )
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Refactored TagParent table")
+        # Repair parent-child tag relationships that are the wrong way around.
+        stmt = update(TagParent).values(
+            parent_id=TagParent.child_id,
+            child_id=TagParent.parent_id,
+        )
+        session.execute(stmt)
+        session.commit()
+        logger.info("[Library][Migration] Refactored TagParent table")
 
     def __apply_db101_migration(self, session: Session):
         """Migrate DB to DB_VERSION 101."""
-        with session:
-            # Ensure version rows are present
-            session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-            session.commit()
+        # Ensure version rows are present
+        session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
+        session.commit()
 
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
-        with session:
-            stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Verified TagParent table data")
+        stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
+        session.execute(stmt)
+        session.commit()
+        logger.info("[Library][Migration] Verified TagParent table data")
 
     def __apply_db103_migration(self, session: Session):
         """Migrate DB from DB_VERSION 102 to 103."""
@@ -773,188 +771,176 @@ class Library:
     def __apply_db104_migration(self, session: Session, library_dir: Path):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-        self.__migrate_sql_to_ts_ignore(library_dir)
+        self.__migrate_sql_to_ts_ignore(session, library_dir)
         session.execute(text("DROP TABLE preferences"))
         session.commit()
 
-    def __migrate_sql_to_ts_ignore(self, library_dir: Path):
+    def __migrate_sql_to_ts_ignore(self, session: Session, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
         if Path(ts_ignore).exists():
             return
 
         # Load legacy extension data
-        with Session(self.engine) as session:
-            extensions: list[str] = unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
-            )
-            is_exclude_list: bool = unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
-            )
+        extensions: list[str] = unwrap(
+            session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
+        )
+        is_exclude_list: bool = unwrap(
+            session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
+        )
 
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
     def __apply_db200_migration(self, session: Session):
         """Migrate DB to DB_VERSION 200."""
-        with session:
-            # Drop unused 'boolean_fields' and 'value_type' tables
-            logger.info(
-                "[Library][Migration][200] Dropping boolean_fields and value_type tables..."
-            )
-            session.execute(text("DROP TABLE boolean_fields"))
-            session.execute(text("DROP TABLE value_type"))
+        # Drop unused 'boolean_fields' and 'value_type' tables
+        logger.info("[Library][Migration][200] Dropping boolean_fields and value_type tables...")
+        session.execute(text("DROP TABLE boolean_fields"))
+        session.execute(text("DROP TABLE value_type"))
 
-            # Add 'name' column to text_fields and datetime_fields tables
-            logger.info("[Library][Migration][200] Adding name columns to field tables...")
-            stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
-            session.execute(stmt)
-            stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
-            session.execute(stmt)
+        # Add 'name' column to text_fields and datetime_fields tables
+        logger.info("[Library][Migration][200] Adding name columns to field tables...")
+        stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
+        session.execute(stmt)
+        stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
+        session.execute(stmt)
 
-            # Drop unnecessary 'position' columns
-            logger.info("[Library][Migration][200] Dropping position columns to field tables...")
-            session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
-            session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
+        # Drop unnecessary 'position' columns
+        logger.info("[Library][Migration][200] Dropping position columns to field tables...")
+        session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
+        session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
 
-            # Add 'is_multiline' column to text_fields table
-            logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
-            stmt = text(
-                "ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0"
-            )
-            session.execute(stmt)
-            session.flush()
+        # Add 'is_multiline' column to text_fields table
+        logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
+        stmt = text("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
+        session.execute(stmt)
+        session.flush()
 
-            # Move values from old `type_key` columns into new `name` columns
-            logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
-            session.execute(text("UPDATE text_fields SET name = type_key"))
-            session.execute(text("UPDATE datetime_fields SET name = type_key"))
-            session.flush()
+        # Move values from old `type_key` columns into new `name` columns
+        logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
+        session.execute(text("UPDATE text_fields SET name = type_key"))
+        session.execute(text("UPDATE datetime_fields SET name = type_key"))
+        session.flush()
 
-            # Change `name` values to title case
-            logger.info("[Library][Migration][200] Normalizing TextField names...")
-            for text_field in session.execute(select(TextField)).scalars():
-                # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
-                text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
-            logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
-            for datetime_field in session.execute(select(DatetimeField)).scalars():
-                datetime_field.name = datetime_field.name.title().replace("_", " ")
-            session.flush()
+        # Change `name` values to title case
+        logger.info("[Library][Migration][200] Normalizing TextField names...")
+        for text_field in session.execute(select(TextField)).scalars():
+            # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
+            text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
+        logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
+        for datetime_field in session.execute(select(DatetimeField)).scalars():
+            datetime_field.name = datetime_field.name.title().replace("_", " ")
+        session.flush()
 
-            # Add correct `is_multiline` values to text_fields table
-            logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
-            text_boxes = [
-                x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
-            ]
-            update_stmt = (
-                update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
-            )
-            session.execute(update_stmt)
-            session.flush()
+        # Add correct `is_multiline` values to text_fields table
+        logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
+        text_boxes = [
+            x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
+        ]
+        update_stmt = (
+            update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
+        )
+        session.execute(update_stmt)
+        session.flush()
 
-            # Repair legacy "Description" fields to use is_multiline = True
-            logger.info("[Library][Migration][200] Repairing legacy Description fields...")
-            desc_stmt = (
-                update(TextField)
-                .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
-                .values(is_multiline=True)
-            )
-            session.execute(desc_stmt)
+        # Repair legacy "Description" fields to use is_multiline = True
+        logger.info("[Library][Migration][200] Repairing legacy Description fields...")
+        desc_stmt = (
+            update(TextField)
+            .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
+            .values(is_multiline=True)
+        )
+        session.execute(desc_stmt)
 
-            # Repair legacy "Comments" fields to use is_multiline = True
-            logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
-            comm_stmt = (
-                update(TextField)
-                .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
-                .values(is_multiline=True)
-            )
-            session.execute(comm_stmt)
+        # Repair legacy "Comments" fields to use is_multiline = True
+        logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
+        comm_stmt = (
+            update(TextField)
+            .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
+            .values(is_multiline=True)
+        )
+        session.execute(comm_stmt)
 
-            # Add default field templates
-            logger.info("[Library][Migration][200] Adding default field templates...")
-            for template in get_default_field_templates():
-                try:
-                    session.add(template)
-                    session.flush()
-                except IntegrityError:
-                    logger.error("[Library] FieldTemplate already exists", field_template=template)
-                    session.rollback()
+        # Add default field templates
+        logger.info("[Library][Migration][200] Adding default field templates...")
+        for template in get_default_field_templates():
+            try:
+                session.add(template)
+                session.flush()
+            except IntegrityError:
+                logger.error("[Library] FieldTemplate already exists", field_template=template)
+                session.rollback()
 
-            session.commit()
+        session.commit()
 
-            # DB indices for improved performance
-            session.execute(
-                text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
-            )
-            session.execute(
-                text(
-                    "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
-                )
-            )
-            session.execute(
-                text(
-                    "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
-                )
-            )
+        # DB indices for improved performance
+        session.execute(
+            text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+        )
+        session.execute(
+            text("CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)")
+        )
+        session.execute(
+            text("CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)")
+        )
 
     def __apply_db201_migration(self, session: Session):
         """Migrate DB to DB_VERSION 201."""
-        with session:
-            create_text_fields_table = text("""
-            CREATE TABLE text_fields_new (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR NOT NULL,
-                entry_id INTEGER NOT NULL,
-                value VARCHAR,
-                is_multiline BOOLEAN NOT NULL,
-                FOREIGN KEY(entry_id) REFERENCES entries (id)
-            )
+        create_text_fields_table = text("""
+        CREATE TABLE text_fields_new (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            entry_id INTEGER NOT NULL,
+            value VARCHAR,
+            is_multiline BOOLEAN NOT NULL,
+            FOREIGN KEY(entry_id) REFERENCES entries (id)
+        )
+        """)
+        create_datetime_fields_table = text("""
+        CREATE TABLE datetime_fields_new (
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR NOT NULL,
+            entry_id INTEGER NOT NULL,
+            value VARCHAR,
+            FOREIGN KEY(entry_id) REFERENCES entries (id)
+        )
+        """)
+
+        logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
+        session.execute(create_text_fields_table)
+        session.flush()
+        session.execute(
+            text("""
+                INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
+                SELECT id, name, entry_id, value, is_multiline
+                FROM text_fields
             """)
-            create_datetime_fields_table = text("""
-            CREATE TABLE datetime_fields_new (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR NOT NULL,
-                entry_id INTEGER NOT NULL,
-                value VARCHAR,
-                FOREIGN KEY(entry_id) REFERENCES entries (id)
-            )
+        )
+        session.execute(text("DROP TABLE text_fields"))
+        session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
+
+        logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
+        session.execute(create_datetime_fields_table)
+        session.flush()
+        session.execute(
+            text("""
+                INSERT INTO datetime_fields_new (id, name, entry_id, value)
+                SELECT id, name, entry_id, value
+                FROM datetime_fields
             """)
+        )
+        session.execute(text("DROP TABLE datetime_fields"))
+        session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
 
-            logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
-            session.execute(create_text_fields_table)
-            session.flush()
-            session.execute(
-                text("""
-                    INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
-                    SELECT id, name, entry_id, value, is_multiline
-                    FROM text_fields
-                """)
-            )
-            session.execute(text("DROP TABLE text_fields"))
-            session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
-
-            logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
-            session.execute(create_datetime_fields_table)
-            session.flush()
-            session.execute(
-                text("""
-                    INSERT INTO datetime_fields_new (id, name, entry_id, value)
-                    SELECT id, name, entry_id, value
-                    FROM datetime_fields
-                """)
-            )
-            session.execute(text("DROP TABLE datetime_fields"))
-            session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
-
-            session.commit()
+        session.commit()
 
     def __apply_db202_migration(self, session: Session):
         """Migrate DB to DB_VERSION 202."""
-        with session:
-            stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Verified TagParent table data")
+        stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
+        session.execute(stmt)
+        session.commit()
+        logger.info("[Library][Migration] Verified TagParent table data")
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
@@ -2204,9 +2190,8 @@ class Library:
             key(str): The key for the name of the version type to set.
             value(int): The version value to set.
         """
-        with session:
-            # Insert if key has no value yet, otherwise update the value
-            session.merge(Version(key=key, value=value))
+        # Insert if key has no value yet, otherwise update the value
+        session.merge(Version(key=key, value=value))
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""
