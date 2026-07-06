@@ -93,8 +93,10 @@ def _read_stl_header(filepath: Path) -> bytes:
 def _load_stl_triangles(
     filepath: Path, header: bytes, file_size: int, max_triangles: int
 ) -> tuple[np.ndarray, int, str]:
-    """STL files come in either binary or ascii format. Figure out the format and parse the
-    triangles from the file."""
+    """STL files come in either binary or ascii format.
+
+    Figure out the format and parse the triangles from the file.
+    """
     if len(header) < _BINARY_STL_HEADER_SIZE:
         raise StlRenderError("STL file is too small")
 
@@ -118,7 +120,9 @@ def _load_stl_triangles(
     return triangles, source_triangle_count, "ascii"
 
 
-def _load_binary_stl_triangles(filepath: Path, triangle_count: int, max_triangles: int) -> np.ndarray:
+def _load_binary_stl_triangles(
+    filepath: Path, triangle_count: int, max_triangles: int
+) -> np.ndarray:
     if triangle_count > max_triangles:
         raise StlRenderError("STL file contains too many triangles")
 
