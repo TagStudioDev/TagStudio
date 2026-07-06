@@ -470,16 +470,14 @@ class Library:
             session.commit()
 
             # check if folder matching current path exists already
-            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
-            if not self.folder:
-                folder = Folder(
-                    path=library_dir,
-                    uuid=str(uuid4()),
-                )
-                session.add(folder)
-                session.expunge(folder)
-                session.commit()
-                self.folder = folder
+            folder = Folder(
+                path=library_dir,
+                uuid=str(uuid4()),
+            )
+            session.add(folder)
+            session.expunge(folder)
+            session.commit()
+            self.folder = folder
 
             # Generate default .ts_ignore file
             try:
@@ -570,7 +568,6 @@ class Library:
             # Ensure version rows are present
             if loaded_db_version < 101:
                 session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-
                 session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
                 session.commit()
 
