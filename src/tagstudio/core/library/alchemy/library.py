@@ -408,7 +408,8 @@ class Library:
             return self.new_lib(library_dir, in_memory)
         return self.migrate_lib(library_dir, in_memory)
 
-    def new_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
+    @staticmethod
+    def __get_engine(library_dir: Path, in_memory: bool):
         connection_string = URL.create(
             drivername="sqlite",
             database=(
@@ -423,14 +424,22 @@ class Library:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if in_memory else NullPool
+
+        logger.info(
+            "[Library] Creating SQLAlchemy Engine",
+            connection_string=connection_string,
+            poolclass=poolclass,
+        )
+        return create_engine(connection_string, poolclass=poolclass)
+
+    def new_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
+        self.engine = self.__get_engine(library_dir, in_memory)
         loaded_db_version: int = 0
 
         logger.info(
             "[Library] Opening SQLite Library",
             library_dir=library_dir,
-            connection_string=connection_string,
         )
-        self.engine = create_engine(connection_string, poolclass=poolclass)
 
         logger.info(f"[Library] Library DB version: {loaded_db_version}")
         make_tables(self.engine)
@@ -506,29 +515,14 @@ class Library:
         return LibraryStatus(success=True, library_path=library_dir)
 
     def migrate_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
-        connection_string = URL.create(
-            drivername="sqlite",
-            database=(
-                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / SQL_FILENAME)
-            ),
-        )
-        # NOTE: File-based databases should use NullPool to create new DB connection in order to
-        # keep connections on separate threads, which prevents the DB files from being locked
-        # even after a connection has been closed.
-        # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
-        # More info can be found on the SQLAlchemy docs:
-        # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
-        # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if in_memory else NullPool
+        self.engine = self.__get_engine(library_dir, in_memory)
         loaded_db_version: int = 0
         initial_db_version: int = DB_VERSION
 
         logger.info(
             "[Library] Opening SQLite Library",
             library_dir=library_dir,
-            connection_string=connection_string,
         )
-        self.engine = create_engine(connection_string, poolclass=poolclass)
 
         # Don't check DB version when creating new library
         loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
