@@ -4,8 +4,6 @@ version = 1
 path = [
     "tests/fixtures/**",
 
-    "contrib/.envrc-nix",
-    "contrib/.envrc-uv",
     "contrib/.vscode/launch.json",
     "docs/CNAME",
     "docs/assets/**",
@@ -23,7 +21,6 @@ path = [
     ".github/ISSUE_TEMPLATE/**",
     ".github/PULL_REQUEST_TEMPLATE.md",
     ".gitignore",
-    ".pre-commit-config.yaml",
     "flake.lock",
 ]
 SPDX-FileCopyrightText = "(c) TagStudio Contributors"
