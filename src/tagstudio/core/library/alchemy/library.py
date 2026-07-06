@@ -605,27 +605,6 @@ class Library:
                 # changes: tag_parents
                 self.__apply_db202_migration(session)
 
-            # TODO ASSURANCE 3: reordering
-            if loaded_db_version < 200:
-                session.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand "
-                        "ON tags (name, shorthand)"
-                    )
-                )
-                session.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id "
-                        "ON tag_parents (child_id)"
-                    )
-                )
-                session.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id "
-                        "ON tag_entries (entry_id)"
-                    )
-                )
-
             # TODO: instead update DB version after every migration and abort on first fail
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -911,6 +890,21 @@ class Library:
                     session.rollback()
 
             session.commit()
+
+            # DB indices for improved performance
+            session.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
+                )
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
+                )
+            )
 
     def __apply_db201_migration(self, session: Session):
         """Migrate DB to DB_VERSION 201."""
