@@ -569,45 +569,78 @@ class Library:
             # TODO: every migration step should either complete sucessfully or be aborted fully
             #  - the migration steps seem to have try-except cases to catch a previously failed
             #    migration
+            # TODO: the migration and the version update should have fate-sharing
             if loaded_db_version < 7:
                 # changes: value_type, tags
                 self.__apply_db7_migration(session)
+                loaded_db_version = 7
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 7)
+                session.commit()
             if loaded_db_version < 8:
                 # changes: tag_colors
                 self.__apply_db8_migration(session)
+                loaded_db_version = 8
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 8)
+                session.commit()
             if loaded_db_version < 9:
                 # changes: entries
                 self.__apply_db9_migration(session)
+                loaded_db_version = 9
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 9)
+                session.commit()
             if loaded_db_version < 100:
                 # changes: tag_parents
                 self.__apply_db100_migration(session)
+                loaded_db_version = 100
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 100)
+                session.commit()
             if loaded_db_version < 101:
                 # changes: versions
                 self.__apply_db101_migration(session)
+                loaded_db_version = 101
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 101)
+                session.commit()
             if loaded_db_version < 102:
                 # changes: tag_parents
                 self.__apply_db102_migration(session)
+                loaded_db_version = 102
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 102)
+                session.commit()
             if loaded_db_version < 103:
                 # changes: tags
                 self.__apply_db103_migration(session)
+                loaded_db_version = 103
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 103)
+                session.commit()
             if loaded_db_version < 104:
                 # changes: deletes preferences
                 self.__apply_db104_migration(session, library_dir)
+                loaded_db_version = 104
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 104)
+                session.commit()
             if loaded_db_version < 200:
                 # changes: field tables
                 self.__apply_db200_migration(session)
+                loaded_db_version = 200
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 200)
+                session.commit()
             if loaded_db_version < 201 and initial_db_version < 200:
                 # changes: field tables
                 self.__apply_db201_migration(session)
+                loaded_db_version = 201
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 201)
+                session.commit()
             if loaded_db_version < 202:
                 # changes: tag_parents
                 self.__apply_db202_migration(session)
+                loaded_db_version = 202
+                self.set_version(session, DB_VERSION_CURRENT_KEY, 202)
+                session.commit()
 
-            # TODO: instead update DB version after every migration and abort on first fail
-            # Update DB_VERSION
-            if loaded_db_version < DB_VERSION:
-                logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
-                self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
+            assert loaded_db_version == DB_VERSION, (
+                "Ran all migrations, but the DB is still not on the newest version"
+            )
+            logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
 
             # check if folder matching current path exists already
             self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
@@ -745,7 +778,6 @@ class Library:
         with session:
             # Ensure version rows are present
             session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-            session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
             session.commit()
 
     def __apply_db102_migration(self, session: Session):
@@ -2211,23 +2243,17 @@ class Library:
             except Exception:
                 return 0
 
-    def set_version(self, key: str, value: int) -> None:
+    def set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
 
         Args:
+            session(Session): The SQLAlchemy DB Session to use.
             key(str): The key for the name of the version type to set.
             value(int): The version value to set.
         """
-        with Session(self.engine) as session:
-            try:
-                version = session.scalar(select(Version).where(Version.key == key))
-                assert version
-                version.value = value
-                session.add(version)
-                session.commit()
-            except (IntegrityError, AssertionError) as e:
-                logger.error("[Library][ERROR] Couldn't set DB version value", error=e)
-                session.rollback()
+        with session:
+            # Insert if key has no value yet, otherwise update the value
+            session.merge(Version(key=key, value=value))
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""
