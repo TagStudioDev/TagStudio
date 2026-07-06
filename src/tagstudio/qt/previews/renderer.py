@@ -104,8 +104,8 @@ Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 
 # TODO: Make these parameters configurable
-_MAX_STL_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
-_MAX_STL_TRIANGLES = 100_000
+_MAX_STL_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+_MAX_STL_TRIANGLES = 250_000
 _pixmap_conversion_lock = threading.Lock()
 
 try:

@@ -11,7 +11,7 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageColor
 
 _BINARY_STL_HEADER_SIZE = 84
 _BINARY_STL_TRIANGLE_SIZE = 50
@@ -263,8 +263,10 @@ def _rasterize(
     size: int,
     bg_color: str,
 ) -> tuple[Image.Image, int]:
-    image = Image.new("RGB", (size, size), color=bg_color)
-    draw = ImageDraw.Draw(image)
+    bg_rgb = ImageColor.getrgb(bg_color)
+    pixels = np.empty((size, size, 3), dtype=np.uint8)
+    pixels[:, :] = bg_rgb
+
     base_color = np.asarray([150.0, 153.0, 163.0], dtype=np.float32)
     light = np.asarray([0.35, -0.45, 0.82], dtype=np.float32)
     light /= np.linalg.norm(light)
@@ -273,28 +275,57 @@ def _rasterize(
     colors = np.clip(base_color * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
     triangle_indexes = _visible_triangle_indexes(normals, depths)
     triangle_order = triangle_indexes[np.argsort(depths[triangle_indexes].mean(axis=1))]
+
+    projected_list = projected.tolist()
+    colors_list = colors.tolist()
     rendered_any = False
     drawn_triangle_count = 0
 
-    for index in triangle_order:
-        tri = projected[index]
-        if (
-            tri[:, 0].max() < 0
-            or tri[:, 0].min() >= size
-            or tri[:, 1].max() < 0
-            or tri[:, 1].min() >= size
-        ):
+    for index in triangle_order.tolist():
+        tri = projected_list[index]
+        xs = (tri[0][0], tri[1][0], tri[2][0])
+        ys = (tri[0][1], tri[1][1], tri[2][1])
+        if max(xs) < 0 or min(xs) >= size or max(ys) < 0 or min(ys) >= size:
             continue
 
-        color = tuple(int(channel) for channel in colors[index])
-        draw.polygon([tuple(point) for point in tri], fill=color)
+        _fill_triangle(pixels, tri, size, colors_list[index])
         rendered_any = True
         drawn_triangle_count += 1
 
     if not rendered_any:
         raise StlRenderError("STL mesh is outside the thumbnail frame")
 
-    return image, drawn_triangle_count
+    return Image.fromarray(pixels, "RGB"), drawn_triangle_count
+
+
+def _fill_triangle(pixels: np.ndarray, tri: list[list[float]], size: int, color: list[int]) -> None:
+    """Fill a single triangle directly into a pixel buffer via scanline conversion."""
+    (ax, ay), (bx, by), (cx, cy) = tri
+    if ay > by:
+        ax, ay, bx, by = bx, by, ax, ay
+    if by > cy:
+        bx, by, cx, cy = cx, cy, bx, by
+    if ay > by:
+        ax, ay, bx, by = bx, by, ax, ay
+
+    y_start = max(0, math.ceil(ay))
+    y_end = min(size - 1, math.ceil(cy) - 1)
+    r, g, b = color
+
+    for y in range(y_start, y_end + 1):
+        fy = float(y)
+        xa = ax if cy == ay else ax + (fy - ay) / (cy - ay) * (cx - ax)
+        if fy < by:
+            xb = ax if by == ay else ax + (fy - ay) / (by - ay) * (bx - ax)
+        else:
+            xb = bx if cy == by else bx + (fy - by) / (cy - by) * (cx - bx)
+
+        x_start = max(0, math.ceil(min(xa, xb)))
+        x_end = min(size - 1, math.ceil(max(xa, xb)) - 1)
+        for x in range(x_start, x_end + 1):
+            pixels[y, x, 0] = r
+            pixels[y, x, 1] = g
+            pixels[y, x, 2] = b
 
 
 def _visible_triangle_indexes(normals: np.ndarray, depths: np.ndarray) -> np.ndarray:
