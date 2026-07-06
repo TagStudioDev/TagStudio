@@ -567,7 +567,6 @@ class Library:
 
             # migrate DB step by step from one version to the next
             # (migration_method, db_version, initial_db_version)
-            # TODO: log statements in migrations are inconsistent
             migrations = [
                 (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
                 (self.__apply_db8_migration, 8, None),  # changes: tag_colors
@@ -613,7 +612,7 @@ class Library:
 
     def __apply_db7_migration(self, session: Session):
         """Migrate DB from DB_VERSION 6 to 7."""
-        logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
+        logger.info("[Library][Migration][7] Applying patches to DB_VERSION: 6 library...")
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
         all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
         disam_stmt = (
@@ -631,7 +630,7 @@ class Library:
             text("ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL")
         )
         session.flush()
-        logger.info("[Library][Migration] Added color_border column to tag_colors table")
+        logger.info("[Library][Migration][8] Added color_border column to tag_colors table")
 
         # collect new default tag colors
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
@@ -646,7 +645,7 @@ class Library:
             session.add(color)
         session.flush()
         logger.info(
-            "[Library][Migration] Migrated tag colors to DB_VERSION 8+",
+            "[Library][Migration][8] Migrated tag colors to DB_VERSION 8+",
             color_name=tag_colors,
         )
 
@@ -680,13 +679,13 @@ class Library:
         )
         session.execute(add_filename_column)
         session.flush()
-        logger.info("[Library][Migration] Added filename column to entries table")
+        logger.info("[Library][Migration][9] Added filename column to entries table")
 
         # Populate the new filename column.
         for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.flush()
-        logger.info("[Library][Migration] Populated filename column in entries table")
+        logger.info("[Library][Migration][9] Populated filename column in entries table")
 
     def __apply_db100_migration(self, session: Session):
         """Migrate DB to DB_VERSION 100."""
@@ -697,7 +696,7 @@ class Library:
         )
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration] Refactored TagParent table")
+        logger.info("[Library][Migration][100] Refactored TagParent table")
 
     def __apply_db101_migration(self, session: Session):
         """Migrate DB to DB_VERSION 101."""
@@ -710,19 +709,19 @@ class Library:
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration] Verified TagParent table data")
+        logger.info("[Library][Migration][102] Verified TagParent table data")
 
     def __apply_db103_migration(self, session: Session):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
         session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
         session.flush()
-        logger.info("[Library][Migration] Added is_hidden column to tags table")
+        logger.info("[Library][Migration][103] Added is_hidden column to tags table")
 
         # mark the "Archived" tag as hidden
         session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
         session.flush()
-        logger.info("[Library][Migration] Updated archived tag to be hidden")
+        logger.info("[Library][Migration][103] Updated archived tag to be hidden")
 
     def __apply_db104_migration(self, session: Session, library_dir: Path):
         """Migrate DB from DB_VERSION 103 to 104."""
@@ -890,7 +889,7 @@ class Library:
         stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration] Verified TagParent table data")
+        logger.info("[Library][Migration][202] Verified TagParent table data")
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
