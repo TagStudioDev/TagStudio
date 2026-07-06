@@ -395,16 +395,15 @@ class JsonMigrationModal(QObject):
             # Convert JSON Library to SQLite
             yield Translations["json_migration.creating_database_tables"]
             self.sql_lib = SqliteLibrary()
-            self.temp_path: Path = (
-                self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
-            )
+            temp_filename = "migration_ts_library.sqlite"
+            self.temp_path: Path = self.json_lib.library_dir / TS_FOLDER_NAME / temp_filename
             if self.temp_path.exists():
                 logger.info('Temporary migration file "temp_path" already exists. Removing...')
                 self.temp_path.unlink()
-            # TODO: fix syntax error
-            # Is the usage of the temporary directory really necessary here?
-            self.sql_lib.open_sqlite_library(
-                self.json_lib.library_dir, is_new=True, storage_path=str(self.temp_path)
+            self.sql_lib.create_sqlite_library(
+                self.json_lib.library_dir,
+                in_memory=False,
+                sql_filename=temp_filename,
             )
             yield Translations.format(
                 "json_migration.migrating_files_entries", entries=len(self.json_lib.entries)

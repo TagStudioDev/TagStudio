@@ -380,7 +380,7 @@ class Library:
             return tag.name
 
     def open_library(self, library_dir: Path, in_memory: bool = False) -> LibraryStatus:
-        """Wrapper for open_sqlite_library.
+        """Wrapper for open_sqlite_library and create_sqlite_library.
 
         Handles in-memory storage and checks whether a JSON-migration is necessary.
         """
@@ -399,21 +399,17 @@ class Library:
                 json_migration_req=True,
             )
 
-        return self.open_sqlite_library(library_dir, is_new, in_memory)
-
-    def open_sqlite_library(
-        self, library_dir: Path, is_new: bool, in_memory: bool
-    ) -> LibraryStatus:
         if is_new:
-            return self.new_lib(library_dir, in_memory)
-        return self.migrate_lib(library_dir, in_memory)
+            return self.create_sqlite_library(library_dir, in_memory)
+
+        return self.open_sqlite_library(library_dir, in_memory)
 
     @staticmethod
-    def __get_engine(library_dir: Path, in_memory: bool):
+    def __get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
         connection_string = URL.create(
             drivername="sqlite",
             database=(
-                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / SQL_FILENAME)
+                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / sql_filename)
             ),
         )
         # NOTE: File-based databases should use NullPool to create new DB connection in order to
@@ -432,8 +428,10 @@ class Library:
         )
         return create_engine(connection_string, poolclass=poolclass)
 
-    def new_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
-        self.engine = self.__get_engine(library_dir, in_memory)
+    def create_sqlite_library(
+        self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
+    ) -> LibraryStatus:
+        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
         loaded_db_version: int = 0
 
         logger.info(
@@ -514,8 +512,10 @@ class Library:
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def migrate_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
-        self.engine = self.__get_engine(library_dir, in_memory)
+    def open_sqlite_library(
+        self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
+    ) -> LibraryStatus:
+        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
         loaded_db_version: int = 0
         initial_db_version: int = DB_VERSION
 
