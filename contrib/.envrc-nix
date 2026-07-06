@@ -1,3 +1,4 @@
+# vi: ft=bash
 # shellcheck shell=bash
 
 # If you wish to use this file, symlink or copy it to `.envrc` for direnv to read it.
@@ -15,5 +16,3 @@ use flake
 
 # Only watch now, or direnv will execute again if created or modified by itself.
 watch_file "${UV_PROJECT_ENVIRONMENT:-.venv}"/bin/activate
-
-# vi: ft=bash

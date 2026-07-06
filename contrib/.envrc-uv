@@ -1,3 +1,4 @@
+# vi: ft=sh
 # shellcheck shell=bash
 
 # If you wish to use this file, symlink or copy it to `.envrc` for direnv to read it.
@@ -28,5 +29,3 @@ if [ ! -f "${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "${venv}"/
 fi
 
 pre-commit install
-
-# vi: ft=bash
