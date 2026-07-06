@@ -385,36 +385,35 @@ class Library:
         Handles in-memory storage and checks whether a JSON-migration is necessary.
         """
         assert isinstance(library_dir, Path)
+        self.verify_ts_folder(library_dir)  # ensure .TagStudio directory exists
 
-        if in_memory:
-            return self.open_sqlite_library(library_dir, is_new=True, storage_path=":memory:")
-
-        is_new = True
         sql_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
-        if self.verify_ts_folder(library_dir) and (is_new := not sql_path.exists()):
-            json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
-            if json_path.exists():
-                return LibraryStatus(
-                    success=False,
-                    library_path=library_dir,
-                    message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
-                    json_migration_req=True,
-                )
+        json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
 
-        return self.open_sqlite_library(library_dir, is_new, str(sql_path))
+        is_new = not sql_path.exists()
+        if not in_memory and is_new and json_path.exists():
+            return LibraryStatus(
+                success=False,
+                library_path=library_dir,
+                message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                json_migration_req=True,
+            )
+
+        return self.open_sqlite_library(library_dir, is_new, in_memory)
 
     def open_sqlite_library(
-        self, library_dir: Path, is_new: bool, storage_path: str
+        self, library_dir: Path, is_new: bool, in_memory: bool
     ) -> LibraryStatus:
         if is_new:
-            return self.new_lib(library_dir, storage_path)
-        else:
-            return self.migrate_lib(library_dir, storage_path)
+            return self.new_lib(library_dir, in_memory)
+        return self.migrate_lib(library_dir, in_memory)
 
-    def new_lib(self, library_dir: Path, storage_path: str) -> LibraryStatus:
+    def new_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
         connection_string = URL.create(
             drivername="sqlite",
-            database=storage_path,
+            database=(
+                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / SQL_FILENAME)
+            ),
         )
         # NOTE: File-based databases should use NullPool to create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
@@ -423,7 +422,7 @@ class Library:
         # More info can be found on the SQLAlchemy docs:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if storage_path == ":memory:" else NullPool
+        poolclass = None if in_memory else NullPool
         loaded_db_version: int = 0
 
         logger.info(
@@ -506,10 +505,12 @@ class Library:
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def migrate_lib(self, library_dir: Path, storage_path: str) -> LibraryStatus:
+    def migrate_lib(self, library_dir: Path, in_memory: bool) -> LibraryStatus:
         connection_string = URL.create(
             drivername="sqlite",
-            database=storage_path,
+            database=(
+                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / SQL_FILENAME)
+            ),
         )
         # NOTE: File-based databases should use NullPool to create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
@@ -518,7 +519,7 @@ class Library:
         # More info can be found on the SQLAlchemy docs:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if storage_path == ":memory:" else NullPool
+        poolclass = None if in_memory else NullPool
         loaded_db_version: int = 0
         initial_db_version: int = DB_VERSION
 
@@ -1170,11 +1171,12 @@ class Library:
             raise ValueError("Invalid library directory.")
 
         full_ts_path = library_dir / TS_FOLDER_NAME
-        if not full_ts_path.exists():
-            logger.info("creating library directory", dir=full_ts_path)
-            full_ts_path.mkdir(parents=True, exist_ok=True)
-            return False
-        return True
+        if full_ts_path.exists():
+            return True
+
+        logger.info("creating library directory", dir=full_ts_path)
+        full_ts_path.mkdir(parents=True, exist_ok=True)
+        return False
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple Entry records to the Library."""
