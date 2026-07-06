@@ -586,12 +586,14 @@ class Library:
             ]
             for migration, v, iv in migrations:
                 if loaded_db_version < v and (iv is None or initial_db_version < iv):
+                    logger.info(f"[Library][Migration][{v}] Starting DB Migration")
                     with session:
                         # any error causes transaction to rollback
                         migration(session, library_dir)
                         loaded_db_version = v
                         self.set_version(session, DB_VERSION_CURRENT_KEY, v)
                         session.commit()
+                    logger.info(f"[Library][Migration][{v}] Completed DB Migration")
 
             assert loaded_db_version == DB_VERSION, (
                 "Ran all migrations, but the DB is still not on the newest version"
