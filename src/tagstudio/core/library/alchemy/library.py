@@ -569,73 +569,26 @@ class Library:
             # TODO: every migration step should either complete sucessfully or be aborted fully
             #  - the migration steps seem to have try-except cases to catch a previously failed
             #    migration
-            # TODO: the migration and the version update should have fate-sharing
-            if loaded_db_version < 7:
-                # changes: value_type, tags
-                self.__apply_db7_migration(session)
-                loaded_db_version = 7
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 7)
-                session.commit()
-            if loaded_db_version < 8:
-                # changes: tag_colors
-                self.__apply_db8_migration(session)
-                loaded_db_version = 8
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 8)
-                session.commit()
-            if loaded_db_version < 9:
-                # changes: entries
-                self.__apply_db9_migration(session)
-                loaded_db_version = 9
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 9)
-                session.commit()
-            if loaded_db_version < 100:
-                # changes: tag_parents
-                self.__apply_db100_migration(session)
-                loaded_db_version = 100
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 100)
-                session.commit()
-            if loaded_db_version < 101:
-                # changes: versions
-                self.__apply_db101_migration(session)
-                loaded_db_version = 101
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 101)
-                session.commit()
-            if loaded_db_version < 102:
-                # changes: tag_parents
-                self.__apply_db102_migration(session)
-                loaded_db_version = 102
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 102)
-                session.commit()
-            if loaded_db_version < 103:
-                # changes: tags
-                self.__apply_db103_migration(session)
-                loaded_db_version = 103
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 103)
-                session.commit()
-            if loaded_db_version < 104:
-                # changes: deletes preferences
-                self.__apply_db104_migration(session, library_dir)
-                loaded_db_version = 104
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 104)
-                session.commit()
-            if loaded_db_version < 200:
-                # changes: field tables
-                self.__apply_db200_migration(session)
-                loaded_db_version = 200
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 200)
-                session.commit()
-            if loaded_db_version < 201 and initial_db_version < 200:
-                # changes: field tables
-                self.__apply_db201_migration(session)
-                loaded_db_version = 201
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 201)
-                session.commit()
-            if loaded_db_version < 202:
-                # changes: tag_parents
-                self.__apply_db202_migration(session)
-                loaded_db_version = 202
-                self.set_version(session, DB_VERSION_CURRENT_KEY, 202)
-                session.commit()
+            # (migration_method, db_version, initial_db_version)
+            migrations = [
+                (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
+                (self.__apply_db8_migration, 8, None),  # changes: tag_colors
+                (self.__apply_db9_migration, 9, None),  # changes: entries
+                (self.__apply_db100_migration, 100, None),  # changes: tag_parents
+                (self.__apply_db101_migration, 101, None),  # changes: versions
+                (self.__apply_db102_migration, 102, None),  # changes: tag_parents
+                (self.__apply_db103_migration, 103, None),  # changes: tags
+                (self.__apply_db104_migration, 104, None),  # changes: deletes preferences
+                (self.__apply_db200_migration, 200, None),  # changes: field tables
+                (self.__apply_db201_migration, 201, 200),  # changes: field tables
+                (self.__apply_db202_migration, 202, None),  # changes: tag_parents
+            ]
+            for migration, v, iv in migrations:
+                if loaded_db_version < v and (iv is None or initial_db_version < iv):
+                    migration(session)
+                    loaded_db_version = v
+                    self.set_version(session, DB_VERSION_CURRENT_KEY, v)
+                    session.commit()
 
             assert loaded_db_version == DB_VERSION, (
                 "Ran all migrations, but the DB is still not on the newest version"
