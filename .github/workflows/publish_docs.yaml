@@ -36,7 +36,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
-          uv pip install --system .[mkdocs]
+          uv pip install --system . --group mkdocs
 
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
 

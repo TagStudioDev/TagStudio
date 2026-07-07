@@ -34,7 +34,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
-          uv pip install --system .[pyinstaller]
+          uv pip install --system . --group pyinstaller
 
       - name: Execute PyInstaller
         run: |
@@ -76,7 +76,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
-          uv pip install --system .[pyinstaller]
+          uv pip install --system . --group pyinstaller
 
       - name: Execute PyInstaller
         run: |
@@ -117,7 +117,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
-          uv pip install --system .[pyinstaller]
+          uv pip install --system . --group pyinstaller
 
       - name: Execute PyInstaller
         run: |

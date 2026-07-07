@@ -26,7 +26,7 @@ source "${venv}"/bin/activate
 
 if [ ! -f "${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "${venv}"/pyproject.toml >/dev/null; then
     printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-    uv pip install --quiet --editable '.[dev]'
+    uv pip install --quiet --editable . --group all
     cp pyproject.toml "${venv}"/pyproject.toml
 fi
 

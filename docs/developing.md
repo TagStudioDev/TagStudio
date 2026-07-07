@@ -57,7 +57,7 @@ To install the required dependencies, you can use a dependency manager such as [
 If using [uv](https://docs.astral.sh/uv), you can install the dependencies for TagStudio with the following command:
 
 ```sh
-uv pip install -e ".[dev]"
+uv pip install -e . --group all
 ```
 
 TagStudio should now be runnable using the `tagstudio` command.
@@ -109,7 +109,7 @@ If you choose to manually set up a virtual environment and install dependencies 
 3.  Use the following PIP command to create an editable installation and install the required development dependencies:
 
     ```sh
-    pip install -e ".[dev]"
+    pip install -e . --group all
     ```
 
 4.  TagStudio should now be runnable using the `tagstudio` command.
@@ -161,7 +161,7 @@ The entry point for TagStudio is `src/tagstudio/main.py`. You can target this fi
 
 [Ruff](https://github.com/astral-sh/ruff) is a Python linter and code formatter that helps enforce a consistent formatting style across our codebase.
 
-Ruff is installed alongside the `pip install -e ".[dev]"` command, but is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
+Ruff is installed alongside the `pip install -e . --group all` command, but is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
 
 ```sh title="Lint Code"
 ruff check
@@ -180,7 +180,7 @@ Ruff should automatically discover the configuration options inside the [pyproje
 
 [Pyright](https://github.com/microsoft/pyright) is a static type checker for Python that helps enforce type strictness and prevent easy-to-miss errors across our codebase.
 
-Pyright is installed alongside the `pip install -e ".[dev]"` command, but is also available as VS Code extensions (see the [Pyright](https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright), [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance), and [basedpyright](https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright) extensions), a PyCharm [setting](https://www.jetbrains.com/help/pycharm/lsp-tools.html#pyright), or in the form of forks such as [basedpyright](https://docs.basedpyright.com/latest/).
+Pyright is installed alongside the `pip install -e . --group all` command, but is also available as VS Code extensions (see the [Pyright](https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright), [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance), and [basedpyright](https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright) extensions), a PyCharm [setting](https://www.jetbrains.com/help/pycharm/lsp-tools.html#pyright), or in the form of forks such as [basedpyright](https://docs.basedpyright.com/latest/).
 
 ```sh title="Run Checks"
 pyright
@@ -192,7 +192,7 @@ Pyright/basedpyright should automatically discover the configuration options ins
 
 [Pytest](https://github.com/pytest-dev/pytest) runs our Python code against the tests inside the [`tests/`](https://github.com/TagStudioDev/TagStudio/tree/main/tests) directory.
 
-Pytest is installed alongside the `pip install -e ".[dev]"` command.
+Pytest is installed alongside the `pip install -e . --group all` command.
 
 ```sh title="Run Tests"
 pytest tests/

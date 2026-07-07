@@ -54,7 +54,7 @@ pip install .
 !!! note "Developer Dependencies"
     If you wish to create an editable install with the additional dependencies required for developing TagStudio, use this modified PIP command instead:
     ```sh
-    pip install -e ".[dev]"
+    pip install -e . --group all
     ```
     _See more under "[Developing](developing.md)"_
 
