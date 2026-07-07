@@ -257,6 +257,7 @@ class MediaCategories:
         ".odt",
         ".pages",
         ".pdf",
+        ".pxd",
         ".rtf",
         ".tex",
         ".wpd",
@@ -336,7 +337,7 @@ class MediaCategories:
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
-    _IWORK_SET: set[str] = {".key", ".numbers", ".pages", ".pxd"}
+    _IWORK_SET: set[str] = {".key", ".numbers", ".pages"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MDIPACK_SET: set[str] = {".mdp"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}

@@ -1218,8 +1218,8 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _iwork_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for an Apple iWork (Pages, Numbers, Keynote, Pixelmator) file.
+    def _apple_embedded_thumb(filepath: Path) -> Image.Image | None:
+        """Extract and render an apple embedded thumbnail (iWork, Apple Creative Studio).
 
         Args:
             filepath (Path): The path of the file.
@@ -1317,10 +1317,10 @@ class ThumbRenderer(QObject):
             page_size *= size / page_size.height()
         else:
             page_size *= size / page_size.width()
-        # Enlarge image for antialiasing
+        # Enlarge image for anti-aliasing
         scale_factor = 2.5
         page_size *= scale_factor
-        # Render image with no antialiasing for speed
+        # Render image with no anti-aliasing for speed
         render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
         render_options.setRenderFlags(
             QPdfDocumentRenderOptions.RenderFlag.TextAliased
@@ -1868,8 +1868,11 @@ class ThumbRenderer(QObject):
                 ):
                     image = self._open_doc_thumb(_filepath)
                 # Apple iWork Suite ============================================
-                elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
-                    image = self._iwork_thumb(_filepath)
+                elif (
+                    MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES)
+                    or ext == ".pxd"
+                ):
+                    image = self._apple_embedded_thumb(_filepath)
                 # Plain Text ===================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
