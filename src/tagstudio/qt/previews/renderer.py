@@ -1247,6 +1247,7 @@ class ThumbRenderer(QObject):
                 for thumb_file in thumb_files:
                     if thumb_file in zip_file.namelist():
                         thumb = get_image(thumb_file)
+                        break
                 else:
                     logger.error("Couldn't render thumbnail", filepath=filepath)
 
