@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: CC0-1.0
+
+# TODO: In the future, docs will be built (but not published) for PRs.
+---
+name: Build Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/actions/setup-python/action.yml
+      - .github/workflows/build_docs.yml
+      - docs/**
+      - CHANGELOG.md
+      - mkdocs.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  publish:
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    permissions:
+      contents: write
+
+    name: Publish Docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python
+        with:
+          groups: docs
+
+      - name: Use cache
+        uses: actions/cache@v6
+        with:
+          key: mkdocs-material-${{ github.run_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - name: Run mkdocs
+        env:
+          DISABLE_MKDOCS_2_WARNING: 'true'
+        run: mkdocs gh-deploy --force

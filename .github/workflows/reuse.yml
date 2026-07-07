@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: CC0-1.0
+---
+name: REUSE Compliance Check
+
+on: [pull_request, push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  check:
+    name: REUSE
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run REUSE
+        uses: fsfe/reuse-action@v6
