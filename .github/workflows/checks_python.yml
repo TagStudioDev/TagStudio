@@ -10,10 +10,10 @@ on:
       - .github/workflows/checks_python.yml
       - .editorconfig
       - pyproject.toml
-      - pyrightconfig.json
-      - pytest.ini
       - uv.lock
       - '**.py'
+      - '**.pyi'
+      - 'src/tagstudio/resources/**'
   push:
     paths: *on_paths
   workflow_dispatch:
@@ -50,12 +50,12 @@ jobs:
               - pyproject.toml
               - uv.lock
               - '**.py'
+              - '**.pyi'
             pyright:
               - .github/actions/setup-python/action.yml
-              - pyrightconfig.json
             pytest:
               - .github/actions/setup-python/action.yml
-              - pytest.ini
+              - 'src/tagstudio/resources/**'
             ruff:
               - .editorconfig
 

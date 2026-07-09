@@ -76,7 +76,7 @@ ruff = ["ruff==0.15.17"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/tagstudio"]
 
-[tool.pytest.ini_options]
+[tool.pytest]
 qt_api = "pyside6"
 pythonpath = ["src"]
 filterwarnings = [
