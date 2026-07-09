@@ -1,17 +1,22 @@
+#!/usr/bin/env -S python -m PyInstaller
 # vi: ft=python
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import argparse
 import platform
 from argparse import ArgumentParser
+from pathlib import Path
+from tomllib import load
 
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
-from tomllib import load
 
 parser = ArgumentParser()
+# HACK: Without this, the script will fail if empty arguments are passed.
+parser.add_argument("_", nargs="*", help=argparse.SUPPRESS)
 parser.add_argument("--portable", action="store_true")
 options = parser.parse_args()
 
@@ -20,23 +25,24 @@ with open("pyproject.toml", "rb") as file:
 
 system = platform.system()
 
+project_root = Path("..", "src/tagstudio")
 name = pyproject["name"] if system == "Windows" else "tagstudio"
 icon = None
 if system == "Windows":
-    icon = "src/tagstudio/resources/icon.ico"
+    icon = Path(project_root, "resources/icon.ico")
 elif system == "Darwin":
-    icon = "src/tagstudio/resources/icon.icns"
+    icon = Path(project_root, "resources/icon.icns")
 
 
 datafiles = [
-    ("src/tagstudio/qt/*.json", "tagstudio/qt"),
-    ("src/tagstudio/qt/*.qrc", "tagstudio/qt"),
-    ("src/tagstudio/resources", "tagstudio/resources"),
+    (f"{project_root}/qt/*.json", "tagstudio/qt"),
+    (f"{project_root}/qt/*.qrc", "tagstudio/qt"),
+    (f"{project_root}/resources", "tagstudio/resources"),
 ]
 
 a = Analysis(
-    ["src/tagstudio/main.py"],
-    pathex=["src"],
+    [Path(project_root, "main.py")],
+    pathex=[],
     binaries=[],
     datas=datafiles,
     hiddenimports=[],

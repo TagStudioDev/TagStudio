@@ -1,0 +1,168 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: CC0-1.0
+---
+name: Checks (Python)
+
+on:
+  pull_request:
+    paths: &on_paths
+      - .github/actions/setup-python/action.yml
+      - .github/workflows/checks_python.yml
+      - .editorconfig
+      - pyproject.toml
+      - pyrightconfig.json
+      - pytest.ini
+      - uv.lock
+      - '**.py'
+  push:
+    paths: *on_paths
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  run-conditions:
+    name: Run Conditions
+    runs-on: ubuntu-latest
+    outputs:
+      pyright: ${{ steps.run-conditions.outputs.pyright }}
+      pytest: ${{ steps.run-conditions.outputs.pytest }}
+      ruff: ${{ steps.run-conditions.outputs.ruff }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47.0.6
+        with:
+          files_yaml: |
+            generic:
+              - .github/workflows/checks_python.yml
+              - pyproject.toml
+              - uv.lock
+              - '**.py'
+            pyright:
+              - .github/actions/setup-python/action.yml
+              - pyrightconfig.json
+            pytest:
+              - .github/actions/setup-python/action.yml
+              - pytest.ini
+            ruff:
+              - .editorconfig
+
+      - name: Set run conditions
+        id: run-conditions
+        run: |
+          cat <<EOF >>"${GITHUB_OUTPUT}"
+          pyright=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.pyright_any_changed }}
+          pytest=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.pytest_any_changed }}
+          ruff=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.ruff_any_changed }}
+          EOF
+
+  check-pyright:
+    name: Pyright
+    needs: run-conditions
+    if: needs.run-conditions.outputs.pyright == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python
+        with:
+          groups: |
+            pyright
+            pytest
+
+      - name: Execute Pyright
+        run: pyright
+
+  check-pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-label: Linux
+
+          - os: windows-2022
+            os-label: Windows
+
+    name: pytest${{ matrix.os-label && format(' ({0})', matrix.os-label) }}
+    needs: run-conditions
+    if: needs.run-conditions.outputs.pytest == 'true'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - *checkout
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python
+        with:
+          groups: pytest
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 \
+            libgl1 \
+            libopengl0 \
+            libpulse0 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xinerama0 \
+            libxkbcommon-x11-0 \
+            libyaml-dev \
+            ripgrep \
+            x11-utils
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ripgrep
+
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install ripgrep
+
+      - name: Execute pytest (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: pytest
+
+      - name: Execute pytest (non-Windows)
+        if: runner.os != 'Windows'
+        run: pytest
+
+  check-ruff:
+    name: Ruff
+    needs: run-conditions
+    if: needs.run-conditions.outputs.ruff == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - parallel:
+          - name: Run Ruff linter
+            uses: astral-sh/ruff-action@v4.0.0
+
+          - name: Run Ruff formatter
+            uses: astral-sh/ruff-action@v4.0.0
+            with:
+              args: format --check

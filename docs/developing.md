@@ -236,13 +236,13 @@ direnv allow
 To build your own executables of TagStudio, first follow the steps in "[Installing Dependencies](#installing-dependencies)." Once that's complete, run the following PyInstaller command:
 
 ```
-pyinstaller tagstudio.spec
+pyinstaller scripts/tagstudio.spec
 ```
 
 If you're on Windows or Linux and wish to build a portable executable, then pass the following flag:
 
 ```
-pyinstaller tagstudio.spec -- --portable
+pyinstaller scripts/tagstudio.spec -- --portable
 ```
 
 The resulting executable file(s) will be located in a new folder named "dist".

@@ -8,3 +8,8 @@ bracketSpacing = true
 objectWrap = "preserve"
 quoteProps = "as-needed"
 singleQuote = false
+
+[[overrides]]
+files = [".github/**/*.yml", ".github/**/*.yaml"]
+[overrides.options]
+singleQuote = true
