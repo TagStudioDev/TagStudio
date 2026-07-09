@@ -52,5 +52,5 @@ jobs:
             mkdocs-material-
       - name: Run mkdocs
         env:
-          DISABLE_MKDOCS_2_WARNING: "true"
+          DISABLE_MKDOCS_2_WARNING: 'true'
         run: mkdocs gh-deploy --force
