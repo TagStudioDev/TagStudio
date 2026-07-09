@@ -562,44 +562,44 @@ class Library:
         # a library that doesn't yet have the is_hidden property on the tags table
         make_tables(self.engine)
 
+        # save backup if patches will be applied
+        if loaded_db_version < DB_VERSION:
+            self.library_dir = library_dir
+            self.save_library_backup_to_disk()
+            self.library_dir = None
+
+        # migrate DB step by step from one version to the next
+        # (migration_method, db_version, initial_db_version)
+        migrations = [
+            (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
+            (self.__apply_db8_migration, 8, None),  # changes: tag_colors
+            (self.__apply_db9_migration, 9, None),  # changes: entries
+            (self.__apply_db100_migration, 100, None),  # changes: tag_parents
+            (self.__apply_db101_migration, 101, None),  # changes: versions
+            (self.__apply_db102_migration, 102, None),  # changes: tag_parents
+            (self.__apply_db103_migration, 103, None),  # changes: tags
+            (self.__apply_db104_migration, 104, None),  # changes: deletes preferences
+            (self.__apply_db200_migration, 200, None),  # changes: field tables
+            (self.__apply_db201_migration, 201, 200),  # changes: field tables
+            (self.__apply_db202_migration, 202, None),  # changes: tag_parents
+        ]
+        for migration, v, iv in migrations:
+            if loaded_db_version < v and (iv is None or initial_db_version < iv):
+                logger.info(f"[Library][Migration][{v}] Starting DB Migration")
+                with Session(self.engine) as session:
+                    # any error causes transaction to rollback
+                    migration(session, library_dir)
+                    loaded_db_version = v
+                    self.set_version(session, DB_VERSION_CURRENT_KEY, v)
+                    session.commit()
+                logger.info(f"[Library][Migration][{v}] Completed DB Migration")
+
+        assert loaded_db_version == DB_VERSION, (
+            "Ran all migrations, but the DB is still not on the newest version"
+        )
+        logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
+
         with Session(self.engine) as session:
-            # save backup if patches will be applied
-            if loaded_db_version < DB_VERSION:
-                self.library_dir = library_dir
-                self.save_library_backup_to_disk()
-                self.library_dir = None
-
-            # migrate DB step by step from one version to the next
-            # (migration_method, db_version, initial_db_version)
-            migrations = [
-                (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
-                (self.__apply_db8_migration, 8, None),  # changes: tag_colors
-                (self.__apply_db9_migration, 9, None),  # changes: entries
-                (self.__apply_db100_migration, 100, None),  # changes: tag_parents
-                (self.__apply_db101_migration, 101, None),  # changes: versions
-                (self.__apply_db102_migration, 102, None),  # changes: tag_parents
-                (self.__apply_db103_migration, 103, None),  # changes: tags
-                (self.__apply_db104_migration, 104, None),  # changes: deletes preferences
-                (self.__apply_db200_migration, 200, None),  # changes: field tables
-                (self.__apply_db201_migration, 201, 200),  # changes: field tables
-                (self.__apply_db202_migration, 202, None),  # changes: tag_parents
-            ]
-            for migration, v, iv in migrations:
-                if loaded_db_version < v and (iv is None or initial_db_version < iv):
-                    logger.info(f"[Library][Migration][{v}] Starting DB Migration")
-                    with session:
-                        # any error causes transaction to rollback
-                        migration(session, library_dir)
-                        loaded_db_version = v
-                        self.set_version(session, DB_VERSION_CURRENT_KEY, v)
-                        session.commit()
-                    logger.info(f"[Library][Migration][{v}] Completed DB Migration")
-
-            assert loaded_db_version == DB_VERSION, (
-                "Ran all migrations, but the DB is still not on the newest version"
-            )
-            logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
-
             # check if folder matching current path exists already
             # NOTE: this has been causing new Folders to be created when the library is moved, since
             # its introduction
