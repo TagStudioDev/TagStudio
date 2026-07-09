@@ -196,8 +196,8 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 #### Version 202
 
-| Added in Commit | Introduced in Release                                                   | Format |
-| --------------- | ----------------------------------------------------------------------- | ------ |
-|                 | [v9.6.1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.1) | SQLite |
+| Added in Commit                          | Introduced in Release                                                   | Format |
+| ---------------------------------------- | ----------------------------------------------------------------------- | ------ |
+| 95e2fe7b4449951c385e35a2e13f0c1925f1f98e | [v9.6.1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.1) | SQLite |
 
 - Applies repairs to the `tag_parents` table, removing rows that reference child tags that have been deleted.

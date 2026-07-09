@@ -42,7 +42,7 @@ toc_depth: 2
 - **French** updated by @kitsumed
 - **Hungarian** updated by @smileyhead
 - **Russian** updated by @romandobra
-- **Spanish** updated by @JCC1998
+- **Spanish** updated by @JCC1998, @2004milenadiaz-source
 
 ---
 
