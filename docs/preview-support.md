@@ -47,7 +47,7 @@ Images will generate thumbnails the first time they are viewed or since the last
 
 ### :material-movie-open: Videos
 
-Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#third-party-dependencies) installed on your system.
+Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#optional-dependencies) installed on your system.
 
 | Filetype              | Extensions              | Dependencies |
 | --------------------- | ----------------------- | :----------: |
@@ -65,7 +65,7 @@ Video thumbnails will default to the closest viable frame from the middle of the
 
 ### :material-sine-wave: Audio
 
-Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
+Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#optional-dependencies) installed on your system. Audio waveforms are currently not cached.
 
 | Filetype            | Extensions               | Dependencies |
 | ------------------- | ------------------------ | :----------: |

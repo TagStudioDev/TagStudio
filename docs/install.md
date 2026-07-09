@@ -1,12 +1,12 @@
 ---
-title: Installation
+title: Installing
 icon: material/download
 ---
 
 <!-- SPDX-FileCopyrightText: (c) TagStudio Contributors -->
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 
-# :material-download: Installation
+# :material-download: Installing
 
 TagStudio provides executable [releases](https://github.com/TagStudioDev/TagStudio/releases) as well as full access to its [source code](https://github.com/TagStudioDev/TagStudio) under the [GPLv3](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE) license.
 
@@ -17,8 +17,8 @@ To download executable builds of TagStudio, visit the [Releases](https://github.
 TagStudio has builds for :fontawesome-brands-windows: **Windows**, :fontawesome-brands-apple: **macOS** _(Apple Silicon & Intel)_, and :material-penguin: **Linux**. We also offer portable releases for Windows and Linux which are self-contained and easier to move around.
 
 <!-- prettier-ignore -->
-!!! info "Third-Party Dependencies"
-    You may need to install [third-party dependencies](#third-party-dependencies) such as [FFmpeg](https://ffmpeg.org/download.html) to use the full feature set of TagStudio.
+!!! info "Optional Dependencies"
+    You may need to install [optional third-party dependencies](#optional-dependencies) such as [FFmpeg](https://ffmpeg.org/download.html) to use the full feature set of TagStudio.
 
 <!-- prettier-ignore -->
 !!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
@@ -81,6 +81,19 @@ Some external dependencies are required for TagStudio to execute. Below is a tab
 | [qt](https://repology.org/project/qt)                                            | required                                                                         |
 | [qt-multimedia](https://repology.org/project/qt)                                 | required                                                                         |
 | [qt-wayland](https://repology.org/project/qt)                                    | Wayland support                                                                  |
+
+<!-- prettier-ignore -->
+!!! bug "Missing Linux Dependency Example"
+    An error message such as the following indicates that you're missing the `libxcb-cursor` or `xcb-util-cursor` library, depending on your distro:
+    ```
+    qt.qpa.plugin: From 6.5.0, xcb-cursor0 or libxcb-cursor0 is needed to load the Qt xcb platform plugin.
+    qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/tmp/_MEIayuTiW/cv2/qt/plugins" even though it was found.
+    This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
+
+    Available platform plugins are: vnc, wayland-egl, offscreen, wayland, linuxfb, minimalegl, eglfs, minimal, vkkhrdisplay, xcb.
+
+    Aborted (core dumped)
+    ```
 
 ### :material-nix: Nix(OS)
 
@@ -212,7 +225,9 @@ Finally, `inputs` can be used in a module to add the package to your packages li
 
 Don't forget to rebuild!
 
-## Third-Party Dependencies
+## Optional Dependencies
+
+Some TagStudio functionality such as multimedia thumbnails and playback, RAR archive thumbnails, and improved directory scanning performance will require installing optional third-party dependencies. Depending on your system, you may already have one or more of these installed. To check
 
 <!-- prettier-ignore -->
 !!! tip
@@ -242,21 +257,3 @@ To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extracto
 ### ripgrep
 
 A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
-
-## Common Error Messages
-
-### Could not load the Qt platform plugin "xcb"
-
-If you get an error message like this one:
-
-```
-qt.qpa.plugin: From 6.5.0, xcb-cursor0 or libxcb-cursor0 is needed to load the Qt xcb platform plugin.
-qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "/tmp/_MEIayuTiW/cv2/qt/plugins" even though it was found.
-This application failed to start because no Qt platform plugin could be initialized. Reinstalling the application may fix this problem.
-
-Available platform plugins are: vnc, wayland-egl, offscreen, wayland, linuxfb, minimalegl, eglfs, minimal, vkkhrdisplay, xcb.
-
-Aborted (core dumped)
-```
-
-Make sure you installed `libxcb-cursor` or `xcb-util-cursor`.

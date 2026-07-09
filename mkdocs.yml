@@ -32,9 +32,8 @@ extra:
 nav:
   - Home:
       - index.md
-  - Getting Started:
+  - Installing:
       - install.md
-      - usage.md
       - Developers:
           - developing.md
           - contributing.md
@@ -42,6 +41,7 @@ nav:
       - Help:
           - help/ffmpeg.md
   - Using TagStudio:
+      - usage.md
       - libraries.md
       - entries.md
       - preview-support.md
