@@ -9,7 +9,11 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
-## 9.6.1 <small>July 6th, 2026</small>
+## 9.6.1 <small>July 9th, 2026</small>
+
+### Added
+
+- feat(ui): render .pxd thumbnails by @Sola-ris in #1430
 
 ### Changed
 
@@ -30,6 +34,8 @@ toc_depth: 2
 #### Internal Changes
 
 - fix(nix): add pyright to devshell by @Computerdores in #1415
+- fix(deps): replace optional dependencies with dependency groups by @Xarvex in #1435
+- feat(ci)!: complete workflows revamp by @Xarvex in #1437
 
 #### Translations
 
