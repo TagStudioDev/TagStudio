@@ -96,9 +96,6 @@ jobs:
           - os: ubuntu-22.04
             os-label: Linux
 
-          - os: macos-latest
-            os-label: macOS
-
           - os: windows-2022
             os-label: Windows
 
