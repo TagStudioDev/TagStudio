@@ -452,7 +452,7 @@ class Library:
 
             # TODO: are all of these commits necessary?
             session.add_all(namespaces)
-            session.commit()
+            session.flush()
 
             # Add default tag colors.
             tag_colors: list[TagColorGroup] = default_color_groups.standard()
@@ -463,21 +463,21 @@ class Library:
             tag_colors += default_color_groups.neon()
 
             session.add_all(tag_colors)
-            session.commit()
+            session.flush()
 
             # Add default tags.
             session.add_all(get_default_tags())
-            session.commit()
+            session.flush()
 
             # Add default field templates
             for template in get_default_field_templates():
                 session.add(template)
-                session.commit()
+            session.flush()
 
             # Ensure version rows are present
             session.add(Version(key=DB_VERSION_INITIAL_KEY, value=DB_VERSION))
             session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
-            session.commit()
+            session.flush()
 
             # add folder for current path
             folder = Folder(
@@ -486,7 +486,7 @@ class Library:
             )
             session.add(folder)
             session.expunge(folder)
-            session.commit()
+            session.flush()
             self.folder = folder
 
             # Generate default .ts_ignore file
@@ -511,6 +511,8 @@ class Library:
                     "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
                 )
             )
+
+            session.commit()
 
         # everything is fine, set the library path
         self.library_dir = library_dir
