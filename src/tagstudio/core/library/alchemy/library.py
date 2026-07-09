@@ -602,6 +602,7 @@ class Library:
         logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
 
         with Session(self.engine) as session:
+            # TODO: the folder logic has no use and was never finished, remove it
             # check if folder matching current path exists already
             # NOTE: this has been causing new Folders to be created when the library is moved, since
             # its introduction
