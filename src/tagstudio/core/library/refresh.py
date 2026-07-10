@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
-
-
+import platform
 import shutil
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -39,12 +38,7 @@ class RefreshTracker:
             yield index
             end = min(len(self.files_not_in_library), index + batch_size)
             entries = [
-                Entry(
-                    path=entry_path,
-                    folder=unwrap(self.library.folder),
-                    fields=[],
-                    date_added=dt.now(),
-                )
+                self.__create_entry(entry_path)
                 for entry_path in self.files_not_in_library[index:end]
             ]
             self.library.add_entries(entries)
@@ -167,7 +161,7 @@ class RefreshTracker:
 
         try:
             for f in pathlib.Path(str(library_dir)).glob(
-                "***/*", flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
+                    "***/*", flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
             ):
                 end_time_loop = time()
                 # Yield output every 1/30 of a second
@@ -202,4 +196,25 @@ class RefreshTracker:
             duration=(end_time_total - start_time_total),
             files_scanned=dir_file_count,
             tool_used="wcmatch (internal)",
+        )
+
+    def __create_entry(self, entry_path: Path) -> Entry:
+        """Extract metadata and instantiate an Entry database model from a file path."""
+        library_dir = unwrap(self.library.library_dir)
+        absolute_path = library_dir / entry_path
+        file_stat = absolute_path.stat()
+
+        if platform.system() == "Windows" or platform.system() == "Darwin":
+            date_created = dt.fromtimestamp(file_stat.st_birthtime)
+        else:
+            date_created = dt.fromtimestamp(file_stat.st_ctime)
+        date_modified = dt.fromtimestamp(file_stat.st_mtime)
+
+        return Entry(
+            path=entry_path,
+            folder=unwrap(self.library.folder),
+            fields=[],
+            date_added=dt.now(),
+            date_created=date_created,
+            date_modified=date_modified
         )
