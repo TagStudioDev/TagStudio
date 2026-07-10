@@ -8,12 +8,13 @@ on:
     paths: &on_paths
       - .github/actions/setup-python/action.yml
       - .github/workflows/checks_python.yml
+      - src/**.json
+      - tests/**
       - .editorconfig
       - pyproject.toml
       - uv.lock
       - '**.py'
       - '**.pyi'
-      - 'src/tagstudio/resources/**'
   push:
     paths: *on_paths
   workflow_dispatch:
@@ -55,7 +56,8 @@ jobs:
               - .github/actions/setup-python/action.yml
             pytest:
               - .github/actions/setup-python/action.yml
-              - 'src/tagstudio/resources/**'
+              - src/**.json
+              - tests/**
             ruff:
               - .editorconfig
 
