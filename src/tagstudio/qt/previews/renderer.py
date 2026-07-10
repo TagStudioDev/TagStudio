@@ -1229,6 +1229,8 @@ class ThumbRenderer(QObject):
             "QuickLook/Preview.heic",
             "QuickLook/Thumbnail.jpg",
             "QuickLook/Thumbnail.heic",
+            "QuickLook/Thumbnail.webp",
+            "QuickLook/Icon.webp",
         ]
         im: Image.Image | None = None
 
