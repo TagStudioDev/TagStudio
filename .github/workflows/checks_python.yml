@@ -17,12 +17,10 @@ on:
       - uv.lock
       - '**.pyi?'
   push:
+    branches-ignore:
+      - translations
     paths: *on_paths
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 defaults:
   run:
@@ -30,6 +28,9 @@ defaults:
 
 jobs:
   run-conditions:
+    permissions:
+      pull-requests: read
+
     name: Run Conditions
     runs-on: ubuntu-latest
     outputs:
@@ -38,14 +39,25 @@ jobs:
       ruff: ${{ steps.run-conditions.outputs.ruff }}
     steps:
       - name: Checkout repository
+        if: github.event_name != 'pull_request'
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          # Largest positive number; infinite depth.
+          # Using 0 would grab all branches.
+          # See: https://github.com/actions/checkout/issues/520
+          # See: https://stackoverflow.com/questions/6802145/how-to-convert-a-git-shallow-clone-to-a-full-clone/6802238#6802238
+          # `git fetch --unshallow` as suggested in later answers would be an extra operation.
+          fetch-depth: '2147483647'
 
       - name: Check changed files
         id: changed-files
         uses: tj-actions/changed-files@v47.0.6
         with:
+          fail_on_initial_diff_error: 'true'
+          fail_on_submodule_diff_error: 'true'
+          skip_initial_fetch: 'true'
+
+          # WARNING: Does not support `?` glob operand!
           files_yaml: |
             generic:
               - .github/workflows/checks_python.yml
@@ -65,14 +77,42 @@ jobs:
 
       - name: Set run conditions
         id: run-conditions
+        env:
+          CHANGED_GENERIC: ${{ steps.changed-files.outputs.generic_any_changed }}
+          CHANGED_PYRIGHT: ${{ steps.changed-files.outputs.pyright_any_changed }}
+          CHANGED_PYTEST: ${{ steps.changed-files.outputs.pytest_any_changed }}
+          CHANGED_RUFF: ${{ steps.changed-files.outputs.ruff_any_changed }}
         run: |
+          pyright=false
+          pytest=false
+          ruff=false
+          if [ "${CHANGED_GENERIC}" = true ]; then
+              pyright=true
+              pytest=true
+              ruff=true
+          else
+              if [ "${CHANGED_PYRIGHT}" = true ]; then
+                  pyright=true
+              fi
+              if [ "${CHANGED_PYTEST}" = true ]; then
+                  pytest=true
+              fi
+              if [ "${CHANGED_RUFF}" = true ]; then
+                  ruff=true
+              fi
+          fi
+
           cat <<EOF >>"${GITHUB_OUTPUT}"
-          pyright=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.pyright_any_changed }}
-          pytest=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.pytest_any_changed }}
-          ruff=${{ steps.changed-files.outputs.generic_any_changed || steps.changed-files.outputs.ruff_any_changed }}
+          pyright=${pyright}
+          pytest=${pytest}
+          ruff=${ruff}
           EOF
 
   check-pyright:
+    concurrency:
+      group: pyright-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     name: Pyright
     needs: run-conditions
     if: needs.run-conditions.outputs.pyright == 'true'
@@ -93,6 +133,9 @@ jobs:
         run: pyright
 
   check-pytest:
+    concurrency:
+      group: ${{ matrix.os }}-pytest-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -155,6 +198,10 @@ jobs:
         run: pytest
 
   check-ruff:
+    concurrency:
+      group: ruff-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     name: Ruff
     needs: run-conditions
     if: needs.run-conditions.outputs.ruff == 'true'
