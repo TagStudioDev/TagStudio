@@ -8,13 +8,14 @@ on:
     paths: &on_paths
       - .github/actions/setup-python/action.yml
       - .github/workflows/checks_python.yml
-      - src/**.json
+      - src/**/resources/**
+      - src/**/*.json
+      - src/**/*.qrc
       - tests/**
       - .editorconfig
       - pyproject.toml
       - uv.lock
-      - '**.py'
-      - '**.pyi'
+      - '**.pyi?'
   push:
     paths: *on_paths
   workflow_dispatch:
@@ -50,13 +51,14 @@ jobs:
               - .github/workflows/checks_python.yml
               - pyproject.toml
               - uv.lock
-              - '**.py'
-              - '**.pyi'
+              - '**.pyi?'
             pyright:
               - .github/actions/setup-python/action.yml
             pytest:
               - .github/actions/setup-python/action.yml
-              - src/**.json
+              - src/**/resources/**
+              - src/**/*.json
+              - src/**/*.qrc
               - tests/**
             ruff:
               - .editorconfig
