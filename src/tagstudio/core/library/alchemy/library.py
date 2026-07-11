@@ -18,7 +18,6 @@ from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 import sqlalchemy
 import structlog
@@ -95,7 +94,6 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
     Entry,
-    Folder,
     Namespace,
     Tag,
     TagAlias,
@@ -234,7 +232,6 @@ class Library:
 
     library_dir: Path | None = None
     engine: Engine | None = None
-    folder: Folder | None = None
     included_files: set[Path] = set()
 
     def __init__(self) -> None:
@@ -259,7 +256,6 @@ class Library:
         """Migrate JSON library data to the SQLite database."""
         logger.info("Starting Library Conversion...")
         start_time = time.time()
-        folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
 
         # Tags
         for tag in json_lib.tags:
@@ -312,7 +308,6 @@ class Library:
             [
                 Entry(
                     path=entry.path / entry.filename,
-                    folder=folder,
                     fields=[],
                     id=entry.id + 1,  # NOTE: JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
@@ -479,16 +474,6 @@ class Library:
             session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
             session.flush()
 
-            # add folder for current path
-            folder = Folder(
-                path=library_dir,
-                uuid=str(uuid4()),
-            )
-            session.add(folder)
-            session.expunge(folder)
-            session.flush()
-            self.folder = folder
-
             # Generate default .ts_ignore file
             try:
                 ts_ignore_template = (
@@ -584,6 +569,7 @@ class Library:
             (self.__apply_db200_migration, 200, None),  # changes: field tables
             (self.__apply_db201_migration, 201, 200),  # changes: field tables
             (self.__apply_db202_migration, 202, None),  # changes: tag_parents
+            (self.__apply_db203_migration, 203, None),  # changes: deletes folders
         ]
         for migration, v, iv in migrations:
             if loaded_db_version < v and (iv is None or initial_db_version < iv):
@@ -600,22 +586,6 @@ class Library:
             "Ran all migrations, but the DB is still not on the newest version"
         )
         logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
-
-        with Session(self.engine) as session:
-            # TODO: the folder logic has no use and was never finished, remove it
-            # check if folder matching current path exists already
-            # NOTE: this has been causing new Folders to be created when the library is moved, since
-            # its introduction
-            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
-            if not self.folder:
-                folder = Folder(
-                    path=library_dir,
-                    uuid=str(uuid4()),
-                )
-                session.add(folder)
-                session.expunge(folder)
-                session.commit()
-                self.folder = folder
 
         # everything is fine, set the library path
         self.library_dir = library_dir
@@ -905,6 +875,42 @@ class Library:
         session.execute(stmt)
         session.flush()
         logger.info("[Library][Migration][202] Verified TagParent table data")
+
+    def __apply_db203_migration(self, session: Session, library_dir: Path):
+        ## remove folder_id column from entries table
+        # create new table in the desired scheme (without folder_id column)
+        session.execute(
+            text("""
+        CREATE TABLE entries_new (
+            id INTEGER NOT NULL,
+            path VARCHAR NOT NULL,
+            suffix VARCHAR NOT NULL,
+            date_created DATETIME,
+            date_modified DATETIME,
+            date_added DATETIME, filename TEXT NOT NULL DEFAULT '',
+            PRIMARY KEY (id),
+            UNIQUE (path)
+        )
+        """)
+        )
+        session.flush()
+        # transfer data to new table
+        session.execute(
+            text("""
+            INSERT INTO entries_new (id, path, suffix, date_created, date_modified, date_added)
+            SELECT id, path, suffix, date_created, date_modified, date_added
+            FROM entries
+        """)
+        )
+        # delete old table
+        session.execute(text("DROP TABLE entries"))
+        # rename new table to old table
+        session.execute(text("ALTER TABLE entries_new RENAME TO entries"))
+        session.flush()
+
+        ## drop table "folders"
+        session.execute(text("DROP TABLE folders"))
+        session.flush()
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
