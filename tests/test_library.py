@@ -77,7 +77,6 @@ def test_library_add_file(library: Library):
     """Check Entry.path handling for insert vs lookup"""
     entry = Entry(
         path=Path("bar.txt"),
-        folder=unwrap(library.folder),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
@@ -139,8 +138,7 @@ def test_get_entry(library: Library, entry_min: Entry):
 
 
 def test_entries_count(library: Library):
-    folder = unwrap(library.folder)
-    entries = [Entry(path=Path(f"{x}.txt"), folder=folder, fields=[]) for x in range(10)]
+    entries = [Entry(path=Path(f"{x}.txt"), fields=[]) for x in range(10)]
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
@@ -254,7 +252,6 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
 def test_mirror_entry_fields(library: Library):
     # Create and add entries with fields
     entry_a = Entry(
-        folder=unwrap(library.folder),
         path=Path("title_and_date.txt"),
         fields=[
             TextField(name="Title", value="I'm a Test Title"),
@@ -262,7 +259,6 @@ def test_mirror_entry_fields(library: Library):
         ],
     )
     entry_b = Entry(
-        folder=unwrap(library.folder),
         path=Path("notes.txt"),
         fields=[
             TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True),
@@ -270,7 +266,6 @@ def test_mirror_entry_fields(library: Library):
         ],
     )
     entry_c = Entry(
-        folder=unwrap(library.folder),
         path=Path("date_published.txt"),
         fields=[
             DatetimeField(name="Date Published", value="2000-01-01 12:00:00"),
@@ -319,14 +314,11 @@ def test_mirror_entry_fields(library: Library):
 
 
 def test_merge_entries(library: Library):
-    folder = unwrap(library.folder)
-
     tag_0: Tag = unwrap(library.add_tag(Tag(id=1010, name="tag_0")))
     tag_1: Tag = unwrap(library.add_tag(Tag(id=1011, name="tag_1")))
     tag_2: Tag = unwrap(library.add_tag(Tag(id=1012, name="tag_2")))
 
     entry_a = Entry(
-        folder=folder,
         path=Path("a"),
         fields=[
             TextField(name="Author", value="Author McAuthorson"),
@@ -334,7 +326,6 @@ def test_merge_entries(library: Library):
         ],
     )
     entry_b = Entry(
-        folder=folder,
         path=Path("b"),
         fields=[TextField(name="Notes", value="test note", is_multiline=True)],
     )
