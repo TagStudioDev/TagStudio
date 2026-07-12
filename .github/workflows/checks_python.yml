@@ -63,7 +63,8 @@ jobs:
               - .github/workflows/checks_python.yml
               - pyproject.toml
               - uv.lock
-              - '**.pyi?'
+              - '**.py'
+              - '**.pyi'
             pyright:
               - .github/actions/setup-python/action.yml
             pytest:
