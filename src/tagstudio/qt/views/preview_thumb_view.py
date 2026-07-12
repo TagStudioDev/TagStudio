@@ -34,7 +34,7 @@ class PreviewThumbView(QWidget):
     """The Preview Panel Widget."""
 
     check_ffmpeg = Signal(bool)
-    stats_updated = Signal(object, object)
+    stats_updated = Signal(Path, FileAttributeData)
 
     __img_button_size: tuple[int, int]
     __image_ratio: float
