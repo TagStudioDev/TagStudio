@@ -3,7 +3,12 @@
 ---
 name: REUSE Compliance Check
 
-on: [pull_request, push]
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - translations
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
