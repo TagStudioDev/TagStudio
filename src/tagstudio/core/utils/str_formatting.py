@@ -49,3 +49,14 @@ def is_version_outdated(current: str, latest: str) -> bool:
         return vcur.patch < vlat.patch
     else:
         return vcur.prerelease is not None or vcur.build is not None
+
+
+def format_duration(duration: int | float) -> str:
+    """Format a duration in seconds as M:SS or H:MM:SS."""
+    try:
+        seconds = int(float(duration))
+        hours, seconds = divmod(seconds, 3600)
+        minutes, seconds = divmod(seconds, 60)
+        return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
+    except (OverflowError, ValueError):
+        return "-:--"

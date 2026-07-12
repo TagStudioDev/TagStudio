@@ -7,7 +7,6 @@ import platform
 import typing
 from dataclasses import dataclass
 from datetime import datetime as dt
-from datetime import timedelta
 from pathlib import Path
 
 import structlog
@@ -20,6 +19,7 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
@@ -224,15 +224,7 @@ class FileAttributes(QWidget):
 
             if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
-                try:
-                    dur_str = str(timedelta(seconds=float(stats.duration)))[:-7]
-                    if dur_str.startswith("0:"):
-                        dur_str = dur_str[2:]
-                    if dur_str.startswith("0"):
-                        dur_str = dur_str[1:]
-                except OverflowError:
-                    dur_str = "-:--"
-                stats_label_text += f"{dur_str}"
+                stats_label_text += format_duration(stats.duration)
 
             if font_family:
                 stats_label_text = add_newline(stats_label_text)

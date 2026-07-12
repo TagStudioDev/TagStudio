@@ -34,11 +34,13 @@ class PreviewThumbView(QWidget):
     """The Preview Panel Widget."""
 
     check_ffmpeg = Signal(bool)
+    stats_updated = Signal(Path, FileAttributeData)
 
     __img_button_size: tuple[int, int]
     __image_ratio: float
 
-    __filepath: Path | None
+    _current_file: Path | None
+    __should_render_on_resize: bool
     __rendered_res: tuple[int, int]
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
@@ -46,6 +48,8 @@ class PreviewThumbView(QWidget):
 
         self.__img_button_size = (266, 266)
         self.__image_ratio = 1.0
+
+        self.__should_render_on_resize = False
 
         self.__image_layout = QStackedLayout(self)
         self.__image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -92,6 +96,10 @@ class PreviewThumbView(QWidget):
         self.__media_player.addAction(open_file_action)
         self.__media_player.addAction(open_explorer_action)
         self.__media_player.addAction(delete_action)
+        # QMediaPlayer loads duration asynchronously after setSource().
+        self.__media_player.player.durationChanged.connect(
+            self.__media_player_duration_changed_callback
+        )
 
         # Need to watch for this to resize the player appropriately.
         self.__media_player.player.hasVideoChanged.connect(
@@ -127,6 +135,16 @@ class PreviewThumbView(QWidget):
 
     def __media_player_video_changed_callback(self, video: bool) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
+
+    def __media_player_duration_changed_callback(self, duration_ms: int) -> None:
+        filepath = self.__media_player.filepath
+        if filepath is None or duration_ms <= 0:
+            return
+
+        self.stats_updated.emit(
+            filepath,
+            FileAttributeData(duration=duration_ms // 1000),
+        )
 
     def __thumb_renderer_updated_callback(
         self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
@@ -207,7 +225,8 @@ class PreviewThumbView(QWidget):
             self.__preview_gif.hide()
 
     def __render_thumb(self, filepath: Path) -> None:
-        self.__filepath = filepath
+        self.__should_render_on_resize = True
+
         self.__rendered_res = (
             math.ceil(self.__img_button_size[0] * THUMB_SIZE_FACTOR),
             math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
@@ -221,17 +240,16 @@ class PreviewThumbView(QWidget):
             update_on_ratio_change=True,
         )
 
-    def __update_media_player(self, filepath: Path) -> int:
-        """Display either audio or video.
-
-        Returns the duration of the audio / video.
-        """
+    def __update_media_player(self, filepath: Path) -> None:
+        """Display either audio or video."""
         self.__media_player.play(filepath)
-        return self.__media_player.player.duration() * 1000
 
     def _display_video(self, filepath: Path, size: QSize | None) -> FileAttributeData:
+        self.__should_render_on_resize = False
+
         self.__switch_preview(MediaType.VIDEO)
-        stats = FileAttributeData(duration=self.__update_media_player(filepath))
+        self.__update_media_player(filepath)
+        stats = FileAttributeData()
 
         if size is not None:
             stats.width = size.width()
@@ -250,10 +268,13 @@ class PreviewThumbView(QWidget):
     def _display_audio(self, filepath: Path) -> FileAttributeData:
         self.__switch_preview(MediaType.AUDIO)
         self.__render_thumb(filepath)
-        return FileAttributeData(duration=self.__update_media_player(filepath))
+        self.__update_media_player(filepath)
+        return FileAttributeData()
 
     def _display_gif(self, gif_data: bytes, size: tuple[int, int]) -> FileAttributeData | None:
         """Update the animated image preview from a filepath."""
+        self.__should_render_on_resize = False
+
         stats = FileAttributeData()
 
         # Ensure that any movie and buffer from previous animations are cleared.
@@ -296,17 +317,26 @@ class PreviewThumbView(QWidget):
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
         self.__switch_preview(None)
-        self.__filepath = None
+        self._current_file = None
+        self.__should_render_on_resize = False
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
 
-        if self.__filepath is not None and self.__rendered_res < self.__img_button_size:
-            self.__render_thumb(self.__filepath)
+        if (
+            self._current_file is not None
+            and self.__should_render_on_resize
+            and self.__rendered_res < self.__img_button_size
+        ):
+            self.__render_thumb(self._current_file)
 
         return super().resizeEvent(event)
 
     @property
     def media_player(self) -> MediaPlayer:
         return self.__media_player
+
+    @property
+    def current_file(self) -> Path | None:
+        return self._current_file
