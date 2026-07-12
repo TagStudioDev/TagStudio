@@ -19,6 +19,7 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
@@ -36,17 +37,6 @@ class FileAttributeData:
     width: int | None = None
     height: int | None = None
     duration: int | None = None
-
-
-def _format_duration(duration: int | float) -> str:
-    """Format a duration in seconds as M:SS or H:MM:SS."""
-    try:
-        seconds = int(float(duration))
-        hours, seconds = divmod(seconds, 3600)
-        minutes, seconds = divmod(seconds, 60)
-        return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
-    except (OverflowError, ValueError):
-        return "-:--"
 
 
 class FileAttributes(QWidget):
@@ -234,7 +224,7 @@ class FileAttributes(QWidget):
 
             if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
-                stats_label_text += _format_duration(stats.duration)
+                stats_label_text += format_duration(stats.duration)
 
             if font_family:
                 stats_label_text = add_newline(stats_label_text)
