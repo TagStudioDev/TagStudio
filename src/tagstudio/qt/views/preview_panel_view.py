@@ -52,7 +52,6 @@ class PreviewPanelView(QWidget):
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
         self.__current_stats: FileAttributeData | None = None
-        self.__current_stats_filepath: Path | None = None
 
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
@@ -146,7 +145,7 @@ class PreviewPanelView(QWidget):
         if len(self._selected) != 1:
             return
 
-        if filepath != self.__current_stats_filepath:
+        if filepath != self._thumb.current_file:
             return
 
         if self.__current_stats is None:
@@ -178,7 +177,6 @@ class PreviewPanelView(QWidget):
             if len(selected) == 0:
                 self._thumb.hide_preview()
                 self.__current_stats = None
-                self.__current_stats_filepath = None
                 self._file_attrs.update_stats()
                 self._file_attrs.update_date_label()
                 self._containers.hide_containers()
@@ -191,9 +189,8 @@ class PreviewPanelView(QWidget):
                 entry: Entry = unwrap(self.lib.get_entry(entry_id))
 
                 filepath: Path = unwrap(self.lib.library_dir) / entry.path
-                if filepath != self.__current_stats_filepath:
+                if filepath != self._thumb.current_file:
                     self.__current_stats = None
-                    self.__current_stats_filepath = filepath
 
                 if update_preview:
                     stats: FileAttributeData = self._thumb.display_file(filepath)
@@ -211,7 +208,6 @@ class PreviewPanelView(QWidget):
                 # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
                 self._thumb.hide_preview()  # TODO: Render mixed selection
                 self.__current_stats = None
-                self.__current_stats_filepath = None
                 self._file_attrs.update_multi_selection(len(selected))
                 self._file_attrs.update_date_label()
                 self._containers.hide_containers()  # TODO: Allow for mixed editing

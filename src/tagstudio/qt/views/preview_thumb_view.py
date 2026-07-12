@@ -336,3 +336,7 @@ class PreviewThumbView(QWidget):
     @property
     def media_player(self) -> MediaPlayer:
         return self.__media_player
+
+    @property
+    def current_file(self) -> Path | None:
+        return self._current_file
