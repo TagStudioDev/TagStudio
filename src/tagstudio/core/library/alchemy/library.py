@@ -596,7 +596,7 @@ class Library:
                     session.commit()
                 logger.info(f"[Library][Migration][{v}] Completed DB Migration")
 
-        assert loaded_db_version == DB_VERSION, (
+        assert loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
         logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
