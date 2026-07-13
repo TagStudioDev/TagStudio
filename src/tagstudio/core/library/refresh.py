@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import shutil
+import subprocess
+import unicodedata
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -10,12 +11,13 @@ from pathlib import Path
 from time import time
 
 import structlog
-from wcmatch import pathlib
+from wcmatch import glob
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
-from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
+from tagstudio.core.utils.silent_subprocess import silent_popen
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
@@ -24,32 +26,106 @@ logger = structlog.get_logger(__name__)
 @dataclass
 class RefreshTracker:
     library: Library
-    files_not_in_library: list[Path] = field(default_factory=list)
+
+    _paths_to_id: dict[Path, int] = field(default_factory=dict)
+    _expected_paths: set[Path] = field(default_factory=set)
+
+    _missing_paths: dict[Path, int] = field(default_factory=dict)
+    _new_paths: set[Path] = field(default_factory=set)
+
+    @staticmethod
+    def _normalize(path: Path) -> Path:
+        return Path(unicodedata.normalize("NFD", str(path)))
 
     @property
-    def files_count(self) -> int:
-        return len(self.files_not_in_library)
+    def missing_files_count(self) -> int:
+        return len(self._missing_paths)
+
+    @property
+    def new_files_count(self) -> int:
+        return len(self._new_paths)
+
+    def _add_path(self, entry_id: int, path: Path):
+        self._paths_to_id[path] = entry_id
+        self._expected_paths.add(path)
+
+    def _del_path(self, path: Path):
+        self._paths_to_id.pop(path)
+        self._expected_paths.remove(path)
 
     def save_new_files(self) -> Iterator[int]:
         """Save the list of files that are not in the library."""
         batch_size = 200
 
-        index = 0
-        while index < len(self.files_not_in_library):
-            yield index
-            end = min(len(self.files_not_in_library), index + batch_size)
-            entries = [
-                Entry(
-                    path=entry_path,
-                    folder=unwrap(self.library.folder),
-                    fields=[],
-                    date_added=dt.now(),
-                )
-                for entry_path in self.files_not_in_library[index:end]
-            ]
-            self.library.add_entries(entries)
-            index = end
-        self.files_not_in_library = []
+        all_entries = [
+            Entry(
+                path=entry_path,
+                folder=unwrap(self.library.folder),
+                fields=[],
+                date_added=dt.now(),
+            )
+            for entry_path in self._new_paths
+        ]
+        for start in range(0, len(all_entries), batch_size):
+            yield start
+            end = start + batch_size
+            entries = all_entries[start:end]
+            entry_ids = self.library.add_entries(entries)
+
+            assert len(entry_ids) == len(entries)
+            for i in range(len(entry_ids)):
+                id = entry_ids[i]
+                path = entries[i].path
+                self._add_path(id, path)
+
+        self._new_paths.clear()
+
+    def fix_unlinked_entries(self):
+        """Attempt to fix unlinked file entries by finding a match in the library directory."""
+        new_paths: dict[Path, list[Path]] = {}
+        new_normalized_paths: dict[Path, list[Path]] = {}
+        for path in self._new_paths:
+            name = Path(path.name)
+            new_paths.setdefault(name, []).append(path)
+            normalized_name = self._normalize(name)
+            if normalized_name != name:
+                new_normalized_paths.setdefault(normalized_name, []).append(name)
+
+        fixed: list[tuple[int, Path, Path]] = []
+        for (
+            path,
+            entry_id,
+        ) in self._missing_paths.items():
+            name = Path(path.name)
+            if name not in new_paths:
+                name = self._normalize(name)
+                if (names := new_normalized_paths.get(name)) and len(names) == 1:
+                    name = names[0]
+
+            if name not in new_paths or len(new_paths[name]) != 1:
+                continue
+            new_path = new_paths.pop(name)[0]
+            self._new_paths.remove(new_path)
+
+            fixed.append((entry_id, path, new_path))
+
+        paths = ((id, new_path) for (id, _path, new_path) in fixed)
+        if not self.library.update_entry_paths(paths):
+            return
+
+        for entry_id, path, new_path in fixed:
+            self._del_path(path)
+            self._add_path(entry_id, new_path)
+            self._missing_paths.pop(path)
+
+    def remove_unlinked_entries(self) -> None:
+        to_remove = []
+        for path, id in self._missing_paths.items():
+            to_remove.append(id)
+            self._del_path(path)
+        self._missing_paths.clear()
+
+        self.library.remove_entries(to_remove)
 
     def refresh_dir(self, library_dir: Path, force_internal_tools: bool = False) -> Iterator[int]:
         """Scan a directory for files, and add those relative filenames to internal variables.
@@ -62,144 +138,102 @@ class RefreshTracker:
         if self.library.library_dir is None:
             raise ValueError("No library directory set.")
 
-        ignore_patterns = Ignore.get_patterns(library_dir)
-
-        if force_internal_tools:
-            return self.__wc_add(library_dir, ignore_to_glob(ignore_patterns))
-
-        dir_list: list[str] | None = self.__get_dir_list(library_dir, ignore_patterns)
-
-        # Use ripgrep if it was found and working, else fallback to wcmatch.
-        if dir_list is not None:
-            return self.__rg_add(library_dir, dir_list)
-        else:
-            return self.__wc_add(library_dir, ignore_to_glob(ignore_patterns))
-
-    def __get_dir_list(self, library_dir: Path, ignore_patterns: list[str]) -> list[str] | None:
-        """Use ripgrep to return a list of matched directories and files.
-
-        Return `None` if ripgrep not found on system.
-        """
-        rg_path = shutil.which("rg")
-        # Use ripgrep if found on system
-        if rg_path is not None:
-            logger.info("[Refresh: Using ripgrep for scanning]")
-
-            compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
-
-            # Write compiled ignore patterns (built-in + user) to a temp file to pass to ripgrep
-            with open(compiled_ignore_path, "w") as pattern_file:
-                pattern_file.write("\n".join(ignore_patterns))
-
-            result = silent_run(
-                " ".join(
-                    [
-                        "rg",
-                        "--files",
-                        "--follow",
-                        "--hidden",
-                        "--ignore-file",
-                        f'"{str(compiled_ignore_path)}"',
-                    ]
-                ),
-                cwd=library_dir,
-                capture_output=True,
-                shell=True,
-                encoding="UTF-8",
-            )
-            compiled_ignore_path.unlink()
-
-            if result.stderr:
-                logger.error(result.stderr)
-
-            return result.stdout.splitlines()  # pyright: ignore [reportReturnType]
-
-        logger.warning("[Refresh: ripgrep not found on system]")
-        return None
-
-    def __rg_add(self, library_dir: Path, dir_list: list[str]) -> Iterator[int]:
-        start_time_total = time()
-        start_time_loop = time()
-        dir_file_count = 0
-        self.files_not_in_library = []
-
-        for r in dir_list:
-            f = pathlib.Path(r)
-
-            end_time_loop = time()
-            # Yield output every 1/30 of a second
-            if (end_time_loop - start_time_loop) > 0.034:
-                yield dir_file_count
-                start_time_loop = time()
-
-            # Skip if the file/path is already mapped in the Library
-            if f in self.library.included_files:
-                dir_file_count += 1
-                continue
-
-            # Ignore if the file is a directory
-            if f.is_dir():
-                continue
-
-            dir_file_count += 1
-            self.library.included_files.add(f)
-
-            if not self.library.has_entry_with_path(f):
-                self.files_not_in_library.append(f)
-
-        end_time_total = time()
-        yield dir_file_count
+        start_time = time()
+        self._paths_to_id = dict((p, i) for i, p in self.library.all_paths())
+        self._expected_paths = set(self._paths_to_id.keys())
         logger.info(
-            "[Refresh]: Directory scan time",
-            path=library_dir,
-            duration=(end_time_total - start_time_total),
-            files_scanned=dir_file_count,
-            tool_used="ripgrep (system)",
+            "[Refresh]: Fetch entry paths",
+            duration=(time() - start_time),
         )
 
-    def __wc_add(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[int]:
-        start_time_total = time()
-        start_time_loop = time()
-        dir_file_count = 0
-        self.files_not_in_library = []
+        ignore_patterns = Ignore.get_patterns(library_dir)
 
+        yield 0
+        raw_paths = None
+        if not force_internal_tools:
+            rg_path = RipgrepStatus.which()
+            if rg_path is None:
+                logger.warning("[Refresh: ripgrep not found on system]")
+            else:
+                raw_paths = self.__rg(rg_path, library_dir, ignore_patterns)
+
+        # Use ripgrep if it was found and working, else fallback to wcmatch.
+        if raw_paths is None:
+            raw_paths = self.__wc(library_dir, ignore_patterns)
+
+        start_time = time()
+        last_update = time()
+
+        paths = set()
+        for raw_path in raw_paths:
+            paths.add(Path(raw_path))
+            if (time() - last_update) >= 0.033:
+                last_update = time()
+                yield len(paths)
+
+        logger.info(
+            "[Refresh]: Library scan time",
+            duration=(time() - start_time),
+        )
+        yield len(paths)
+
+        self.__add(library_dir, paths)
+
+    def __rg(self, rg_path: str, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str]:
+        """Use ripgrep to return a list of matched directories and files."""
+        logger.info("[Refresh: Using ripgrep for scanning]")
+
+        compiled_ignore_path = library_dir / ".TagStudio" / ".compiled_ignore"
+
+        # Write compiled ignore patterns (built-in + user) to a temp file to pass to ripgrep
+        with open(compiled_ignore_path, "w") as pattern_file:
+            pattern_file.write("\n".join(ignore_patterns))
+
+        with silent_popen(
+            " ".join(
+                [
+                    f'"{rg_path}"',
+                    "--files",
+                    "--follow",
+                    "--hidden",
+                    "--ignore-file",
+                    f'"{str(compiled_ignore_path)}"',
+                ]
+            ),
+            cwd=library_dir,
+            shell=True,
+            stdout=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+        ) as proc:
+            assert proc.stdout
+            for line in proc.stdout:
+                yield line[:-1]  # exclude newline
+
+        compiled_ignore_path.unlink()
+
+    def __wc(self, library_dir: Path, ignore_patterns: list[str]) -> Iterator[str]:
         logger.info("[Refresh]: Falling back to wcmatch for scanning")
 
-        try:
-            for f in pathlib.Path(str(library_dir)).glob(
-                "***/*", flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
-            ):
-                end_time_loop = time()
-                # Yield output every 1/30 of a second
-                if (end_time_loop - start_time_loop) > 0.034:
-                    yield dir_file_count
-                    start_time_loop = time()
+        ignore_patterns = ignore_to_glob(ignore_patterns)
+        return glob.iglob(
+            "***/*", root_dir=library_dir, flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
+        )
 
-                # Skip if the file/path is already mapped in the Library
-                if f in self.library.included_files:
-                    dir_file_count += 1
-                    continue
+    def __add(self, library_dir: Path, paths: set[Path]):
+        start_time_total = time()
 
-                # Ignore if the file is a directory
-                if f.is_dir():
-                    continue
+        self._new_paths = paths.difference(self._expected_paths)
 
-                dir_file_count += 1
-                self.library.included_files.add(f)
-
-                relative_path = f.relative_to(library_dir)
-
-                if not self.library.has_entry_with_path(relative_path):
-                    self.files_not_in_library.append(relative_path)
-        except ValueError:
-            logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
+        missing = self._expected_paths.difference(paths)
+        self._missing_paths = dict((p, self._paths_to_id[p]) for p in missing)
 
         end_time_total = time()
-        yield dir_file_count
         logger.info(
-            "[Refresh]: Directory scan time",
+            "[Refresh]: Calculate new/missing paths",
             path=library_dir,
             duration=(end_time_total - start_time_total),
-            files_scanned=dir_file_count,
-            tool_used="wcmatch (internal)",
+            files_scanned=len(paths),
+            missing=len(self._missing_paths),
+            new=len(self._new_paths),
         )
