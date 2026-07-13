@@ -569,7 +569,7 @@ class Library:
             (self.__apply_db200_migration, 200, None),  # changes: field tables
             (self.__apply_db201_migration, 201, 200),  # changes: field tables
             (self.__apply_db202_migration, 202, None),  # changes: tag_parents
-            (self.__apply_db203_migration, 203, None),  # changes: deletes folders
+            (self.__apply_db300_migration, 300, None),  # changes: deletes folders
         ]
         for migration, v, iv in migrations:
             if loaded_db_version < v and (iv is None or initial_db_version < iv):
@@ -876,7 +876,7 @@ class Library:
         session.flush()
         logger.info("[Library][Migration][202] Verified TagParent table data")
 
-    def __apply_db203_migration(self, session: Session, library_dir: Path):
+    def __apply_db300_migration(self, session: Session, library_dir: Path):
         ## remove folder_id column from entries table
         # create new table in the desired scheme (without folder_id column)
         session.execute(
