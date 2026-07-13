@@ -887,7 +887,8 @@ class Library:
             suffix VARCHAR NOT NULL,
             date_created DATETIME,
             date_modified DATETIME,
-            date_added DATETIME, filename TEXT NOT NULL DEFAULT '',
+            date_added DATETIME,
+            filename TEXT NOT NULL DEFAULT '',
             PRIMARY KEY (id),
             UNIQUE (path)
         )
@@ -897,8 +898,9 @@ class Library:
         # transfer data to new table
         session.execute(
             text("""
-            INSERT INTO entries_new (id, path, suffix, date_created, date_modified, date_added)
-            SELECT id, path, suffix, date_created, date_modified, date_added
+            INSERT INTO entries_new (id, path, suffix, date_created, date_modified, date_added,
+                                     filename)
+            SELECT id, path, suffix, date_created, date_modified, date_added, filename
             FROM entries
         """)
         )
