@@ -16,7 +16,6 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
-from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -41,7 +40,6 @@ class RefreshTracker:
             entries = [
                 Entry(
                     path=entry_path,
-                    folder=unwrap(self.library.folder),
                     fields=[],
                     date_added=dt.now(),
                 )
