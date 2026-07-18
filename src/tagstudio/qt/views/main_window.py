@@ -701,7 +701,7 @@ class MainWindow(QMainWindow):
         self.content_splitter.addWidget(self.entry_list_container)
 
     def setup_preview_panel(self, driver: "QtDriver"):
-        self.preview_panel = PreviewPanel(driver.lib, driver)
+        self.preview_panel = PreviewPanel(driver)
         self.content_splitter.addWidget(self.preview_panel)
 
     def setup_status_bar(self):

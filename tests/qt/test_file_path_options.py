@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportPrivateUsage=false, reportAttributeAccessIssue=false
 
 import os
 from collections.abc import Callable
@@ -8,9 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtGui import (
-    QAction,
-)
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMenuBar
 from pytestqt.qtbot import QtBot
 
@@ -60,11 +59,10 @@ def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: Sh
 )
 def test_file_path_display(
     qt_driver: QtDriver,
-    library: Library,
     filepath_option: ShowFilepathOption,
     expected_path: Callable[[Library], Path],
 ):
-    panel = PreviewPanel(library, qt_driver)
+    panel = PreviewPanel(qt_driver)
 
     # Select 2
     qt_driver.toggle_item_selection(2, append=False, bridge=False)
@@ -73,15 +71,17 @@ def test_file_path_display(
     qt_driver.settings.show_filepath = filepath_option
 
     # Apply the mock value
-    entry = library.get_entry(2)
+    entry = qt_driver.lib.get_entry(2)
     assert isinstance(entry, Entry)
     filename = entry.path
-    panel._file_attributes_widget.update_stats(filepath=unwrap(library.library_dir) / filename)  # pyright: ignore[reportPrivateUsage]
+    panel._file_attributes_widget.update_stats(
+        filepath=unwrap(qt_driver.lib.library_dir) / filename
+    )
 
     # Generate the expected file string.
     # This is copied directly from the file_attributes.py file
     # can be imported as a function in the future
-    display_path: Path = expected_path(library)
+    display_path: Path = expected_path(qt_driver.lib)
     file_str: str = ""
     separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
     for i, part in enumerate(display_path.parts):
@@ -94,7 +94,7 @@ def test_file_path_display(
             file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
-    assert panel._file_attributes_widget.file_label.text() == file_str  # pyright: ignore[reportPrivateUsage]
+    assert panel._file_attributes_widget.file_label.text() == file_str
 
 
 @pytest.mark.parametrize(
@@ -146,7 +146,7 @@ def test_title_update(
     qt_driver.main_window.menu_bar.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update
-    qt_driver._init_library(library_dir, open_status)  # pyright: ignore[reportPrivateUsage]
+    qt_driver._init_library(library_dir, open_status)
 
     # Assert the title is updated correctly
-    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))  # pyright: ignore[reportAttributeAccessIssue]
+    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))

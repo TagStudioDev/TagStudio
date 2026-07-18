@@ -13,7 +13,6 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidget
 
 from tagstudio.core.constants import FFMPEG_HELP_URL
-from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
@@ -26,7 +25,7 @@ from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
-from tagstudio.qt.views.tag_suggest_box_view import TagSuggestBoxView
+from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -35,31 +34,31 @@ logger = structlog.get_logger(__name__)
 
 
 class PreviewPanelView(QWidget):
-    lib: Library
     _selected: list[int]
 
-    def __init__(self, library: Library, driver: "QtDriver") -> None:
+    def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
-        self.lib = library
+        self._lib = driver.lib
         rm = ResourceManager()
 
-        self.field_search: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
-            library,
+        self.field_search_box: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
+            self._lib,
             is_field_template_chooser=True,
             view=FieldTemplateSearchPanelView(is_field_template_chooser=True),
         )
-        self.tag_search = TagSuggestBox(
-            library,
-            is_tag_chooser=True,
-            view=TagSuggestBoxView(is_tag_chooser=True),
-        )
-        self.tag_search.set_driver(driver)
-        self.tag_search.hide()
 
-        self._thumb = PreviewThumb(self.lib, driver)
-        self._file_attrs = FileAttributes(self.lib, driver)
+        tag_placeholder_text = (
+            f"{Translations['home.search_tags']} {Translations['home.search.how_to_exit']}"
+        )
+        self.tag_search_box = TagSuggestBox(
+            driver, view=SuggestBoxView(placeholder=tag_placeholder_text)
+        )
+        self.tag_search_box.hide()
+
+        self._thumb = PreviewThumb(self._lib, driver)
+        self._file_attrs = FileAttributes(self._lib, driver)
         self._containers = FieldContainers(
-            self.lib, driver
+            self._lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
 
         # Visual Preview
@@ -124,7 +123,7 @@ class PreviewPanelView(QWidget):
 
         add_buttons_layout.addWidget(self._add_tag_button)
         add_buttons_layout.addWidget(self._add_field_button)
-        add_buttons_layout.addWidget(self.tag_search)
+        add_buttons_layout.addWidget(self.tag_search_box)
         # add_buttons_layout.addWidget(self.field_search)
 
         preview_layout.addWidget(self._thumb)
@@ -166,14 +165,14 @@ class PreviewPanelView(QWidget):
                 self._add_field_button.setEnabled(False)
                 self._add_tag_button.setHidden(False)
                 self._add_field_button.setHidden(False)
-                self.tag_search.disappear()
+                self.tag_search_box.hide_and_reset()
 
             # One Item Selected
             elif len(selected) == 1:
                 entry_id = selected[0]
-                entry: Entry = unwrap(self.lib.get_entry(entry_id))
+                entry: Entry = unwrap(self._lib.get_entry(entry_id))
 
-                filepath: Path = unwrap(self.lib.library_dir) / entry.path
+                filepath: Path = unwrap(self._lib.library_dir) / entry.path
                 if filepath != self._thumb.current_file:
                     self.__current_stats = None
 
@@ -190,7 +189,7 @@ class PreviewPanelView(QWidget):
                 self._add_field_button.setEnabled(True)
                 self._add_tag_button.setHidden(False)
                 self._add_field_button.setHidden(False)
-                self.tag_search.disappear()
+                self.tag_search_box.hide_and_reset()
 
             # Multiple Selected Items
             elif len(selected) > 1:
@@ -207,7 +206,7 @@ class PreviewPanelView(QWidget):
                 self._add_field_button.setEnabled(True)
                 self._add_tag_button.setHidden(False)
                 self._add_field_button.setHidden(False)
-                self.tag_search.disappear()
+                self.tag_search_box.hide_and_reset()
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)

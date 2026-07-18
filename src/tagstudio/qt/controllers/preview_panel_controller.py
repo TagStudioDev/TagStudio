@@ -12,7 +12,6 @@ from PySide6 import QtCore
 from PySide6.QtGui import QShortcut
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
-from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
@@ -24,8 +23,8 @@ logger = structlog.get_logger(__name__)
 
 
 class PreviewPanel(PreviewPanelView):
-    def __init__(self, library: Library, driver: "QtDriver") -> None:
-        super().__init__(library, driver)
+    def __init__(self, driver: "QtDriver") -> None:
+        super().__init__(driver)
 
         self.__current_stats: FileAttributeData | None = None
         self._thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
@@ -45,29 +44,29 @@ class PreviewPanel(PreviewPanelView):
         self.add_tag_action.activated.connect(self._add_tag_button.setFocus)
         self.add_tag_action.activated.connect(self._add_tag_button.click)
 
-        self.tag_search.done.connect(self.tag_added_callback)
-        self.tag_search.tags_updated.connect(self.update_added_callback)
+        self.tag_search_box.done.connect(self.tag_added_callback)
+        self.tag_search_box.tags_updated.connect(self.update_added_callback)
 
     def _add_field_button_callback(self) -> None:
         # self.__add_field_modal.show()
         pass
 
     def _add_tag_button_callback(self) -> None:
-        self.tag_search.added = self._containers.tags
-        self.tag_search.view.search_field.setDisabled(False)
-        self.tag_search.setHidden(False)
+        self.tag_search_box.added = self._containers.tags
+        self.tag_search_box.layout().search_field.setDisabled(False)
+        self.tag_search_box.setHidden(False)
         self._add_tag_button.setHidden(True)
         self._add_field_button.setHidden(True)
 
     def tag_added_callback(self):
-        self.tag_search.setHidden(True)
+        self.tag_search_box.setHidden(True)
         self._add_tag_button.setHidden(False)
         self._add_field_button.setHidden(False)
 
         self._add_tag_button.setFocus()
 
     def update_added_callback(self):
-        self.tag_search.added = self._containers.tags
+        self.tag_search_box.added = self._containers.tags
 
     def __thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
         if len(self._selected) != 1:
@@ -91,11 +90,11 @@ class PreviewPanel(PreviewPanelView):
     @override
     def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
-            self.field_search.field_template_chosen.disconnect()
-            self.tag_search.item_chosen.disconnect()
+            self.field_search_box.field_template_chosen.disconnect()
+            self.tag_search_box.item_chosen.disconnect()
 
-        self.field_search.field_template_chosen.connect(self._add_field_to_selected)
-        self.tag_search.item_chosen.connect(self._add_tag_to_selected)
+        self.field_search_box.field_template_chosen.connect(self._add_field_to_selected)
+        self.tag_search_box.item_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
         self._containers.add_field_to_selected(template)

@@ -77,6 +77,7 @@ class GlobalSettings(BaseModel):
     theme: Theme = Field(default=Theme.SYSTEM)
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
+    edit_tag_on_create: bool = Field(default=False)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
