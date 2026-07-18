@@ -21,7 +21,7 @@ from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
-from tagstudio.qt.views.tag_suggest_box_view import TagSuggestBoxView
+from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
