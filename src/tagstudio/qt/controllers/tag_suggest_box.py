@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.controllers.suggest_box_controller import SuggestBox
+from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations

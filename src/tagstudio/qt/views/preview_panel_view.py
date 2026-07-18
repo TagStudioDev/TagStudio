@@ -18,7 +18,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.controllers.return_button import ReturnButton
-from tagstudio.qt.controllers.tag_suggest_box_controller import TagSuggestBox
+from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
