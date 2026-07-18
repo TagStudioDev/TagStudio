@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-from typing import TYPE_CHECKING
 
 import structlog
 from PySide6.QtCore import Qt
@@ -19,9 +18,6 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_scroll_top_style,
 )
-
-if TYPE_CHECKING:
-    pass
 
 logger = structlog.get_logger(__name__)
 
