@@ -113,7 +113,6 @@ class PreviewPanelView(QVBoxLayout):
         add_buttons_layout.addWidget(self.tag_search_box)
         add_buttons_layout.addWidget(self.field_search_box)
 
-        # Finalize Layout
         preview_layout.addWidget(self.preview_thumb)
         info_layout.addWidget(self.warning_banner)
         info_layout.addWidget(self.file_attrs)
