@@ -7,6 +7,7 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
+from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
@@ -30,6 +31,29 @@ class TagSuggestBox(SuggestBox[Tag]):
         super().__init__(driver, view=view or SuggestBoxView())
         self._driver = driver
         self._lib = self._driver.lib
+
+        # Context Menu Actions
+        edit_tag_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
+        edit_tag_on_create_action.setCheckable(True)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.addAction(edit_tag_on_create_action)
+        self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.layout().search_field.addAction(edit_tag_on_create_action)
+        edit_tag_on_create_action.setChecked(self._driver.settings.edit_tag_on_create)
+        edit_tag_on_create_action.triggered.connect(
+            lambda checked: self.toggle_edit_on_tag_create(checked)
+        )
+
+    def search_for_tag(self, tag_id: int) -> None:
+        self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
+        self._driver.update_browsing_state(
+            BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
+        )
+
+    def toggle_edit_on_tag_create(self, checked: bool) -> None:
+        """Toggle the setting for opening the edit window after creating a tag.."""
+        self._driver.settings.edit_tag_on_create = checked
+        self._driver.settings.save()
 
     @override
     def on_item_create(self) -> None:
@@ -142,12 +166,6 @@ class TagSuggestBox(SuggestBox[Tag]):
             aliases=edit_item_panel.aliases,
         )
         self.update_items(self._layout.search_field.text())
-
-    def search_for_tag(self, tag_id: int) -> None:
-        self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
-        self._driver.update_browsing_state(
-            BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
-        )
 
     @override
     def get_item_widget(self, index: int, library: Library | None) -> TagWidget:

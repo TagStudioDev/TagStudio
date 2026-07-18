@@ -47,11 +47,11 @@ class PreviewPanelView(QWidget):
             view=FieldTemplateSearchPanelView(is_field_template_chooser=True),
         )
 
-        tag_placeholder_text = (
-            f"{Translations['home.search_tags']} {Translations['home.search.how_to_exit']}"
+        tag_placeholder = " ".join(
+            [Translations["home.search_or_create_tags"], Translations["home.search.how_to_exit"]]
         )
         self.tag_search_box = TagSuggestBox(
-            driver, view=SuggestBoxView(placeholder=tag_placeholder_text)
+            driver, view=SuggestBoxView(placeholder_text=tag_placeholder)
         )
         self.tag_search_box.hide()
 

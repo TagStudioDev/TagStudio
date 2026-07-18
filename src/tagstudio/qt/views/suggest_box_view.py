@@ -27,7 +27,7 @@ logger = structlog.get_logger(__name__)
 
 
 class SuggestBoxView(QVBoxLayout):
-    def __init__(self, placeholder: str = "") -> None:
+    def __init__(self, placeholder_text: str = "") -> None:
         super().__init__()
         # Init layout
         self.setContentsMargins(0, 0, 0, 0)
@@ -79,7 +79,7 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field.setStyleSheet(autofill_line_edit_style())
         self.search_field.setObjectName("search_field")
         self.search_field.setMinimumHeight(28)
-        self.search_field.setPlaceholderText(placeholder)
+        self.search_field.setPlaceholderText(placeholder_text)
         self.scroll_area.setFocusProxy(self.search_field)
 
         # Finalize layout
