@@ -5,10 +5,11 @@
 import typing
 from collections.abc import Callable
 from pathlib import Path
+from typing import override
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
 from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
@@ -748,3 +749,9 @@ class MainWindow(QMainWindow):
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with hidden tags."""
         return self.show_hidden_entries_checkbox.isChecked()
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.menu_bar.clear_select_action.trigger()
+        return super().keyPressEvent(event)
