@@ -74,10 +74,10 @@ class GlobalSettings(BaseModel):
     infinite_scroll: bool = Field(default=True)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
+    edit_tag_on_create: bool = Field(default=False)
     theme: Theme = Field(default=Theme.SYSTEM)
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
-    edit_tag_on_create: bool = Field(default=False)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)

@@ -30,7 +30,6 @@ class TagSuggestBox(SuggestBox[Tag]):
         super().__init__(driver, view=view or SuggestBoxView())
         self._driver = driver
         self._lib = self._driver.lib
-        self._edit_on_create = self._driver.settings.edit_tag_on_create
 
     @override
     def on_item_create(self) -> None:
@@ -43,7 +42,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         """
         query: str = self._layout.search_field.text()
 
-        if self._edit_on_create:
+        if self._driver.settings.edit_tag_on_create:
             panel: BuildTagPanel = BuildTagPanel(self._lib)
             modal: PanelModal = PanelModal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True

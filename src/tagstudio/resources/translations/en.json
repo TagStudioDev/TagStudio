@@ -316,6 +316,7 @@
     "settings.dateformat.international": "International",
     "settings.dateformat.label": "Date Format",
     "settings.dateformat.system": "System",
+    "settings.edit_tag_on_create": "Edit Tag After Creation",
     "settings.filepath.label": "Filepath Visibility",
     "settings.filepath.option.full": "Show Full Paths",
     "settings.filepath.option.name": "Show Filenames Only",
