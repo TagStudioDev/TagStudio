@@ -154,9 +154,6 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def edit_item(self, edit_item_panel: PanelWidget) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
         if not isinstance(edit_item_panel, BuildTagPanel):
             return
 
