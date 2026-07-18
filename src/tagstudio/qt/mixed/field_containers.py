@@ -10,7 +10,6 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -21,7 +20,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BaseFieldTemplate,
@@ -38,6 +36,7 @@ from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextContainerWidget
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.stylesheets.stylesheets import inset_container_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -59,12 +58,6 @@ class FieldContainers(QWidget):
         self.mixed_fields: list = []
         self.cached_entries: list[Entry] = []
         self.containers: list[FieldContainer] = []
-
-        self.panel_bg_color = (
-            Theme.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value
-        )
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -92,9 +85,7 @@ class FieldContainers(QWidget):
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(
-            f"QWidget#entryScrollContainer{{background:{self.panel_bg_color};border-radius:6px;}}"
-        )
+        self.scroll_area.setStyleSheet(inset_container_style("entryScrollContainer"))
         self.scroll_area.setWidget(scroll_container)
 
         root_layout = QHBoxLayout(self)
@@ -480,3 +471,13 @@ class FieldContainers(QWidget):
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
             callback()
+
+    @property
+    def tags(self) -> list[int]:
+        if len(self.cached_entries) <= 0:
+            return []
+        entry = self.cached_entries[0]
+        entry_ = self.lib.get_entry_full(entry.id, with_fields=False)
+        if not entry_:
+            return []
+        return [tag.id for tag in entry_.tags]

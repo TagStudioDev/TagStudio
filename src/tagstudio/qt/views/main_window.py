@@ -182,10 +182,10 @@ class MainMenuBar(QMenuBar):
         self.new_tag_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
+                QtCore.Qt.Key.Key_N,
             )
         )
-        self.new_tag_action.setToolTip("Ctrl+T")
+        self.new_tag_action.setToolTip("Ctrl+N")
         self.new_tag_action.setEnabled(False)
         self.edit_menu.addAction(self.new_tag_action)
 
@@ -220,8 +220,8 @@ class MainMenuBar(QMenuBar):
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
-        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.clear_select_action.setToolTip("Esc")
+        # self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        # self.clear_select_action.setToolTip("Esc")
         self.clear_select_action.setEnabled(False)
         self.edit_menu.addAction(self.clear_select_action)
 
@@ -704,6 +704,8 @@ class MainWindow(QMainWindow):
         self.content_splitter.addWidget(self.preview_panel)
 
     def setup_status_bar(self):
+        # BUG: Clicking the status bar does not count as losing focus on other widgets
+        # (for example, the "Add Tag" line edit). Can this be fixed?
         self.status_bar = QStatusBar(self)
         self.status_bar.setObjectName("status_bar")
         status_bar_size_policy = QSizePolicy(

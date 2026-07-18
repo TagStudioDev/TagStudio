@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, override
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
-from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
@@ -121,6 +121,7 @@ class TagWidget(QWidget):
         # if on_click_callback:
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.base_layout = QVBoxLayout(self)
+        self.base_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.base_layout.setObjectName("baseLayout")
         self.base_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -148,23 +149,24 @@ class TagWidget(QWidget):
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.inner_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self._delete_button = QPushButton(self)
         self._delete_button.setFlat(True)
         self._delete_button.setText("–")
         self._delete_button.setHidden(True)
-        self._delete_button.setMinimumSize(22, 22)
-        self._delete_button.setMaximumSize(22, 22)
+        self._delete_button.setFixedSize(22, 22)
         self._delete_button.clicked.connect(self.on_remove.emit)
         self._delete_button.setHidden(True)
         self.inner_layout.addWidget(self._delete_button)
-        self.inner_layout.addStretch(1)
 
         self.bg_button.setLayout(self.inner_layout)
         self.bg_button.setMinimumSize(44, 22)
 
-        self.bg_button.setMinimumHeight(22)
-        self.bg_button.setMaximumHeight(22)
+        self.bg_button.setFixedHeight(22)
+
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.bg_button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         self.base_layout.addWidget(self.bg_button)
 

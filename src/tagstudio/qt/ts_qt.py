@@ -51,8 +51,6 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-
-# This import has side-effect of importing PySide resources
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.module_status import ModuleStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
@@ -77,7 +75,7 @@ from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, Palette, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
@@ -274,7 +272,7 @@ class QtDriver(DriverMixin, QObject):
         dir = QFileDialog.getExistingDirectory(
             parent=None,
             caption=Translations["window.title.open_create_library"],
-            dir="/",
+            dir=str(Path.home()),
             options=QFileDialog.Option.ShowDirsOnly,
         )
         if dir not in (None, ""):
@@ -303,19 +301,28 @@ class QtDriver(DriverMixin, QObject):
         elif self.settings.theme == Theme.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
+        pal: QPalette = self.app.palette()
+        # BUG: Changing the palette in any way here seems to affect the accent colors of certain
+        # widgets, like QLineEdit focused borders and QComboBox highlighted items and borders.
+        # Need to figure out the cause of this.
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
         ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-            pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipBase, QColor("#1e1e1e")
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipText, QColor("#FFFFFF")
+            )
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
             pal.setColor(
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
-
-            self.app.setPalette(pal)
+        Palette.set_palette(pal)
+        self.app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
@@ -627,8 +634,10 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        self.check_for_update()
+        self.main_window.search_field.setFocus()
+
         self.app.exec()
+        self.check_for_update()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):

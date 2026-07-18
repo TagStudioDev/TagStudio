@@ -10,25 +10,23 @@ from pathlib import Path
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidget
 
 from tagstudio.core.constants import FFMPEG_HELP_URL
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
+from tagstudio.qt.controllers.return_button import ReturnButton
+from tagstudio.qt.controllers.tag_suggest_box_controller import TagSuggestBox
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
+from tagstudio.qt.views.tag_suggest_box_view import TagSuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -38,7 +36,6 @@ logger = structlog.get_logger(__name__)
 
 class PreviewPanelView(QWidget):
     lib: Library
-
     _selected: list[int]
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
@@ -46,18 +43,32 @@ class PreviewPanelView(QWidget):
         self.lib = library
         rm = ResourceManager()
 
+        self.field_search: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
+            library,
+            is_field_template_chooser=True,
+            view=FieldTemplateSearchPanelView(is_field_template_chooser=True),
+        )
+        self.tag_search = TagSuggestBox(
+            library,
+            is_tag_chooser=True,
+            view=TagSuggestBoxView(is_tag_chooser=True),
+        )
+        self.tag_search.set_driver(driver)
+        self.tag_search.hide()
+
         self._thumb = PreviewThumb(self.lib, driver)
         self._file_attrs = FileAttributes(self.lib, driver)
         self._containers = FieldContainers(
             self.lib, driver
         )  # TODO: this should be name mangled, but is still needed on the controller side atm
-        self.__current_stats: FileAttributeData | None = None
 
+        # Visual Preview
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
         preview_layout.setContentsMargins(0, 0, 0, 0)
         preview_layout.setSpacing(6)
 
+        # Warning Banner (Missing FFmpeg, etc.)
         self._ffmpeg_warning_widget = QWidget()
         self._ffmpeg_warning_widget.setObjectName("ffmpeg_widget")
         ffmpeg_warning_layout = QHBoxLayout(self._ffmpeg_warning_widget)
@@ -82,9 +93,9 @@ class PreviewPanelView(QWidget):
         ffmpeg_warning_layout.addWidget(warning_icon)
         ffmpeg_warning_layout.addWidget(ffmpeg_warning_label)
         ffmpeg_warning_layout.setStretch(1, 1)
-
         self._ffmpeg_warning_widget.hide()
 
+        # File Information
         info_section = QWidget()
         info_layout = QVBoxLayout(info_section)
         info_layout.setContentsMargins(0, 0, 0, 0)
@@ -99,20 +110,22 @@ class PreviewPanelView(QWidget):
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.__add_tag_button = QPushButton(Translations["tag.add"])
-        self.__add_tag_button.setEnabled(False)
-        self.__add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.__add_tag_button.setMinimumHeight(28)
-        self.__add_tag_button.setStyleSheet(button_style())
+        self._add_tag_button = ReturnButton(Translations["tag.add"])
+        self._add_tag_button.setEnabled(False)
+        self._add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._add_tag_button.setMinimumHeight(30)
+        self._add_tag_button.setStyleSheet(button_style())
 
-        self.__add_field_button = QPushButton(Translations["field.add"])
-        self.__add_field_button.setEnabled(False)
-        self.__add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.__add_field_button.setMinimumHeight(28)
-        self.__add_field_button.setStyleSheet(button_style())
+        self._add_field_button = ReturnButton(Translations["field.add"])
+        self._add_field_button.setEnabled(False)
+        self._add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._add_field_button.setMinimumHeight(30)
+        self._add_field_button.setStyleSheet(button_style())
 
-        add_buttons_layout.addWidget(self.__add_tag_button)
-        add_buttons_layout.addWidget(self.__add_field_button)
+        add_buttons_layout.addWidget(self._add_tag_button)
+        add_buttons_layout.addWidget(self._add_field_button)
+        add_buttons_layout.addWidget(self.tag_search)
+        # add_buttons_layout.addWidget(self.field_search)
 
         preview_layout.addWidget(self._thumb)
         info_layout.addWidget(self._ffmpeg_warning_widget)
@@ -127,38 +140,6 @@ class PreviewPanelView(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
         root_layout.addWidget(add_buttons_container)
-
-        self.__connect_callbacks()
-
-    def __connect_callbacks(self) -> None:
-        self.__add_field_button.clicked.connect(self._add_field_button_callback)
-        self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
-        self._thumb.stats_updated.connect(self.__thumb_stats_updated_callback)
-
-    def _add_field_button_callback(self) -> None:
-        raise NotImplementedError()
-
-    def _add_tag_button_callback(self) -> None:
-        raise NotImplementedError()
-
-    def __thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
-        if len(self._selected) != 1:
-            return
-
-        if filepath != self._thumb.current_file:
-            return
-
-        if self.__current_stats is None:
-            self.__current_stats = FileAttributeData()
-
-        if stats.width is not None:
-            self.__current_stats.width = stats.width
-        if stats.height is not None:
-            self.__current_stats.height = stats.height
-        if stats.duration is not None:
-            self.__current_stats.duration = stats.duration
-
-        self._file_attrs.update_stats(filepath, self.__current_stats)
 
     def _set_selection_callback(self) -> None:
         raise NotImplementedError()
@@ -181,7 +162,11 @@ class PreviewPanelView(QWidget):
                 self._file_attrs.update_date_label()
                 self._containers.hide_containers()
 
-                self.add_buttons_enabled = False
+                self._add_tag_button.setEnabled(False)
+                self._add_field_button.setEnabled(False)
+                self._add_tag_button.setHidden(False)
+                self._add_field_button.setHidden(False)
+                self.tag_search.disappear()
 
             # One Item Selected
             elif len(selected) == 1:
@@ -201,7 +186,11 @@ class PreviewPanelView(QWidget):
 
                 self._set_selection_callback()
 
-                self.add_buttons_enabled = True
+                self._add_tag_button.setEnabled(True)
+                self._add_field_button.setEnabled(True)
+                self._add_tag_button.setHidden(False)
+                self._add_field_button.setHidden(False)
+                self.tag_search.disappear()
 
             # Multiple Selected Items
             elif len(selected) > 1:
@@ -214,7 +203,11 @@ class PreviewPanelView(QWidget):
 
                 self._set_selection_callback()
 
-                self.add_buttons_enabled = True
+                self._add_tag_button.setEnabled(True)
+                self._add_field_button.setEnabled(True)
+                self._add_tag_button.setHidden(False)
+                self._add_field_button.setHidden(False)
+                self.tag_search.disappear()
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)
@@ -222,15 +215,15 @@ class PreviewPanelView(QWidget):
 
     @property
     def add_buttons_enabled(self) -> bool:  # needed for the tests
-        field = self.__add_field_button.isEnabled()
-        tag = self.__add_tag_button.isEnabled()
+        field = self._add_field_button.isEnabled()
+        tag = self._add_tag_button.isEnabled()
         assert field == tag
         return field
 
     @add_buttons_enabled.setter
     def add_buttons_enabled(self, enabled: bool) -> None:
-        self.__add_field_button.setEnabled(enabled)
-        self.__add_tag_button.setEnabled(enabled)
+        self._add_field_button.setEnabled(enabled)
+        self._add_tag_button.setEnabled(enabled)
 
     @property
     def _file_attributes_widget(self) -> FileAttributes:  # needed for the tests
