@@ -74,9 +74,7 @@ def test_file_path_display(
     entry = qt_driver.lib.get_entry(2)
     assert isinstance(entry, Entry)
     filename = entry.path
-    panel._file_attributes_widget.update_stats(
-        filepath=unwrap(qt_driver.lib.library_dir) / filename
-    )
+    panel.file_attributes_widget.update_stats(filepath=unwrap(qt_driver.lib.library_dir) / filename)
 
     # Generate the expected file string.
     # This is copied directly from the file_attributes.py file
@@ -94,7 +92,7 @@ def test_file_path_display(
             file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
-    assert panel._file_attributes_widget.file_label.text() == file_str
+    assert panel.file_attributes_widget.file_label.text() == file_str
 
 
 @pytest.mark.parametrize(

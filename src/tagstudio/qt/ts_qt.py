@@ -963,7 +963,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.preview_thumb.media_player.stop()
+                        self.main_window.preview_panel.stop_media_playback()
 
                     msg = Translations.format(
                         "status.deleting_file", i=i, count=len(pending), path=f
