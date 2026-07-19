@@ -121,7 +121,6 @@ class TagWidget(QWidget):
         # if on_click_callback:
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.base_layout = QVBoxLayout(self)
-        self.base_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.base_layout.setObjectName("baseLayout")
         self.base_layout.setContentsMargins(0, 0, 0, 0)
 
