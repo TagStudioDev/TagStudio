@@ -129,6 +129,10 @@ class PreviewPanel(QWidget):
         self._set_item_mode(None)
         self.layout().add_field_button.setFocus()
 
+    def _field_added_callback(self):
+        self._set_item_mode(None)
+        self._layout.add_field_button.setFocus()
+
     def _update_added_callback(self):
         self.layout().tag_search_box.added = self.layout().containers.tags
 
@@ -200,6 +204,34 @@ class PreviewPanel(QWidget):
             )
             edit_modal.saved_data.connect(
                 partial(self.layout().containers.update_datetime_field_callback, field, entry_id)
+            )
+            edit_modal.show()
+
+    def _edit_field(self, entry_id: int, field: BaseField) -> None:
+        # TODO: A lot of this code is similar to or straight up shared with FieldContainers.
+        # It's possible to reuse it later, after a FieldContainers refactor.
+        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
+
+        if type(field) is TextField:
+            edit_modal = PanelModal(
+                EditText(field.name, field.value, field.is_multiline),
+                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                is_savable=True,
+                inline_title=False,
+            )
+            edit_modal.saved_data.connect(
+                partial(self._layout.containers.update_text_field_callback, field, entry_id)
+            )
+            edit_modal.show()
+        elif type(field) is DatetimeField:
+            edit_modal = PanelModal(
+                DatetimePicker(self._driver, field.name, field.value or dt.now()),
+                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                is_savable=True,
+                inline_title=False,
+            )
+            edit_modal.saved_data.connect(
+                partial(self._layout.containers.update_datetime_field_callback, field, entry_id)
             )
             edit_modal.show()
 

@@ -75,7 +75,6 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     def _on_item_edit(self, item: BaseFieldTemplate) -> None:
         panel: EditFieldTemplateModal = EditFieldTemplateModal(item)
         modal: Modal = Modal(panel, item.name, Translations["field_template.edit"], is_savable=True)
-
         modal.saved.connect(lambda: self._edit_item(panel))
         modal.show()
 
