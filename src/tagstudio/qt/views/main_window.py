@@ -221,8 +221,6 @@ class MainMenuBar(QMenuBar):
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
-        # self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        # self.clear_select_action.setToolTip("Esc")
         self.clear_select_action.setEnabled(False)
         self.edit_menu.addAction(self.clear_select_action)
 

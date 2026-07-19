@@ -25,7 +25,6 @@ logger = structlog.get_logger(__name__)
 class SuggestBoxView(QVBoxLayout):
     def __init__(self, placeholder_text: str = "") -> None:
         super().__init__()
-        # Init layout
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
@@ -78,6 +77,6 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field.setPlaceholderText(placeholder_text)
         self.scroll_area.setFocusProxy(self.search_field)
 
-        # Finalize layout
+        # Finalize Layout
         self.addWidget(scroll_area_container)
         self.addWidget(self.search_field)
