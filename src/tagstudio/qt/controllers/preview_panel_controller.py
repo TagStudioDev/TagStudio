@@ -82,6 +82,7 @@ class PreviewPanel(QWidget):
         self.layout().add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
         self._open_field_search_action.activated.connect(self._open_field_search_callback)
         self.layout().field_search_box.done.connect(self._field_added_callback)
+
         # Previews
         self.layout().preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
         self.layout().preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
@@ -131,7 +132,7 @@ class PreviewPanel(QWidget):
 
     def _field_added_callback(self):
         self._set_item_mode(None)
-        self._layout.add_field_button.setFocus()
+        self.layout().add_field_button.setFocus()
 
     def _update_added_callback(self):
         self.layout().tag_search_box.added = self.layout().containers.tags
@@ -220,7 +221,7 @@ class PreviewPanel(QWidget):
                 inline_title=False,
             )
             edit_modal.saved_data.connect(
-                partial(self._layout.containers.update_text_field_callback, field, entry_id)
+                partial(self.layout().containers.update_text_field_callback, field, entry_id)
             )
             edit_modal.show()
         elif type(field) is DatetimeField:
@@ -231,7 +232,7 @@ class PreviewPanel(QWidget):
                 inline_title=False,
             )
             edit_modal.saved_data.connect(
-                partial(self._layout.containers.update_datetime_field_callback, field, entry_id)
+                partial(self.layout().containers.update_datetime_field_callback, field, entry_id)
             )
             edit_modal.show()
 
