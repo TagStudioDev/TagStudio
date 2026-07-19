@@ -53,11 +53,20 @@ class PreviewPanel(QWidget):
         self._selected: list[int]
         self._current_stats: FileAttributeData | None = None
 
-        key = QtCore.QKeyCombination(
-            QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-            QtCore.Qt.Key.Key_T,
+        self._open_tag_search_action = QShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_T,
+            ),
+            self,
         )
-        self._add_tag_action = QShortcut(key, self)
+        self._open_field_search_action = QShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_L,
+            ),
+            self,
+        )
 
         self.setLayout(self._layout)
         self._set_item_mode(None)
@@ -66,13 +75,13 @@ class PreviewPanel(QWidget):
     def _connect_callbacks(self) -> None:
         # Tag Search
         self._layout.add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
-        self._add_tag_action.activated.connect(self._layout.add_tag_button.setFocus)
-        self._add_tag_action.activated.connect(self._layout.add_tag_button.click)
+        self._open_tag_search_action.activated.connect(self._open_tag_search_callback)
         self._layout.tag_search_box.done.connect(self._tag_added_callback)
         self._layout.tag_search_box.items_updated.connect(self._update_added_callback)
 
         # Field Search
         self._layout.add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
+        self._open_field_search_action.activated.connect(self._open_field_search_callback)
         self._layout.field_search_box.done.connect(self._field_added_callback)
 
         # Previews
@@ -93,8 +102,8 @@ class PreviewPanel(QWidget):
             self._layout.add_field_button.setEnabled(True)
 
         if mode == _ItemMode.TAG:
-            self._layout.field_search_box.hide_and_reset()
             self._layout.tag_search_box.added = self._layout.containers.tags
+            self._layout.field_search_box.hide_and_reset()
             self._layout.tag_search_box.setHidden(False)
             hide_and_disable_buttons()
         elif mode == _ItemMode.FIELD:
@@ -105,6 +114,14 @@ class PreviewPanel(QWidget):
             self._layout.tag_search_box.hide_and_reset()
             self._layout.field_search_box.hide_and_reset()
             restore_buttons()
+
+    def _open_tag_search_callback(self) -> None:
+        self._layout.add_tag_button.setFocus()
+        self._layout.add_tag_button.click()
+
+    def _open_field_search_callback(self) -> None:
+        self._layout.add_field_button.setFocus()
+        self._layout.add_field_button.click()
 
     def _tag_added_callback(self):
         self._set_item_mode(None)
