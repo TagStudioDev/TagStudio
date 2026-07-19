@@ -210,11 +210,18 @@ jobs:
     steps:
       - *checkout
 
+      - name: Setup Ruff
+        uses: astral-sh/ruff-action@v4.0.0
+        with:
+          # No-op operation, since executing Ruff cannot be disabled for the action.
+          # Note that `--version` has different behavior than `version`, as the
+          # latter will fail if passed any extra args, even if that arg is empty.
+          args: --version
+          src: ''
+
       - parallel:
           - name: Run Ruff linter
-            uses: astral-sh/ruff-action@v4.0.0
+            run: ruff check
 
           - name: Run Ruff formatter
-            uses: astral-sh/ruff-action@v4.0.0
-            with:
-              args: format --check
+            run: ruff format --check
