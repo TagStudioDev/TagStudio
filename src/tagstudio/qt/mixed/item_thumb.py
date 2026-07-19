@@ -500,7 +500,7 @@ class ItemThumb(FlowWidget):
     ):
         selected = self.driver._selected
         if len(selected) == 1 and entry_id in selected:
-            self.driver.main_window.preview_panel.field_containers_widget.update_toggled_tag(
+            self.driver.main_window.preview_panel.containers.update_toggled_tag(
                 tag_id, toggle_value
             )
 

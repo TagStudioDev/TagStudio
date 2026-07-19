@@ -57,7 +57,7 @@ class FieldContainers(QWidget):
         self.common_fields: list = []
         self.mixed_fields: list = []
         self.cached_entries: list[Entry] = []
-        self.containers: list[FieldContainer] = []
+        self._containers: list[FieldContainer] = []
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -128,8 +128,8 @@ class FieldContainers(QWidget):
             self.write_field_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self.containers) > container_len:
-            for i, c in enumerate(self.containers):
+        if len(self._containers) > container_len:
+            for i, c in enumerate(self._containers):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
@@ -148,7 +148,7 @@ class FieldContainers(QWidget):
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
-        for c in self.containers:
+        for c in self._containers:
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
@@ -364,12 +364,12 @@ class FieldContainers(QWidget):
         )
 
         # Create new containers if necessary
-        if len(self.containers) < (index + 1):
+        if len(self._containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self._containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self._containers[index]
 
         # Set field title
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
@@ -398,12 +398,12 @@ class FieldContainers(QWidget):
                 If True, field is not present in all selected items.
         """
         logger.info("[FieldContainers][write_tag_container]", index=index)
-        if len(self.containers) < (index + 1):
+        if len(self._containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self._containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self._containers[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
 

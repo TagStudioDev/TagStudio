@@ -16,7 +16,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.field_containers import FieldContainers
-from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
+from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
@@ -191,23 +191,5 @@ class PreviewPanel(QWidget):
         self._layout.preview_thumb.media_player.stop()
 
     @property
-    def add_buttons_enabled(self) -> bool:  # needed for the tests
-        field = self._layout.add_field_button.isEnabled()
-        tag = self._layout.add_tag_button.isEnabled()
-        assert field == tag
-        return field
-
-    @add_buttons_enabled.setter
-    def add_buttons_enabled(self, enabled: bool) -> None:
-        self._layout.add_field_button.setEnabled(enabled)
-        self._layout.add_tag_button.setEnabled(enabled)
-
-    @property
-    def file_attributes_widget(self) -> FileAttributes:  # needed for the tests
-        """Getter for the file attributes widget."""
-        return self._layout.file_attrs
-
-    @property
-    def field_containers_widget(self) -> FieldContainers:  # needed for the tests
-        """Getter for the field containers widget."""
+    def containers(self) -> FieldContainers:
         return self._layout.containers
