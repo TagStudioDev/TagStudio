@@ -47,7 +47,6 @@ class SuggestBox[T](QWidget):
 
     def __init__(self, driver: "QtDriver", view: SuggestBoxView) -> None:
         super().__init__()
-        self._layout = view
         self._driver = driver
         self._limit = 5
         self._is_shift_held = False
@@ -55,42 +54,42 @@ class SuggestBox[T](QWidget):
         self.added: list[int] = []
         self.excluded: list[int] = []
 
-        self.setLayout(self._layout)
+        self.setLayout(view)
         self._connect_callbacks()
 
     def hide_and_reset(self):
         self.hide()
-        self._layout.search_field.setDisabled(True)
+        self.layout().search_field.setDisabled(True)
         self._on_shift_held(held=False)
 
     def _connect_callbacks(self) -> None:
-        self._layout.search_field.textChanged.connect(self._on_search_query_changed)
-        self._layout.search_field.editingFinished.connect(self._editing_finished_callback)
-        self._layout.search_field.return_pressed.connect(
-            lambda: self._on_search_query_submitted(self._layout.search_field.text())
+        self.layout().search_field.textChanged.connect(self._on_search_query_changed)
+        self.layout().search_field.editingFinished.connect(self._editing_finished_callback)
+        self.layout().search_field.return_pressed.connect(
+            lambda: self._on_search_query_submitted(self.layout().search_field.text())
         )
-        self._layout.search_field.shift_return_pressed.connect(
+        self.layout().search_field.shift_return_pressed.connect(
             lambda: self._on_search_query_submitted(
-                self._layout.search_field.text(), always_create=True
+                self.layout().search_field.text(), always_create=True
             )
         )
 
-        self._layout.search_field.shift_holding.connect(lambda held: self._on_shift_held(held))
+        self.layout().search_field.shift_holding.connect(lambda held: self._on_shift_held(held))
 
     def _on_shift_held(self, held: bool):
         if held:
             self._is_shift_held = True
             opacity_effect = QGraphicsOpacityEffect(self)
             opacity_effect.setOpacity(0.3)
-            if self._layout.content_layout.count() > 0:
-                self._layout.content_layout.itemAt(0).widget().setGraphicsEffect(opacity_effect)
+            if self.layout().content_layout.count() > 0:
+                self.layout().content_layout.itemAt(0).widget().setGraphicsEffect(opacity_effect)
         else:
             self._is_shift_held = False
-            if self._layout.content_layout.count() > 0:
-                self._layout.content_layout.itemAt(0).widget().setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+            if self.layout().content_layout.count() > 0:
+                self.layout().content_layout.itemAt(0).widget().setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     def _clear_search_query(self) -> None:
-        self._layout.search_field.setText("")
+        self.layout().search_field.setText("")
 
     def _get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore
         raise NotImplementedError()
@@ -106,7 +105,7 @@ class SuggestBox[T](QWidget):
             self.hide_and_reset()
             return
         elif not self.isHidden():
-            self._layout.search_field.setFocus()
+            self.layout().search_field.setFocus()
 
         # Create and add item if no search results
         if (len(self._search_results) <= 0) or always_create:
@@ -173,14 +172,14 @@ class SuggestBox[T](QWidget):
             item: T | None = all_results[i] if i < len(all_results) else None
             self._set_item_widget(item=item, index=i)
 
-        if self._layout.content_layout.isEmpty():
-            self._layout.scroll_area.setHidden(True)
-            self._layout.content_layout.setContentsMargins(0, 0, 0, 0)
-            self._layout.search_field.setStyleSheet(autofill_line_edit_style())
+        if self.layout().content_layout.isEmpty():
+            self.layout().scroll_area.setHidden(True)
+            self.layout().content_layout.setContentsMargins(0, 0, 0, 0)
+            self.layout().search_field.setStyleSheet(autofill_line_edit_style())
         else:
-            self._layout.scroll_area.setHidden(False)
-            self._layout.content_layout.setContentsMargins(6, 6, 6, 6)
-            self._layout.search_field.setStyleSheet(autofill_line_edit_top_style())
+            self.layout().scroll_area.setHidden(False)
+            self.layout().content_layout.setContentsMargins(6, 6, 6, 6)
+            self.layout().search_field.setStyleSheet(autofill_line_edit_top_style())
 
     def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
@@ -189,7 +188,7 @@ class SuggestBox[T](QWidget):
         raise NotImplementedError()
 
     def _editing_finished_callback(self):
-        if self._layout.search_field.text() == "":
+        if self.layout().search_field.text() == "":
             self.done.emit()
             self.hide_and_reset()
 
@@ -203,13 +202,14 @@ class SuggestBox[T](QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         self._update_items()
         self._on_shift_held(held=False)
-        self._layout.search_field.setDisabled(False)
+        self.layout().search_field.setDisabled(False)
         self._clear_search_query()
         return super().showEvent(event)
 
     @override
     def layout(self) -> SuggestBoxView:
-        return self._layout
+        """Return the typed layout for this widget."""
+        return super().layout()  # pyright: ignore[reportReturnType]
 
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:

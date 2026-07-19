@@ -58,7 +58,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         """
         # NOTE: Unlike tags, creating new field templates will ALWAYS spawn an edit window
         # since the user needs to decide what type of field it should be before it's created.
-        query: str = self._layout.search_field.text()
+        query: str = self.layout().search_field.text()
         panel = EditFieldTemplateModal()
         modal = PanelModal(
             panel,
@@ -126,7 +126,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             self._clear_search_query()
 
         edit_item_panel.hide()
-        self._on_search_query_changed(self._layout.search_field.text())
+        self._on_search_query_changed(self.layout().search_field.text())
 
     @override
     def _edit_item(self, edit_item_panel: PanelWidget) -> None:
@@ -136,18 +136,18 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self._lib.update_field_template(
             edit_item_panel.old_field_type, edit_item_panel.build_field_template()
         )
-        self._update_items(self._layout.search_field.text())
+        self._update_items(self.layout().search_field.text())
 
     @override
     def _get_item_widget(self, index: int, library: Library | None) -> FieldTemplateWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
-        if self._layout.content_layout.count() <= index:
-            while self._layout.content_layout.count() <= index:
+        if self.layout().content_layout.count() <= index:
+            while self.layout().content_layout.count() <= index:
                 pad_field_template_widget = FieldTemplateWidget()
                 pad_field_template_widget.setHidden(True)
-                self._layout.content_layout.addWidget(pad_field_template_widget)
+                self.layout().content_layout.addWidget(pad_field_template_widget)
 
-        field_template_widget: QWidget = self._layout.content_layout.itemAt(index).widget()
+        field_template_widget: QWidget = self.layout().content_layout.itemAt(index).widget()
         assert isinstance(field_template_widget, FieldTemplateWidget)
         return field_template_widget

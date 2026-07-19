@@ -7,6 +7,7 @@ from datetime import datetime as dt
 from enum import IntEnum
 from functools import partial
 from pathlib import Path
+from typing import override
 from warnings import catch_warnings
 
 import structlog
@@ -47,7 +48,6 @@ class _ItemMode(IntEnum):
 class PreviewPanel(QWidget):
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
-        self._layout = PreviewPanelView(driver=driver, pixel_ratio=self.devicePixelRatio())
         self._driver = driver
         self._lib = self._driver.lib
         self._selected: list[int]
@@ -68,77 +68,77 @@ class PreviewPanel(QWidget):
             self,
         )
 
-        self.setLayout(self._layout)
+        self.setLayout(PreviewPanelView(driver=driver, pixel_ratio=self.devicePixelRatio()))
         self._set_item_mode(None)
         self._connect_callbacks()
 
     def _connect_callbacks(self) -> None:
         # Tag Search
-        self._layout.add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
+        self.layout().add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
         self._open_tag_search_action.activated.connect(self._open_tag_search_callback)
-        self._layout.tag_search_box.done.connect(self._tag_added_callback)
-        self._layout.containers.on_tags_update.connect(self._update_added_callback)
+        self.layout().tag_search_box.done.connect(self._tag_added_callback)
+        self.layout().containers.on_tags_update.connect(self._update_added_callback)
 
         # Field Search
-        self._layout.add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
+        self.layout().add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
         self._open_field_search_action.activated.connect(self._open_field_search_callback)
-        self._layout.field_search_box.done.connect(self._field_added_callback)
+        self.layout().field_search_box.done.connect(self._field_added_callback)
 
         # Previews
-        self._layout.preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
-        self._layout.preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
+        self.layout().preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
+        self.layout().preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
 
     def _set_item_mode(self, mode: _ItemMode | None):
         def hide_and_disable_buttons():
-            self._layout.add_tag_button.setHidden(True)
-            self._layout.add_tag_button.setEnabled(False)
-            self._layout.add_field_button.setHidden(True)
-            self._layout.add_field_button.setEnabled(False)
+            self.layout().add_tag_button.setHidden(True)
+            self.layout().add_tag_button.setEnabled(False)
+            self.layout().add_field_button.setHidden(True)
+            self.layout().add_field_button.setEnabled(False)
 
         def restore_buttons():
-            self._layout.add_tag_button.setHidden(False)
-            self._layout.add_tag_button.setEnabled(True)
-            self._layout.add_field_button.setHidden(False)
-            self._layout.add_field_button.setEnabled(True)
+            self.layout().add_tag_button.setHidden(False)
+            self.layout().add_tag_button.setEnabled(True)
+            self.layout().add_field_button.setHidden(False)
+            self.layout().add_field_button.setEnabled(True)
 
         if mode == _ItemMode.TAG:
-            self._layout.tag_search_box.added = self._layout.containers.tags
-            self._layout.field_search_box.hide_and_reset()
-            self._layout.tag_search_box.setHidden(False)
+            self.layout().tag_search_box.added = self.layout().containers.tags
+            self.layout().field_search_box.hide_and_reset()
+            self.layout().tag_search_box.setHidden(False)
             hide_and_disable_buttons()
         elif mode == _ItemMode.FIELD:
-            self._layout.tag_search_box.hide_and_reset()
-            self._layout.field_search_box.setHidden(False)
+            self.layout().tag_search_box.hide_and_reset()
+            self.layout().field_search_box.setHidden(False)
             hide_and_disable_buttons()
         else:
-            self._layout.tag_search_box.hide_and_reset()
-            self._layout.field_search_box.hide_and_reset()
+            self.layout().tag_search_box.hide_and_reset()
+            self.layout().field_search_box.hide_and_reset()
             restore_buttons()
 
     def _open_tag_search_callback(self) -> None:
-        self._layout.add_tag_button.setFocus()
-        self._layout.add_tag_button.click()
+        self.layout().add_tag_button.setFocus()
+        self.layout().add_tag_button.click()
 
     def _open_field_search_callback(self) -> None:
-        self._layout.add_field_button.setFocus()
-        self._layout.add_field_button.click()
+        self.layout().add_field_button.setFocus()
+        self.layout().add_field_button.click()
 
     def _tag_added_callback(self):
         self._set_item_mode(None)
-        self._layout.add_tag_button.setFocus()
+        self.layout().add_tag_button.setFocus()
 
     def _field_added_callback(self):
         self._set_item_mode(None)
-        self._layout.add_field_button.setFocus()
+        self.layout().add_field_button.setFocus()
 
     def _update_added_callback(self):
-        self._layout.tag_search_box.added = self._layout.containers.tags
+        self.layout().tag_search_box.added = self.layout().containers.tags
 
     def _thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
         if len(self._selected) != 1:
             return
 
-        if filepath != self._layout.preview_thumb.current_file:
+        if filepath != self.layout().preview_thumb.current_file:
             return
 
         if self._current_stats is None:
@@ -151,18 +151,18 @@ class PreviewPanel(QWidget):
         if stats.duration is not None:
             self._current_stats.duration = stats.duration
 
-        self._layout.file_attrs.update_stats(filepath, self._current_stats)
+        self.layout().file_attrs.update_stats(filepath, self._current_stats)
 
     def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
-            self._layout.field_search_box.item_chosen.disconnect()
-            self._layout.tag_search_box.item_chosen.disconnect()
+            self.layout().field_search_box.item_chosen.disconnect()
+            self.layout().tag_search_box.item_chosen.disconnect()
 
-        self._layout.field_search_box.item_chosen.connect(self._add_field_to_selected)
-        self._layout.tag_search_box.item_chosen.connect(self._add_tag_to_selected)
+        self.layout().field_search_box.item_chosen.connect(self._add_field_to_selected)
+        self.layout().tag_search_box.item_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
-        self._layout.containers.add_field_to_selected(template)
+        self.layout().containers.add_field_to_selected(template)
         # TODO: Allow editing of fields across multiple entries at once.
         if len(self._selected) == 1:
             if self._driver.settings.edit_field_on_add:
@@ -175,7 +175,7 @@ class PreviewPanel(QWidget):
                 if entry_field is not None:
                     self._edit_field(entry.id, entry_field)
 
-            self._layout.containers.update_from_entry(self._selected[0])
+            self.layout().containers.update_from_entry(self._selected[0])
 
     def _edit_field(self, entry_id: int, field: BaseField) -> None:
         # TODO: A lot of this code is similar to or straight up shared with FieldContainers.
@@ -190,7 +190,7 @@ class PreviewPanel(QWidget):
                 inline_title=False,
             )
             edit_modal.saved_data.connect(
-                partial(self._layout.containers.update_text_field_callback, field, entry_id)
+                partial(self.layout().containers.update_text_field_callback, field, entry_id)
             )
             edit_modal.show()
         elif type(field) is DatetimeField:
@@ -201,21 +201,21 @@ class PreviewPanel(QWidget):
                 inline_title=False,
             )
             edit_modal.saved_data.connect(
-                partial(self._layout.containers.update_datetime_field_callback, field, entry_id)
+                partial(self.layout().containers.update_datetime_field_callback, field, entry_id)
             )
             edit_modal.show()
 
     def _add_tag_to_selected(self, tag_id: int) -> None:
-        self._layout.containers.add_tags_to_selected(tag_id)
+        self.layout().containers.add_tags_to_selected(tag_id)
         if len(self._selected) == 1:
-            self._layout.containers.update_from_entry(self._selected[0])
+            self.layout().containers.update_from_entry(self._selected[0])
 
     def _toggle_ffmpeg_warning(self, enable_warning: bool = True) -> None:
         if enable_warning and (not FfmpegStatus.which() or not FfprobeStatus.which()):
-            self._layout.warning_banner.show()
+            self.layout().warning_banner.show()
             return
 
-        self._layout.warning_banner.hide()
+        self.layout().warning_banner.hide()
 
     def set_selection(self, selected: list[int], update_preview: bool = True) -> None:
         """Render the panel widgets with the newest data from the Library.
@@ -230,13 +230,13 @@ class PreviewPanel(QWidget):
         try:
             # No Items Selected
             if len(selected) == 0:
-                self._layout.preview_thumb.hide_preview()
+                self.layout().preview_thumb.hide_preview()
                 self._current_stats = None
-                self._layout.file_attrs.update_stats()
-                self._layout.file_attrs.update_date_label()
-                self._layout.containers.hide_containers()
-                self._layout.add_tag_button.setEnabled(False)
-                self._layout.add_field_button.setEnabled(False)
+                self.layout().file_attrs.update_stats()
+                self.layout().file_attrs.update_date_label()
+                self.layout().containers.hide_containers()
+                self.layout().add_tag_button.setEnabled(False)
+                self.layout().add_field_button.setEnabled(False)
 
             # One Item Selected
             elif len(selected) == 1:
@@ -244,25 +244,25 @@ class PreviewPanel(QWidget):
                 entry: Entry = unwrap(self._lib.get_entry(entry_id))
 
                 filepath: Path = unwrap(self._lib.library_dir) / entry.path
-                if filepath != self._layout.preview_thumb.current_file:
+                if filepath != self.layout().preview_thumb.current_file:
                     self._current_stats = None
 
                 if update_preview:
-                    stats: FileAttributeData = self._layout.preview_thumb.display_file(filepath)
+                    stats: FileAttributeData = self.layout().preview_thumb.display_file(filepath)
                     self._current_stats = stats
-                    self._layout.file_attrs.update_stats(filepath, stats)
-                self._layout.file_attrs.update_date_label(filepath)
-                self._layout.containers.update_from_entry(entry_id)
+                    self.layout().file_attrs.update_stats(filepath, stats)
+                self.layout().file_attrs.update_date_label(filepath)
+                self.layout().containers.update_from_entry(entry_id)
                 self._set_selection_callback()
 
             # Multiple Selected Items
             elif len(selected) > 1:
                 # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
-                self._layout.preview_thumb.hide_preview()  # TODO: Render mixed selection
+                self.layout().preview_thumb.hide_preview()  # TODO: Render mixed selection
                 self._current_stats = None
-                self._layout.file_attrs.update_multi_selection(len(selected))
-                self._layout.file_attrs.update_date_label()
-                self._layout.containers.hide_containers()  # TODO: Allow for mixed editing
+                self.layout().file_attrs.update_multi_selection(len(selected))
+                self.layout().file_attrs.update_date_label()
+                self.layout().containers.hide_containers()  # TODO: Allow for mixed editing
                 self._set_selection_callback()
 
         except Exception as e:
@@ -270,8 +270,13 @@ class PreviewPanel(QWidget):
 
     def stop_media_playback(self) -> None:
         """Stop any media playback in the preview panel."""
-        self._layout.preview_thumb.media_player.stop()
+        self.layout().preview_thumb.media_player.stop()
 
     @property
     def containers(self) -> FieldContainers:
-        return self._layout.containers
+        return self.layout().containers
+
+    @override
+    def layout(self) -> PreviewPanelView:
+        """Return the typed layout for this widget."""
+        return super().layout()  # pyright: ignore[reportReturnType]

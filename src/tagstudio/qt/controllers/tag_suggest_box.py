@@ -64,7 +64,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         Args:
             add_to_entry (bool): Should this item be added to currently selected entries?
         """
-        query: str = self._layout.search_field.text()
+        query: str = self.layout().search_field.text()
 
         if self._driver.settings.edit_tag_on_create:
             panel: BuildTagPanel = BuildTagPanel(self._lib)
@@ -150,7 +150,7 @@ class TagSuggestBox(SuggestBox[Tag]):
             self._clear_search_query()
 
         edit_item_panel.hide()
-        self._on_search_query_changed(self._layout.search_field.text())
+        self._on_search_query_changed(self.layout().search_field.text())
 
     @override
     def _edit_item(self, edit_item_panel: PanelWidget) -> None:
@@ -162,19 +162,19 @@ class TagSuggestBox(SuggestBox[Tag]):
             parent_ids=edit_item_panel.parent_ids,
             aliases=edit_item_panel.aliases,
         )
-        self._update_items(self._layout.search_field.text())
+        self._update_items(self.layout().search_field.text())
 
     @override
     def _get_item_widget(self, index: int, library: Library | None) -> TagWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
-        if self._layout.content_layout.count() <= index:
-            while self._layout.content_layout.count() <= index:
+        if self.layout().content_layout.count() <= index:
+            while self.layout().content_layout.count() <= index:
                 tag_widget = TagWidget(tag=None, has_edit=True, has_remove=True, library=library)
                 tag_widget.on_remove.connect(self._update_items)
                 tag_widget.setHidden(True)
-                self._layout.content_layout.addWidget(tag_widget)
+                self.layout().content_layout.addWidget(tag_widget)
 
-        tag_widget: QWidget = self._layout.content_layout.itemAt(index).widget()
+        tag_widget: QWidget = self.layout().content_layout.itemAt(index).widget()
         assert isinstance(tag_widget, TagWidget)
         return tag_widget

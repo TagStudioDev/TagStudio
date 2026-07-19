@@ -17,10 +17,10 @@ def test_update_selection_empty(qt_driver: QtDriver):
     panel.set_selection(qt_driver.selected)
 
     # Panel should disable UI that allows for entry modification
-    assert panel._layout.add_tag_button.isEnabled() == panel._layout.add_field_button.isEnabled()
+    assert panel.layout().add_tag_button.isEnabled() == panel.layout().add_field_button.isEnabled()
     assert (
-        not panel._layout.add_tag_button.isEnabled()
-        and not panel._layout.add_field_button.isEnabled()
+        not panel.layout().add_tag_button.isEnabled()
+        and not panel.layout().add_field_button.isEnabled()
     )
 
 
@@ -32,8 +32,8 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
     panel.set_selection(qt_driver.selected)
 
     # Panel should enable UI that allows for entry modification
-    assert panel._layout.add_tag_button.isEnabled() == panel._layout.add_field_button.isEnabled()
-    assert panel._layout.add_tag_button.isEnabled() and panel._layout.add_field_button.isEnabled()
+    assert panel.layout().add_tag_button.isEnabled() == panel.layout().add_field_button.isEnabled()
+    assert panel.layout().add_tag_button.isEnabled() and panel.layout().add_field_button.isEnabled()
 
 
 def test_update_selection_multiple(qt_driver: QtDriver):
@@ -45,5 +45,5 @@ def test_update_selection_multiple(qt_driver: QtDriver):
     panel.set_selection(qt_driver.selected)
 
     # Panel should enable UI that allows for entry modification
-    assert panel._layout.add_tag_button.isEnabled() == panel._layout.add_field_button.isEnabled()
-    assert panel._layout.add_tag_button.isEnabled() and panel._layout.add_field_button.isEnabled()
+    assert panel.layout().add_tag_button.isEnabled() == panel.layout().add_field_button.isEnabled()
+    assert panel.layout().add_tag_button.isEnabled() and panel.layout().add_field_button.isEnabled()
