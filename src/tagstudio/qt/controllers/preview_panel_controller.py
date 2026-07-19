@@ -77,7 +77,7 @@ class PreviewPanel(QWidget):
         self._layout.add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
         self._open_tag_search_action.activated.connect(self._open_tag_search_callback)
         self._layout.tag_search_box.done.connect(self._tag_added_callback)
-        self._layout.tag_search_box.items_updated.connect(self._update_added_callback)
+        self._layout.containers.on_tags_update.connect(self._update_added_callback)
 
         # Field Search
         self._layout.add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))

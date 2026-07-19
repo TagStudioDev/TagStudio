@@ -9,7 +9,7 @@ from functools import partial
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -46,6 +46,8 @@ logger = structlog.get_logger(__name__)
 
 class FieldContainers(QWidget):
     """Widget for the tag and field containers displayed inside the Preview Panel."""
+
+    on_tags_update = Signal()
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
@@ -421,7 +423,10 @@ class FieldContainers(QWidget):
             inner_widget.set_tags(tags)
 
             inner_widget.on_update.connect(
-                lambda: self.update_from_entry(self.cached_entries[0].id, update_badges=True)
+                lambda: (
+                    self.update_from_entry(self.cached_entries[0].id, update_badges=True),
+                    self.on_tags_update.emit(),
+                )
             )
         else:
             text = f"<i>{Translations['field.mixed_data']}</i>"

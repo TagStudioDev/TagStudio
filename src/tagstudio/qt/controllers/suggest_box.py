@@ -44,7 +44,6 @@ def _item_name(item: object) -> str:
 class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal()
-    items_updated = Signal()
 
     def __init__(self, driver: "QtDriver", view: SuggestBoxView) -> None:
         super().__init__()
@@ -190,7 +189,6 @@ class SuggestBox[T](QWidget):
         raise NotImplementedError()
 
     def _editing_finished_callback(self):
-        self.items_updated.emit()
         if self._layout.search_field.text() == "":
             self.done.emit()
             self.hide_and_reset()
