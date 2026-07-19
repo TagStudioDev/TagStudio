@@ -166,7 +166,6 @@ class TagWidget(QWidget):
         self.bg_button.setFixedHeight(22)
 
         self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.bg_button.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         self.base_layout.addWidget(self.bg_button)
 

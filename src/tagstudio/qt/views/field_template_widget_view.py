@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, Qt
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.qt.models.palette import ColorType, get_tag_color
@@ -30,7 +30,7 @@ class FieldTemplateWidgetView(QWidget):
 
         self.__root_layout = QVBoxLayout(self)
         self.__root_layout.setObjectName("root_layout")
-
+        self.__root_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.__root_layout.setContentsMargins(0, 0, 0, 0)
 
         # Background button
@@ -47,6 +47,8 @@ class FieldTemplateWidgetView(QWidget):
         self.__inner_layout.setObjectName("inner_layout")
         self._bg_button.setLayout(self.__inner_layout)
 
+        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+
         self.__inner_layout.setContentsMargins(0, 0, 0, 0)
 
         # Remove button
@@ -58,7 +60,7 @@ class FieldTemplateWidgetView(QWidget):
         self._delete_button.setMaximumSize(22, 22)
 
         self.__inner_layout.addWidget(self._delete_button)
-        self.__inner_layout.addStretch(1)
+        self.__inner_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.__connect_callbacks()
 

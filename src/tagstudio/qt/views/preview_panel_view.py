@@ -11,7 +11,7 @@ from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidget
 
 from tagstudio.core.constants import FFMPEG_HELP_URL
-from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
+from tagstudio.qt.controllers.field_suggest_box import FieldSuggestBox
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.controllers.return_button import ReturnButton
 from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
@@ -19,7 +19,6 @@ from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
@@ -36,20 +35,16 @@ class PreviewPanelView(QVBoxLayout):
         self.setSpacing(6)
         rm = ResourceManager()
 
-        # Search/Create Boxes
-        self.field_search_box: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
-            driver.lib,
-            is_field_template_chooser=True,
-            view=FieldTemplateSearchPanelView(is_field_template_chooser=True),
-        )
+        def ph_text(key: str) -> str:
+            return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
 
-        tag_placeholder = " ".join(
-            [Translations["home.search_or_create_tags"], Translations["home.search.how_to_exit"]]
+        # Search/Create Boxes
+        self.field_search_box = FieldSuggestBox(
+            driver, view=SuggestBoxView(placeholder_text=ph_text("home.search_or_create_fields"))
         )
         self.tag_search_box = TagSuggestBox(
-            driver, view=SuggestBoxView(placeholder_text=tag_placeholder)
+            driver, view=SuggestBoxView(placeholder_text=ph_text("home.search_or_create_tags"))
         )
-        self.tag_search_box.hide()
 
         self.preview_thumb = PreviewThumb(driver.lib, driver)
         self.file_attrs = FileAttributes(driver.lib, driver)
@@ -119,8 +114,9 @@ class PreviewPanelView(QVBoxLayout):
         add_buttons_layout.addWidget(self.add_tag_button)
         add_buttons_layout.addWidget(self.add_field_button)
         add_buttons_layout.addWidget(self.tag_search_box)
-        # add_buttons_layout.addWidget(self.field_search)
+        add_buttons_layout.addWidget(self.field_search_box)
 
+        # Finalize Layout
         preview_layout.addWidget(self.preview_thumb)
         info_layout.addWidget(self.warning_banner)
         info_layout.addWidget(self.file_attrs)
@@ -130,6 +126,5 @@ class PreviewPanelView(QVBoxLayout):
         splitter.addWidget(info_section)
         splitter.setStretchFactor(1, 2)
 
-        # Finalize Layout
         self.addWidget(splitter)
         self.addWidget(add_buttons_container)

@@ -242,6 +242,27 @@ class FieldContainers(QWidget):
         )
         self.driver.add_tags_to_selected_callback(tag_ids)
 
+    def update_text_field_callback(
+        self, field: TextField, entry_id: int, content: dict[str, str | bool]
+    ) -> None:
+        """Callback called when a text field has updated data."""
+        self._update_text_field(
+            field, str(content["name"]), str(content["value"]), bool(content["is_multiline"])
+        )
+        self.update_from_entry(entry_id)
+
+    def update_datetime_field_callback(
+        self, field: DatetimeField, entry_id: int, content: dict[str, str]
+    ) -> None:
+        """Callback called when a datetime field has updated data."""
+        self.update_datetime_field(field, str(content["name"]), str(content["value"]))
+        self.update_from_entry(entry_id)
+
+    def remove_field_callback(self, field: BaseField, entry_id: int) -> None:
+        """Callback called when a field needs to be removed from an entry."""
+        self._remove_field(field)
+        self.update_from_entry(entry_id)
+
     def write_field_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
         """Update/Create data for a field FieldContainer.
 
@@ -251,27 +272,6 @@ class FieldContainers(QWidget):
             is_mixed(bool): Relevant when multiple items are selected.
                 If True, field is not present in all selected items.
         """
-
-        def update_text_field_callback(
-            field: TextField, entry_id: int, content: dict[str, str | bool]
-        ) -> None:
-            """Callback called when a text field has updated data."""
-            self._update_text_field(
-                field, str(content["name"]), str(content["value"]), bool(content["is_multiline"])
-            )
-            self.update_from_entry(entry_id)
-
-        def update_datetime_field_callback(
-            field: DatetimeField, entry_id: int, content: dict[str, str]
-        ) -> None:
-            """Callback called when a datetime field has updated data."""
-            self.update_datetime_field(field, str(content["name"]), str(content["value"]))
-            self.update_from_entry(entry_id)
-
-        def remove_field_callback(field: BaseField, entry_id: int) -> None:
-            """Callback called when a field needs to be removed from an entry."""
-            self._remove_field(field)
-            self.update_from_entry(entry_id)
 
         def write_text_container(
             container: FieldContainer, field: TextField, title: str, is_mixed: bool
@@ -296,14 +296,14 @@ class FieldContainers(QWidget):
                     inline_title=False,
                 )
                 edit_modal.saved_data.connect(
-                    partial(update_text_field_callback, field, self.top_entry_id)
+                    partial(self.update_text_field_callback, field, self.top_entry_id)
                 )
 
                 container.set_edit_callback(edit_modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(title),
-                        callback=partial(remove_field_callback, field, self.top_entry_id),
+                        callback=partial(self.remove_field_callback, field, self.top_entry_id),
                     )
                 )
 
@@ -334,14 +334,14 @@ class FieldContainers(QWidget):
                     inline_title=False,
                 )
                 edit_modal.saved_data.connect(
-                    partial(update_datetime_field_callback, field, self.top_entry_id)
+                    partial(self.update_datetime_field_callback, field, self.top_entry_id)
                 )
 
                 container.set_edit_callback(edit_modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
-                        callback=partial(remove_field_callback, field, self.top_entry_id),
+                        callback=partial(self.remove_field_callback, field, self.top_entry_id),
                     )
                 )
 
@@ -352,7 +352,7 @@ class FieldContainers(QWidget):
             container.set_remove_callback(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.name),
-                    callback=partial(remove_field_callback, field, self.top_entry_id),
+                    callback=partial(self.remove_field_callback, field, self.top_entry_id),
                 )
             )
 

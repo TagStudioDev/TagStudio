@@ -19,7 +19,6 @@ from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
@@ -43,9 +42,9 @@ def _item_name(item: object) -> str:
 
 
 class SuggestBox[T](QWidget):
-    item_chosen = Signal(int)
+    item_chosen = Signal(object)
     done = Signal()
-    tags_updated = Signal()
+    items_updated = Signal()
 
     def __init__(self, driver: "QtDriver", view: SuggestBoxView) -> None:
         super().__init__()
@@ -60,14 +59,19 @@ class SuggestBox[T](QWidget):
         self.setLayout(self._layout)
         self._connect_callbacks()
 
+    def hide_and_reset(self):
+        self.hide()
+        self._layout.search_field.setDisabled(True)
+        self._on_shift_held(held=False)
+
     def _connect_callbacks(self) -> None:
-        self._layout.search_field.textChanged.connect(self.on_search_query_changed)
-        self._layout.search_field.editingFinished.connect(self.test_editing_finished)
+        self._layout.search_field.textChanged.connect(self._on_search_query_changed)
+        self._layout.search_field.editingFinished.connect(self._editing_finished_callback)
         self._layout.search_field.return_pressed.connect(
-            lambda: self.on_search_query_submitted(self._layout.search_field.text())
+            lambda: self._on_search_query_submitted(self._layout.search_field.text())
         )
         self._layout.search_field.shift_return_pressed.connect(
-            lambda: self.on_search_query_submitted(
+            lambda: self._on_search_query_submitted(
                 self._layout.search_field.text(), always_create=True
             )
         )
@@ -86,16 +90,16 @@ class SuggestBox[T](QWidget):
             if self._layout.content_layout.count() > 0:
                 self._layout.content_layout.itemAt(0).widget().setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
-    def clear_search_query(self) -> None:
+    def _clear_search_query(self) -> None:
         self._layout.search_field.setText("")
 
-    def get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore[reportExplicitAny]
-        return self.get_item_widget(index, library)
+    def _get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore
+        raise NotImplementedError()
 
-    def on_search_query_changed(self, query: str) -> None:
-        self.update_items(query)
+    def _on_search_query_changed(self, query: str) -> None:
+        self._update_items(query)
 
-    def on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
+    def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
         logger.info("Query submitted")
         if not query:
@@ -107,17 +111,17 @@ class SuggestBox[T](QWidget):
 
         # Create and add item if no search results
         if (len(self._search_results) <= 0) or always_create:
-            self.on_item_create()
+            self._on_item_create()
         else:
             self._on_item_chosen(self._search_results[0])
 
-        self.clear_search_query()
-        self.update_items()
+        self._clear_search_query()
+        self._update_items()
 
-    def on_item_create(self) -> None:
+    def _on_item_create(self) -> None:
         raise NotImplementedError()
 
-    def on_item_edit(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _on_item_edit(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def _on_item_chosen(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
@@ -126,13 +130,13 @@ class SuggestBox[T](QWidget):
     def _is_excluded(self, item: T) -> bool:
         return _item_id(item) in self.excluded
 
-    def update_items(self, query: str | None = None) -> None:
+    def _update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items", limit=self._limit)
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
-        search_results: tuple[list[T], list[T]] = self.search_items(query_lower)
+        search_results: tuple[list[T], list[T]] = self._search_items(query_lower)
 
         # Sort and prioritize the results
         direct_results = list({item for item in search_results[0] if not self._is_excluded(item)})
@@ -168,7 +172,7 @@ class SuggestBox[T](QWidget):
 
         for i in range(0, self._limit):
             item: T | None = all_results[i] if i < len(all_results) else None
-            self.set_item_widget(item=item, index=i)
+            self._set_item_widget(item=item, index=i)
 
         if self._layout.content_layout.isEmpty():
             self._layout.scroll_area.setHidden(True)
@@ -179,35 +183,30 @@ class SuggestBox[T](QWidget):
             self._layout.content_layout.setContentsMargins(6, 6, 6, 6)
             self._layout.search_field.setStyleSheet(autofill_line_edit_top_style())
 
-    def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
+    def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def test_editing_finished(self):
-        logger.info("Editing finished")
-        self.tags_updated.emit()
+    def _editing_finished_callback(self):
+        self.items_updated.emit()
         if self._layout.search_field.text() == "":
             self.done.emit()
             self.hide_and_reset()
 
-    def hide_and_reset(self):
-        self.hide()
-        self._layout.search_field.setDisabled(True)
-        self._on_shift_held(held=False)
-
-    def create_item_from_modal(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _create_item_from_modal(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def edit_item(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _edit_item(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     @override
     def showEvent(self, event: QShowEvent) -> None:
-        self.update_items()
+        self._update_items()
         self._on_shift_held(held=False)
-        self.clear_search_query()
+        self._layout.search_field.setDisabled(False)
+        self._clear_search_query()
         return super().showEvent(event)
 
     @override

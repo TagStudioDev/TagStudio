@@ -3,6 +3,9 @@
 
 
 import typing
+from datetime import datetime as dt
+from enum import IntEnum
+from functools import partial
 from pathlib import Path
 from warnings import catch_warnings
 
@@ -11,18 +14,34 @@ from PySide6 import QtCore
 from PySide6.QtGui import QShortcut
 from PySide6.QtWidgets import QWidget
 
-from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
+from tagstudio.core.library.alchemy.fields import (
+    BaseField,
+    BaseFieldTemplate,
+    DatetimeField,
+    DatetimeFieldTemplate,
+    TextField,
+    TextFieldTemplate,
+)
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
+from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+
+
+class _ItemMode(IntEnum):
+    TAG = 1
+    FIELD = 2
 
 
 class PreviewPanel(QWidget):
@@ -41,35 +60,59 @@ class PreviewPanel(QWidget):
         self._add_tag_action = QShortcut(key, self)
 
         self.setLayout(self._layout)
+        self._set_item_mode(None)
         self._connect_callbacks()
 
     def _connect_callbacks(self) -> None:
-        self._layout.add_field_button.clicked.connect(self._add_field_button_callback)
-        self._layout.add_tag_button.clicked.connect(self._add_tag_button_callback)
-        self._layout.preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
+        # Tag Search
+        self._layout.add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
         self._add_tag_action.activated.connect(self._layout.add_tag_button.setFocus)
         self._add_tag_action.activated.connect(self._layout.add_tag_button.click)
-        self._layout.tag_search_box.done.connect(self.tag_added_callback)
-        self._layout.tag_search_box.tags_updated.connect(self._update_added_callback)
+        self._layout.tag_search_box.done.connect(self._tag_added_callback)
+        self._layout.tag_search_box.items_updated.connect(self._update_added_callback)
+
+        # Field Search
+        self._layout.add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
+        self._layout.field_search_box.done.connect(self._field_added_callback)
+
+        # Previews
+        self._layout.preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
         self._layout.preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
 
-    def _add_field_button_callback(self) -> None:
-        # self.__add_field_modal.show()
-        pass
+    def _set_item_mode(self, mode: _ItemMode | None):
+        def hide_and_disable_buttons():
+            self._layout.add_tag_button.setHidden(True)
+            self._layout.add_tag_button.setEnabled(False)
+            self._layout.add_field_button.setHidden(True)
+            self._layout.add_field_button.setEnabled(False)
 
-    def _add_tag_button_callback(self) -> None:
-        self._layout.tag_search_box.added = self._layout.containers.tags
-        self._layout.tag_search_box.layout().search_field.setDisabled(False)
-        self._layout.tag_search_box.setHidden(False)
-        self._layout.add_tag_button.setHidden(True)
-        self._layout.add_field_button.setHidden(True)
+        def restore_buttons():
+            self._layout.add_tag_button.setHidden(False)
+            self._layout.add_tag_button.setEnabled(True)
+            self._layout.add_field_button.setHidden(False)
+            self._layout.add_field_button.setEnabled(True)
 
-    def tag_added_callback(self):
-        self._layout.tag_search_box.setHidden(True)
-        self._layout.add_tag_button.setHidden(False)
-        self._layout.add_field_button.setHidden(False)
+        if mode == _ItemMode.TAG:
+            self._layout.field_search_box.hide_and_reset()
+            self._layout.tag_search_box.added = self._layout.containers.tags
+            self._layout.tag_search_box.setHidden(False)
+            hide_and_disable_buttons()
+        elif mode == _ItemMode.FIELD:
+            self._layout.tag_search_box.hide_and_reset()
+            self._layout.field_search_box.setHidden(False)
+            hide_and_disable_buttons()
+        else:
+            self._layout.tag_search_box.hide_and_reset()
+            self._layout.field_search_box.hide_and_reset()
+            restore_buttons()
 
+    def _tag_added_callback(self):
+        self._set_item_mode(None)
         self._layout.add_tag_button.setFocus()
+
+    def _field_added_callback(self):
+        self._set_item_mode(None)
+        self._layout.add_field_button.setFocus()
 
     def _update_added_callback(self):
         self._layout.tag_search_box.added = self._layout.containers.tags
@@ -95,16 +138,55 @@ class PreviewPanel(QWidget):
 
     def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
-            self._layout.field_search_box.field_template_chosen.disconnect()
+            self._layout.field_search_box.item_chosen.disconnect()
             self._layout.tag_search_box.item_chosen.disconnect()
 
-        self._layout.field_search_box.field_template_chosen.connect(self._add_field_to_selected)
+        self._layout.field_search_box.item_chosen.connect(self._add_field_to_selected)
         self._layout.tag_search_box.item_chosen.connect(self._add_tag_to_selected)
 
     def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
         self._layout.containers.add_field_to_selected(template)
+        # TODO: Allow editing of fields across multiple entries at once.
         if len(self._selected) == 1:
+            if self._driver.settings.edit_field_on_add:
+                entry = unwrap(self._lib.get_entry_full(self._selected[0]))
+                entry_field = None
+                if isinstance(template, TextFieldTemplate):
+                    entry_field = entry.text_fields[-1]
+                elif isinstance(template, DatetimeFieldTemplate):
+                    entry_field = entry.datetime_fields[-1]
+                if entry_field is not None:
+                    self._edit_field(entry.id, entry_field)
+
             self._layout.containers.update_from_entry(self._selected[0])
+
+    def _edit_field(self, entry_id: int, field: BaseField) -> None:
+        # TODO: A lot of this code is similar to or straight up shared with FieldContainers.
+        # It's possible to reuse it later, after a FieldContainers refactor.
+        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
+
+        if type(field) is TextField:
+            edit_modal = PanelModal(
+                EditText(field.name, field.value, field.is_multiline),
+                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                is_savable=True,
+                inline_title=False,
+            )
+            edit_modal.saved_data.connect(
+                partial(self._layout.containers.update_text_field_callback, field, entry_id)
+            )
+            edit_modal.show()
+        elif type(field) is DatetimeField:
+            edit_modal = PanelModal(
+                DatetimePicker(self._driver, field.name, field.value or dt.now()),
+                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                is_savable=True,
+                inline_title=False,
+            )
+            edit_modal.saved_data.connect(
+                partial(self._layout.containers.update_datetime_field_callback, field, entry_id)
+            )
+            edit_modal.show()
 
     def _add_tag_to_selected(self, tag_id: int) -> None:
         self._layout.containers.add_tags_to_selected(tag_id)
@@ -127,6 +209,7 @@ class PreviewPanel(QWidget):
             (Only works with one or more items selected)
         """
         self._selected = selected
+        self._set_item_mode(None)
         try:
             # No Items Selected
             if len(selected) == 0:
@@ -135,12 +218,8 @@ class PreviewPanel(QWidget):
                 self._layout.file_attrs.update_stats()
                 self._layout.file_attrs.update_date_label()
                 self._layout.containers.hide_containers()
-
                 self._layout.add_tag_button.setEnabled(False)
                 self._layout.add_field_button.setEnabled(False)
-                self._layout.add_tag_button.setHidden(False)
-                self._layout.add_field_button.setHidden(False)
-                self._layout.tag_search_box.hide_and_reset()
 
             # One Item Selected
             elif len(selected) == 1:
@@ -157,14 +236,7 @@ class PreviewPanel(QWidget):
                     self._layout.file_attrs.update_stats(filepath, stats)
                 self._layout.file_attrs.update_date_label(filepath)
                 self._layout.containers.update_from_entry(entry_id)
-
                 self._set_selection_callback()
-
-                self._layout.add_tag_button.setEnabled(True)
-                self._layout.add_field_button.setEnabled(True)
-                self._layout.add_tag_button.setHidden(False)
-                self._layout.add_field_button.setHidden(False)
-                self._layout.tag_search_box.hide_and_reset()
 
             # Multiple Selected Items
             elif len(selected) > 1:
@@ -174,14 +246,7 @@ class PreviewPanel(QWidget):
                 self._layout.file_attrs.update_multi_selection(len(selected))
                 self._layout.file_attrs.update_date_label()
                 self._layout.containers.hide_containers()  # TODO: Allow for mixed editing
-
                 self._set_selection_callback()
-
-                self._layout.add_tag_button.setEnabled(True)
-                self._layout.add_field_button.setEnabled(True)
-                self._layout.add_tag_button.setHidden(False)
-                self._layout.add_field_button.setHidden(False)
-                self._layout.tag_search_box.hide_and_reset()
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)

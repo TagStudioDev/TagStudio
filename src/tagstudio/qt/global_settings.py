@@ -75,6 +75,7 @@ class GlobalSettings(BaseModel):
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
     edit_tag_on_create: bool = Field(default=False)
+    edit_field_on_add: bool = Field(default=True)
     theme: Theme = Field(default=Theme.SYSTEM)
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
