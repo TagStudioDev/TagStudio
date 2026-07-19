@@ -107,7 +107,6 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
 
         # TODO: Add tabbing to different items, and use underline to indicate which will be added
         underlined_widget.toggle_underline(index != 0)
-
         # Disconnect previous callbacks
         with catch_warnings(record=True):
             field_template_widget.on_edit.disconnect()

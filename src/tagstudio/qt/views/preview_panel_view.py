@@ -19,7 +19,6 @@ from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
@@ -113,6 +112,7 @@ class PreviewPanelView(QVBoxLayout):
         add_buttons_layout.addWidget(self.tag_search_box)
         add_buttons_layout.addWidget(self.field_search_box)
 
+        # Finalize Layout
         preview_layout.addWidget(self.preview_thumb)
         info_layout.addWidget(self.warning_banner)
         info_layout.addWidget(self.file_attrs)
