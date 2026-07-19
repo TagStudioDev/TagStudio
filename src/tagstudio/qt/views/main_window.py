@@ -222,6 +222,7 @@ class MainMenuBar(QMenuBar):
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
         self.clear_select_action.setEnabled(False)
+        self.clear_select_action.setToolTip("Esc")
         self.edit_menu.addAction(self.clear_select_action)
 
         # Copy Fields

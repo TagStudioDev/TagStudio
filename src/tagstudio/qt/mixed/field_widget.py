@@ -34,7 +34,9 @@ class FieldContainer(QWidget):
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
-        button_size = 24
+        button_size = 22
+        icon_margins = 4
+        icon_size = button_size - icon_margins
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
@@ -42,7 +44,7 @@ class FieldContainer(QWidget):
 
         self.inner_layout = QVBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(6, 0, 6, 6)
+        self.inner_layout.setContentsMargins(3, 0, 0, 3)
         self.inner_layout.setSpacing(0)
         self.field_container = QWidget()
         self.field_container.setObjectName("fieldContainer")
@@ -82,7 +84,7 @@ class FieldContainer(QWidget):
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
         self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(FieldContainer.edit_icon)))
-        self.edit_button.setIconSize(QSize(20, 20))
+        self.edit_button.setIconSize(QSize(icon_size, icon_size))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
@@ -93,7 +95,7 @@ class FieldContainer(QWidget):
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
         self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(FieldContainer.trash_icon)))
-        self.remove_button.setIconSize(QSize(20, 20))
+        self.remove_button.setIconSize(QSize(icon_size, icon_size))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)
