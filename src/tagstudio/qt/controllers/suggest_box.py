@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
+from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
@@ -82,11 +83,15 @@ class SuggestBox[T](QWidget):
             opacity_effect = QGraphicsOpacityEffect(self)
             opacity_effect.setOpacity(0.3)
             if self.layout().content_layout.count() > 0:
-                self.layout().content_layout.itemAt(0).widget().setGraphicsEffect(opacity_effect)
+                underlined_widget = self.layout().content_layout.itemAt(0).widget()
+                assert isinstance(underlined_widget, UnderlinedWidget)
+                underlined_widget.widget.setGraphicsEffect(opacity_effect)
         else:
             self._is_shift_held = False
             if self.layout().content_layout.count() > 0:
-                self.layout().content_layout.itemAt(0).widget().setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+                underlined_widget = self.layout().content_layout.itemAt(0).widget()
+                assert isinstance(underlined_widget, UnderlinedWidget)
+                underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     def _clear_search_query(self) -> None:
         self.layout().search_field.setText("")

@@ -15,6 +15,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
 from tagstudio.qt.controllers.field_template_widget_controller import FieldTemplateWidget
 from tagstudio.qt.controllers.suggest_box import SuggestBox
+from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
@@ -97,13 +98,18 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     @override
     def _set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
         """Set the field template of a field template widget at a specific index."""
-        field_template_widget: FieldTemplateWidget = self._get_item_widget(index, self._lib)
+        underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
+        field_template_widget = underlined_widget.widget
+        assert isinstance(field_template_widget, FieldTemplateWidget)
         field_template_widget.has_remove = False
         field_template_widget.set_field_template(item)
-        field_template_widget.setHidden(item is None)
+        underlined_widget.setHidden(item is None)
 
         if item is None:
             return
+
+        # TODO: Add tabbing to different items, and use underline to indicate which will be added
+        underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
@@ -139,15 +145,16 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self._update_items(self.layout().search_field.text())
 
     @override
-    def _get_item_widget(self, index: int, library: Library | None) -> FieldTemplateWidget:
+    def _get_item_widget(self, index: int, library: Library | None) -> UnderlinedWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
         if self.layout().content_layout.count() <= index:
             while self.layout().content_layout.count() <= index:
-                pad_field_template_widget = FieldTemplateWidget()
-                pad_field_template_widget.setHidden(True)
-                self.layout().content_layout.addWidget(pad_field_template_widget)
+                field_template_widget = FieldTemplateWidget()
+                widget = UnderlinedWidget(field_template_widget)
+                widget.setHidden(True)
+                self.layout().content_layout.addWidget(widget)
 
-        field_template_widget: QWidget = self.layout().content_layout.itemAt(index).widget()
-        assert isinstance(field_template_widget, FieldTemplateWidget)
-        return field_template_widget
+        widget_: QWidget = self.layout().content_layout.itemAt(index).widget()
+        assert isinstance(widget_, UnderlinedWidget)
+        return widget_

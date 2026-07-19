@@ -14,6 +14,7 @@ from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.controllers.suggest_box import SuggestBox
+from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
@@ -109,10 +110,12 @@ class TagSuggestBox(SuggestBox[Tag]):
     @override
     def _set_item_widget(self, item: Tag | None, index: int) -> None:
         """Set the tag of a tag widget at a specific index."""
-        tag_widget: TagWidget = self._get_item_widget(index, self._lib)
+        underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
+        tag_widget = underlined_widget.widget
+        assert isinstance(tag_widget, TagWidget)
         tag_widget.has_remove = False
         tag_widget.set_tag(item)
-        tag_widget.setHidden(item is None)
+        underlined_widget.setHidden(item is None)
         opacity_effect = QGraphicsOpacityEffect(self)
         opacity_effect.setOpacity(0.3)
         if item and item.id in self.added:
@@ -122,6 +125,9 @@ class TagSuggestBox(SuggestBox[Tag]):
 
         if item is None:
             return
+
+        # TODO: Add tabbing to different items, and use underline to indicate which will be added
+        underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
@@ -165,16 +171,17 @@ class TagSuggestBox(SuggestBox[Tag]):
         self._update_items(self.layout().search_field.text())
 
     @override
-    def _get_item_widget(self, index: int, library: Library | None) -> TagWidget:
+    def _get_item_widget(self, index: int, library: Library | None) -> UnderlinedWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
         if self.layout().content_layout.count() <= index:
             while self.layout().content_layout.count() <= index:
                 tag_widget = TagWidget(tag=None, has_edit=True, has_remove=True, library=library)
                 tag_widget.on_remove.connect(self._update_items)
-                tag_widget.setHidden(True)
-                self.layout().content_layout.addWidget(tag_widget)
+                widget = UnderlinedWidget(tag_widget)
+                widget.setHidden(True)
+                self.layout().content_layout.addWidget(widget)
 
-        tag_widget: QWidget = self.layout().content_layout.itemAt(index).widget()
-        assert isinstance(tag_widget, TagWidget)
-        return tag_widget
+        widget_: QWidget = self.layout().content_layout.itemAt(index).widget()
+        assert isinstance(widget_, UnderlinedWidget)
+        return widget_

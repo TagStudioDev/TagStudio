@@ -59,7 +59,9 @@ class SuggestBoxView(QVBoxLayout):
         self.scroll_area.setStyleSheet(scroll_area_style)
         scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
-        self.scroll_area.setMaximumHeight(28)
+        search_bar_height = 28
+        underline_padding = 7
+        self.scroll_area.setMaximumHeight(search_bar_height + underline_padding)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.verticalScrollBar().setEnabled(False)
         self.scroll_area.setContentsMargins(0, 0, 0, 0)

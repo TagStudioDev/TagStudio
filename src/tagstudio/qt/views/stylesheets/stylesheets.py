@@ -410,6 +410,13 @@ def tag_remove_button_style(
     """
 
 
+def widget_underline_style() -> str:
+    return f"""
+        background: {Palette.accent()};
+        border-radius: 2px;
+    """
+
+
 def title_line_edit_style() -> str:
     """Used to mimic an H3-like header style inside a QLineEdit."""
     return """
