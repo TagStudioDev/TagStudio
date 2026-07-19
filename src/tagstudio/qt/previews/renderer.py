@@ -1295,11 +1295,12 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a thumbnail for a PDF file.
+    def _pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
+        """Render a thumbnail for a PDF or Adobe Illustator file.
 
         filepath (Path): The path of the file.
             size (int): The size of the icon.
+            ext (str): The file extension.
         """
         im: Image.Image | None = None
 
@@ -1321,7 +1322,7 @@ class ThumbRenderer(QObject):
         else:
             page_size *= size / page_size.width()
         # Enlarge image for anti-aliasing
-        scale_factor = 2.5
+        scale_factor = 2.5 if ext in {".pdf"} else 1
         page_size *= scale_factor
         # Render image with no anti-aliasing for speed
         render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
@@ -1910,7 +1911,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
-                    image = self._pdf_thumb(_filepath, adj_size)
+                    image = self._pdf_thumb(_filepath, adj_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
                     image = self._archive_thumb(_filepath, ext)

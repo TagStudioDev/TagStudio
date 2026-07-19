@@ -105,6 +105,7 @@ class MediaCategories:
     # These sets are used either individually or together to form the final sets
     # for the MediaCategory(s).
     # These sets may be combined and are NOT 1:1 with the final categories.
+    _ADOBE_ILLUSTRATOR_SET: set[str] = {".ai"}
     _ADOBE_PHOTOSHOP_SET: set[str] = {
         ".pdd",
         ".psb",
@@ -580,7 +581,7 @@ class MediaCategories:
     )
     PDF_TYPES = MediaCategory(
         media_type=MediaType.PDF,
-        extensions=_PDF_SET,
+        extensions=_PDF_SET | _ADOBE_ILLUSTRATOR_SET,
         is_iana=False,
         name="pdf",
     )
