@@ -7,6 +7,7 @@ from datetime import datetime as dt
 from enum import IntEnum
 from functools import partial
 from pathlib import Path
+from typing import override
 from warnings import catch_warnings
 
 import structlog
