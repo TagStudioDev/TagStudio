@@ -201,8 +201,7 @@ class AboutModal(QWidget):
 
         # ripgrep Status
         ripgrep_path_title = QLabel("ripgrep")  # NOTE: Don't localize
-        ripgrep_path_content = ClickableLabel()
-        ripgrep_path_content.setText(f"{ripgrep_status}")  # TODO: Pass in constructor after #1386
+        ripgrep_path_content = ClickableLabel(f"{ripgrep_status}")
         ripgrep_location = RipgrepStatus.which()
         if ripgrep_location:
             ripgrep_path_content.clicked.connect(
