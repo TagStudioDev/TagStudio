@@ -225,7 +225,7 @@ class PreviewPanel(QWidget):
             )
             edit_modal.show()
         elif type(field) is DatetimeField:
-            edit_modal = PanelModal(
+            edit_modal = Modal(
                 DatetimePicker(self._driver, field.name, field.value or dt.now()),
                 window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
                 is_savable=True,
