@@ -40,7 +40,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
 import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
+from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VERSION
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
@@ -203,7 +203,7 @@ class QtDriver(DriverMixin, QObject):
         self.scrollbar_pos = 0
         self.spacing = None
 
-        self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
+        self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
         # self.title_text: str = self.base_title
         # self.buffer = {}

@@ -10,7 +10,8 @@ import traceback
 
 import structlog
 
-from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.core.constants import BUILD_TYPE, VERSION
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -59,7 +60,7 @@ def main():
         "--version",
         action="version",
         help="Displays TagStudio version information.",
-        version=f"TagStudio v{VERSION} {VERSION_BRANCH}",
+        version=f"TagStudio v{VERSION} {Translations[BUILD_TYPE] if BUILD_TYPE else ''}",
     )
     args = parser.parse_args()
 

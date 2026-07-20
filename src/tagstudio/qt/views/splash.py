@@ -10,7 +10,7 @@ from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSplashScreen, QWidget
 
-from tagstudio.core.constants import COPYRIGHT, COPYRIGHT_COMPACT, VERSION, VERSION_BRANCH
+from tagstudio.core.constants import BUILD_TYPE, COPYRIGHT, COPYRIGHT_COMPACT, VERSION
 from tagstudio.qt.global_settings import Splash
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
@@ -21,7 +21,12 @@ logger = structlog.get_logger(__name__)
 class SplashScreen:
     """The custom splash screen widget for TagStudio."""
 
-    VERSION_STR: str = f"{Translations['about.version']} {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"  # noqa: E501
+    VERSION_STR: str = " ".join(
+        [
+            f"{Translations['about.version']}",
+            f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
+        ]
+    )
     DEFAULT_SPLASH = Splash.AURORA
 
     def __init__(

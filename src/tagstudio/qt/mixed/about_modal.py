@@ -19,12 +19,12 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import (
+    BUILD_TYPE,
     COPYRIGHT,
     DISCORD_URL,
     DOCS_URL,
     GITHUB_REPO_URL,
     VERSION,
-    VERSION_BRANCH,
 )
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
@@ -42,7 +42,12 @@ from tagstudio.qt.views.stylesheets.stylesheets import form_content_style, heade
 class AboutModal(QWidget):
     """Modal window showing information about the TagStudio application."""
 
-    VERSION_STR: str = f"{Translations['about.version']} {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"  # noqa: E501
+    VERSION_STR: str = " ".join(
+        [
+            f"{Translations['about.version']}",
+            f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
+        ]
+    )
 
     def __init__(self, config_path: Path | str):
         super().__init__()

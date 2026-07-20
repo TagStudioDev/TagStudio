@@ -8,7 +8,7 @@ path = [
     "docs/CNAME",
     "docs/assets/**",
     "src/tagstudio/qt/resources.json",
-    "src/tagstudio/resources/icon.*",
+    "src/tagstudio/resources/icon*.*",
     "src/tagstudio/resources/tagstudio.desktop",
     "src/tagstudio/resources/templates/ts_ignore_template.txt",
     "src/tagstudio/resources/templates/ts_ignore_template_blank.txt",

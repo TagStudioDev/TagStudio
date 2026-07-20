@@ -10,6 +10,7 @@
     "about.version.latest": "{built_version} (Latest Release: {latest_version})",
     "about.website": "Website",
     "app.git": "Git Commit",
+    "app.nightly": "Nightly",
     "app.pre_release": "Pre-Release",
     "app.title": "{base_title} - Library '{library_dir}'",
     "color_manager.title": "Manage Tag Colors",
