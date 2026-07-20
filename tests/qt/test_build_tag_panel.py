@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportPrivateUsage = false
 
 from collections.abc import Callable
 
@@ -22,7 +23,7 @@ def test_build_tag_panel_add_sub_tag_callback(
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    panel._add_parent_tag_callback(parent.id)  # pyright: ignore[reportPrivateUsage]
+    panel._add_parent_tag_callback(parent.id)
 
     assert len(panel.parent_ids) == 1
 
@@ -40,7 +41,7 @@ def test_build_tag_panel_remove_subtag_callback(
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    panel._remove_parent_tag_callback(parent.id)  # pyright: ignore[reportPrivateUsage]
+    panel._remove_parent_tag_callback(parent.id)
 
     assert len(panel.parent_ids) == 0
 
@@ -58,7 +59,7 @@ def test_build_tag_panel_add_alias_callback(
     panel: BuildTagPanel = BuildTagPanel(library, tag)
     qtbot.addWidget(panel)
 
-    panel._create_alias_callback()  # pyright: ignore[reportPrivateUsage]
+    panel._create_alias_callback()
 
     assert panel.aliases_table.rowCount() == 1
 

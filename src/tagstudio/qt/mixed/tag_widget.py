@@ -141,9 +141,6 @@ class TagWidget(QWidget):
         self.search_for_tag_action = QAction(self)
         self.search_for_tag_action.setText(Translations["tag.search_for_tag"])
         self.bg_button.addAction(self.search_for_tag_action)
-        # add_to_search_action = QAction(self)
-        # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))
-        # self.bg_button.addAction(add_to_search_action)
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")

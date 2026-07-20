@@ -62,7 +62,7 @@ from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntr
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.qt.mixed.about_modal import AboutModal
@@ -83,8 +83,8 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
-from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.main_window import MainWindow
+from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.splash import SplashScreen
 from tagstudio.qt.views.stylesheets.stylesheets import header
 
@@ -364,14 +364,14 @@ class QtDriver(DriverMixin, QObject):
             if platform.system() != "Windows":
                 self.app.setDesktopFileName("tagstudio")
 
-        # Initialize the Tag Manager panel
-        self.tag_manager = TagSearchModal(
-            self.lib,
-            title=Translations["tag_manager.title"],
-            is_tag_chooser=False,
+        tsp_view = SearchPanelView(
+            placeholder_text=Translations["home.search_tags"],
+            create_text=Translations["tag.create"],
+            is_chooser=False,
         )
-        self.tag_manager.tsp.set_driver(self)
-
+        tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
+        tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
         self.tag_manager.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
@@ -385,8 +385,8 @@ class QtDriver(DriverMixin, QObject):
         self.field_template_manager = Modal(
             content_widget=FieldTemplateSearchPanel(
                 self.lib,
-                is_field_template_chooser=False,
-                view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
+                is_chooser=False,
+                view=SearchPanelView(Translations["home.search_field_templates"], is_chooser=False),
             ),
             title=Translations["field_template_manager.title"],
             is_savable=False,
@@ -397,12 +397,15 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
+        # TODO: Remove/replace this with a suite of persistently visible tagging panels, including
+        # tag search. These will be docked on the left-hand side of the main window.
+
         # Initialize the "Add Tag" panel
-        self.add_tag_modal = TagSearchModal(
-            self.lib, title=Translations["tag.add.plural"], is_tag_chooser=True
-        )
-        self.add_tag_modal.tsp.set_driver(self)
-        self.add_tag_modal.tsp.item_chosen.connect(
+        add_tag_tsp_view = SearchPanelView(placeholder_text=Translations["home.search_tags"])
+        add_tag_tsp = TagSearchPanel(self.lib, view=add_tag_tsp_view)
+        add_tag_tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.add_tag_modal = Modal(add_tag_tsp, Translations["tag.add.plural"])
+        add_tag_tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
                 self.main_window.preview_panel.set_selection(self.selected),
@@ -889,6 +892,11 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         self.modal.show()
+
+    def search_for_tag_callback(self, tag_id: int) -> None:
+        """Callback to search for a given Tag ID."""
+        self.main_window.search_field.setText(f"tag_id:{tag_id}")
+        self.update_browsing_state(BrowsingState.from_tag_id(tag_id, self.browsing_history.current))
 
     def select_all_action_callback(self):
         """Set the selection to all visible items."""
