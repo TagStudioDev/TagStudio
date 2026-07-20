@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.global_settings import (
     DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
@@ -30,7 +32,6 @@ from tagstudio.qt.global_settings import (
     Theme,
 )
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class SettingsPanel(PanelWidget):
+class SettingsPanel(ModalContent):
     driver: "QtDriver"
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
@@ -427,15 +428,15 @@ class SettingsPanel(PanelWidget):
         )
 
     @classmethod
-    def build_modal(cls, driver: "QtDriver") -> PanelModal:
+    def build_modal(cls, driver: "QtDriver") -> Modal:
         settings_panel = cls(driver)
 
-        modal = PanelModal(
-            widget=settings_panel,
+        modal = Modal(
+            content_widget=settings_panel,
             window_title=Translations["settings.title"],
             is_savable=True,
         )
         modal.saved.connect(lambda: settings_panel.update_settings(driver))
-        modal.title_widget.setVisible(False)
+        modal.layout().title_label.setVisible(False)
 
         return modal

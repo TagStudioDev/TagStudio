@@ -20,21 +20,22 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.qt.mixed.tag_widget import (
-    get_tag_border_color,
-    get_tag_highlight_color,
-    get_tag_text_color,
-)
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
-from tagstudio.qt.views.panel_modal import PanelWidget
-from tagstudio.qt.views.stylesheets.stylesheets import color_swatch_style, header
+from tagstudio.qt.views.stylesheets.stylesheets import (
+    color_swatch_style,
+    get_tag_border_color,
+    get_tag_highlight_color,
+    get_tag_text_color,
+    header,
+)
 
 logger = structlog.get_logger(__name__)
 
 
-class TagColorSelection(PanelWidget):
+class TagColorSelection(ModalContent):
     def __init__(self, library: Library):
         super().__init__()
         self.lib = library

@@ -24,10 +24,10 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import (
     checkbox_style,
     line_edit_style,
@@ -37,7 +37,7 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
 logger = structlog.get_logger(__name__)
 
 
-class BuildColorPanel(PanelWidget):
+class BuildColorPanel(ModalContent):
     on_edit = Signal(TagColorGroup)
 
     def __init__(self, library: Library, color_group: TagColorGroup):
@@ -254,8 +254,8 @@ class BuildColorPanel(PanelWidget):
         self.slug_field.setText(slug)
         self.update_preview_text()
 
-        if self.panel_save_button is not None:
-            self.panel_save_button.setDisabled(is_name_empty)
+        if self.save_button is not None:
+            self.save_button.setDisabled(is_name_empty)
 
     def build_color(self) -> tuple[TagColorGroup, TagColorGroup]:
         name = self.name_field.text()

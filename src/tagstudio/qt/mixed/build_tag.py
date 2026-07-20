@@ -28,12 +28,13 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import (
     checkbox_style,
     colored_radio_button_style,
@@ -73,7 +74,7 @@ class CustomTableItem(QLineEdit):
             super().keyPressEvent(arg__1)
 
 
-class BuildTagPanel(PanelWidget):
+class BuildTagPanel(ModalContent):
     on_edit = Signal(Tag)
 
     def __init__(self, library: Library, tag: Tag | None = None) -> None:
@@ -201,7 +202,7 @@ class BuildTagPanel(PanelWidget):
             self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
         chose_tag_color_title = Translations["tag.choose_color"]
-        self.choose_color_modal = PanelModal(
+        self.choose_color_modal = Modal(
             self.tag_color_selection, chose_tag_color_title, chose_tag_color_title
         )
         self.choose_color_modal.done.connect(
@@ -372,7 +373,7 @@ class BuildTagPanel(PanelWidget):
 
         def on_parent_tag_edit(tag: Tag) -> None:
             build_tag_panel = BuildTagPanel(self.lib, tag=tag)
-            edit_modal = PanelModal(
+            edit_modal = Modal(
                 build_tag_panel,
                 self.lib.tag_display_name(tag),
                 "Edit Tag",
@@ -422,7 +423,7 @@ class BuildTagPanel(PanelWidget):
         while self.aliases_table.rowCount() > 0:
             self.aliases_table.removeRow(0)
 
-        last: QWidget | None = self.panel_save_button
+        last: QWidget | None = self.save_button
         aliases = list(self.aliases)
         alias_names = [a.name for a in aliases]
         sorted_aliases = sorted(aliases, key=lambda x: alias_names[aliases.index(x)])
@@ -493,8 +494,8 @@ class BuildTagPanel(PanelWidget):
         is_empty = not self.name_field.text().strip()
         self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
 
-        if self.panel_save_button is not None:
-            self.panel_save_button.setDisabled(is_empty)
+        if self.save_button is not None:
+            self.save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
         tag = self.tag
@@ -515,8 +516,8 @@ class BuildTagPanel(PanelWidget):
         self.setTabOrder(self.shorthand_field, self.aliases_add_button)
         self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
         self.setTabOrder(self.parent_tags_add_button, self.color_button)
-        self.setTabOrder(self.color_button, unwrap(self.panel_cancel_button))
-        self.setTabOrder(unwrap(self.panel_cancel_button), unwrap(self.panel_save_button))
-        self.setTabOrder(unwrap(self.panel_save_button), self.aliases_table.cellWidget(0, 1))
+        self.setTabOrder(self.color_button, unwrap(self.cancel_button))
+        self.setTabOrder(unwrap(self.cancel_button), unwrap(self.save_button))
+        self.setTabOrder(unwrap(self.save_button), self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()
         self.name_field.setFocus()
