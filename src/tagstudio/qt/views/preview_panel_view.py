@@ -34,12 +34,16 @@ class PreviewPanelView(QVBoxLayout):
         self.setSpacing(6)
         rm = ResourceManager()
 
+        # Search/Create Boxes
         def ph_text(key: str) -> str:
             return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
 
-        # Search/Create Boxes
-        self.field_search_box = FieldSuggestBox(driver, ph_text("home.search_or_create_fields"))
-        self.tag_search_box = TagSuggestBox(driver, ph_text("home.search_or_create_tags"))
+        self.field_search_box = FieldSuggestBox(
+            driver.lib, driver.settings, ph_text("home.search_or_create_fields")
+        )
+        self.tag_search_box = TagSuggestBox(
+            driver.lib, driver.settings, ph_text("home.search_or_create_tags")
+        )
 
         self.preview_thumb = PreviewThumb(driver.lib, driver)
         self.file_attrs = FileAttributes(driver.lib, driver)

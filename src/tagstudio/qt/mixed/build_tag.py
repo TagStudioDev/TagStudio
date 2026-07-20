@@ -30,11 +30,12 @@ from tagstudio.core.library.alchemy.models import Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import (
     checkbox_style,
     colored_radio_button_style,
@@ -79,7 +80,7 @@ class BuildTagPanel(ModalContent):
 
     def __init__(self, library: Library, tag: Tag | None = None) -> None:
         super().__init__()
-        self.lib = library
+        self._lib = library
         self.tag: Tag  # NOTE: This gets set at the end of the init.
         self.tag_color_namespace: str | None
         self.tag_color_slug: str | None
@@ -154,7 +155,6 @@ class BuildTagPanel(ModalContent):
 
         self.parent_tags_title = QLabel(Translations["tag.parent_tags"])
         self.parent_tags_layout.addWidget(self.parent_tags_title)
-
         self.scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
         self.parent_tags_scroll_layout.setContentsMargins(6, 6, 6, 0)
@@ -177,10 +177,11 @@ class BuildTagPanel(ModalContent):
         if tag is not None:
             exclude_ids.append(tag.id)
 
-        self.add_tag_modal = TagSearchModal(
-            self.lib, title=Translations["tag.add.plural"], exclude=exclude_ids
-        )
-        self.add_tag_modal.tsp.item_chosen.connect(lambda x: self._add_parent_tag_callback(x))
+        tsp_view = SearchPanelView(placeholder_text=Translations["home.search_tags"])
+        tsp = TagSearchPanel(self._lib, exclude=exclude_ids, view=tsp_view)
+        self.add_tag_modal = Modal(tsp, title=Translations["tag.add.plural"])
+        tsp.item_chosen.connect(lambda x: self._add_parent_tag_callback(x))
+
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
@@ -195,12 +196,12 @@ class BuildTagPanel(ModalContent):
         self.color_button: TagColorPreview
         try:
             assert tag is not None
-            self.color_button = TagColorPreview(self.lib, tag.color)
+            self.color_button = TagColorPreview(self._lib, tag.color)
         except Exception as e:
             # TODO: Investigate why this happens during tests
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
-            self.color_button = TagColorPreview(self.lib, None)
-        self.tag_color_selection = TagColorSelection(self.lib)
+            self.color_button = TagColorPreview(self._lib, None)
+        self.tag_color_selection = TagColorSelection(self._lib)
         chose_tag_color_title = Translations["tag.choose_color"]
         self.choose_color_modal = Modal(
             self.tag_color_selection, chose_tag_color_title, chose_tag_color_title
@@ -326,7 +327,7 @@ class BuildTagPanel(ModalContent):
         next_tab: QWidget = last_tab
 
         for parent_id in self.parent_ids:
-            tag = self.lib.get_tag(parent_id)
+            tag = self._lib.get_tag(parent_id)
             if not tag:
                 continue
             is_disam = parent_id == self.disambiguation_id
@@ -364,7 +365,7 @@ class BuildTagPanel(ModalContent):
             text_color = get_tag_text_color(primary_color, highlight_color)
 
         def update_parent_tag_callback(build_tag_panel: BuildTagPanel):
-            self.lib.update_tag(
+            self._lib.update_tag(
                 build_tag_panel.build_tag(),
                 parent_ids=set(build_tag_panel.parent_ids),
                 aliases=set(build_tag_panel.aliases),
@@ -372,10 +373,10 @@ class BuildTagPanel(ModalContent):
             self.set_parent_tags()
 
         def on_parent_tag_edit(tag: Tag) -> None:
-            build_tag_panel = BuildTagPanel(self.lib, tag=tag)
+            build_tag_panel = BuildTagPanel(self._lib, tag=tag)
             edit_modal = Modal(
                 build_tag_panel,
-                self.lib.tag_display_name(tag),
+                self._lib.tag_display_name(tag),
                 "Edit Tag",
                 is_savable=True,
             )
@@ -383,7 +384,7 @@ class BuildTagPanel(ModalContent):
             edit_modal.show()
 
         # Add Tag Widget
-        tag_widget = TagWidget(tag, library=self.lib, has_edit=True, has_remove=True)
+        tag_widget = TagWidget(tag, library=self._lib, has_edit=True, has_remove=True)
         tag_widget.on_remove.connect(lambda t=parent_id: self._remove_parent_tag_callback(t))
         tag_widget.on_edit.connect(partial(on_parent_tag_edit, tag))
 

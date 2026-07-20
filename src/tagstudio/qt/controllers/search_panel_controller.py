@@ -8,7 +8,7 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.modal_content import ModalContent
@@ -50,18 +50,18 @@ class SearchPanel[T](ModalContent):
         is_chooser: bool = True,
     ) -> None:
         super().__init__()
-        self.view = view
-        self.is_chooser = is_chooser
-        self.setLayout(QVBoxLayout(self))
-        self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().addWidget(self.view)
-        self.view.connect_callbacks(self)
         self._driver: QtDriver | None = None
-        self.exclude: list[int] = exclude or []
+        self._is_chooser = is_chooser
+        self._create_and_add_button_in_layout = False
+        self._create_and_add_button_key: str = ""
+
+        # Items
+        self._excluded: list[int] = exclude or []
+        self._search_results: list[T] = []
 
         # Limits
         self._unlimited_limit_item_label: str = "All Items"
-        self.__limit_items: list[tuple[str, int]] = [
+        self._limit_items: list[tuple[str, int]] = [
             ("25", 25),
             ("50", 50),
             ("100", 100),
@@ -69,66 +69,102 @@ class SearchPanel[T](ModalContent):
             ("500", 500),
             (self._unlimited_limit_item_label, -1),
         ]
-        self.__default_limit_index: int = 0  # 25 Limit (Default)
-        self.__previous_limit_index: int = self.__default_limit_index
+        self._default_limit_index: int = 0  # 25 Limit (Default)
+        self._previous_limit_index: int = self._default_limit_index
 
-        self.view.set_limit_items(self.__limit_items)
-        self.view.set_limit_index(self.__default_limit_index)
+        self.setLayout(view)
+        self.set_limit_items(self._limit_items)
+        self.set_limit_index(self._default_limit_index)
+        self.setMinimumSize(300, 400)
+        self.connect_callbacks(self)
 
-        # Items
-        self._search_results: list[T] = []
+    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:  # pyright: ignore[reportExplicitAny]
+        self.layout().limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
+        self.layout().search_field.textChanged.connect(controller.on_search_query_changed)
+        self.layout().search_field.returnPressed.connect(
+            lambda: controller.on_search_query_submitted(self.get_search_query())
+        )
+        self.layout().create_button.clicked.connect(controller.on_item_create)
+        self.layout().create_and_add_button.clicked.connect(
+            lambda: controller.on_item_create(add_to_entry=True)
+        )
 
-        self._create_and_add_button_label_key: str = ""
+    def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
+        # Remove existing limit items
+        for i in reversed(range(self.layout().limit_combobox.count())):
+            self.layout().limit_combobox.removeItem(i)
 
-    @property
-    def search_field(self):
-        return self.view.search_field
+        # Add new limit items
+        self.layout().limit_combobox.addItems([limit_item[0] for limit_item in limit_items])
 
-    @property
-    def create_and_add_button(self):
-        return self.view.create_and_add_button
+    def get_limit_index(self) -> int:
+        return self.layout().limit_combobox.currentIndex()
+
+    def set_limit_index(self, index: int) -> None:
+        self.layout().limit_combobox.setCurrentIndex(index)
+
+    def focus_search_box(self, select_all: bool = False) -> None:
+        self.layout().search_field.setFocus()
+        if select_all:
+            self.layout().search_field.selectAll()
 
     def get_search_query(self) -> str:
-        return self.view.get_search_query()
+        return self.layout().search_field.text()
 
     def clear_search_query(self) -> None:
-        self.view.clear_search_query()
+        self.layout().search_field.setText("")
+        self.focus_search_box()
 
-    def get_item_widget(self, index: int, library: Library):
-        return self.view.get_item_widget(index, library)
+    # Item list
+    def scroll_to(self, position: int) -> None:
+        self.layout().scroll_area.verticalScrollBar().setValue(position)
 
-    def set_driver(self, driver: "QtDriver") -> None:
-        self._driver = driver
+    def add_create_and_add_button(self) -> None:
+        if self._create_and_add_button_in_layout:
+            return
+        self.layout().scroll_layout.addWidget(self.layout().create_and_add_button)
+        self.layout().create_and_add_button.show()
+        self._create_and_add_button_in_layout = True
+
+    def remove_create_and_add_button(self) -> None:
+        if not self._create_and_add_button_in_layout:
+            return
+        self.layout().scroll_layout.removeWidget(self.layout().create_and_add_button)
+        self.layout().create_and_add_button.hide()
+        self._create_and_add_button_in_layout = False
+
+    def get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore[reportExplicitAny]
+        return self.get_item_widget(index, library)
 
     def on_limit_changed(self, index: int) -> None:
         # Method was called outside the limit_combobox callback
-        if index != self.view.get_limit_index():
-            self.view.set_limit_index(index)
+        if index != self.get_limit_index():
+            self.set_limit_index(index)
 
-        if self.__previous_limit_index == index:
+        if self._previous_limit_index == index:
             return
 
-        self.update_items(self.search_field.text())
+        self.update_items(self.layout().search_field.text())
 
     def _get_limit(self) -> tuple[str, int]:
-        return self.__limit_items[self.view.get_limit_index()]
+        return self._limit_items[self.get_limit_index()]
 
     def _get_previous_limit(self) -> tuple[str, int]:
-        return self.__limit_items[self.__previous_limit_index]
+        return self._limit_items[self._previous_limit_index]
 
     def _get_max_limit(self) -> int:
         raise NotImplementedError()
 
     def on_search_query_changed(self, query: str) -> None:
-        self.create_and_add_button.setText(
-            Translations.format(self._create_and_add_button_label_key, query=query)
+        self.layout().create_and_add_button.setText(
+            Translations.format(self._create_and_add_button_key, query=query)
         )
         self.update_items(query)
 
     def on_search_query_submitted(self, query: str) -> None:
         # Focus search field if no query
         if not query:
-            self.search_field.setFocus()
+            self.layout().search_field.setFocus()
             parent: QWidget | None = self.parentWidget()
             if parent is not None:  # pyright: ignore[reportUnnecessaryComparison]
                 parent.hide()
@@ -137,7 +173,7 @@ class SearchPanel[T](ModalContent):
         # Create and add item if no search results
         if len(self._search_results) <= 0:
             self.on_item_create(add_to_entry=True)
-        elif self.is_chooser:
+        elif self._is_chooser:
             self._on_item_chosen(self._search_results[0])
 
         self.clear_search_query()
@@ -156,14 +192,14 @@ class SearchPanel[T](ModalContent):
         raise NotImplementedError()
 
     def _is_excluded(self, item: T) -> bool:
-        return _item_id(item) in self.exclude
+        return _item_id(item) in self._excluded
 
     def update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items", limit=self._get_limit()[1])
 
         # Remove the "Create & Add" button if one exists
-        self.view.remove_create_and_add_button()
+        self.remove_create_and_add_button()
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
@@ -205,11 +241,11 @@ class SearchPanel[T](ModalContent):
             item: T | None = all_results[i] if i < len(all_results) else None
             self.set_item_widget(item=item, index=i)
 
-        self.__previous_limit_index = self.view.get_limit_index()
+        self._previous_limit_index = self.get_limit_index()
 
         # Add back the "Create & Add" button
         if query and query.strip():
-            self.view.add_create_and_add_button()
+            self.add_create_and_add_button()
 
     def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
@@ -218,10 +254,15 @@ class SearchPanel[T](ModalContent):
         raise NotImplementedError()
 
     @override
+    def layout(self) -> SearchPanelView:
+        """Return the typed layout for this widget."""
+        return super().layout()  # pyright: ignore[reportReturnType]
+
+    @override
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
         self.update_items()
-        self.view.scroll_to(0)
-        self.view.clear_search_query()
+        self.scroll_to(0)
+        self.clear_search_query()
         return super().showEvent(event)
 
     @override
@@ -229,10 +270,10 @@ class SearchPanel[T](ModalContent):
         # When Escape is pressed, focus back on the search box.
         # If focus is already on the search box, close the modal.
         if event.key() == QtCore.Qt.Key.Key_Escape:
-            if self.search_field.hasFocus():
+            if self.layout().search_field.hasFocus():
                 super().keyPressEvent(event)
             else:
-                self.view.focus_search_box(select_all=True)
+                self.focus_search_box(select_all=True)
 
     def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()

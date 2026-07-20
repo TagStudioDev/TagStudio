@@ -2,36 +2,36 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import typing
 from typing import override
 from warnings import catch_warnings
 
 import structlog
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
+from typing_extensions import deprecated
 
-from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
+from tagstudio.qt.global_settings import GlobalSettings
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
-
-if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
 class TagSuggestBox(SuggestBox[Tag]):
-    def __init__(self, driver: "QtDriver", placeholder_text: str = "") -> None:
-        super().__init__(driver, placeholder_text)
-        self._driver = driver
-        self._lib = self._driver.lib
+    search_for_tag = Signal(int)
+
+    def __init__(
+        self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
+    ) -> None:
+        super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
         edit_tag_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
@@ -40,21 +40,24 @@ class TagSuggestBox(SuggestBox[Tag]):
         self.addAction(edit_tag_on_create_action)
         self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.layout().search_field.addAction(edit_tag_on_create_action)
-        edit_tag_on_create_action.setChecked(self._driver.settings.edit_tag_on_create)
+        edit_tag_on_create_action.setChecked(self._settings.edit_tag_on_create)
         edit_tag_on_create_action.triggered.connect(
             lambda checked: self.toggle_edit_on_tag_create(checked)
         )
 
+    @deprecated("Put this callback in the driver!")
     def _search_for_tag_callback(self, tag_id: int) -> None:
-        self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
-        self._driver.update_browsing_state(
-            BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
-        )
+        # TODO: This should be a callback, the driver does not need to be passed for this.
+        # self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
+        # self._driver.update_browsing_state(
+        #     BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
+        # )
+        pass
 
     def toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""
-        self._driver.settings.edit_tag_on_create = checked
-        self._driver.settings.save()
+        self._settings.edit_tag_on_create = checked
+        self._settings.save()
 
     @override
     def _on_item_create(self) -> None:
@@ -65,7 +68,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         """
         query: str = self.layout().search_field.text()
 
-        if self._driver.settings.edit_tag_on_create:
+        if self._settings.edit_tag_on_create:
             panel: BuildTagPanel = BuildTagPanel(self._lib)
             modal: Modal = Modal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True
@@ -139,7 +142,7 @@ class TagSuggestBox(SuggestBox[Tag]):
             lambda checked=False, tag=item: self._on_item_chosen(tag)
         )
         tag_widget.search_for_tag_action.triggered.connect(
-            lambda checked=False, tag_id=item.id: self._search_for_tag_callback(tag_id)
+            lambda checked=False, tag_id=item.id: self.search_for_tag.emit(tag_id)
         )
         tag_widget.search_for_tag_action.setEnabled(True)
 

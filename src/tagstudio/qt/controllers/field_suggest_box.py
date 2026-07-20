@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import typing
 from typing import override
 from warnings import catch_warnings
 
@@ -18,18 +17,15 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
+from tagstudio.qt.global_settings import GlobalSettings
 from tagstudio.qt.translations import Translations
-
-if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
 class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
-    def __init__(self, driver: "QtDriver", placeholder_text: str = ""):
-        super().__init__(driver, placeholder_text)
-        self._lib = self._driver.lib
+    def __init__(self, library: Library, settings: GlobalSettings, placeholder_text: str = ""):
+        super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
         edit_field_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
@@ -38,15 +34,15 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self.addAction(edit_field_on_add_action)
         self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.layout().search_field.addAction(edit_field_on_add_action)
-        edit_field_on_add_action.setChecked(self._driver.settings.edit_field_on_add)
+        edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
         edit_field_on_add_action.triggered.connect(
             lambda checked: self.toggle_edit_on_field_add(checked)
         )
 
     def toggle_edit_on_field_add(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after adding a field."""
-        self._driver.settings.edit_field_on_add = checked
-        self._driver.settings.save()
+        self._settings.edit_field_on_add = checked
+        self._settings.save()
 
     @override
     def _on_item_create(self) -> None:

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 import structlog
 from PySide6.QtCore import Signal
@@ -12,6 +12,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
+from tagstudio.qt.global_settings import GlobalSettings
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
@@ -19,9 +20,6 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 logger = structlog.get_logger(__name__)
-
-if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
 
 
 def _item_id(item: object) -> int:
@@ -46,9 +44,12 @@ class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", placeholder_text: str = "") -> None:
+    def __init__(
+        self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
+    ) -> None:
         super().__init__()
-        self._driver = driver
+        self._lib = library
+        self._settings = settings
         self._limit = 5
         self._is_shift_held = False
         self._search_results: list[T] = []
