@@ -9,7 +9,6 @@ import structlog
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
-from typing_extensions import deprecated
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
@@ -44,15 +43,6 @@ class TagSuggestBox(SuggestBox[Tag]):
         edit_tag_on_create_action.triggered.connect(
             lambda checked: self.toggle_edit_on_tag_create(checked)
         )
-
-    @deprecated("Put this callback in the driver!")
-    def _search_for_tag_callback(self, tag_id: int) -> None:
-        # TODO: This should be a callback, the driver does not need to be passed for this.
-        # self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
-        # self._driver.update_browsing_state(
-        #     BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
-        # )
-        pass
 
     def toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""

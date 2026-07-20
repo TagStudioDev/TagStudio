@@ -8,10 +8,8 @@ from warnings import catch_warnings
 import structlog
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox, QWidget
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
-from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.controllers.modal import Modal
@@ -192,17 +190,6 @@ class TagSearchPanel(SearchPanel[Tag]):
             aliases=edit_item_panel.aliases,
         )
         self.update_items(self.layout().search_field.text())
-
-    @deprecated("Put this callback in the driver!")
-    def _search_for_tag_callback(self, tag_id: int) -> None:
-        if self._driver is None:
-            return
-
-        # TODO: This should be a callback, the driver does not need to be passed for this.
-        self._driver.main_window.search_field.setText(f"tag_id:{tag_id}")
-        self._driver.update_browsing_state(
-            BrowsingState.from_tag_id(tag_id, self._driver.browsing_history.current)
-        )
 
     @override
     def get_item_widget(self, index: int, library: Library | None) -> TagWidget:
