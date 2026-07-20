@@ -13,14 +13,14 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceError, slugify
 from tagstudio.core.library.alchemy.models import Namespace
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import line_edit_style
 
 logger = structlog.get_logger(__name__)
 
 
-class BuildNamespacePanel(PanelWidget):
+class BuildNamespacePanel(ModalContent):
     on_edit = Signal(Namespace)
 
     def __init__(self, library: Library, namespace: Namespace | None = None):
@@ -118,8 +118,8 @@ class BuildNamespacePanel(PanelWidget):
 
         self.slug_field.setText(slug)
 
-        if self.panel_save_button is not None:
-            self.panel_save_button.setDisabled(is_name_empty)
+        if self.save_button is not None:
+            self.save_button.setDisabled(is_name_empty)
 
     def no_collide(self, slug: str) -> str:
         """Return a slug name that's verified not to collide with other known namespace slugs."""

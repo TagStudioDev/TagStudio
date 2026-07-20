@@ -13,12 +13,13 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -66,7 +67,7 @@ class TagSuggestBox(SuggestBox[Tag]):
 
         if self._driver.settings.edit_tag_on_create:
             panel: BuildTagPanel = BuildTagPanel(self._lib)
-            modal: PanelModal = PanelModal(
+            modal: Modal = Modal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True
             )
             if query.strip():
@@ -83,7 +84,7 @@ class TagSuggestBox(SuggestBox[Tag]):
     @override
     def _on_item_edit(self, item: Tag) -> None:
         edit_tag_panel: BuildTagPanel = BuildTagPanel(self._lib, tag=item)
-        edit_tag_modal: PanelModal = PanelModal(
+        edit_tag_modal: Modal = Modal(
             edit_tag_panel,
             self._lib.tag_display_name(item),
             Translations["tag.edit"],
@@ -143,7 +144,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         tag_widget.search_for_tag_action.setEnabled(True)
 
     @override
-    def _create_item_from_modal(self, edit_item_panel: PanelWidget) -> None:
+    def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:
         if isinstance(edit_item_panel, BuildTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
@@ -156,7 +157,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         self._on_search_query_changed(self.layout().search_field.text())
 
     @override
-    def _edit_item(self, edit_item_panel: PanelWidget) -> None:
+    def _edit_item(self, edit_item_panel: ModalContent) -> None:
         if not isinstance(edit_item_panel, BuildTagPanel):
             return
 

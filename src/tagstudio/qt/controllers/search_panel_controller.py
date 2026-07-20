@@ -11,8 +11,8 @@ from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 logger = structlog.get_logger(__name__)
@@ -40,7 +40,7 @@ def _item_name(item: object) -> str:
         raise AttributeError()
 
 
-class SearchPanel[T](PanelWidget):
+class SearchPanel[T](ModalContent):
     item_chosen = Signal(int)
 
     def __init__(
@@ -234,8 +234,8 @@ class SearchPanel[T](PanelWidget):
             else:
                 self.view.focus_search_box(select_all=True)
 
-    def create_item(self, edit_item_panel: PanelWidget, choose_item: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
+    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def edit_item(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
+    def edit_item(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()

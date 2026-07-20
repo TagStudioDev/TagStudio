@@ -4,14 +4,7 @@
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
 from tagstudio.qt.views.stylesheets.stylesheets import (

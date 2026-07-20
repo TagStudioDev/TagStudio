@@ -61,6 +61,7 @@ from tagstudio.qt.controllers.field_template_search_panel_controller import Fiel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
@@ -84,7 +85,6 @@ from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.main_window import MainWindow
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
 from tagstudio.qt.views.stylesheets.stylesheets import header
 
@@ -167,12 +167,12 @@ class QtDriver(DriverMixin, QObject):
     favorite_updated = Signal(bool)
     archived_updated = Signal(bool)
 
-    tag_manager_panel: PanelModal | None = None
+    tag_manager: Modal | None = None
     color_manager_panel: TagColorManager | None = None
-    field_template_manager_panel: PanelModal | None = None
-    ignore_modal: PanelModal | None = None
-    add_tag_modal: PanelModal | None = None
-    add_field_modal: PanelModal | None = None
+    field_template_manager: Modal | None = None
+    ignore_modal: Modal | None = None
+    add_tag_modal: Modal | None = None
+    add_field_modal: Modal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
@@ -365,14 +365,14 @@ class QtDriver(DriverMixin, QObject):
                 self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
-        self.tag_manager_panel = TagSearchModal(
+        self.tag_manager = TagSearchModal(
             self.lib,
             title=Translations["tag_manager.title"],
             is_tag_chooser=False,
         )
-        self.tag_manager_panel.tsp.set_driver(self)
+        self.tag_manager.tsp.set_driver(self)
 
-        self.tag_manager_panel.done.connect(
+        self.tag_manager.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
             )
@@ -382,8 +382,8 @@ class QtDriver(DriverMixin, QObject):
         self.color_manager_panel = TagColorManager(self)
 
         # Initialize the Field Template Manager panel
-        self.field_template_manager_panel = PanelModal(
-            widget=FieldTemplateSearchPanel(
+        self.field_template_manager = Modal(
+            content_widget=FieldTemplateSearchPanel(
                 self.lib,
                 is_field_template_chooser=False,
                 view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
@@ -391,7 +391,7 @@ class QtDriver(DriverMixin, QObject):
             title=Translations["field_template_manager.title"],
             is_savable=False,
         )
-        self.field_template_manager_panel.done.connect(
+        self.field_template_manager.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
             )
@@ -486,14 +486,14 @@ class QtDriver(DriverMixin, QObject):
             lambda f="": self.delete_files_callback(f)
         )
 
-        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
+        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager.show)
 
         self.main_window.menu_bar.color_manager_action.triggered.connect(
             self.color_manager_panel.show
         )
 
         self.main_window.menu_bar.field_template_manager_action.triggered.connect(
-            self.field_template_manager_panel.show
+            self.field_template_manager.show
         )
 
         # endregion
@@ -733,7 +733,7 @@ class QtDriver(DriverMixin, QObject):
             self.ignore_modal = None
 
         panel = IgnoreModal(self.lib)
-        self.ignore_modal = PanelModal(
+        self.ignore_modal = Modal(
             panel,
             Translations["menu.edit.ignore_files"],
             is_savable=True,
@@ -871,7 +871,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_tag_action_callback(self):
         panel = BuildTagPanel(self.lib)
-        self.modal = PanelModal(
+        self.modal = Modal(
             panel,
             Translations["tag.new"],
             Translations["tag.create"],

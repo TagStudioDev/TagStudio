@@ -30,12 +30,12 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextContainerWidget
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.stylesheets.stylesheets import inset_container_style
 
 if typing.TYPE_CHECKING:
@@ -291,7 +291,7 @@ class FieldContainers(QWidget):
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
-                edit_modal = PanelModal(
+                edit_modal = Modal(
                     EditText(field.name, field.value, field.is_multiline),
                     window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
                     is_savable=True,
@@ -329,7 +329,7 @@ class FieldContainers(QWidget):
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
-                edit_modal = PanelModal(
+                edit_modal = Modal(
                     DatetimePicker(self.driver, field.name, field.value or dt.now()),
                     window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
                     is_savable=True,

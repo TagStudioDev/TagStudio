@@ -10,8 +10,8 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
@@ -200,10 +200,10 @@ class SuggestBox[T](QWidget):
             self.done.emit()
             self.hide_and_reset()
 
-    def _create_item_from_modal(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def _edit_item(self, edit_item_panel: PanelWidget) -> None:  # pyright: ignore[reportUnusedParameter]
+    def _edit_item(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     @override

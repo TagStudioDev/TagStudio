@@ -14,10 +14,11 @@ from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
 from tagstudio.qt.controllers.field_template_widget_controller import FieldTemplateWidget
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -58,7 +59,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         # since the user needs to decide what type of field it should be before it's created.
         query: str = self.layout().search_field.text()
         panel = EditFieldTemplateModal()
-        modal = PanelModal(
+        modal = Modal(
             panel,
             Translations["field_template.new"],
             Translations["field_template.new"],
@@ -73,9 +74,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     @override
     def _on_item_edit(self, item: BaseFieldTemplate) -> None:
         panel: EditFieldTemplateModal = EditFieldTemplateModal(item)
-        modal: PanelModal = PanelModal(
-            panel, item.name, Translations["field_template.edit"], is_savable=True
-        )
+        modal: Modal = Modal(panel, item.name, Translations["field_template.edit"], is_savable=True)
 
         modal.saved.connect(lambda: self._edit_item(panel))
         modal.show()
@@ -121,7 +120,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         )
 
     @override
-    def _create_item_from_modal(self, edit_item_panel: PanelWidget) -> None:
+    def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:
         if isinstance(edit_item_panel, EditFieldTemplateModal):
             template: BaseFieldTemplate = edit_item_panel.build_field_template()
             self._lib.add_field_template(template)
@@ -132,7 +131,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self._on_search_query_changed(self.layout().search_field.text())
 
     @override
-    def _edit_item(self, edit_item_panel: PanelWidget) -> None:
+    def _edit_item(self, edit_item_panel: ModalContent) -> None:
         if not isinstance(edit_item_panel, EditFieldTemplateModal):
             return
 

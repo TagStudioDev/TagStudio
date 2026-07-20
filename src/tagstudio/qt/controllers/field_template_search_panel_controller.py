@@ -13,15 +13,16 @@ from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
 from tagstudio.qt.controllers.field_template_widget_controller import FieldTemplateWidget
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel_controller import SearchPanel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 logger = structlog.get_logger(__name__)
 
 
-class FieldTemplateSearchModal(PanelModal):
+class FieldTemplateSearchModal(Modal):
     def __init__(
         self,
         library: Library,
@@ -33,11 +34,7 @@ class FieldTemplateSearchModal(PanelModal):
             is_field_template_chooser,
             view=FieldTemplateSearchPanelView(is_field_template_chooser),
         )
-        super().__init__(
-            self.search_panel,
-            Translations["field.add.plural"],
-            is_savable=has_save,
-        )
+        super().__init__(self.search_panel, Translations["field.add.plural"], is_savable=has_save)
 
 
 class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
@@ -76,7 +73,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         logger.info("[FieldTemplateSearch] Create and Add Field Template", name=query)
 
         panel: EditFieldTemplateModal = EditFieldTemplateModal()
-        modal: PanelModal = PanelModal(
+        modal: Modal = Modal(
             panel,
             Translations["field_template.new"],
             Translations["field_template.new"],
@@ -93,7 +90,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
     def on_item_edit(self, item: BaseFieldTemplate) -> None:
 
         panel: EditFieldTemplateModal = EditFieldTemplateModal(item)
-        modal: PanelModal = PanelModal(
+        modal: Modal = Modal(
             panel,
             item.name,
             Translations["field_template.edit"],
@@ -157,7 +154,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         )
 
     @override
-    def create_item(self, edit_item_panel: PanelWidget, choose_item: bool = False) -> None:
+    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
 
         if isinstance(edit_item_panel, EditFieldTemplateModal):
             template: BaseFieldTemplate = edit_item_panel.build_field_template()
@@ -171,7 +168,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.on_search_query_changed(self.get_search_query())
 
     @override
-    def edit_item(self, edit_item_panel: PanelWidget) -> None:
+    def edit_item(self, edit_item_panel: ModalContent) -> None:
         if not isinstance(edit_item_panel, EditFieldTemplateModal):
             return
 

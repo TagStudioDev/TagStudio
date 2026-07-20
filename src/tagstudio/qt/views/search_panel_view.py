@@ -17,15 +17,15 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import list_button_style
 
 if TYPE_CHECKING:
     from tagstudio.qt.controllers.search_panel_controller import SearchPanel
 
 
-class SearchPanelView(PanelWidget):
+class SearchPanelView(ModalContent):
     def __init__(self, is_chooser: bool) -> None:
         self.is_chooser: bool = is_chooser
         super().__init__()
