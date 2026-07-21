@@ -18,7 +18,6 @@ from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
-from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -27,8 +26,8 @@ logger = structlog.get_logger(__name__)
 
 
 class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
-    def __init__(self, driver: "QtDriver", view: SuggestBoxView | None = None):
-        super().__init__(driver, view=view or SuggestBoxView())
+    def __init__(self, driver: "QtDriver", placeholder_text: str = ""):
+        super().__init__(driver, placeholder_text)
         self._lib = self._driver.lib
 
         # Context Menu Actions

@@ -46,7 +46,7 @@ class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", view: SuggestBoxView) -> None:
+    def __init__(self, driver: "QtDriver", placeholder_text: str = "") -> None:
         super().__init__()
         self._driver = driver
         self._limit = 5
@@ -55,10 +55,13 @@ class SuggestBox[T](QWidget):
         self.added: list[int] = []
         self.excluded: list[int] = []
 
-        self.setLayout(view)
+        self.setLayout(SuggestBoxView(placeholder_text))
         self._connect_callbacks()
 
-    def hide_and_reset(self):
+    def set_placeholder_text(self, text: str) -> None:
+        self.layout().search_field.setPlaceholderText(text)
+
+    def hide_and_reset(self) -> None:
         self.hide()
         self.layout().search_field.setDisabled(True)
         self._on_shift_held(held=False)
@@ -77,7 +80,7 @@ class SuggestBox[T](QWidget):
 
         self.layout().search_field.shift_holding.connect(lambda held: self._on_shift_held(held))
 
-    def _on_shift_held(self, held: bool):
+    def _on_shift_held(self, held: bool) -> None:
         if held:
             self._is_shift_held = True
             opacity_effect = QGraphicsOpacityEffect(self)
@@ -192,7 +195,7 @@ class SuggestBox[T](QWidget):
     def _set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def _editing_finished_callback(self):
+    def _editing_finished_callback(self) -> None:
         if self.layout().search_field.text() == "":
             self.done.emit()
             self.hide_and_reset()

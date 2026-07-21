@@ -20,7 +20,6 @@ from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
-from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -39,12 +38,8 @@ class PreviewPanelView(QVBoxLayout):
             return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
 
         # Search/Create Boxes
-        self.field_search_box = FieldSuggestBox(
-            driver, view=SuggestBoxView(placeholder_text=ph_text("home.search_or_create_fields"))
-        )
-        self.tag_search_box = TagSuggestBox(
-            driver, view=SuggestBoxView(placeholder_text=ph_text("home.search_or_create_tags"))
-        )
+        self.field_search_box = FieldSuggestBox(driver, ph_text("home.search_or_create_fields"))
+        self.tag_search_box = TagSuggestBox(driver, ph_text("home.search_or_create_tags"))
 
         self.preview_thumb = PreviewThumb(driver.lib, driver)
         self.file_attrs = FileAttributes(driver.lib, driver)

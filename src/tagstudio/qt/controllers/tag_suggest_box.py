@@ -19,7 +19,6 @@ from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
-from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -28,8 +27,8 @@ logger = structlog.get_logger(__name__)
 
 
 class TagSuggestBox(SuggestBox[Tag]):
-    def __init__(self, driver: "QtDriver", view: SuggestBoxView | None = None):
-        super().__init__(driver, view=view or SuggestBoxView())
+    def __init__(self, driver: "QtDriver", placeholder_text: str = "") -> None:
+        super().__init__(driver, placeholder_text)
         self._driver = driver
         self._lib = self._driver.lib
 
