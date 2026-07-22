@@ -1728,6 +1728,8 @@ class Library:
                     session.flush()
 
                 if aliases is not None:
+                    for a in aliases:
+                        a.tag_id = tag.id
                     self.update_aliases(tag, aliases, session)
                     session.flush()
 
