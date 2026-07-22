@@ -216,7 +216,6 @@ class SuggestBox[T](QWidget):
 
     @override
     def layout(self) -> SuggestBoxView:
-        """Return the typed layout for this widget."""
         return super().layout()  # pyright: ignore[reportReturnType]
 
     @override

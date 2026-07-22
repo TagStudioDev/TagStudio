@@ -49,12 +49,10 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
 
     @override
     def _on_item_create(self) -> None:
-        """Opens panel to create a new field template and optionally add it to an entry.
+        """Creates a new field template and adds it to the currently selected entries.
 
+        Optionally opens up an edit panel after creation and before adding to entries.
         Populates name field using current search query.
-
-        Args:
-            add_to_entry (bool): Should this item be added to currently selected entries?
         """
         # NOTE: Unlike tags, creating new field templates will ALWAYS spawn an edit window
         # since the user needs to decide what type of field it should be before it's created.

@@ -23,5 +23,4 @@ class UnderlinedWidget(QWidget):
 
     @override
     def layout(self) -> UnderlinedWidgetView:
-        """Return the typed layout for this widget."""
         return super().layout()  # pyright: ignore[reportReturnType]

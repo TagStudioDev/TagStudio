@@ -57,12 +57,10 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _on_item_create(self) -> None:
-        """Opens panel to create a new tag and optionally add it to an entry.
+        """Creates a new tag and adds it to the currently selected entries.
 
+        Optionally opens up an edit panel after creation and before adding to entries.
         Populates name field using current search query.
-
-        Args:
-            add_to_entry (bool): Should this item be added to currently selected entries?
         """
         query: str = self.layout().search_field.text()
 

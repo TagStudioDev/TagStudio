@@ -278,5 +278,4 @@ class PreviewPanel(QWidget):
 
     @override
     def layout(self) -> PreviewPanelView:
-        """Return the typed layout for this widget."""
         return super().layout()  # pyright: ignore[reportReturnType]
