@@ -23,11 +23,11 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 class TagColorManager(QWidget):
-    create_namespace_modal: PanelModal | None = None
+    create_namespace_modal: Modal | None = None
 
     def __init__(
         self,
@@ -125,7 +125,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -142,7 +142,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
@@ -174,7 +174,7 @@ class TagColorManager(QWidget):
     def create_namespace(self):
         build_namespace_panel = BuildNamespacePanel(self.lib)
 
-        self.create_namespace_modal = PanelModal(
+        self.create_namespace_modal = Modal(
             build_namespace_panel,
             Translations["namespace.create.title"],
             is_savable=True,

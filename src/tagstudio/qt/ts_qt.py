@@ -51,8 +51,6 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-
-# This import has side-effect of importing PySide resources
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.module_status import ModuleStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
@@ -63,6 +61,7 @@ from tagstudio.qt.controllers.field_template_search_panel_controller import Fiel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchModal
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
@@ -77,7 +76,7 @@ from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, Palette, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
@@ -86,7 +85,6 @@ from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
 from tagstudio.qt.views.main_window import MainWindow
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
 from tagstudio.qt.views.stylesheets.stylesheets import header
 
@@ -169,12 +167,12 @@ class QtDriver(DriverMixin, QObject):
     favorite_updated = Signal(bool)
     archived_updated = Signal(bool)
 
-    tag_manager_panel: PanelModal | None = None
+    tag_manager: Modal | None = None
     color_manager_panel: TagColorManager | None = None
-    field_template_manager_panel: PanelModal | None = None
-    ignore_modal: PanelModal | None = None
-    add_tag_modal: PanelModal | None = None
-    add_field_modal: PanelModal | None = None
+    field_template_manager: Modal | None = None
+    ignore_modal: Modal | None = None
+    add_tag_modal: Modal | None = None
+    add_field_modal: Modal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
@@ -274,7 +272,7 @@ class QtDriver(DriverMixin, QObject):
         dir = QFileDialog.getExistingDirectory(
             parent=None,
             caption=Translations["window.title.open_create_library"],
-            dir="/",
+            dir=str(Path.home()),
             options=QFileDialog.Option.ShowDirsOnly,
         )
         if dir not in (None, ""):
@@ -303,19 +301,28 @@ class QtDriver(DriverMixin, QObject):
         elif self.settings.theme == Theme.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
+        pal: QPalette = self.app.palette()
+        # BUG: Changing the palette in any way here seems to affect the accent colors of certain
+        # widgets, like QLineEdit focused borders and QComboBox highlighted items and borders.
+        # Need to figure out the cause of this.
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
         ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-            pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipBase, QColor("#1e1e1e")
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipText, QColor("#FFFFFF")
+            )
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
             pal.setColor(
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
-
-            self.app.setPalette(pal)
+        Palette.set_palette(pal)
+        self.app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
@@ -358,14 +365,14 @@ class QtDriver(DriverMixin, QObject):
                 self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
-        self.tag_manager_panel = TagSearchModal(
+        self.tag_manager = TagSearchModal(
             self.lib,
             title=Translations["tag_manager.title"],
             is_tag_chooser=False,
         )
-        self.tag_manager_panel.tsp.set_driver(self)
+        self.tag_manager.tsp.set_driver(self)
 
-        self.tag_manager_panel.done.connect(
+        self.tag_manager.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
             )
@@ -375,8 +382,8 @@ class QtDriver(DriverMixin, QObject):
         self.color_manager_panel = TagColorManager(self)
 
         # Initialize the Field Template Manager panel
-        self.field_template_manager_panel = PanelModal(
-            widget=FieldTemplateSearchPanel(
+        self.field_template_manager = Modal(
+            content_widget=FieldTemplateSearchPanel(
                 self.lib,
                 is_field_template_chooser=False,
                 view=FieldTemplateSearchPanelView(is_field_template_chooser=False),
@@ -384,7 +391,7 @@ class QtDriver(DriverMixin, QObject):
             title=Translations["field_template_manager.title"],
             is_savable=False,
         )
-        self.field_template_manager_panel.done.connect(
+        self.field_template_manager.done.connect(
             lambda checked=False: self.main_window.preview_panel.set_selection(
                 self.selected, update_preview=False
             )
@@ -479,14 +486,14 @@ class QtDriver(DriverMixin, QObject):
             lambda f="": self.delete_files_callback(f)
         )
 
-        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
+        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager.show)
 
         self.main_window.menu_bar.color_manager_action.triggered.connect(
             self.color_manager_panel.show
         )
 
         self.main_window.menu_bar.field_template_manager_action.triggered.connect(
-            self.field_template_manager_panel.show
+            self.field_template_manager.show
         )
 
         # endregion
@@ -627,8 +634,10 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        self.check_for_update()
+        self.main_window.search_field.setFocus()
+
         self.app.exec()
+        self.check_for_update()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
@@ -724,7 +733,7 @@ class QtDriver(DriverMixin, QObject):
             self.ignore_modal = None
 
         panel = IgnoreModal(self.lib)
-        self.ignore_modal = PanelModal(
+        self.ignore_modal = Modal(
             panel,
             Translations["menu.edit.ignore_files"],
             is_savable=True,
@@ -862,7 +871,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_tag_action_callback(self):
         panel = BuildTagPanel(self.lib)
-        self.modal = PanelModal(
+        self.modal = Modal(
             panel,
             Translations["tag.new"],
             Translations["tag.create"],
@@ -954,7 +963,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.preview_thumb.media_player.stop()
+                        self.main_window.preview_panel.stop_media_playback()
 
                     msg = Translations.format(
                         "status.deleting_file", i=i, count=len(pending), path=f

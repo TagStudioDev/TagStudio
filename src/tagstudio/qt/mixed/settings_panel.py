@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.global_settings import (
     DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
@@ -30,7 +32,6 @@ from tagstudio.qt.global_settings import (
     Theme,
 )
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -38,7 +39,7 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class SettingsPanel(PanelWidget):
+class SettingsPanel(ModalContent):
     driver: "QtDriver"
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
@@ -216,6 +217,20 @@ class SettingsPanel(PanelWidget):
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
         )
 
+        # Open Edit Window When Creating a Tag
+        self.edit_tag_on_create_checkbox = QCheckBox()
+        self.edit_tag_on_create_checkbox.setChecked(self.driver.settings.edit_tag_on_create)
+        form_layout.addRow(
+            Translations["settings.edit_tag_on_create"], self.edit_tag_on_create_checkbox
+        )
+
+        # Open Edit Window When Adding a Field
+        self.edit_field_on_add_checkbox = QCheckBox()
+        self.edit_field_on_add_checkbox.setChecked(self.driver.settings.edit_field_on_add)
+        form_layout.addRow(
+            Translations["settings.edit_field_on_add"], self.edit_field_on_add_checkbox
+        )
+
     # TODO: Implement Library Settings
     def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
         form_layout = QFormLayout(self.library_settings_container)
@@ -366,6 +381,8 @@ class SettingsPanel(PanelWidget):
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
             "tag_click_action": self.tag_click_action_combobox.currentData(),
+            "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
+            "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
@@ -388,6 +405,8 @@ class SettingsPanel(PanelWidget):
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
         driver.settings.tag_click_action = settings["tag_click_action"]
+        driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
+        driver.settings.edit_field_on_add = settings["edit_field_on_add"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
@@ -409,15 +428,15 @@ class SettingsPanel(PanelWidget):
         )
 
     @classmethod
-    def build_modal(cls, driver: "QtDriver") -> PanelModal:
+    def build_modal(cls, driver: "QtDriver") -> Modal:
         settings_panel = cls(driver)
 
-        modal = PanelModal(
-            widget=settings_panel,
+        modal = Modal(
+            content_widget=settings_panel,
             window_title=Translations["settings.title"],
             is_savable=True,
         )
         modal.saved.connect(lambda: settings_panel.update_settings(driver))
-        modal.title_widget.setVisible(False)
+        modal.layout().title_label.setVisible(False)
 
         return modal

@@ -73,8 +73,8 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
 
         self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
 
-        if self.panel_save_button is not None:
-            self.panel_save_button.setDisabled(is_empty)
+        if self.save_button is not None:
+            self.save_button.setDisabled(is_empty)
 
     def __on_type_changed(self, index: int):
         old_type = self.__field_type
