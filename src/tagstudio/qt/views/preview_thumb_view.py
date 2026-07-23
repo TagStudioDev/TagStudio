@@ -160,6 +160,7 @@ class PreviewThumbView(QWidget):
         layout.addWidget(widget)
         layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
+        widget.setCursor(Qt.CursorShape.PointingHandCursor)
         page.setLayout(layout)
 
     def __update_image_size(self, size: tuple[int, int]) -> None:

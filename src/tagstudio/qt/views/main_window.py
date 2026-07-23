@@ -5,10 +5,11 @@
 import typing
 from collections.abc import Callable
 from pathlib import Path
+from typing import override
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
 from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
@@ -182,10 +183,10 @@ class MainMenuBar(QMenuBar):
         self.new_tag_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
+                QtCore.Qt.Key.Key_N,
             )
         )
-        self.new_tag_action.setToolTip("Ctrl+T")
+        self.new_tag_action.setToolTip("Ctrl+N")
         self.new_tag_action.setEnabled(False)
         self.edit_menu.addAction(self.new_tag_action)
 
@@ -220,9 +221,8 @@ class MainMenuBar(QMenuBar):
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
-        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.clear_select_action.setToolTip("Esc")
         self.clear_select_action.setEnabled(False)
+        self.clear_select_action.setToolTip("Esc")
         self.edit_menu.addAction(self.clear_select_action)
 
         # Copy Fields
@@ -700,10 +700,12 @@ class MainWindow(QMainWindow):
         self.content_splitter.addWidget(self.entry_list_container)
 
     def setup_preview_panel(self, driver: "QtDriver"):
-        self.preview_panel = PreviewPanel(driver.lib, driver)
+        self.preview_panel = PreviewPanel(driver)
         self.content_splitter.addWidget(self.preview_panel)
 
     def setup_status_bar(self):
+        # BUG: Clicking the status bar does not count as losing focus on other widgets
+        # (for example, the "Add Tag" line edit). Can this be fixed?
         self.status_bar = QStatusBar(self)
         self.status_bar.setObjectName("status_bar")
         status_bar_size_policy = QSizePolicy(
@@ -746,3 +748,9 @@ class MainWindow(QMainWindow):
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with hidden tags."""
         return self.show_hidden_entries_checkbox.isChecked()
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.menu_bar.clear_select_action.trigger()
+        return super().keyPressEvent(event)

@@ -52,9 +52,9 @@ class SearchPanel[T](PanelWidget):
         super().__init__()
         self.view = view
         self.is_chooser = is_chooser
-        self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.addWidget(self.view)
+        self.setLayout(QVBoxLayout(self))
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().addWidget(self.view)
         self.view.connect_callbacks(self)
         self._driver: QtDriver | None = None
         self.exclude: list[int] = exclude or []
