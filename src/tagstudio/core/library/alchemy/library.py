@@ -14,6 +14,7 @@ from os import makedirs
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import sqlalchemy
 import structlog
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
@@ -1745,6 +1746,49 @@ class Library:
                 child_id=tag.id,
             )
             session.add(parent_tag)
+
+    def get_version(self, key: str) -> int:
+        """Get a version value from the DB.
+
+        Args:
+            key(str): The key for the name of the version type to set.
+        """
+        return Library._get_version(self.engine, key)
+
+    @staticmethod
+    def _get_version(engine, key: str) -> int:
+        with Session(engine) as session:
+            engine = sqlalchemy.inspect(engine)
+            try:
+                # "Version" table added in DB_VERSION 101
+                if engine and engine.has_table("versions"):
+                    version = session.scalar(select(Version).where(Version.key == key))
+                    assert version
+                    return version.value
+                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+                # and is set to be removed in a future release.
+                else:
+                    return int(
+                        unwrap(
+                            session.scalar(
+                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
+                            )
+                        )
+                    )
+            except Exception:
+                return 0
+
+    @staticmethod
+    def _set_version(session: Session, key: str, value: int) -> None:
+        """Set a version value to the DB.
+
+        Args:
+            session(Session): The SQLAlchemy DB Session to use.
+            key(str): The key for the name of the version type to set.
+            value(int): The version value to set.
+        """
+        # Insert if key has no value yet, otherwise update the value
+        session.merge(Version(key=key, value=value))
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""

@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 
-from abc import abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
-import sqlalchemy
 import structlog
 import ujson
 from sqlalchemy import (
@@ -59,7 +57,6 @@ class DBMigration:
     version: int = None  # pyright: ignore[reportAssignmentType]
     initial_version: int | None = None
 
-    @abstractmethod
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log: Callable[[str], str]):
         raise NotImplementedError
@@ -67,12 +64,14 @@ class DBMigration:
 
 class DBMigrations:
     def __init__(self, library_dir: Path, engine: Engine) -> None:
+        from tagstudio.core.library.alchemy.library import Library
+
         self.library_dir = library_dir
         self.engine = engine
 
         # Don't check DB version when creating new library
-        self.loaded_db_version = self.__get_version(DB_VERSION_CURRENT_KEY)
-        self.initial_db_version = self.__get_version(DB_VERSION_INITIAL_KEY)
+        self.loaded_db_version = Library._get_version(engine, DB_VERSION_CURRENT_KEY)
+        self.initial_db_version = Library._get_version(engine, DB_VERSION_INITIAL_KEY)
 
         # ======================== Library Database Version Checking =======================
         # DB_VERSION 6 is the first supported SQLite DB version.
@@ -101,6 +100,8 @@ class DBMigrations:
         return self.loaded_db_version < DB_VERSION
 
     def run(self):
+        from tagstudio.core.library.alchemy.library import Library
+
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
         migrations: list[type[DBMigration]] = [
@@ -131,7 +132,7 @@ class DBMigrations:
                         lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
                     )
                     self.loaded_db_version = migration.version
-                    self.__set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                    Library._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
                     session.commit()
                 logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
 
@@ -139,44 +140,6 @@ class DBMigrations:
             "Ran all migrations, but the DB is still not on the newest version"
         )
         logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
-
-    def __get_version(self, key: str) -> int:
-        """Get a version value from the DB.
-
-        Args:
-            key(str): The key for the name of the version type to set.
-        """
-        with Session(self.engine) as session:
-            engine = sqlalchemy.inspect(self.engine)
-            try:
-                # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("versions"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-                # and is set to be removed in a future release.
-                else:
-                    return int(
-                        unwrap(
-                            session.scalar(
-                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
-                            )
-                        )
-                    )
-            except Exception:
-                return 0
-
-    def __set_version(self, session: Session, key: str, value: int) -> None:
-        """Set a version value to the DB.
-
-        Args:
-            session(Session): The SQLAlchemy DB Session to use.
-            key(str): The key for the name of the version type to set.
-            value(int): The version value to set.
-        """
-        # Insert if key has no value yet, otherwise update the value
-        session.merge(Version(key=key, value=value))
 
 
 class MigrationTo7(DBMigration):
