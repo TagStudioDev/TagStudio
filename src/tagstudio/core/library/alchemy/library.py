@@ -528,10 +528,7 @@ class Library:
     ) -> LibraryStatus:
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
 
-        logger.info(
-            "[Library] Opening SQLite Library",
-            library_dir=library_dir,
-        )
+        logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
         # Don't check DB version when creating new library
         loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
@@ -562,9 +559,7 @@ class Library:
 
         # save backup if patches will be applied
         if loaded_db_version < DB_VERSION:
-            self.library_dir = library_dir
-            self.save_library_backup_to_disk()
-            self.library_dir = None
+            Library.save_library_backup_to_disk(library_dir)
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
@@ -1859,16 +1854,17 @@ class Library:
                 session.rollback()
                 return None
 
-    def save_library_backup_to_disk(self) -> Path:
-        assert isinstance(self.library_dir, Path)
-        makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
+    @staticmethod
+    def save_library_backup_to_disk(library_dir: Path) -> Path:
+        assert isinstance(library_dir, Path)
+        makedirs(str(library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
         filename = f"ts_library_backup_{datetime.now(UTC).strftime('%Y_%m_%d_%H%M%S')}.sqlite"
 
-        target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
+        target_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / SQL_FILENAME,
+            library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
 
