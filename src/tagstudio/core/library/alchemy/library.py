@@ -444,6 +444,7 @@ class Library:
 
             # TODO - find a better way
             # is this the better way?
+            # Could we perhaps update the row we are reading from here?
             result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
             autoincrement_val = result.scalar()
             if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
@@ -564,19 +565,6 @@ class Library:
             self.library_dir = library_dir
             self.save_library_backup_to_disk()
             self.library_dir = None
-
-        # TODO: this is very sketchy; blindly creating all tables the newest DB version should have
-        # without considering what version the DB is currently on and then doing all of the
-        # migrations after that seems like it could cause problems in some scenarios.
-        # instead only have this on creation and create new tables as part of migrations
-        # Note: this actually produces an error and fails to initialise built-in tags when opening
-        # a library that doesn't yet have the is_hidden property on the tags table
-        logger.info("[Library] Creating DB tables...")
-        with self.engine.connect() as conn:
-            # TODO: this should instead be migrations that create the exact tables
-            # that were added in the respective DB versions
-            ModelBase.metadata.create_all(conn)
-            conn.commit()
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
@@ -705,6 +693,16 @@ class Library:
 
     def __apply_db101_migration(self, session: Session, library_dir: Path):
         """Migrate DB to DB_VERSION 101."""
+        # Create versions table
+        session.execute(
+            text("""
+        CREATE TABLE versions (
+            "key" VARCHAR NOT NULL PRIMARY KEY,
+            value INTEGER NOT NULL,
+        );
+        """)
+        )
+        session.flush()
         # Ensure version rows are present
         session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
         session.flush()
