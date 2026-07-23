@@ -578,29 +578,6 @@ class Library:
             ModelBase.metadata.create_all(conn)
             conn.commit()
 
-        # TODO: this needs to be a migration
-        # tag IDs < 1000 are reserved
-        # create tag and delete it to bump the autoincrement sequence
-        # TODO - find a better way
-        # is this the better way?
-        with self.engine.connect() as conn:
-            result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
-            autoincrement_val = result.scalar()
-            if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
-                try:
-                    conn.execute(
-                        text(
-                            "INSERT INTO tags "
-                            "(id, name, color_namespace, color_slug, is_category, is_hidden) "
-                            f"VALUES ({RESERVED_TAG_END}, 'temp', NULL, NULL, false, false)"
-                        )
-                    )
-                    conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
-                    conn.commit()
-                except OperationalError as e:
-                    logger.error("Could not initialize built-in tags", error=e)
-                    conn.rollback()
-
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
         migrations = [
