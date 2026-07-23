@@ -95,9 +95,9 @@ Some external dependencies are required for TagStudio to execute. Below is a tab
     Aborted (core dumped)
     ```
 
-### :material-nix: Nix(OS)
+### :material-nix: Nix & NixOS
 
-For [Nix(OS)](https://nixos.org/), the TagStudio repository includes a [flake](https://wiki.nixos.org/wiki/Flakes) that provides some outputs such as a development shell and package.
+For [Nix](https://nixos.org/), the TagStudio repository includes a [flake](https://wiki.nixos.org/wiki/Flakes) that provides some outputs such as a development shell and package.
 
 Two packages are provided: `tagstudio` and `tagstudio-jxl`. The distinction was made because `tagstudio-jxl` has an extra compilation step for [JPEG-XL](https://jpeg.org/jpegxl) image support. To give either of them a test run, you can execute `nix run github:TagStudioDev/TagStudio#tagstudio`. If you are in a cloned repository and wish to run a package with the context of the repository, you can simply use `nix run` with no arguments.
 
@@ -256,4 +256,4 @@ To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extracto
 
 ### ripgrep
 
-A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
+A recommended tool to improve the performance of directory scanning is [ripgrep](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.

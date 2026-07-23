@@ -118,7 +118,7 @@ If you choose to manually set up a virtual environment and install dependencies 
 !!! Warning "Linux Library Dependencies"
     If developing TagStudio on Linux, certain libraries are required that may not be included with your distribution. A full list of these can be found [here](install.md#linux).
 
-## Nix(OS)
+## Nix & NixOS
 
 If using [Nix](https://nixos.org/), there is a development environment already provided in the [flake](https://wiki.nixos.org/wiki/Flakes) that is accessible with the following command:
 
