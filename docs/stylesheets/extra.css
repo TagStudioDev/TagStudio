@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 /* Dark Theme */
+
 [data-md-color-scheme="slate"] {
+    --md-primary-fg-color: rgb(197, 110, 255);
+    --md-accent-fg-color: rgb(92, 222, 255);
     --md-default-bg-color: #060617;
     --md-default-fg-color: #eae1ff;
-    --md-default-fg-color--light: #b898ff;
-    --md-code-fg-color: #eae1ffcc;
+    --md-default-fg-color--light: #c2a5ff;
+    --md-code-fg-color: #d8c7ffcc;
     --md-code-hl-string-color: rgb(92, 255, 228);
     --md-code-hl-keyword-color: rgb(61, 155, 255);
     --md-code-hl-constant-color: rgb(205, 78, 255);
@@ -17,6 +20,8 @@
 
 /* Light Theme */
 [data-md-color-scheme="default"] {
+    --md-primary-fg-color: #7758ff;
+    --md-accent-fg-color: rgb(22, 166, 255);
     --md-default-fg-color--light: #090a26;
 }
 
@@ -73,6 +78,11 @@ td {
     padding: 0.5em 1em 0.5em 1em !important;
 }
 
+hr {
+    border-bottom-width: 2px !important;
+    border-color: #9988ff50 !important;
+}
+
 .md-typeset ul li ul {
     margin-top: 0;
     margin-bottom: 0.1rem;
@@ -119,6 +129,18 @@ h2,
     margin-right: -0.8rem;
 }
 
+.md-code__nav,
+.md-content__button,
+.headerlink {
+    border-radius: 0.2rem;
+    background: none;
+    color: #9988ff50 !important;
+}
+
+.md-code__nav:hover {
+    background-color: #9988ff50;
+}
+
 figcaption {
     margin-top: 0 !important;
 }
@@ -147,6 +169,51 @@ h2 > .twemoji {
 td code {
     margin-right: 0.3rem;
     padding: 0 !important;
+}
+
+.admonition {
+    border-radius: 0.4rem !important;
+    border-width: 2px !important;
+}
+
+.highlight > .filename {
+    border-width: 2px !important;
+    border: solid;
+    border-color: #9988ff10 !important;
+    border-radius: 0.4rem 0.4rem 0 0 !important;
+}
+
+code {
+    border-radius: 0.4rem !important;
+    border-width: 2px !important;
+    border: solid;
+    border-color: #9988ff10;
+}
+
+:is(span, ul, li, td, p, a) > code {
+    border-width: 1px !important;
+    border-radius: 0.1rem !important;
+}
+
+.filename + pre > code {
+    border-top-width: 0 !important;
+    border-radius: 0 0 0.4rem 0.4rem !important;
+}
+
+.tabbed-labels.tabbed-labels--linked {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    box-shadow: none !important;
+}
+
+.admonition-title {
+    font-size: 0.7rem;
+    font-family: "Bai Jamjuree", Roboto, sans-serif;
+    font-weight: 600 !important;
+}
+
+.admonition-title span {
+    margin-top: 0.05rem !important;
 }
 
 /* Matches the palette used by mkdocs-material */

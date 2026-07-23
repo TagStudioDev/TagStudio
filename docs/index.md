@@ -27,12 +27,12 @@ hide:
 
 ![TagStudio screenshot](./assets/tag_bubbles.png)
 
-**TagStudio** is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
+<span style="font-family: Bai Jamjuree, Roboto, sans-serif; font-size: 1.1rem; letter-spacing: -0.05rem;"><span style="font-weight: 900;">Tag</span><span style="font-weight: 500;"><i>Studio</i></span></span> is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
 </div>
 
 <figure markdown="span">
-  [:material-download: Download Latest Release](https://github.com/TagStudioDev/TagStudio/releases){ .md-button .md-button--primary }
+  [:material-github: Download Latest Release](https://github.com/TagStudioDev/TagStudio/releases){ .md-button .md-button--primary }
 </figure>
 
 ## :material-star: Core Features
