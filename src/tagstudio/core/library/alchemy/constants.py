@@ -4,6 +4,11 @@
 
 from sqlalchemy import text
 
+from tagstudio.core.library.alchemy.fields import (
+    DatetimeFieldTemplate,
+    TextFieldTemplate,
+)
+
 SQL_FILENAME: str = "ts_library.sqlite"
 JSON_FILENAME: str = "ts_library.json"
 
@@ -32,3 +37,15 @@ WITH RECURSIVE ChildTags AS (
 )
 SELECT tag_id FROM ChildTags;
 """)
+
+
+DEFAULT_FIELD_TEMPLATES = (
+    TextFieldTemplate(name="Title"),
+    TextFieldTemplate(name="Author"),
+    TextFieldTemplate(name="Artist"),
+    TextFieldTemplate(name="URL"),
+    TextFieldTemplate(name="Description", is_multiline=True),
+    TextFieldTemplate(name="Notes", is_multiline=True),
+    TextFieldTemplate(name="Comments", is_multiline=True),
+    DatetimeFieldTemplate(name="Date"),
+)

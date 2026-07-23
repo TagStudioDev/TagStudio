@@ -837,7 +837,7 @@ class QtDriver(DriverMixin, QObject):
         logger.info("Backing Up Library...")
         self.main_window.status_bar.showMessage(Translations["status.library_backup_in_progress"])
         start_time = time.time()
-        target_path = self.lib.save_library_backup_to_disk()
+        target_path = Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
         end_time = time.time()
         self.main_window.status_bar.showMessage(
             Translations.format(
