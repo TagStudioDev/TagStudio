@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 
+from abc import abstractmethod
+from collections.abc import Callable
 from pathlib import Path
 
 import sqlalchemy
@@ -53,6 +55,16 @@ class MigrationError(Exception):
     pass
 
 
+class DBMigration:
+    version: int = None  # pyright: ignore[reportAssignmentType]
+    initial_version: int | None = None
+
+    @abstractmethod
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log: Callable[[str], str]):
+        raise NotImplementedError
+
+
 class DBMigrations:
     def __init__(self, library_dir: Path, engine: Engine) -> None:
         self.library_dir = library_dir
@@ -80,9 +92,9 @@ class DBMigrations:
                 f"{expected_text} v{DB_VERSION}"
             )
 
-        logger.info(f"[Library] Library DB version: {self.loaded_db_version}")
-
-        raise NotImplementedError
+        logger.info(
+            f"[Library][Migration] Starting with library DB version: {self.loaded_db_version}"
+        )
 
     @property
     def required(self) -> bool:
@@ -91,35 +103,42 @@ class DBMigrations:
     def run(self):
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
-        migrations = [
-            (self.__apply_db7_migration, 7, None),  # changes: value_type, tags
-            (self.__apply_db8_migration, 8, None),  # changes: tag_colors
-            (self.__apply_db9_migration, 9, None),  # changes: entries
-            (self.__apply_db100_migration, 100, None),  # changes: tag_parents
-            (self.__apply_db101_migration, 101, None),  # changes: versions
-            (self.__apply_db102_migration, 102, None),  # changes: tag_parents
-            (self.__apply_db103_migration, 103, None),  # changes: tags
-            (self.__apply_db104_migration, 104, None),  # changes: deletes preferences
-            (self.__apply_db200_migration, 200, None),  # changes: field tables
-            (self.__apply_db201_migration, 201, 200),  # changes: field tables
-            (self.__apply_db202_migration, 202, None),  # changes: tag_parents
-            (self.__apply_db300_migration, 300, None),  # changes: deletes folders
+        migrations: list[type[DBMigration]] = [
+            MigrationTo7,  # changes: value_type, tags
+            MigrationTo8,  # changes: tag_colors
+            MigrationTo9,  # changes: entries
+            MigrationTo100,  # changes: tag_parents
+            MigrationTo101,  # changes: versions
+            MigrationTo102,  # changes: tag_parents
+            MigrationTo103,  # changes: tags
+            MigrationTo104,  # changes: deletes preferences
+            MigrationTo200,  # changes: field tables
+            MigrationTo201,  # changes: field tables
+            MigrationTo202,  # changes: tag_parents
+            MigrationTo300,  # changes: deletes folders
         ]
-        for migration, v, iv in migrations:
-            if self.loaded_db_version < v and (iv is None or self.initial_db_version < iv):
-                logger.info(f"[Library][Migration][{v}] Starting DB Migration")
+        for migration in migrations:
+            if self.loaded_db_version < migration.version and (
+                migration.initial_version is None
+                or self.initial_db_version < migration.initial_version
+            ):
+                logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
                 with Session(self.engine) as session:
                     # any error causes transaction to rollback
-                    migration(session, self.library_dir)
-                    self.loaded_db_version = v
-                    self.__set_version(session, DB_VERSION_CURRENT_KEY, v)
+                    migration.run(
+                        session,
+                        self.library_dir,
+                        lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
+                    )
+                    self.loaded_db_version = migration.version
+                    self.__set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
                     session.commit()
-                logger.info(f"[Library][Migration][{v}] Completed DB Migration")
+                logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
 
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
-        logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
+        logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
 
     def __get_version(self, key: str) -> int:
         """Get a version value from the DB.
@@ -159,9 +178,14 @@ class DBMigrations:
         # Insert if key has no value yet, otherwise update the value
         session.merge(Version(key=key, value=value))
 
-    def __apply_db7_migration(self, session: Session, _library_dir: Path):
+
+class MigrationTo7(DBMigration):
+    version = 7
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 6 to 7."""
-        logger.info("[Library][Migration][7] Applying patches to DB_VERSION: 6 library...")
+        logger.info(fmt_log("Applying patches to DB_VERSION: 6 library..."))
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
         # TODO: combine into single sql statement
         all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
@@ -173,14 +197,19 @@ class DBMigrations:
         session.execute(disam_stmt)
         session.flush()
 
-    def __apply_db8_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo8(DBMigration):
+    version = 8
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
         session.execute(
             text("ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL")
         )
         session.flush()
-        logger.info("[Library][Migration][8] Added color_border column to tag_colors table")
+        logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
         tag_colors: list[TagColorGroup] = [
@@ -194,7 +223,7 @@ class DBMigrations:
             session.add(color)
         session.flush()
         logger.info(
-            "[Library][Migration][8] Migrated tag colors to DB_VERSION 8+",
+            fmt_log("Migrated tag colors to DB_VERSION 8+"),
             color_name=tag_colors,
         )
 
@@ -220,7 +249,12 @@ class DBMigrations:
             session.execute(neon_stmt)
         session.flush()
 
-    def __apply_db9_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo9(DBMigration):
+    version = 9
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 8 to 9."""
         # Apply database schema changes
         add_filename_column = text(
@@ -228,7 +262,7 @@ class DBMigrations:
         )
         session.execute(add_filename_column)
         session.flush()
-        logger.info("[Library][Migration][9] Added filename column to entries table")
+        logger.info(fmt_log("Added filename column to entries table"))
 
         # Populate the new filename column.
         from tagstudio.core.library.alchemy.library import Library
@@ -237,9 +271,14 @@ class DBMigrations:
             entry.filename = entry.path.name
             session.merge(entry)
         session.flush()
-        logger.info("[Library][Migration][9] Populated filename column in entries table")
+        logger.info(fmt_log("Populated filename column in entries table"))
 
-    def __apply_db100_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo100(DBMigration):
+    version = 100
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 100."""
         # Repair parent-child tag relationships that are the wrong way around.
         stmt = update(TagParent).values(
@@ -248,9 +287,14 @@ class DBMigrations:
         )
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration][100] Refactored TagParent table")
+        logger.info(fmt_log("Refactored TagParent table"))
 
-    def __apply_db101_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo101(DBMigration):
+    version = 101
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 101."""
         # Create versions table
         session.execute(
@@ -265,35 +309,52 @@ class DBMigrations:
         # Ensure version rows are present
         session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
         session.flush()
+        logger.info(fmt_log("Created versions table"))
 
-    def __apply_db102_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo102(DBMigration):
+    version = 102
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 102."""
         # delete TagParents with a dangling parent reference
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration][102] Verified TagParent table data")
+        logger.info(fmt_log("Verified TagParent table data"))
 
-    def __apply_db103_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo103(DBMigration):
+    version = 103
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
         session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
         session.flush()
-        logger.info("[Library][Migration][103] Added is_hidden column to tags table")
+        logger.info(fmt_log("Added is_hidden column to tags table"))
 
         # mark the "Archived" tag as hidden
         session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
         session.flush()
-        logger.info("[Library][Migration][103] Updated archived tag to be hidden")
+        logger.info(fmt_log("Updated archived tag to be hidden"))
 
-    def __apply_db104_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo104(DBMigration):
+    version = 104
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-        self.__migrate_sql_to_ts_ignore(session, library_dir)
+        cls.__migrate_sql_to_ts_ignore(session, library_dir)
         session.execute(text("DROP TABLE preferences"))
         session.flush()
 
-    def __migrate_sql_to_ts_ignore(self, session: Session, library_dir: Path):
+    @classmethod
+    def __migrate_sql_to_ts_ignore(cls, session: Session, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
         if Path(ts_ignore).exists():
@@ -312,49 +373,54 @@ class DBMigrations:
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
-    def __apply_db200_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo200(DBMigration):
+    version = 200
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 200."""
         # Drop unused 'boolean_fields' and 'value_type' tables
-        logger.info("[Library][Migration][200] Dropping boolean_fields and value_type tables...")
+        logger.info(fmt_log("Dropping boolean_fields and value_type tables..."))
         session.execute(text("DROP TABLE boolean_fields"))
         session.execute(text("DROP TABLE value_type"))
 
         # Add 'name' column to text_fields and datetime_fields tables
-        logger.info("[Library][Migration][200] Adding name columns to field tables...")
+        logger.info(fmt_log("Adding name columns to field tables..."))
         stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
         session.execute(stmt)
         stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
         session.execute(stmt)
 
         # Drop unnecessary 'position' columns
-        logger.info("[Library][Migration][200] Dropping position columns to field tables...")
+        logger.info(fmt_log("Dropping position columns to field tables..."))
         session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
         session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
 
         # Add 'is_multiline' column to text_fields table
-        logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
+        logger.info(fmt_log("Adding is_multiline column to text_fields..."))
         stmt = text("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
         session.execute(stmt)
         session.flush()
 
         # Move values from old `type_key` columns into new `name` columns
-        logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
+        logger.info(fmt_log("Moving values from type_key columns to name..."))
         session.execute(text("UPDATE text_fields SET name = type_key"))
         session.execute(text("UPDATE datetime_fields SET name = type_key"))
         session.flush()
 
         # Change `name` values to title case
-        logger.info("[Library][Migration][200] Normalizing TextField names...")
+        logger.info(fmt_log("Normalizing TextField names..."))
         for text_field in session.execute(select(TextField)).scalars():
             # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
             text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
-        logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
+        logger.info(fmt_log("Normalizing DatetimeField names..."))
         for datetime_field in session.execute(select(DatetimeField)).scalars():
             datetime_field.name = datetime_field.name.title().replace("_", " ")
         session.flush()
 
         # Add correct `is_multiline` values to text_fields table
-        logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
+        logger.info(fmt_log("Updating is_multiline for legacy TEXT_BOXes..."))
         text_boxes = [
             x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
         ]
@@ -365,7 +431,7 @@ class DBMigrations:
         session.flush()
 
         # Repair legacy "Description" fields to use is_multiline = True
-        logger.info("[Library][Migration][200] Repairing legacy Description fields...")
+        logger.info(fmt_log("Repairing legacy Description fields..."))
         desc_stmt = (
             update(TextField)
             .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
@@ -374,7 +440,7 @@ class DBMigrations:
         session.execute(desc_stmt)
 
         # Repair legacy "Comments" fields to use is_multiline = True
-        logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
+        logger.info(fmt_log("Repairing legacy Comment fields..."))
         comm_stmt = (
             update(TextField)
             .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
@@ -383,7 +449,7 @@ class DBMigrations:
         session.execute(comm_stmt)
 
         # Add default field templates
-        logger.info("[Library][Migration][200] Adding default field templates...")
+        logger.info(fmt_log("Adding default field templates..."))
         for template in DEFAULT_FIELD_TEMPLATES:
             session.add(template)
         session.flush()
@@ -399,7 +465,13 @@ class DBMigrations:
             text("CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)")
         )
 
-    def __apply_db201_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo201(DBMigration):
+    version = 201
+    initial_version = 200
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 201."""
         create_text_fields_table = text("""
         CREATE TABLE text_fields_new (
@@ -421,7 +493,7 @@ class DBMigrations:
         )
         """)
 
-        logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
+        logger.info(fmt_log("Dropping type_key from text_fields table..."))
         session.execute(create_text_fields_table)
         session.flush()
         session.execute(
@@ -434,7 +506,7 @@ class DBMigrations:
         session.execute(text("DROP TABLE text_fields"))
         session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
 
-        logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
+        logger.info(fmt_log("Dropping type_key from datetime_fields table..."))
         session.execute(create_datetime_fields_table)
         session.flush()
         session.execute(
@@ -449,14 +521,24 @@ class DBMigrations:
 
         session.flush()
 
-    def __apply_db202_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo202(DBMigration):
+    version = 202
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 202."""
         stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
         session.flush()
-        logger.info("[Library][Migration][202] Verified TagParent table data")
+        logger.info(fmt_log("Verified TagParent table data"))
 
-    def __apply_db300_migration(self, session: Session, library_dir: Path):
+
+class MigrationTo300(DBMigration):
+    version = 300
+
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
         ## remove folder_id column from entries table
         # create new table in the desired scheme (without folder_id column)
         session.execute(
