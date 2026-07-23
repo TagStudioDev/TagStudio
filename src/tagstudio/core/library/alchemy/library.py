@@ -44,7 +44,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.dialects import sqlite
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import (
     InstanceState,
     Session,
@@ -76,7 +76,7 @@ from tagstudio.core.library.alchemy.constants import (
     SQL_FILENAME,
     TAG_CHILDREN_QUERY,
 )
-from tagstudio.core.library.alchemy.db import make_tables
+from tagstudio.core.library.alchemy.db import Base as ModelBase
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
     BrowsingState,
@@ -431,21 +431,40 @@ class Library:
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
     ) -> LibraryStatus:
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
-        loaded_db_version: int = 0
 
         logger.info(
             "[Library] Opening SQLite Library",
             library_dir=library_dir,
         )
 
-        logger.info(f"[Library] Library DB version: {loaded_db_version}")
-        make_tables(self.engine)
+        logger.info("[Library] Creating DB tables...")
+        with self.engine.connect() as conn:
+            ModelBase.metadata.create_all(conn)
+            conn.commit()
+
+            # TODO - find a better way
+            # is this the better way?
+            result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+            autoincrement_val = result.scalar()
+            if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
+                try:
+                    conn.execute(
+                        text(
+                            "INSERT INTO tags "
+                            "(id, name, color_namespace, color_slug, is_category, is_hidden) "
+                            f"VALUES ({RESERVED_TAG_END}, 'temp', NULL, NULL, false, false)"
+                        )
+                    )
+                    conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+                    conn.commit()
+                except OperationalError as e:
+                    logger.error("Could not initialize built-in tags", error=e)
+                    conn.rollback()
 
         with Session(self.engine) as session:
             # Add default tag color namespaces.
             namespaces = default_color_groups.namespaces()
 
-            # TODO: are all of these commits necessary?
             session.add_all(namespaces)
             session.flush()
 
@@ -507,8 +526,6 @@ class Library:
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
     ) -> LibraryStatus:
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
-        loaded_db_version: int = 0
-        initial_db_version: int = DB_VERSION
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -554,7 +571,35 @@ class Library:
         # instead only have this on creation and create new tables as part of migrations
         # Note: this actually produces an error and fails to initialise built-in tags when opening
         # a library that doesn't yet have the is_hidden property on the tags table
-        make_tables(self.engine)
+        logger.info("[Library] Creating DB tables...")
+        with self.engine.connect() as conn:
+            # TODO: this should instead be migrations that create the exact tables
+            # that were added in the respective DB versions
+            ModelBase.metadata.create_all(conn)
+            conn.commit()
+
+        # TODO: this needs to be a migration
+        # tag IDs < 1000 are reserved
+        # create tag and delete it to bump the autoincrement sequence
+        # TODO - find a better way
+        # is this the better way?
+        with self.engine.connect() as conn:
+            result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+            autoincrement_val = result.scalar()
+            if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
+                try:
+                    conn.execute(
+                        text(
+                            "INSERT INTO tags "
+                            "(id, name, color_namespace, color_slug, is_category, is_hidden) "
+                            f"VALUES ({RESERVED_TAG_END}, 'temp', NULL, NULL, false, false)"
+                        )
+                    )
+                    conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+                    conn.commit()
+                except OperationalError as e:
+                    logger.error("Could not initialize built-in tags", error=e)
+                    conn.rollback()
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
