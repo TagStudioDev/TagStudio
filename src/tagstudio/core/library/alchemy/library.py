@@ -541,6 +541,13 @@ class Library:
             )
 
         logger.info(f"[Library] Library DB version: {loaded_db_version}")
+
+        # save backup if patches will be applied
+        if loaded_db_version < DB_VERSION:
+            self.library_dir = library_dir
+            self.save_library_backup_to_disk()
+            self.library_dir = None
+
         # TODO: this is very sketchy; blindly creating all tables the newest DB version should have
         # without considering what version the DB is currently on and then doing all of the
         # migrations after that seems like it could cause problems in some scenarios.
@@ -548,12 +555,6 @@ class Library:
         # Note: this actually produces an error and fails to initialise built-in tags when opening
         # a library that doesn't yet have the is_hidden property on the tags table
         make_tables(self.engine)
-
-        # save backup if patches will be applied
-        if loaded_db_version < DB_VERSION:
-            self.library_dir = library_dir
-            self.save_library_backup_to_disk()
-            self.library_dir = None
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
