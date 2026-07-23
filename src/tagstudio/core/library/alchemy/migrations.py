@@ -118,13 +118,13 @@ class DBMigrations:
             MigrationTo202,  # changes: tag_parents
             MigrationTo300,  # changes: deletes folders
         ]
-        for migration in migrations:
-            if self.loaded_db_version < migration.version and (
-                migration.initial_version is None
-                or self.initial_db_version < migration.initial_version
-            ):
-                logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
-                with Session(self.engine) as session:
+        with Session(self.engine) as session:
+            for migration in migrations:
+                if self.loaded_db_version < migration.version and (
+                    migration.initial_version is None
+                    or self.initial_db_version < migration.initial_version
+                ):
+                    logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
                     # any error causes transaction to rollback
                     migration.run(
                         session,
@@ -132,8 +132,17 @@ class DBMigrations:
                         lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
                     )
                     self.loaded_db_version = migration.version
-                    Library._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
-                    session.commit()
+                    try:
+                        Library._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                    except Exception as e:
+                        logger.info(
+                            f"[Library][Migration][{migration.version}] "
+                            "Couldn't update version, continuing without commit",
+                            error=e,
+                        )
+                        session.flush()
+                    else:
+                        session.commit()
                 logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
 
         assert self.loaded_db_version >= DB_VERSION, (
@@ -264,8 +273,8 @@ class MigrationTo101(DBMigration):
             text("""
         CREATE TABLE versions (
             "key" VARCHAR NOT NULL PRIMARY KEY,
-            value INTEGER NOT NULL,
-        );
+            value INTEGER NOT NULL
+        )
         """)
         )
         session.flush()
