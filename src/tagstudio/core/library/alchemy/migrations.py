@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import override
 
 import structlog
 import ujson
@@ -133,6 +134,7 @@ class DBMigrations:
 class MigrationTo7(DBMigration):
     version = 7
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 6 to 7."""
@@ -152,6 +154,7 @@ class MigrationTo7(DBMigration):
 class MigrationTo8(DBMigration):
     version = 8
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 7 to 8."""
@@ -204,6 +207,7 @@ class MigrationTo8(DBMigration):
 class MigrationTo9(DBMigration):
     version = 9
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 8 to 9."""
@@ -228,6 +232,7 @@ class MigrationTo9(DBMigration):
 class MigrationTo100(DBMigration):
     version = 100
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 100."""
@@ -244,6 +249,7 @@ class MigrationTo100(DBMigration):
 class MigrationTo101(DBMigration):
     version = 101
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 101."""
@@ -266,6 +272,7 @@ class MigrationTo101(DBMigration):
 class MigrationTo102(DBMigration):
     version = 102
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 102."""
@@ -279,6 +286,7 @@ class MigrationTo102(DBMigration):
 class MigrationTo103(DBMigration):
     version = 103
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 102 to 103."""
@@ -296,6 +304,7 @@ class MigrationTo103(DBMigration):
 class MigrationTo104(DBMigration):
     version = 104
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB from DB_VERSION 103 to 104."""
@@ -328,6 +337,7 @@ class MigrationTo104(DBMigration):
 class MigrationTo200(DBMigration):
     version = 200
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 200."""
@@ -421,6 +431,7 @@ class MigrationTo201(DBMigration):
     version = 201
     initial_version = 200
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 201."""
@@ -476,6 +487,7 @@ class MigrationTo201(DBMigration):
 class MigrationTo202(DBMigration):
     version = 202
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         """Migrate DB to DB_VERSION 202."""
@@ -488,6 +500,7 @@ class MigrationTo202(DBMigration):
 class MigrationTo300(DBMigration):
     version = 300
 
+    @override
     @classmethod
     def run(cls, session: Session, library_dir: Path, fmt_log):
         ## remove folder_id column from entries table
