@@ -7,23 +7,10 @@ from pathlib import Path
 
 import structlog
 import ujson
-from sqlalchemy import (
-    Engine,
-    and_,
-    delete,
-    select,
-    text,
-    update,
-)
-from sqlalchemy.orm import (
-    Session,
-)
+from sqlalchemy import Engine, and_, delete, select, text, update
+from sqlalchemy.orm import Session
 
-from tagstudio.core.constants import (
-    IGNORE_NAME,
-    TAG_ARCHIVED,
-    TS_FOLDER_NAME,
-)
+from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
@@ -31,17 +18,9 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_INITIAL_KEY,
     DEFAULT_FIELD_TEMPLATES,
 )
-from tagstudio.core.library.alchemy.fields import (
-    LEGACY_FIELD_MAP,
-    DatetimeField,
-    TextField,
-)
+from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import (
-    Tag,
-    TagColorGroup,
-    Version,
-)
+from tagstudio.core.library.alchemy.models import Tag, TagColorGroup, Version
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations

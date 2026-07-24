@@ -72,11 +72,7 @@ from tagstudio.core.library.alchemy.constants import (
     TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import Base as ModelBase
-from tagstudio.core.library.alchemy.enums import (
-    MAX_SQL_VARIABLES,
-    BrowsingState,
-    SortingModeEnum,
-)
+from tagstudio.core.library.alchemy.enums import MAX_SQL_VARIABLES, BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.fields import (
     LEGACY_FIELD_MAP,
     BaseField,
