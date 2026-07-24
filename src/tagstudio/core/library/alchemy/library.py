@@ -1774,18 +1774,6 @@ class Library:
             except Exception:
                 return 0
 
-    @staticmethod
-    def _set_version(session: Session, key: str, value: int) -> None:
-        """Set a version value to the DB.
-
-        Args:
-            session(Session): The SQLAlchemy DB Session to use.
-            key(str): The key for the name of the version type to set.
-            value(int): The version value to set.
-        """
-        # Insert if key has no value yet, otherwise update the value
-        session.merge(Version(key=key, value=value))
-
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""
         all_fields: set[BaseField] = set()

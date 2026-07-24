@@ -80,7 +80,6 @@ class DBMigrations:
         return self.loaded_db_version < DB_VERSION
 
     def run(self):
-        from tagstudio.core.library.alchemy.library import Library
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
@@ -113,7 +112,7 @@ class DBMigrations:
                     )
                     self.loaded_db_version = migration.version
                     try:
-                        Library._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                        self.__set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
                     except Exception as e:
                         logger.info(
                             f"[Library][Migration][{migration.version}] "
@@ -129,6 +128,17 @@ class DBMigrations:
             "Ran all migrations, but the DB is still not on the newest version"
         )
         logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
+
+    def __set_version(self, session: Session, key: str, value: int) -> None:
+        """Set a version value to the DB.
+
+        Args:
+            session(Session): The SQLAlchemy DB Session to use.
+            key(str): The key for the name of the version type to set.
+            value(int): The version value to set.
+        """
+        # Insert if key has no value yet, otherwise update the value
+        session.merge(Version(key=key, value=value))
 
 
 class MigrationTo7(DBMigration):
