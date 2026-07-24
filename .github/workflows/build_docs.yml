@@ -13,7 +13,7 @@ on:
       - .github/actions/setup-python/action.yml
       - .github/workflows/build_docs.yml
       - docs/**
-      - mkdocs.yml
+      - properdocs.yml
   workflow_dispatch:
 
 concurrency:
@@ -50,7 +50,7 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - name: Run mkdocs
+      - name: Run properdocs
         env:
           DISABLE_MKDOCS_2_WARNING: 'true'
-        run: mkdocs gh-deploy --force
+        run: properdocs gh-deploy --force
