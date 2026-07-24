@@ -60,7 +60,11 @@ extra = [{ include-group = "pre-commit" }]
 lint = [{ include-group = "pyright" }, { include-group = "ruff" }]
 test = [{ include-group = "pytest" }]
 
-mkdocs = ["mkdocs-material[imaging]>=9.7", "mkdocs-redirects~=1.2"]
+mkdocs = [
+    "mkdocs-material[imaging]>=9.7",
+    "mkdocs-redirects~=1.2",
+    "properdocs",
+]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.21"]
 pyright = ["pyright~=1.1.409"]
