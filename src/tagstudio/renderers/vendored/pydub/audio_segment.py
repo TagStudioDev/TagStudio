@@ -43,7 +43,7 @@ from pydub.utils import (
 )
 
 from tagstudio.core.utils.silent_subprocess import silent_popen
-from tagstudio.qt.previews.vendored.pydub.utils import _mediainfo_json
+from tagstudio.renderers.vendored.pydub.utils import _mediainfo_json
 
 basestring = str
 xrange = range
@@ -256,7 +256,7 @@ class _AudioSegment:
             self.sample_width = 4
             self.frame_width = self.channels * self.sample_width
 
-        super(_AudioSegment, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def raw_data(self):
