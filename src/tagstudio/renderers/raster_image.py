@@ -31,7 +31,7 @@ register_heif_opener()
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 
 
-def image_thumb(filepath: Path) -> Image.Image | None:
+def raster_image_thumb(filepath: Path) -> Image.Image | None:
     """Render a thumbnail for a standard image type.
 
     Args:
@@ -51,7 +51,7 @@ def image_thumb(filepath: Path) -> Image.Image | None:
     return im
 
 
-def image_exr_thumb(filepath: Path) -> Image.Image | None:
+def exr_image_thumb(filepath: Path) -> Image.Image | None:
     """Render a thumbnail for a EXR image type.
 
     Args:
@@ -82,7 +82,7 @@ def image_exr_thumb(filepath: Path) -> Image.Image | None:
     return im
 
 
-def image_raw_thumb(filepath: Path) -> Image.Image | None:
+def raw_image_thumb(filepath: Path) -> Image.Image | None:
     """Render a thumbnail for a RAW image type.
 
     Args:

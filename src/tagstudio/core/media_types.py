@@ -305,6 +305,7 @@ class MediaCategories:
         ".nef",
         ".nrw",
         ".orf",
+        ".r3d",
         ".raf",
         ".raw",
         ".rw2",

@@ -16,7 +16,7 @@ from tagstudio.core.utils.types import unwrap
 logger = structlog.get_logger(__name__)
 
 
-def mdp_thumb(filepath: Path) -> Image.Image | None:
+def medibang_paint_thumb(filepath: Path) -> Image.Image | None:
     """Extract the thumbnail from a .mdp file.
 
     Args:

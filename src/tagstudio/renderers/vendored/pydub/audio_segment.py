@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: (c) 2022  James Robert (jiaaro)
+# SPDX-FileCopyrightText: (c) 2022 James Robert (jiaaro), http://jiaaro.com
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 # Vendored from pydub

@@ -44,16 +44,16 @@ from tagstudio.renderers.archive import (
     powerpoint_thumb,
 )
 from tagstudio.renderers.audio import audio_album_thumb, audio_waveform_thumb
-from tagstudio.renderers.blender import blender
-from tagstudio.renderers.clip_studio import clip_thumb, pdn_thumb
-from tagstudio.renderers.ebook import epub_cover
-from tagstudio.renderers.font import font_long_thumb, font_short_thumb
-from tagstudio.renderers.medibang_paint import mdp_thumb
+from tagstudio.renderers.blender import blender_thumb
+from tagstudio.renderers.clip_studio import clip_studio_thumb, pdn_thumb
+from tagstudio.renderers.ebook import epub_thumb
+from tagstudio.renderers.font import font_full_preview, font_small_thumb
+from tagstudio.renderers.medibang_paint import medibang_paint_thumb
 from tagstudio.renderers.pdf import pdf_thumb
-from tagstudio.renderers.raster_image import image_exr_thumb, image_raw_thumb, image_thumb
+from tagstudio.renderers.raster_image import exr_image_thumb, raster_image_thumb, raw_image_thumb
 from tagstudio.renderers.source_engine import vtf_thumb
 from tagstudio.renderers.text import text_thumb
-from tagstudio.renderers.vector_image import image_vector_thumb
+from tagstudio.renderers.vector_image import vector_image_thumb
 from tagstudio.renderers.video import video_thumb
 
 if TYPE_CHECKING:
@@ -805,7 +805,7 @@ class ThumbRenderer(QObject):
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = epub_cover(_filepath, ext)
+                    image = epub_thumb(_filepath, ext)
                 # Krita ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
@@ -815,7 +815,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
                 ):
-                    image = clip_thumb(_filepath)
+                    image = clip_studio_thumb(_filepath)
                 # VTF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
@@ -829,18 +829,18 @@ class ThumbRenderer(QObject):
                     if MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
-                        image = image_raw_thumb(_filepath)
+                        image = raw_image_thumb(_filepath)
                     # Vector Images --------------------------------------------
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
-                        image = image_vector_thumb(_filepath, adj_size)
+                        image = vector_image_thumb(_filepath, adj_size)
                     # EXR Images -----------------------------------------------
                     elif ext in [".exr"]:
-                        image = image_exr_thumb(_filepath)
+                        image = exr_image_thumb(_filepath)
                     # Normal Images --------------------------------------------
                     else:
-                        image = image_thumb(_filepath)
+                        image = raster_image_thumb(_filepath)
                 # Videos =======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
@@ -871,12 +871,12 @@ class ThumbRenderer(QObject):
                 ):
                     if is_grid_thumb:
                         # Short (Aa) Preview
-                        image = font_short_thumb(_filepath, adj_size)
+                        image = font_small_thumb(_filepath, adj_size)
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.BLUE)
                     else:
                         # Large (Full Alphabet) Preview
-                        image = font_long_thumb(_filepath, adj_size)
+                        image = font_full_preview(_filepath, adj_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
@@ -891,7 +891,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
-                    image = blender(_filepath)
+                    image = blender_thumb(_filepath)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
@@ -902,7 +902,7 @@ class ThumbRenderer(QObject):
                     image = archive_thumb(_filepath, ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
-                    image = mdp_thumb(_filepath)
+                    image = medibang_paint_thumb(_filepath)
                 # Paint.NET ====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
                     image = pdn_thumb(_filepath)

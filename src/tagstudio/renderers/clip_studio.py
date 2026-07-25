@@ -15,7 +15,7 @@ from PIL import Image
 logger = structlog.get_logger(__name__)
 
 
-def clip_thumb(filepath: Path) -> Image.Image | None:
+def clip_studio_thumb(filepath: Path) -> Image.Image | None:
     """Extract the thumbnail from the SQLite database embedded in a .clip file.
 
     Args:

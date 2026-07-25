@@ -1,10 +1,6 @@
-#!/usr/bin/env python3
+# SPDX-FileCopyrightText: (c) 2017 The Blender Foundation
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
-
-
-# <pep8 compliant>
-
 
 ## This file is a modified script that gets the thumbnail data stored in a blend file
 

@@ -19,7 +19,7 @@ from PySide6.QtSvg import QSvgRenderer
 logger = structlog.get_logger(__name__)
 
 
-def image_vector_thumb(filepath: Path, size: int) -> Image.Image:
+def vector_image_thumb(filepath: Path, size: int) -> Image.Image:
     """Render a thumbnail for a vector image, such as SVG.
 
     Args:

@@ -16,7 +16,7 @@ from tagstudio.renderers.vendored.blender_renderer import (
 logger = structlog.get_logger(__name__)
 
 
-def blender(filepath: Path) -> Image.Image | None:
+def blender_thumb(filepath: Path) -> Image.Image | None:
     """Get an emended thumbnail from a Blender file, if a thumbnail is present.
 
     Args:

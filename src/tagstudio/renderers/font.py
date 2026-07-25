@@ -17,7 +17,7 @@ from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 logger = structlog.get_logger(__name__)
 
 
-def font_short_thumb(filepath: Path, size: int) -> Image.Image | None:
+def font_small_thumb(filepath: Path, size: int) -> Image.Image | None:
     """Render a small font preview ("Aa") thumbnail from a font file.
 
     Args:
@@ -78,7 +78,7 @@ def font_short_thumb(filepath: Path, size: int) -> Image.Image | None:
     return im
 
 
-def font_long_thumb(filepath: Path, size: int) -> Image.Image | None:
+def font_full_preview(filepath: Path, size: int) -> Image.Image | None:
     """Render a large font preview ("Alphabet") thumbnail from a font file.
 
     Args:
