@@ -1,9 +1,11 @@
 {
+    "about.app_cache_path": "TagStudio缓存路径",
     "about.config_path": "配置路径",
     "about.description": "TagStudio是一款照片和文件组织应用程序，采用基于标签的系统，旨在为用户提供自由和灵活性。该应用程序不使用专有程序或格式，不会产生大量的辅助文件，也不会对您的文件系统结构造成彻底的颠覆。",
     "about.documentation": "文档",
     "about.module.found": "存在",
     "about.title": "关于 TagStudio",
+    "about.version": "版本",
     "about.website": "网站",
     "app.git": "Git 提交更新",
     "app.pre_release": "预发布版本",

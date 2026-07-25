@@ -10,6 +10,7 @@
     "about.version.latest": "{built_version} (legújabb kiadás: {latest_version})",
     "about.website": "Honlap",
     "app.git": "Git-véglegesítés",
+    "app.nightly": "Napi",
     "app.pre_release": "Kísérleti verzió",
     "app.title": "{base_title} – Könyvtár: „{library_dir}”",
     "color.color_border": "Másodlagos szín használata keretszínként",
