@@ -36,17 +36,19 @@ from tagstudio.qt.global_settings import (
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.renderers.apple import apple_embedded_thumb
-from tagstudio.renderers.archive import archive_thumb
+from tagstudio.renderers.archive import (
+    apple_embedded_thumb,
+    archive_thumb,
+    krita_thumb,
+    open_doc_thumb,
+    powerpoint_thumb,
+)
 from tagstudio.renderers.audio import audio_album_thumb, audio_waveform_thumb
 from tagstudio.renderers.blender import blender
 from tagstudio.renderers.clip_studio import clip_thumb, pdn_thumb
 from tagstudio.renderers.ebook import epub_cover
 from tagstudio.renderers.font import font_long_thumb, font_short_thumb
-from tagstudio.renderers.krita import krita_thumb
 from tagstudio.renderers.medibang_paint import mdp_thumb
-from tagstudio.renderers.microsoft_office import powerpoint_thumb
-from tagstudio.renderers.open_document import open_doc_thumb
 from tagstudio.renderers.pdf import pdf_thumb
 from tagstudio.renderers.raster_image import image_exr_thumb, image_raw_thumb, image_thumb
 from tagstudio.renderers.source_engine import vtf_thumb
@@ -58,10 +60,10 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+Image.MAX_IMAGE_PIXELS = None
 
 
 logger = structlog.get_logger(__name__)
-Image.MAX_IMAGE_PIXELS = None
 
 
 try:

@@ -35,7 +35,7 @@ def image_thumb(filepath: Path) -> Image.Image | None:
     im: Image.Image | None = None
     try:
         with filepath.open("rb") as file:
-            im = load_raster_image(BytesIO(file.read()))
+            im = image_from_bytes(BytesIO(file.read()))
     except (
         FileNotFoundError,
         UnidentifiedImageError,
@@ -102,7 +102,7 @@ def image_raw_thumb(filepath: Path) -> Image.Image | None:
     return im
 
 
-def load_raster_image(image_data: BytesIO) -> Image.Image:
+def image_from_bytes(image_data: BytesIO) -> Image.Image:
     """Load a raster image and add a background if it's transparent.
 
     Args:

@@ -12,8 +12,8 @@ from PIL import Image
 
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
-from tagstudio.renderers.archive import Archive, first_image, open_archive
-from tagstudio.renderers.raster_image import load_raster_image
+from tagstudio.renderers.archive import Archive, first_image_in_archive, open_archive
+from tagstudio.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
@@ -39,7 +39,7 @@ def epub_cover(filepath: Path, ext: str) -> Image.Image | None:
                     im = cover_from_comic_info(archive, comic_info, "InnerCover")
 
             if not im:
-                im = first_image(archive)
+                im = first_image_in_archive(archive)
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
@@ -68,6 +68,6 @@ def cover_from_comic_info(
         ext = Path(page_name).suffix
         if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
             image_data = archive.read(page_name)  # pyright: ignore[reportUnknownVariableType]
-            im = load_raster_image(BytesIO(image_data))
+            im = image_from_bytes(BytesIO(image_data))
 
     return im

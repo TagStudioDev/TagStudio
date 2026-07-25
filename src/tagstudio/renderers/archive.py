@@ -16,7 +16,7 @@ from PIL import Image
 
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
-from tagstudio.renderers.raster_image import load_raster_image
+from tagstudio.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
@@ -60,27 +60,7 @@ class TarFile:
         self.tar.__exit__(*args)
 
 
-def archive_thumb(filepath: Path, ext: str) -> Image.Image | None:
-    """Extract the first image found in the archive.
-
-    Args:
-        filepath (Path): The path to the archive.
-        ext (str): The file extension.
-
-    Returns:
-        Image: The first image found in the archive.
-    """
-    im: Image.Image | None = None
-    try:
-        with open_archive(filepath, ext) as archive:
-            im = first_image(archive)
-    except Exception as e:
-        logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-    return im
-
-
-def open_archive(filepath: Path, ext: str) -> Archive:
+def open_archive(filepath: Path, ext: str = "") -> Archive:
     """Open an archive with its corresponding archiver.
 
     Args:
@@ -100,7 +80,7 @@ def open_archive(filepath: Path, ext: str) -> Archive:
     return archiver(filepath, "r")
 
 
-def first_image(archive: Archive) -> Image.Image | None:
+def first_image_in_archive(archive: Archive) -> Image.Image | None:
     """Find and extract the first renderable image in the archive.
 
     Args:
@@ -113,6 +93,66 @@ def first_image(archive: Archive) -> Image.Image | None:
         ext = Path(file_name).suffix
         if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
             image_data = archive.read(file_name)  # pyright: ignore[reportUnknownVariableType]
-            return load_raster_image(BytesIO(image_data))
+            return image_from_bytes(BytesIO(image_data))
 
     return None
+
+
+def archive_thumb(
+    filepath: Path, ext: str = "", image_names: list[Path] | list[str] | None = None
+) -> Image.Image | None:
+    """Extract an embedded preview image from an archive.
+
+    Args:
+        filepath (Path): The path to the archive.
+        ext (str): The file extension. Used to help determine more specific archive type.
+        image_names: (list[Path] | list[str] | None): List of embedded image names to search for.
+
+    Returns:
+        Image: The first image found in the archive.
+    """
+    try:
+        with open_archive(filepath, ext) as archive:
+            # If no list of image names to search for was provided, default to the first image.
+            if not image_names:
+                return first_image_in_archive(archive)
+
+            for image_name in image_names:
+                if image_name in archive.namelist():
+                    file_data = archive.read(str(image_name))  # pyright: ignore[reportUnknownVariableType]
+                    return image_from_bytes(BytesIO(file_data))
+
+    except Exception as e:
+        logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        return None
+
+
+def apple_embedded_thumb(filepath: Path) -> Image.Image | None:
+    """Extract and render an apple embedded thumbnail (iWork, Apple Creative Studio)."""
+    image_names: list[str] = [
+        "preview.jpg",
+        "QuickLook/Preview.heic",
+        "QuickLook/Thumbnail.jpg",
+        "QuickLook/Thumbnail.heic",
+        "QuickLook/Thumbnail.webp",
+        "QuickLook/Icon.webp",
+    ]
+    return archive_thumb(filepath, image_names=image_names)
+
+
+def krita_thumb(filepath: Path) -> Image.Image | None:
+    """Extract and render a thumbnail for a Krita file."""
+    image_names = ["preview.png"]
+    return archive_thumb(filepath, image_names=image_names)
+
+
+def open_doc_thumb(filepath: Path) -> Image.Image | None:
+    """Extract and render a thumbnail for an OpenDocument file."""
+    image_names = ["Thumbnails/thumbnail.png"]
+    return archive_thumb(filepath, image_names=image_names)
+
+
+def powerpoint_thumb(filepath: Path) -> Image.Image | None:
+    """Extract and render a thumbnail for a Microsoft PowerPoint file."""
+    image_names = ["docProps/thumbnail.jpeg"]
+    return archive_thumb(filepath, image_names=image_names)

@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# NOTE: This file contains Qt imports because Qt is used as the vector renderer in this case.
+# This is NOT considered part of the Qt frontend, but is technically tangled with the Qt import.
 
 from io import BytesIO
 from pathlib import Path
