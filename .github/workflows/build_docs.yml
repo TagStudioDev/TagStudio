@@ -51,6 +51,4 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - name: Run properdocs
-        env:
-          DISABLE_MKDOCS_2_WARNING: 'true'
         run: properdocs gh-deploy --force
