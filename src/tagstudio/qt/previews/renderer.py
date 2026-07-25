@@ -66,12 +66,6 @@ Image.MAX_IMAGE_PIXELS = None
 logger = structlog.get_logger(__name__)
 
 
-try:
-    import pillow_jxl  # noqa: F401 # pyright: ignore
-except ImportError as e:
-    logger.error('[ThumbRenderer] Could not import the "pillow_jxl" module', error=e)
-
-
 class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 

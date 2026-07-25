@@ -20,10 +20,15 @@ from rawpy import (
 
 from tagstudio.core.utils.types import unwrap
 
+logger = structlog.get_logger(__name__)
+
+try:
+    import pillow_jxl  # noqa: F401 # pyright: ignore
+except ImportError as e:
+    logger.error('[ThumbRenderer] Could not import the "pillow_jxl" module', error=e)
+
 register_heif_opener()
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
-
-logger = structlog.get_logger(__name__)
 
 
 def image_thumb(filepath: Path) -> Image.Image | None:
