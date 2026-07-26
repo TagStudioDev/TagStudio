@@ -112,7 +112,7 @@ class DBMigrations:
                     )
                     self.loaded_db_version = migration.version
                     try:
-                        self.__set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                        self._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
                     except Exception as e:
                         logger.info(
                             f"[Library][Migration][{migration.version}] "
@@ -129,7 +129,7 @@ class DBMigrations:
         )
         logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
 
-    def __set_version(self, session: Session, key: str, value: int) -> None:
+    def _set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
 
         Args:
