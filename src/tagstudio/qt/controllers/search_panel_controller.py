@@ -170,11 +170,12 @@ class SearchPanel[T](PanelWidget):
         search_results: tuple[list[T], list[T]] = self.search_items(query_lower)
 
         # Sort and prioritize the results
+        # not item.is_pinned is used beacuse False sorts before True.
         direct_results = list({item for item in search_results[0] if not self._is_excluded(item)})
-        direct_results.sort(key=lambda item: _item_name(item).lower())
+        direct_results.sort(key=lambda item: (not item.is_pinned, _item_name(item).lower()))  # pyright: ignore[reportAttributeAccessIssue]
 
         ancestor_results = list({item for item in search_results[1] if not self._is_excluded(item)})
-        ancestor_results.sort(key=lambda item: _item_name(item).lower())
+        ancestor_results.sort(key=lambda item: (not item.is_pinned, _item_name(item).lower()))  # pyright: ignore[reportAttributeAccessIssue]
 
         raw_results = list(direct_results + ancestor_results)
         priority_results: set[T] = set()

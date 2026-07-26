@@ -238,6 +238,20 @@ class BuildTagPanel(PanelWidget):
         self.hidden_layout.addWidget(self.hidden_checkbox)
         self.hidden_layout.addWidget(self.hidden_title)
 
+        # Pinned ---------------------------------------------------------------
+        self.pinned_widget = QWidget()
+        self.pinned_layout = QHBoxLayout(self.pinned_widget)
+        self.pinned_layout.setStretch(1, 1)
+        self.pinned_layout.setContentsMargins(0, 0, 0, 0)
+        self.pinned_layout.setSpacing(6)
+        self.pinned_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.pinned_title = QLabel(Translations["tag.is_pinned"])
+        self.pinned_checkbox = QCheckBox()
+        self.pinned_checkbox.setFixedSize(22, 22)
+        self.pinned_checkbox.setStyleSheet(checkbox_style())
+        self.pinned_layout.addWidget(self.pinned_checkbox)
+        self.pinned_layout.addWidget(self.pinned_title)
+
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
         self.root_layout.addWidget(self.shorthand_widget)
@@ -249,6 +263,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
+        self.root_layout.addWidget(self.pinned_widget)
 
         self.set_tag(tag or Tag(name=Translations["tag.new"]))
 
@@ -488,6 +503,7 @@ class BuildTagPanel(PanelWidget):
 
         self.cat_checkbox.setChecked(tag.is_category)
         self.hidden_checkbox.setChecked(tag.is_hidden)
+        self.pinned_checkbox.setChecked(tag.is_pinned)
 
     def _on_name_change(self):
         is_empty = not self.name_field.text().strip()
@@ -505,6 +521,7 @@ class BuildTagPanel(PanelWidget):
         tag.color_slug = self.tag_color_slug
         tag.is_category = self.cat_checkbox.isChecked()
         tag.is_hidden = self.hidden_checkbox.isChecked()
+        tag.is_pinned = self.pinned_checkbox.isChecked()
 
         logger.info("[BuildTag] Build Tag", tag_id=tag.id, tag_name=tag.name)
         return tag

@@ -388,6 +388,7 @@
     "tag.edit": "Edit Tag",
     "tag.is_category": "Is Category",
     "tag.is_hidden": "Is Hidden",
+    "tag.is_pinned": "Is Pinned",
     "tag.name": "Name",
     "tag.new": "New Tag",
     "tag.parent_tags": "Parent Tags",

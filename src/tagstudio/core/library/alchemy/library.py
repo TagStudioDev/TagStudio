@@ -570,6 +570,7 @@ class Library:
             (self.__apply_db201_migration, 201, 200),  # changes: field tables
             (self.__apply_db202_migration, 202, None),  # changes: tag_parents
             (self.__apply_db300_migration, 300, None),  # changes: deletes folders
+            (self.__apply_db301_migration, 301, None),  # changes: tags
         ]
         for migration, v, iv in migrations:
             if loaded_db_version < v and (iv is None or initial_db_version < iv):
@@ -913,6 +914,13 @@ class Library:
         ## drop table "folders"
         session.execute(text("DROP TABLE folders"))
         session.flush()
+
+    def __apply_db301_migration(self, session: Session, library_dir: Path):
+        """Migrate DB to DB_VERSION 301."""
+        # Add the new pinned column for tags
+        session.execute(text("ALTER TABLE tags ADD COLUMN is_pinned BOOLEAN NOT NULL DEFAULT 0"))
+        session.flush()
+        logger.info("[Library][Migration][103] Added is_pinned column to tags table")
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
