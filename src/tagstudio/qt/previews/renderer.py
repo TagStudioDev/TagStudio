@@ -7,31 +7,23 @@ import hashlib
 import math
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import structlog
-from PIL import (
-    Image,
-    ImageChops,
-    ImageDraw,
-    ImageEnhance,
-    ImageFile,
-    ImageQt,
-    UnidentifiedImageError,
-)
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFile, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QObject, QSize, Qt, Signal
-from PySide6.QtGui import QGuiApplication, QPixmap
-from typing_extensions import deprecated
 
 from tagstudio.core.exceptions import NoRendererError
+from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.global_settings import (
     DEFAULT_CACHED_THUMB_RES,
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
+    GlobalSettings,
+    Theme,
 )
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
@@ -45,7 +37,7 @@ from tagstudio.renderers.archive import (
 )
 from tagstudio.renderers.audio import audio_album_thumb, audio_waveform_thumb
 from tagstudio.renderers.blender import blender_thumb
-from tagstudio.renderers.clip_studio import clip_studio_thumb, pdn_thumb
+from tagstudio.renderers.clip_studio import clip_studio_thumb, paint_dot_net_thumb
 from tagstudio.renderers.ebook import epub_thumb
 from tagstudio.renderers.font import font_full_preview, font_small_thumb
 from tagstudio.renderers.medibang_paint import medibang_paint_thumb
@@ -56,9 +48,6 @@ from tagstudio.renderers.text import text_thumb
 from tagstudio.renderers.vector_image import vector_image_thumb
 from tagstudio.renderers.video import video_thumb
 
-if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
-
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
@@ -66,18 +55,16 @@ Image.MAX_IMAGE_PIXELS = None
 logger = structlog.get_logger(__name__)
 
 
-class ThumbRenderer(QObject):
+class FileRenderer:
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
-    updated = Signal(float, QPixmap, QSize, Path)
-    updated_ratio = Signal(float)
     cached_img_ext: str = ".webp"
 
-    def __init__(self, driver: "QtDriver") -> None:
-        """Initialize the class."""
+    def __init__(self, library: Library, settings: GlobalSettings) -> None:
         super().__init__()
-        self.driver = driver
+        self.lib = library
+        self.settings = settings
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -120,7 +107,6 @@ class ThumbRenderer(QObject):
 
         return "file_generic"
 
-    @deprecated("This method will be replaced with Qt painting methods in the near future.")
     def _get_mask(
         self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
     ) -> Image.Image:
@@ -144,7 +130,6 @@ class ThumbRenderer(QObject):
             self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
         return item
 
-    @deprecated("This method will be replaced with Qt painting methods in the near future.")
     def _get_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -167,6 +152,7 @@ class ThumbRenderer(QObject):
         name: str,
         color: UiColor,
         size: tuple[int, int],
+        theme: Theme,
         pixel_ratio: float = 1.0,
         bg_image: Image.Image | None = None,
         draw_edge: bool = True,
@@ -178,6 +164,7 @@ class ThumbRenderer(QObject):
             name (str): The name of the icon resource. "thumb_loading" will not draw a border.
             color (str): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
+            theme (Theme): A theme enum to determine the light/dark theme.
             pixel_ratio (float): The screen pixel ratio.
             bg_image (Image.Image): Optional background image to go behind the icon.
             draw_edge (bool): Flag for is the raised edge should be drawn.
@@ -190,19 +177,20 @@ class ThumbRenderer(QObject):
         item: Image.Image | None = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
             item_flat: Image.Image = (
-                self._render_corner_icon(name, color, size, pixel_ratio, bg_image)
+                self._render_corner_icon(name, color, size, pixel_ratio, theme, bg_image)
                 if is_corner
-                else self._render_center_icon(name, color, size, pixel_ratio, draw_border, bg_image)
+                else self._render_center_icon(
+                    name, color, size, pixel_ratio, theme, draw_border, bg_image
+                )
             )
             if draw_edge:
                 edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
-                item = self._apply_edge(item_flat, edge, faded=True)
+                item = self._apply_edge(item_flat, edge, theme, faded=True)
                 self.icons[(name, color, *size, pixel_ratio)] = item
             else:
                 item = item_flat
         return item
 
-    @deprecated("This method will be replaced with Qt painting methods in the near future.")
     def _render_mask(
         self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
     ) -> Image.Image:
@@ -233,7 +221,6 @@ class ThumbRenderer(QObject):
         )
         return im
 
-    @deprecated("This method will be replaced with Qt painting methods in the near future.")
     def _render_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -293,6 +280,7 @@ class ThumbRenderer(QObject):
         color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme,
         draw_border: bool = True,
         bg_image: Image.Image | None = None,
     ) -> Image.Image:
@@ -303,6 +291,7 @@ class ThumbRenderer(QObject):
             color (UiColor): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             draw_border (bool): Option to draw a border.
             bg_image (Image.Image): Optional background image to go behind the icon.
         """
@@ -362,11 +351,7 @@ class ThumbRenderer(QObject):
             size,
             resample=Image.Resampling.BILINEAR,
         )
-        fg: Image.Image = Image.new(
-            "RGB",
-            size=size,
-            color="#00FF00",
-        )
+        fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
 
         # Get icon by name
         icon = self.rm.get(name)
@@ -388,10 +373,7 @@ class ThumbRenderer(QObject):
         )
 
         # Apply color overlay
-        im = self._apply_overlay_color(
-            im,
-            color,
-        )
+        im = self._apply_overlay_color(im, color, theme)
 
         return im
 
@@ -401,6 +383,7 @@ class ThumbRenderer(QObject):
         color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme,
         bg_image: Image.Image | None = None,
     ) -> Image.Image:
         """Render a thumbnail icon with the icon in the upper-left corner.
@@ -410,6 +393,7 @@ class ThumbRenderer(QObject):
             color (UiColor): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             draw_border (bool): Option to draw a border.
             bg_image (Image.Image): Optional background image to go behind the icon.
         """
@@ -436,10 +420,7 @@ class ThumbRenderer(QObject):
                 color="#000000",
             )
             # Apply color overlay
-            bg = self._apply_overlay_color(
-                im,
-                color,
-            )
+            bg = self._apply_overlay_color(im, color, theme)
 
         # Paste background color with rounded rectangle mask onto blank image
         im.paste(
@@ -493,7 +474,7 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _apply_overlay_color(self, image: Image.Image, color: UiColor) -> Image.Image:
+    def _apply_overlay_color(self, image: Image.Image, color: UiColor, theme: Theme) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
 
         Red channel for foreground, green channel for outline, none for background.
@@ -501,20 +482,21 @@ class ThumbRenderer(QObject):
         Args:
             image (Image.Image): The image to apply an overlay to.
             color (UiColor): The name of the ColorType color to use.
+            theme (Theme): A theme enum to determine the light/dark theme.
         """
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.PRIMARY, color)
         )
         fg_color: str = (
             get_ui_color(ColorType.PRIMARY, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
         ol_color: str = (
             get_ui_color(ColorType.BORDER, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
 
@@ -534,9 +516,12 @@ class ThumbRenderer(QObject):
 
         return bg
 
-    @deprecated("This method will be replaced with Qt painting methods in the near future.")
     def _apply_edge(
-        self, image: Image.Image, edge: tuple[Image.Image, Image.Image], faded: bool = False
+        self,
+        image: Image.Image,
+        edge: tuple[Image.Image, Image.Image],
+        theme: Theme,
+        faded: bool = False,
     ) -> Image.Image:
         """Apply a given edge effect to an image.
 
@@ -544,13 +529,12 @@ class ThumbRenderer(QObject):
             image (Image.Image): The image to apply the edge to.
             edge (tuple[Image.Image, Image.Image]): The edge images to apply.
                 Item 0 is the inner highlight, and item 1 is the outer shadow.
+            theme (Theme): A theme enum to determine the light/dark theme.
             faded (bool): Whether to apply a faded version of the edge.
                 Used for light themes.
         """
         opacity: float = 1.0 if not faded else 0.8
-        shade_reduction: float = (
-            0 if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark else 0.3
-        )
+        shade_reduction: float = 0 if theme == Theme.DARK else 0.3
         im: Image.Image = image
         im_hl, im_sh = deepcopy(edge)
 
@@ -570,21 +554,24 @@ class ThumbRenderer(QObject):
 
     def render(
         self,
+        cache: CacheManager | None,
         timestamp: float,
         filepath: Path | str,
         base_size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme = Theme.DARK,
         is_loading: bool = False,
         is_grid_thumb: bool = False,
-        update_on_ratio_change: bool = False,
     ):
         """Render a thumbnail or preview image.
 
         Args:
+            cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             is_loading (bool): Is this a loading graphic?
             is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
                 Or else the Preview Pane?
@@ -592,11 +579,7 @@ class ThumbRenderer(QObject):
         """
         render_mask_and_edge: bool = True
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        theme_color: UiColor = (
-            UiColor.THEME_LIGHT
-            if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
-            else UiColor.THEME_DARK
-        )
+        theme_color: UiColor = UiColor.THEME_LIGHT if theme == Theme.LIGHT else UiColor.THEME_DARK
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -605,6 +588,7 @@ class ThumbRenderer(QObject):
                 name=self._get_resource_id(filepath),
                 color=theme_color,
                 size=size,
+                theme=theme,
                 pixel_ratio=pixel_ratio,
             )
             return im
@@ -616,6 +600,7 @@ class ThumbRenderer(QObject):
                 name="broken_link_icon",
                 color=UiColor.RED,
                 size=size,
+                theme=theme,
                 pixel_ratio=pixel_ratio,
                 bg_image=cached_im,
                 draw_edge=not cached_im,
@@ -623,9 +608,7 @@ class ThumbRenderer(QObject):
             )
             return im
 
-        def render_ignored(
-            size: tuple[int, int], pixel_ratio: float, im: Image.Image
-        ) -> Image.Image:
+        def render_ignored(size: tuple[int, int], im: Image.Image) -> Image.Image:
             icon_ratio: float = 5
             padding_factor = 18
 
@@ -646,8 +629,9 @@ class ThumbRenderer(QObject):
 
         def fetch_cached_image(file_name: Path):
             image: Image.Image | None = None
-            assert self.driver.cache_manager is not None
-            cached_path = self.driver.cache_manager.get_file_path(file_name)
+            if not cache:
+                return image
+            cached_path = cache.get_file_path(file_name)
 
             if cached_path and cached_path.is_file():
                 try:
@@ -669,11 +653,11 @@ class ThumbRenderer(QObject):
                 mod_time = str(filepath.stat().st_mtime_ns)
             hashable_str: str = f"{str(filepath)}{mod_time}"
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
-            file_name = Path(f"{hash_value}{ThumbRenderer.cached_img_ext}")
+            file_name = Path(f"{hash_value}{FileRenderer.cached_img_ext}")
             image = fetch_cached_image(file_name)
 
-            if not image and self.driver.settings.generate_thumbs:
-                settings_res = self.driver.settings.cached_thumb_resolution
+            if not image and self.settings.generate_thumbs:
+                settings_res = self.settings.cached_thumb_resolution
                 thumb_res = (
                     settings_res
                     if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
@@ -684,10 +668,11 @@ class ThumbRenderer(QObject):
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
                 image = self._render(
-                    timestamp,
+                    cache,
                     filepath,
                     (thumb_res, thumb_res),
                     1,
+                    theme,
                     is_grid_thumb,
                     save_to_file=file_name,
                 )
@@ -711,7 +696,7 @@ class ThumbRenderer(QObject):
                         (adj_size, adj_size), pixel_ratio
                     )
                     image = self._apply_edge(
-                        four_corner_gradient(image, (adj_size, adj_size), mask), edge
+                        four_corner_gradient(image, (adj_size, adj_size), mask), edge, theme
                     )
 
             # Check if the file is supposed to be ignored and render an overlay if needed
@@ -720,10 +705,10 @@ class ThumbRenderer(QObject):
                     image
                     and Ignore.compiled_patterns
                     and Ignore.compiled_patterns.match(
-                        filepath.relative_to(unwrap(self.driver.lib.library_dir))
+                        filepath.relative_to(unwrap(self.lib.library_dir))
                     )
                 ):
-                    image = render_ignored((adj_size, adj_size), pixel_ratio, image)
+                    image = render_ignored((adj_size, adj_size), image)
             except TypeError:
                 pass
 
@@ -731,13 +716,13 @@ class ThumbRenderer(QObject):
         elif is_loading:
             # Initialize "Loading" thumbnail
             loading_thumb: Image.Image = self._get_icon(
-                "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
+                "thumb_loading", theme_color, (adj_size, adj_size), theme, pixel_ratio
             )
             image = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
         # A full preview image (never cached)
         elif not is_grid_thumb:
-            image = self._render(timestamp, filepath, base_size, pixel_ratio)
+            image = self._render(cache, filepath, base_size, pixel_ratio, theme)
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
@@ -754,40 +739,31 @@ class ThumbRenderer(QObject):
         if not image:
             image = Image.new("RGBA", (128, 128), color="#FF00FF")
 
-        # Convert the final image to a pixmap to emit.
-        qim = ImageQt.ImageQt(image)
-        pixmap = QPixmap.fromImage(qim)
-        pixmap.setDevicePixelRatio(pixel_ratio)
-        self.updated_ratio.emit(image.size[0] / image.size[1])
-        if pixmap:
-            self.updated.emit(
-                timestamp,
-                pixmap,
-                QSize(
-                    math.ceil(adj_size / pixel_ratio),
-                    math.ceil(image.size[1] / pixel_ratio),
-                ),
-                filepath,
-            )
-        else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath)
+        return (
+            image,
+            (math.ceil(adj_size / pixel_ratio), math.ceil(image.size[1] / pixel_ratio)),
+            timestamp,
+        )
 
     def _render(
         self,
-        timestamp: float,
+        cache: CacheManager | None,
         filepath: str | Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme = Theme.DARK,
         is_grid_thumb: bool = False,
         save_to_file: Path | None = None,
     ) -> Image.Image | None:
         """Render a thumbnail or preview image.
 
         Args:
+            cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
                 Or else the Preview Pane?
             save_to_file(Path | None): A filepath to optionally save the output to.
@@ -795,117 +771,117 @@ class ThumbRenderer(QObject):
         """
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         image: Image.Image | None = None
-        _filepath: Path = Path(filepath)
+        filepath_: Path = Path(filepath)
         savable_media_type: bool = True
 
-        if _filepath and _filepath.is_file():
+        if filepath_ and filepath_.is_file():
             try:
-                ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
-                # Ebooks =======================================================
+                ext: str = filepath_.suffix.lower() if filepath_.suffix else filepath_.stem.lower()
+                # eBooks ===========================================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = epub_thumb(_filepath, ext)
-                # Krita ========================================================
+                    image = epub_thumb(filepath_, ext)
+                # Krita ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
                 ):
-                    image = krita_thumb(_filepath)
-                # Clip Studio Paint ============================================
+                    image = krita_thumb(filepath_)
+                # Clip Studio Paint ================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
                 ):
-                    image = clip_studio_thumb(_filepath)
-                # VTF ==========================================================
+                    image = clip_studio_thumb(filepath_)
+                # VTF ==============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
-                    image = vtf_thumb(_filepath)
-                # Images =======================================================
+                    image = vtf_thumb(filepath_)
+                # Images ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
                 ):
-                    # Raw Images -----------------------------------------------
+                    # Raw Images -------------------------------------------------------------------
                     if MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
-                        image = raw_image_thumb(_filepath)
-                    # Vector Images --------------------------------------------
+                        image = raw_image_thumb(filepath_)
+                    # Vector Images ----------------------------------------------------------------
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
-                        image = vector_image_thumb(_filepath, adj_size)
-                    # EXR Images -----------------------------------------------
+                        image = vector_image_thumb(filepath_, adj_size)
+                    # EXR Images -------------------------------------------------------------------
                     elif ext in [".exr"]:
-                        image = exr_image_thumb(_filepath)
-                    # Normal Images --------------------------------------------
+                        image = exr_image_thumb(filepath_)
+                    # Normal Images ----------------------------------------------------------------
                     else:
-                        image = raster_image_thumb(_filepath)
-                # Videos =======================================================
+                        image = raster_image_thumb(filepath_)
+                # Videos ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
-                    image = video_thumb(_filepath)
-                # PowerPoint Slideshow
+                    image = video_thumb(filepath_)
+                # PowerPoint =======================================================================
                 elif ext in {".pptx"}:
-                    image = powerpoint_thumb(_filepath)
-                # OpenDocument/OpenOffice ======================================
+                    image = powerpoint_thumb(filepath_)
+                # OpenDocument/OpenOffice ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
                 ):
-                    image = open_doc_thumb(_filepath)
-                # Apple iWork Suite ============================================
+                    image = open_doc_thumb(filepath_)
+                # Apple iWork + Creator Studio =====================================================
                 elif (
                     MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES)
                     or ext == ".pxd"
                 ):
-                    image = apple_embedded_thumb(_filepath)
-                # Plain Text ===================================================
+                    image = apple_embedded_thumb(filepath_)
+                # Plain Text =======================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
                 ):
-                    image = text_thumb(_filepath)
-                # Fonts ========================================================
+                    image = text_thumb(filepath_)
+                # Fonts ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
                     if is_grid_thumb:
                         # Short (Aa) Preview
-                        image = font_small_thumb(_filepath, adj_size)
+                        image = font_small_thumb(filepath_, adj_size)
                         if image is not None:
-                            image = self._apply_overlay_color(image, UiColor.BLUE)
+                            image = self._apply_overlay_color(image, UiColor.BLUE, theme)
                     else:
                         # Large (Full Alphabet) Preview
-                        image = font_full_preview(_filepath, adj_size)
+                        image = font_full_preview(filepath_, adj_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
                 ):
-                    image = audio_album_thumb(_filepath, ext)
+                    image = audio_album_thumb(filepath_, ext)
                     if image is None:
-                        image = audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
+                        image = audio_waveform_thumb(filepath_, ext, adj_size, pixel_ratio)
                         savable_media_type = False
                         if image is not None:
-                            image = self._apply_overlay_color(image, UiColor.GREEN)
+                            image = self._apply_overlay_color(image, UiColor.GREEN, theme)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
-                    image = blender_thumb(_filepath)
+                    image = blender_thumb(filepath_)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
-                    image = pdf_thumb(_filepath, adj_size, ext)
+                    image = pdf_thumb(filepath_, adj_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
-                    image = archive_thumb(_filepath, ext)
+                    image = archive_thumb(filepath_, ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
-                    image = medibang_paint_thumb(_filepath)
+                    image = medibang_paint_thumb(filepath_)
                 # Paint.NET ====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
-                    image = pdn_thumb(_filepath)
+                    image = paint_dot_net_thumb(filepath_)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
@@ -913,9 +889,8 @@ class ThumbRenderer(QObject):
                 if image:
                     image = self._resize_image(image, (adj_size, adj_size))
 
-                if save_to_file and savable_media_type and image:
-                    assert self.driver.cache_manager is not None
-                    self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
+                if save_to_file and savable_media_type and image and cache:
+                    cache.save_image(image, save_to_file, mode="RGBA")
 
             except (
                 AssertionError,

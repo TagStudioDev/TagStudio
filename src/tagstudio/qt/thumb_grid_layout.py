@@ -17,7 +17,7 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
-from tagstudio.qt.previews.renderer import ThumbRenderer
+from tagstudio.qt.qt_file_renderer import QtFileRenderer
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -44,7 +44,7 @@ class ThumbGridLayout(QLayout):
         self._entry_items: dict[int, int] = {}
 
         self._render_results: dict[Path, Any] = {}
-        self._renderer: ThumbRenderer = ThumbRenderer(self.driver)
+        self._renderer: QtFileRenderer = QtFileRenderer(self.driver.lib, self.driver.settings)
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
 
@@ -77,6 +77,7 @@ class ThumbGridLayout(QLayout):
             (
                 self._renderer.render,
                 (
+                    self.driver.cache_manager,
                     self._render_cutoff,
                     Path(),
                     base_size,
@@ -300,7 +301,15 @@ class ThumbGridLayout(QLayout):
                     self.driver.thumb_job_queue.put(
                         (
                             self._renderer.render,
-                            (timestamp, file_path, base_size, ratio, False, True),
+                            (
+                                self.driver.cache_manager,
+                                timestamp,
+                                file_path,
+                                base_size,
+                                ratio,
+                                False,
+                                True,
+                            ),
                         )
                     )
 

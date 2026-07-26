@@ -17,7 +17,7 @@ from tagstudio.core.media_types import MediaType
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.platform_strings import open_file_str, trash_term
-from tagstudio.qt.previews.renderer import ThumbRenderer
+from tagstudio.qt.qt_file_renderer import QtFileRenderer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.stylesheets.rounded_pixmap_style import RoundedPixmapStyle
 
@@ -45,6 +45,7 @@ class PreviewThumbView(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
+        self._driver = driver
 
         self.__img_button_size = (266, 266)
         self.__image_ratio = 1.0
@@ -109,7 +110,7 @@ class PreviewThumbView(QWidget):
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
-        self.__thumb_renderer = ThumbRenderer(driver)
+        self.__thumb_renderer = QtFileRenderer(driver.lib, driver.settings)
         self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
         self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
 
@@ -232,12 +233,13 @@ class PreviewThumbView(QWidget):
             math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
         )
 
+        # TODO: Make driver update the cache manager reference here instead of passing the driver.
         self.__thumb_renderer.render(
+            self._driver.cache_manager,
             time.time(),
             filepath,
             self.__rendered_res,
             self.devicePixelRatio(),
-            update_on_ratio_change=True,
         )
 
     def __update_media_player(self, filepath: Path) -> None:

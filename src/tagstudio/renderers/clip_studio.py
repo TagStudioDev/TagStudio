@@ -44,7 +44,7 @@ def clip_studio_thumb(filepath: Path) -> Image.Image | None:
     return im
 
 
-def pdn_thumb(filepath: Path) -> Image.Image | None:
+def paint_dot_net_thumb(filepath: Path) -> Image.Image | None:
     """Extract the base64-encoded thumbnail from a .pdn file header.
 
     Args:
