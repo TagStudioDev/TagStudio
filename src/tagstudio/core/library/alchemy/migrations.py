@@ -34,7 +34,7 @@ class MigrationError(Exception):
 
 
 class DBMigration:
-    version: int = None  # pyright: ignore[reportAssignmentType]
+    version: int
     initial_version: int | None = None
 
     @classmethod
