@@ -9,9 +9,7 @@ from PIL import Image
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 
-from tagstudio.renderers.vendored.blender_renderer import (
-    blend_thumb,  # pyright: ignore[reportUnknownVariableType]
-)
+from tagstudio.renderers.vendored.blender_thumbnailer import blend_thumb
 
 logger = structlog.get_logger(__name__)
 
