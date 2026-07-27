@@ -214,7 +214,7 @@ From there, Git will automatically run through the hooks during commit actions!
 
 You can automatically enter this development shell, and keep your user shell, with a tool like [direnv](https://direnv.net/). Some reference `.envrc` files are provided in the repository at [`contrib`](https://github.com/TagStudioDev/TagStudio/tree/main/contrib).
 
-Two currently available are for [Nix](#nixos) and [uv](#installing-with-uv), to use one:
+Two currently available are for [Nix](#nix-nixos) and [uv](#installing-with-uv), to use one:
 
 ```sh
 ln -s .envrc-$variant .envrc
