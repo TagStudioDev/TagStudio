@@ -12,18 +12,17 @@ from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel_controller import SearchPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 from tagstudio.qt.views.tag_search_panel_view import TagSearchPanelView
 
 logger = structlog.get_logger(__name__)
 
 
-class TagSearchModal(PanelModal):
-    tsp: "TagSearchPanel"
-
+class TagSearchModal(Modal):
     def __init__(
         self,
         library: Library,
@@ -33,16 +32,9 @@ class TagSearchModal(PanelModal):
         has_save: bool = False,
     ):
         self.tsp = TagSearchPanel(
-            library,
-            exclude,
-            is_tag_chooser,
-            view=TagSearchPanelView(is_tag_chooser),
+            library, exclude, is_tag_chooser, view=TagSearchPanelView(is_tag_chooser)
         )
-        super().__init__(
-            widget=self.tsp,
-            title=title,
-            is_savable=has_save,
-        )
+        super().__init__(content_widget=self.tsp, title=title, is_savable=has_save)
 
 
 class TagSearchPanel(SearchPanel[Tag]):
@@ -82,7 +74,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         query: str = self.get_search_query()
 
         panel: BuildTagPanel = BuildTagPanel(self.__lib)
-        modal: PanelModal = PanelModal(
+        modal: Modal = Modal(
             panel,
             Translations["tag.new"],
             Translations["tag.add"] if add_to_entry else Translations["tag.new"],
@@ -101,7 +93,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
         edit_tag_panel: BuildTagPanel = BuildTagPanel(self.__lib, tag=item)
-        edit_tag_modal: PanelModal = PanelModal(
+        edit_tag_modal: Modal = Modal(
             edit_tag_panel,
             self.__lib.tag_display_name(item),
             Translations["tag.edit"],
@@ -188,7 +180,7 @@ class TagSearchPanel(SearchPanel[Tag]):
             tag_widget.search_for_tag_action.setEnabled(False)
 
     @override
-    def create_item(self, edit_item_panel: PanelWidget, choose_item: bool = False) -> None:
+    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
@@ -206,7 +198,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         self.on_search_query_changed(self.get_search_query())
 
     @override
-    def edit_item(self, edit_item_panel: PanelWidget) -> None:
+    def edit_item(self, edit_item_panel: ModalContent) -> None:
         # TODO: Move this to a top-level import
         from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 

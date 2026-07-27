@@ -22,8 +22,9 @@ def test_add_tag_callback(qt_driver: QtDriver):
     qt_driver.add_tag_action_callback()
 
     # When
-    assert isinstance(qt_driver.modal.widget, BuildTagPanel)
-    qt_driver.modal.widget.name_field.setText("xxx")
+    build_tag_panel = qt_driver.modal.layout().content_widget
+    assert isinstance(build_tag_panel, BuildTagPanel)
+    build_tag_panel.name_field.setText("xxx")
     # qt_driver.modal.widget.color_field.setCurrentIndex(1)
     qt_driver.modal.saved.emit()
 

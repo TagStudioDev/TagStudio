@@ -12,8 +12,8 @@ from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.tag_box_view import TagBoxWidgetView
 
 if TYPE_CHECKING:
@@ -74,7 +74,7 @@ class TagBoxWidget(TagBoxWidgetView):
     def _on_edit(self, tag: Tag) -> None:
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
 
-        edit_modal = PanelModal(
+        edit_modal = Modal(
             build_tag_panel,
             self.__driver.lib.tag_display_name(tag),
             "Edit Tag",

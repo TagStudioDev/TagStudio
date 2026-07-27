@@ -9,7 +9,7 @@ from typing import cast, override
 from PySide6.QtCore import QDateTime
 from PySide6.QtWidgets import QDateTimeEdit, QLineEdit, QVBoxLayout
 
-from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.stylesheets.stylesheets import title_line_edit_style
 
 if typing.TYPE_CHECKING:
@@ -39,7 +39,7 @@ def qdtf2dtf(dtf: str) -> str:
     return out
 
 
-class DatetimePicker(PanelWidget):
+class DatetimePicker(ModalContent):
     def __init__(self, driver: "QtDriver", name: str, datetime: dt | str):
         super().__init__()
         self.setMinimumSize(300, 60)

@@ -14,12 +14,12 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
 from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style, title_line_edit_style
 
 
-class EditTextView(PanelWidget):
+class EditTextView(ModalContent):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(480, 240)

@@ -12,12 +12,12 @@ from PySide6.QtWidgets import QMessageBox, QPushButton
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.mixed.field_widget import FieldWidget
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.stylesheets.stylesheets import add_button_style
 
 if typing.TYPE_CHECKING:
@@ -102,7 +102,7 @@ class ColorBoxWidget(FieldWidget):
     def edit_color(self, color_group: TagColorGroup):
         build_color_panel = BuildColorPanel(self.lib, color_group)
 
-        self.edit_modal = PanelModal(
+        self.edit_modal = Modal(
             build_color_panel,
             "Edit Color",
             is_savable=True,

@@ -27,11 +27,11 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
@@ -183,7 +183,7 @@ class PreviewPanel(QWidget):
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
 
         if type(field) is TextField:
-            edit_modal = PanelModal(
+            edit_modal = Modal(
                 EditText(field.name, field.value, field.is_multiline),
                 window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
                 is_savable=True,
@@ -194,7 +194,7 @@ class PreviewPanel(QWidget):
             )
             edit_modal.show()
         elif type(field) is DatetimeField:
-            edit_modal = PanelModal(
+            edit_modal = Modal(
                 DatetimePicker(self._driver, field.name, field.value or dt.now()),
                 window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
                 is_savable=True,
