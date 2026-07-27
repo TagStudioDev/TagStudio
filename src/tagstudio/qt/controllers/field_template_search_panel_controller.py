@@ -7,7 +7,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
@@ -17,24 +17,9 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel_controller import SearchPanel
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.field_template_search_panel_view import FieldTemplateSearchPanelView
+from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 logger = structlog.get_logger(__name__)
-
-
-class FieldTemplateSearchModal(Modal):
-    def __init__(
-        self,
-        library: Library,
-        is_field_template_chooser: bool = True,
-        has_save: bool = False,
-    ) -> None:
-        self.search_panel: FieldTemplateSearchPanel = FieldTemplateSearchPanel(
-            library,
-            is_field_template_chooser,
-            view=FieldTemplateSearchPanelView(is_field_template_chooser),
-        )
-        super().__init__(self.search_panel, Translations["field.add.plural"], is_savable=has_save)
 
 
 class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
@@ -43,18 +28,19 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
     def __init__(
         self,
         library: Library,
-        is_field_template_chooser: bool = True,
-        view: FieldTemplateSearchPanelView | None = None,
+        is_chooser: bool = True,
+        view: SearchPanelView | None = None,
     ) -> None:
         super().__init__(
-            view=view or FieldTemplateSearchPanelView(is_field_template_chooser),
+            view=view
+            or SearchPanelView(Translations["home.search_field_templates"], is_chooser=is_chooser),
             exclude=[],
-            is_chooser=is_field_template_chooser,
+            is_chooser=is_chooser,
         )
         self.__lib = library
 
         self._unlimited_limit_item_label = Translations["field_template.all_field_templates"]
-        self._create_and_add_button_label_key = "field_template.create_add"
+        self._create_and_add_button_key = "field_template.create_add"
 
     @override
     def _get_max_limit(self) -> int:
@@ -102,7 +88,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
     @override
     def _on_item_remove(self, item: BaseFieldTemplate) -> None:
-        if self.is_chooser:
+        if self._is_chooser:
             return
 
         message_box = QMessageBox(
@@ -138,7 +124,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         if item is None:
             return
 
-        field_template_widget.has_remove = not self.is_chooser
+        field_template_widget.has_remove = not self._is_chooser
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
@@ -175,4 +161,18 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.__lib.update_field_template(
             edit_item_panel.old_field_type, edit_item_panel.build_field_template()
         )
-        self.update_items(self.search_field.text())
+        self.update_items(self.layout().search_field.text())
+
+    @override
+    def get_item_widget(self, index: int, library: Library | None) -> FieldTemplateWidget:
+        """Gets the item widget at a specific index."""
+        # Create any new item widgets needed up to the given index
+        if self.layout().scroll_layout.count() <= index:
+            while self.layout().scroll_layout.count() <= index:
+                pad_field_template_widget = FieldTemplateWidget()
+                pad_field_template_widget.setHidden(True)
+                self.layout().scroll_layout.addWidget(pad_field_template_widget)
+
+        field_template_widget: QWidget = self.layout().scroll_layout.itemAt(index).widget()
+        assert isinstance(field_template_widget, FieldTemplateWidget)
+        return field_template_widget
