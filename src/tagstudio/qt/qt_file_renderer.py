@@ -14,10 +14,10 @@ from tagstudio.qt.previews.renderer import FileRenderer
 
 
 class QtFileRenderer(QObject):
+    """A Qt-specific wrapper for rendering image previews and thumbnails from files."""
+
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
-
-    """A Qt-specific entry point for rendering file previews and thumbnails."""
 
     def __init__(self, library: Library, settings: GlobalSettings) -> None:
         super().__init__()
@@ -43,11 +43,11 @@ class QtFileRenderer(QObject):
             cache=cache,
             timestamp=timestamp,
             filepath=filepath,
-            base_size=base_size,
-            pixel_ratio=pixel_ratio,
+            size=base_size,
+            dpi_scale=pixel_ratio,
             theme=self.theme,
             is_loading=is_loading,
-            is_grid_thumb=is_grid_thumb,
+            is_thumb=is_grid_thumb,
         )
         qim = ImageQt.ImageQt(image)
         pixmap = QPixmap.fromImage(qim)

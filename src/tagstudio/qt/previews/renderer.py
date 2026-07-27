@@ -56,7 +56,7 @@ logger = structlog.get_logger(__name__)
 
 
 class FileRenderer:
-    """A class for rendering image and file thumbnails."""
+    """A class for rendering image previews and thumbnails from files."""
 
     rm: ResourceManager = ResourceManager()
     cached_img_ext: str = ".webp"
@@ -107,6 +107,7 @@ class FileRenderer:
 
         return "file_generic"
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _get_mask(
         self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
     ) -> Image.Image:
@@ -130,6 +131,7 @@ class FileRenderer:
             self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
         return item
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _get_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -153,7 +155,7 @@ class FileRenderer:
         color: UiColor,
         size: tuple[int, int],
         theme: Theme,
-        pixel_ratio: float = 1.0,
+        dpi_scale: float = 1.0,
         bg_image: Image.Image | None = None,
         draw_edge: bool = True,
         is_corner: bool = False,
@@ -165,7 +167,7 @@ class FileRenderer:
             color (str): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             theme (Theme): A theme enum to determine the light/dark theme.
-            pixel_ratio (float): The screen pixel ratio.
+            dpi_scale (float): The screen pixel ratio.
             bg_image (Image.Image): Optional background image to go behind the icon.
             draw_edge (bool): Flag for is the raised edge should be drawn.
             is_corner (bool): Flag for is the icon should render with the "corner" style
@@ -174,23 +176,24 @@ class FileRenderer:
         if name == "thumb_loading":
             draw_border = False
 
-        item: Image.Image | None = self.icons.get((name, color, *size, pixel_ratio))
+        item: Image.Image | None = self.icons.get((name, color, *size, dpi_scale))
         if not item:
             item_flat: Image.Image = (
-                self._render_corner_icon(name, color, size, pixel_ratio, theme, bg_image)
+                self._render_corner_icon(name, color, size, dpi_scale, theme, bg_image)
                 if is_corner
                 else self._render_center_icon(
-                    name, color, size, pixel_ratio, theme, draw_border, bg_image
+                    name, color, size, dpi_scale, theme, draw_border, bg_image
                 )
             )
             if draw_edge:
-                edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
+                edge: tuple[Image.Image, Image.Image] = self._get_edge(size, dpi_scale)
                 item = self._apply_edge(item_flat, edge, theme, faded=True)
-                self.icons[(name, color, *size, pixel_ratio)] = item
+                self.icons[(name, color, *size, dpi_scale)] = item
             else:
                 item = item_flat
         return item
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _render_mask(
         self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
     ) -> Image.Image:
@@ -221,6 +224,7 @@ class FileRenderer:
         )
         return im
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _render_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -248,10 +252,7 @@ class FileRenderer:
             outline="white",
             width=width,
         )
-        im_hl = im_hl.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
+        im_hl = im_hl.resize(size, resample=Image.Resampling.BILINEAR)
 
         # Shadow
         im_sh: Image.Image = Image.new(
@@ -267,10 +268,7 @@ class FileRenderer:
             outline="black",
             width=width,
         )
-        im_sh = im_sh.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
+        im_sh = im_sh.resize(size, resample=Image.Resampling.BILINEAR)
 
         return (im_hl, im_sh)
 
@@ -347,10 +345,7 @@ class FileRenderer:
             )
 
         # Resize image to final size
-        im = im.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
+        im = im.resize(size, resample=Image.Resampling.BILINEAR)
         fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
 
         # Get icon by name
@@ -436,15 +431,8 @@ class FileRenderer:
         primary_color = colors.get(ColorType.PRIMARY)
 
         # Resize image to final size
-        im = im.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
-        fg: Image.Image = Image.new(
-            "RGB",
-            size=size,
-            color=primary_color,
-        )
+        im = im.resize(size, resample=Image.Resampling.BILINEAR)
+        fg: Image.Image = Image.new("RGB", size=size, color=primary_color)
 
         # Get icon by name
         icon = self.rm.get(name)
@@ -453,21 +441,11 @@ class FileRenderer:
             icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
-        icon = icon.resize(
-            (
-                math.ceil(size[0] // icon_ratio),
-                math.ceil(size[1] // icon_ratio),
-            )
-        )
+        icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
 
         # Paste icon
         im.paste(
-            im=fg.resize(
-                (
-                    math.ceil(size[0] // icon_ratio),
-                    math.ceil(size[1] // icon_ratio),
-                )
-            ),
+            im=fg.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))),
             box=(size[0] // padding_factor, size[1] // padding_factor),
             mask=icon.getchannel(3),
         )
@@ -516,6 +494,7 @@ class FileRenderer:
 
         return bg
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _apply_edge(
         self,
         image: Image.Image,
@@ -557,11 +536,11 @@ class FileRenderer:
         cache: CacheManager | None,
         timestamp: float,
         filepath: Path | str,
-        base_size: tuple[int, int],
-        pixel_ratio: float,
+        size: tuple[int, int],
+        dpi_scale: float,
         theme: Theme = Theme.DARK,
         is_loading: bool = False,
-        is_grid_thumb: bool = False,
+        is_thumb: bool = False,
     ):
         """Render a thumbnail or preview image.
 
@@ -569,39 +548,38 @@ class FileRenderer:
             cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
-            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
+            size (tuple[int, int]): The unmodified base size of the thumbnail.
+            dpi_scale (float): The screen pixel ratio.
             theme (Theme): A theme enum to determine the light/dark theme.
             is_loading (bool): Is this a loading graphic?
-            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
-                Or else the Preview Pane?
+            is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
             update_on_ratio_change (bool): Should an updated ratio signal be sent?
         """
         render_mask_and_edge: bool = True
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        scaled_size = math.ceil(max(size[0], size[1]) * dpi_scale)
         theme_color: UiColor = UiColor.THEME_LIGHT if theme == Theme.LIGHT else UiColor.THEME_DARK
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        def render_default(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        def render_default(size: tuple[int, int], dpi_scale: float) -> Image.Image:
             im = self._get_icon(
                 name=self._get_resource_id(filepath),
                 color=theme_color,
                 size=size,
                 theme=theme,
-                pixel_ratio=pixel_ratio,
+                dpi_scale=dpi_scale,
             )
             return im
 
         def render_unlinked(
-            size: tuple[int, int], pixel_ratio: float, cached_im: Image.Image | None = None
+            size: tuple[int, int], dpi_scale: float, cached_im: Image.Image | None = None
         ) -> Image.Image:
             im = self._get_icon(
                 name="broken_link_icon",
                 color=UiColor.RED,
                 size=size,
                 theme=theme,
-                pixel_ratio=pixel_ratio,
+                dpi_scale=dpi_scale,
                 bg_image=cached_im,
                 draw_edge=not cached_im,
                 is_corner=False,
@@ -614,9 +592,7 @@ class FileRenderer:
 
             im_ = im
             icon: Image.Image = self.rm.ignored
-
             icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
-
             im_.paste(
                 im=icon.resize(
                     (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
@@ -640,13 +616,13 @@ class FileRenderer:
                         raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
                 except Exception as e:
                     logger.error(
-                        "[ThumbRenderer] Couldn't open cached thumbnail!", path=cached_path, error=e
+                        "[FileRenderer] Couldn't open cached thumbnail!", path=cached_path, error=e
                     )
             return image
 
         image: Image.Image | None = None
         # Try to get a non-loading thumbnail for the grid.
-        if not is_loading and is_grid_thumb and filepath and filepath != Path("."):
+        if not is_loading and is_thumb and filepath and filepath != Path("."):
             # Attempt to retrieve cached image from disk
             mod_time: str = ""
             with contextlib.suppress(Exception):
@@ -668,35 +644,35 @@ class FileRenderer:
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
                 image = self._render(
-                    cache,
-                    filepath,
-                    (thumb_res, thumb_res),
-                    1,
-                    theme,
-                    is_grid_thumb,
-                    save_to_file=file_name,
+                    cache=cache,
+                    filepath=filepath,
+                    size=(thumb_res, thumb_res),
+                    dpi_scale=1,
+                    theme=theme,
+                    is_thumb=is_thumb,
+                    cache_filename=file_name,
                 )
 
             # If the normal renderer failed, fallback the defaults
             # (with native non-cached sizing!)
             if not image:
                 image = (
-                    render_unlinked((adj_size, adj_size), pixel_ratio)
+                    render_unlinked((scaled_size, scaled_size), dpi_scale)
                     if not filepath.exists() or filepath.is_dir()
-                    else render_default((adj_size, adj_size), pixel_ratio)
+                    else render_default((scaled_size, scaled_size), dpi_scale)
                 )
                 render_mask_and_edge = False
 
             # Apply the mask and edge
             if image:
-                image = self._resize_image(image, (adj_size, adj_size))
+                image = self._resize_image(image, (scaled_size, scaled_size))
                 if render_mask_and_edge:
-                    mask = self._get_mask((adj_size, adj_size), pixel_ratio)
+                    mask = self._get_mask((scaled_size, scaled_size), dpi_scale)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
-                        (adj_size, adj_size), pixel_ratio
+                        (scaled_size, scaled_size), dpi_scale
                     )
                     image = self._apply_edge(
-                        four_corner_gradient(image, (adj_size, adj_size), mask), edge, theme
+                        four_corner_gradient(image, (scaled_size, scaled_size), mask), edge, theme
                     )
 
             # Check if the file is supposed to be ignored and render an overlay if needed
@@ -708,7 +684,7 @@ class FileRenderer:
                         filepath.relative_to(unwrap(self.lib.library_dir))
                     )
                 ):
-                    image = render_ignored((adj_size, adj_size), image)
+                    image = render_ignored((scaled_size, scaled_size), image)
             except TypeError:
                 pass
 
@@ -716,13 +692,15 @@ class FileRenderer:
         elif is_loading:
             # Initialize "Loading" thumbnail
             loading_thumb: Image.Image = self._get_icon(
-                "thumb_loading", theme_color, (adj_size, adj_size), theme, pixel_ratio
+                "thumb_loading", theme_color, (scaled_size, scaled_size), theme, dpi_scale
             )
-            image = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+            image = loading_thumb.resize(
+                (scaled_size, scaled_size), resample=Image.Resampling.BILINEAR
+            )
 
         # A full preview image (never cached)
-        elif not is_grid_thumb:
-            image = self._render(cache, filepath, base_size, pixel_ratio, theme)
+        elif not is_thumb:
+            image = self._render(cache, filepath, size, dpi_scale, theme)
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
@@ -730,7 +708,7 @@ class FileRenderer:
                     else render_default((512, 512), 2)
                 )
                 render_mask_and_edge = False
-            mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
+            mask = self._get_mask(image.size, dpi_scale, scale_radius=True)
             bg = Image.new("RGBA", image.size, (0, 0, 0, 0))
             bg.paste(image, mask=mask.getchannel(0))
             image = bg
@@ -741,7 +719,7 @@ class FileRenderer:
 
         return (
             image,
-            (math.ceil(adj_size / pixel_ratio), math.ceil(image.size[1] / pixel_ratio)),
+            (math.ceil(scaled_size / dpi_scale), math.ceil(image.size[1] / dpi_scale)),
             timestamp,
         )
 
@@ -749,11 +727,11 @@ class FileRenderer:
         self,
         cache: CacheManager | None,
         filepath: str | Path,
-        base_size: tuple[int, int],
-        pixel_ratio: float,
+        size: tuple[int, int],
+        dpi_scale: float,
         theme: Theme = Theme.DARK,
-        is_grid_thumb: bool = False,
-        save_to_file: Path | None = None,
+        is_thumb: bool = False,
+        cache_filename: Path | None = None,
     ) -> Image.Image | None:
         """Render a thumbnail or preview image.
 
@@ -761,18 +739,17 @@ class FileRenderer:
             cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
-            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
+            size (tuple[int, int]): The unmodified base size of the thumbnail.
+            dpi_scale (float): The screen pixel ratio.
             theme (Theme): A theme enum to determine the light/dark theme.
-            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
-                Or else the Preview Pane?
-            save_to_file(Path | None): A filepath to optionally save the output to.
+            is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
+            cache_filename (Path | None): An optional filename to use to save to the cache.
 
         """
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        scaled_size = math.ceil(max(size[0], size[1]) * dpi_scale)
         image: Image.Image | None = None
         filepath_: Path = Path(filepath)
-        savable_media_type: bool = True
+        is_savable_type: bool = True
 
         if filepath_ and filepath_.is_file():
             try:
@@ -810,7 +787,7 @@ class FileRenderer:
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
-                        image = vector_image_thumb(filepath_, adj_size)
+                        image = vector_image_thumb(filepath_, scaled_size)
                     # EXR Images -------------------------------------------------------------------
                     elif ext in [".exr"]:
                         image = exr_image_thumb(filepath_)
@@ -845,22 +822,22 @@ class FileRenderer:
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
-                    if is_grid_thumb:
+                    if is_thumb:
                         # Short (Aa) Preview
-                        image = font_small_thumb(filepath_, adj_size)
+                        image = font_small_thumb(filepath_, scaled_size)
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.BLUE, theme)
                     else:
                         # Large (Full Alphabet) Preview
-                        image = font_full_preview(filepath_, adj_size)
+                        image = font_full_preview(filepath_, scaled_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
                 ):
                     image = audio_album_thumb(filepath_, ext)
                     if image is None:
-                        image = audio_waveform_thumb(filepath_, ext, adj_size, pixel_ratio)
-                        savable_media_type = False
+                        image = audio_waveform_thumb(filepath_, ext, scaled_size, dpi_scale)
+                        is_savable_type = False
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN, theme)
                 # Blender ======================================================
@@ -872,7 +849,7 @@ class FileRenderer:
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
-                    image = pdf_thumb(filepath_, adj_size, ext)
+                    image = pdf_thumb(filepath_, scaled_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
                     image = archive_thumb(filepath_, ext)
@@ -887,10 +864,10 @@ class FileRenderer:
                     raise NoRendererError
 
                 if image:
-                    image = self._resize_image(image, (adj_size, adj_size))
+                    image = self._resize_image(image, (scaled_size, scaled_size))
 
-                if save_to_file and savable_media_type and image and cache:
-                    cache.save_image(image, save_to_file, mode="RGBA")
+                if cache_filename and is_savable_type and image and cache:
+                    cache.save_image(image, cache_filename, mode="RGBA")
 
             except (
                 AssertionError,
@@ -899,7 +876,11 @@ class FileRenderer:
                 UnidentifiedImageError,
                 ValueError,
             ) as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+                logger.error(
+                    "[FileRenderer] Couldn't render thumbnail",
+                    filepath=filepath,
+                    error=type(e).__name__,
+                )
                 image = None
             except NoRendererError:
                 image = None
