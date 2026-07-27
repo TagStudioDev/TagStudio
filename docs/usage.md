@@ -40,7 +40,7 @@ Hover over the field and click the pencil icon. From there, add or edit text in 
 
 ## Creating Tags
 
-Create a new tag by accessing the "New Tag" option from the Edit menu or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>. In the tag creation panel, enter a tag name, optional shorthand name, optional tag aliases, optional parent tags, and an optional color.
+Create a new tag by accessing the "New Tag" option from the Edit menu or by pressing <kbd>Ctrl</kbd>+<kbd>N</kbd>. In the tag creation panel, enter a tag name, optional shorthand name, optional tag aliases, optional parent tags, and an optional color.
 
 - The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
 - The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.

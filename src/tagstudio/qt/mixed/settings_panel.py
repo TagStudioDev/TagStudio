@@ -216,6 +216,20 @@ class SettingsPanel(PanelWidget):
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
         )
 
+        # Open Edit Window When Creating a Tag
+        self.edit_tag_on_create_checkbox = QCheckBox()
+        self.edit_tag_on_create_checkbox.setChecked(self.driver.settings.edit_tag_on_create)
+        form_layout.addRow(
+            Translations["settings.edit_tag_on_create"], self.edit_tag_on_create_checkbox
+        )
+
+        # Open Edit Window When Adding a Field
+        self.edit_field_on_add_checkbox = QCheckBox()
+        self.edit_field_on_add_checkbox.setChecked(self.driver.settings.edit_field_on_add)
+        form_layout.addRow(
+            Translations["settings.edit_field_on_add"], self.edit_field_on_add_checkbox
+        )
+
     # TODO: Implement Library Settings
     def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
         form_layout = QFormLayout(self.library_settings_container)
@@ -366,6 +380,8 @@ class SettingsPanel(PanelWidget):
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
             "tag_click_action": self.tag_click_action_combobox.currentData(),
+            "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
+            "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
@@ -388,6 +404,8 @@ class SettingsPanel(PanelWidget):
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
         driver.settings.tag_click_action = settings["tag_click_action"]
+        driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
+        driver.settings.edit_field_on_add = settings["edit_field_on_add"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]

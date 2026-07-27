@@ -125,7 +125,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -142,7 +142,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),

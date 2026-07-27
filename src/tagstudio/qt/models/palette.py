@@ -7,10 +7,32 @@ from enum import IntEnum
 from typing import Any
 
 import structlog
+from PySide6.QtGui import QPalette
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger(__name__)
+
+
+class Palette(metaclass=Singleton):
+    _palette: QPalette | None = None
+    _accent: str | None = None
+
+    @staticmethod
+    def set_palette(palette: QPalette) -> None:
+        Palette._palette = palette
+
+    @staticmethod
+    def accent() -> str:
+        if not Palette._palette:
+            logger.error("[Style] No QPalette set!")
+            return get_ui_color(ColorType.PRIMARY, UiColor.BLUE)
+        if not Palette._accent:
+            Palette._accent = (
+                f"rgba{QPalette.color(Palette._palette, QPalette.ColorRole.Accent).toTuple()}"
+            )
+        return Palette._accent
 
 
 class ColorType(IntEnum):

@@ -8,7 +8,7 @@ from PySide6.QtGui import QColor, QGuiApplication
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.models.palette import ColorType, Palette, UiColor, get_tag_color, get_ui_color
 
 # TODO: There's plenty of good opportunities here to consolidate similar styles.
 # Work should be done to more closely use Qt's theming systems rather than override them.
@@ -53,20 +53,65 @@ def button_style() -> str:
         border-radius: 6px;
         font-weight: 500;
         text-align: center;
+        padding: 0px 12px;
     }}
     QPushButton::hover{{
         background-color: {Theme.COLOR_HOVER.value};
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
         border-style: solid;
         border-width: 2px;
+        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
+        padding: 0px 8px;
     }}
     QPushButton::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
-        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
+        outline: none;
+        background-color: palette(light);
         border-style: solid;
         border-width: 2px;
+        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
+        padding: 0px 8px;
+    }}
+    QPushButton::focus{{
+        outline: none;
+        border: solid;
+        border-width: 2px;
+        border-color: {Palette.accent()};
+        padding: 0px 8px;
     }}
     QPushButton::disabled{{
+        background-color: {Theme.COLOR_DISABLED_BG.value};
+    }}
+"""
+
+
+def line_edit_style_main() -> str:
+    """Style used for common QLineEdits."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QLineEdit{{
+        background: {bg_color};
+        border-radius: 6px;
+        font-weight: 500;
+        text-align: center;
+        padding: 0px 4px;
+    }}
+    QLineEdit::hover{{
+        border-style: solid;
+        border-width: 2px;
+        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
+        padding: 0px 2px;
+    }}
+    QLineEdit::focus{{
+        border-style: solid;
+        border-width: 2px;
+        border-color: {Palette.accent()};
+        padding: 0px 2px;
+    }}
+    QLineEdit::disabled{{
         background-color: {Theme.COLOR_DISABLED_BG.value};
     }}
 """
@@ -229,6 +274,7 @@ def line_edit_style() -> str:
 def list_button_style(
     color: QColor | None = None,
     border_style: str = "solid",
+    italic: bool = False,
 ) -> str:
     """Style used for special QPushButtons found in lists."""
     if color is None:
@@ -243,6 +289,7 @@ def list_button_style(
         background: rgba{color.toTuple()};
         color: rgba{text_color.toTuple()};
         font-weight: 600;
+        {"font: italic;" if italic else ""}
         border-color: rgba{border_color.toTuple()};
         border-radius: 6px;
         border-style: {border_style};
@@ -310,9 +357,9 @@ def tag_style(
         border-radius: 6px;
         border-style: {border_style};
         border-width: 2px;
+        font-size: 13px;
         padding-right: 4px;
         padding-left: 4px;
-        font-size: 13px
     }}
     QPushButton::hover{{
         border-color: rgba{highlight_color.toTuple()};
@@ -323,12 +370,9 @@ def tag_style(
         border-color: rgba{primary_color.toTuple()};
     }}
     QPushButton::focus{{
-        padding-right: 0px;
-        padding-left: 0px;
-        outline-style: solid;
-        outline-width: 1px;
-        outline-radius: 4px;
-        outline-color: rgba{text_color.toTuple()};
+        outline: none;
+        border-width: 3px;
+        border-color: rgba{text_color.toTuple()};
     }}
     """
 
@@ -366,11 +410,122 @@ def tag_remove_button_style(
     """
 
 
+def widget_underline_style() -> str:
+    return f"""
+        background: {Palette.accent()};
+        border-radius: 2px;
+    """
+
+
 def title_line_edit_style() -> str:
     """Used to mimic an H3-like header style inside a QLineEdit."""
     return """
     font-weight: bold;
     font-size: 16px;
+    """
+
+
+def inset_container_style(object_name: str = "") -> str:
+    """Used for darkened inset areas."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QWidget{"#" + object_name if object_name else ""}{{
+        background: {bg_color};
+        border-radius: 6px;
+        }}
+    """
+
+
+# TODO: Combine the autofill styles into one method?
+def autofill_scroll_top_style(object_name: str = "") -> str:
+    """Used autofill lists positioned on top of line edits."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QWidget{"#" + object_name if object_name else ""}{{
+        background: {bg_color};
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        border: none;
+        }}
+    """
+
+
+def autofill_scroll_top_focus_style(object_name: str = "") -> str:
+    """Used autofill lists positioned on top of line edits."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QWidget{"#" + object_name if object_name else ""}{{
+        background: {bg_color};
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+        border: solid;
+        border-width: 2px 2px 0px 2px;
+        border-color: {Palette.accent()};
+        }}
+    """
+
+
+def autofill_line_edit_style() -> str:
+    """Used for QLineEdits."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QLineEdit{{
+        background: {bg_color};
+        border-radius: 6px;
+        padding: 3px 6px;
+        }}
+    QLineEdit::focus{{
+        padding: 4px 4px;
+        border: solid;
+        border-width: 2px;
+        border-color: {Palette.accent()};
+        }}
+    """
+
+
+def autofill_line_edit_top_style() -> str:
+    """Used for QLineEdits when there's a top autofill section present."""
+    bg_color = (
+        Theme.COLOR_BG_DARK.value
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else Theme.COLOR_BG_LIGHT.value
+    )
+
+    return f"""
+    QLineEdit{{
+        background: {bg_color};
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        padding: 0px 0px 2px 6px;
+        }}
+    QLineEdit::focus{{
+        padding: 4px 4px;
+        border: solid;
+        border-width: 0px 2px 2px 2px;
+        border-color: {Palette.accent()};
+        }}
     """
 
 
