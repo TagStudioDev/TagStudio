@@ -73,19 +73,17 @@ let
   };
 in
 pkgs.mkShellNoCC {
-  nativeBuildInputs = with pkgs; [
+  packages = [
+    python3Wrapped
+  ]
+  ++ (with pkgs; [
     coreutils
+    ffmpeg-headless
+    ripgrep
     uv
 
     pyright
     ruff
-  ];
-  buildInputs = [
-    python3Wrapped
-  ]
-  ++ (with pkgs; [
-    ffmpeg-headless
-    ripgrep
   ]);
 
   env = {
