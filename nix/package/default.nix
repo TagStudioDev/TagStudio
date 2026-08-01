@@ -97,7 +97,7 @@ python3Packages.buildPythonApplication {
     with python3Packages;
     [
       audioop-lts
-      chardet
+      chardet_5
       ffmpeg-python
       humanfriendly
       mutagen
