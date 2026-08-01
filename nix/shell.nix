@@ -27,11 +27,11 @@ let
         libdrm
         libpulseaudio
         libva
+        libx11
         libxkbcommon
+        libxrandr
         pipewire
         qt6.qtwayland
-        xorg.libX11
-        xorg.libXrandr
       ]
     );
 
