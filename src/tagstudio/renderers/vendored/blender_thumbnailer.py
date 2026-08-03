@@ -1,33 +1,29 @@
-#!/usr/bin/env python3
+# SPDX-FileCopyrightText: (c) 2017 Blender Foundation
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
-# <pep8 compliant>
-
-
-## This file is a modified script that gets the thumbnail data stored in a blend file
-
+"""Extract an embedded thumbnail from a Blender file."""
 
 import gzip
 import os
 import struct
 from io import BufferedReader
+from pathlib import Path
 
 from PIL import Image, ImageOps
 
 
-def blend_extract_thumb(path) -> tuple[bytes | None, int, int]:
+def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
     rend = b"REND"
     test = b"TEST"
 
-    blendfile: BufferedReader | gzip.GzipFile = open(path, "rb")  # noqa: SIM115
+    blendfile: BufferedReader | gzip.GzipFile = open(path, "rb")
 
     head = blendfile.read(12)
 
     if head[0:2] == b"\x1f\x8b":  # gzip magic
         blendfile.close()
-        blendfile = gzip.GzipFile("", "rb", 0, open(path, "rb"))  # noqa: SIM115
+        blendfile = gzip.GzipFile("", "rb", 0, open(path, "rb"))
         head = blendfile.read(12)
 
     if not head.startswith(b"BLENDER"):
@@ -82,7 +78,7 @@ def blend_extract_thumb(path) -> tuple[bytes | None, int, int]:
     return image_buffer, x, y
 
 
-def blend_thumb(file_in) -> Image.Image | None:
+def blend_thumb(file_in: Path | str) -> Image.Image | None:
     buf, width, height = blend_extract_thumb(file_in)
     if buf is None:
         return None

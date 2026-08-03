@@ -183,7 +183,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager | None
+    cache_manager: CacheManager | None = None
 
     browsing_history: History[BrowsingState]
 
