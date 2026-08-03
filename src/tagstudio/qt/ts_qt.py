@@ -408,7 +408,7 @@ class QtDriver(DriverMixin, QObject):
         add_tag_tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
-                self.main_window.preview_panel.set_selection(self.selected),
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False),
             )
         )
 
