@@ -33,21 +33,21 @@ class QtFileRenderer(QObject):
         cache: CacheManager | None,
         timestamp: float,
         filepath: Path | str,
-        base_size: tuple[int, int],
+        size: tuple[int, int],
         pixel_ratio: float,
         is_loading: bool = False,
-        is_grid_thumb: bool = False,
+        is_thumb: bool = False,
     ):
 
         image, size, timestamp = self.renderer.render(
             cache=cache,
             timestamp=timestamp,
             filepath=filepath,
-            size=base_size,
+            size=size,
             dpi_scale=pixel_ratio,
             theme=self.theme,
             is_loading=is_loading,
-            is_thumb=is_grid_thumb,
+            is_thumb=is_thumb,
         )
         qim = ImageQt.ImageQt(image)
         pixmap = QPixmap.fromImage(qim)
@@ -57,4 +57,4 @@ class QtFileRenderer(QObject):
         if pixmap:
             self.updated.emit(timestamp, pixmap, QSize(size[0], size[1]), filepath)
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath)
+            self.updated.emit(timestamp, QPixmap(), QSize(*size), filepath)
