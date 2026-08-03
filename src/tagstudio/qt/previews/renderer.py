@@ -37,10 +37,11 @@ from tagstudio.renderers.archive import (
 )
 from tagstudio.renderers.audio import audio_album_thumb, audio_waveform_thumb
 from tagstudio.renderers.blender import blender_thumb
-from tagstudio.renderers.clip_studio import clip_studio_thumb, paint_dot_net_thumb
+from tagstudio.renderers.clip_studio import clip_studio_thumb
 from tagstudio.renderers.ebook import epub_thumb
 from tagstudio.renderers.font import font_full_preview, font_small_thumb
 from tagstudio.renderers.medibang_paint import medibang_paint_thumb
+from tagstudio.renderers.paint_dot_net import paint_dot_net_thumb
 from tagstudio.renderers.pdf import pdf_thumb
 from tagstudio.renderers.raster_image import exr_image_thumb, raster_image_thumb, raw_image_thumb
 from tagstudio.renderers.source_engine import vtf_thumb
@@ -852,7 +853,7 @@ class FileRenderer:
                     image = pdf_thumb(filepath_, scaled_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
-                    image = archive_thumb(filepath_, ext)
+                    image = archive_thumb(filepath_, ext=ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
                     image = medibang_paint_thumb(filepath_)

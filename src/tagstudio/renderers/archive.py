@@ -99,14 +99,16 @@ def first_image_in_archive(archive: Archive) -> Image.Image | None:
 
 
 def archive_thumb(
-    filepath: Path, ext: str = "", image_names: list[Path] | list[str] | None = None
+    filepath: Path,
+    image_names: list[Path] | list[str] | None = None,
+    ext: str = "",
 ) -> Image.Image | None:
     """Extract an embedded preview image from an archive.
 
     Args:
         filepath (Path): The path to the archive.
-        ext (str): The file extension. Used to help determine more specific archive type.
         image_names: (list[Path] | list[str] | None): List of embedded image names to search for.
+        ext (str): The file extension. Used to help determine more specific archive type.
 
     Returns:
         Image: The first image found in the archive.
@@ -121,6 +123,10 @@ def archive_thumb(
                 if image_name in archive.namelist():
                     file_data = archive.read(str(image_name))  # pyright: ignore[reportUnknownVariableType]
                     return image_from_bytes(BytesIO(file_data))
+
+            # If no images were found with the given names, fallback to the first image found.
+            if not image_names:
+                return first_image_in_archive(archive)
 
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
@@ -137,22 +143,22 @@ def apple_embedded_thumb(filepath: Path) -> Image.Image | None:
         "QuickLook/Thumbnail.webp",
         "QuickLook/Icon.webp",
     ]
-    return archive_thumb(filepath, image_names=image_names)
+    return archive_thumb(filepath, image_names)
 
 
 def krita_thumb(filepath: Path) -> Image.Image | None:
     """Extract and render a thumbnail for a Krita file."""
     image_names = ["preview.png"]
-    return archive_thumb(filepath, image_names=image_names)
+    return archive_thumb(filepath, image_names)
 
 
 def open_doc_thumb(filepath: Path) -> Image.Image | None:
     """Extract and render a thumbnail for an OpenDocument file."""
     image_names = ["Thumbnails/thumbnail.png"]
-    return archive_thumb(filepath, image_names=image_names)
+    return archive_thumb(filepath, image_names)
 
 
 def powerpoint_thumb(filepath: Path) -> Image.Image | None:
     """Extract and render a thumbnail for a Microsoft PowerPoint file."""
     image_names = ["docProps/thumbnail.jpeg"]
-    return archive_thumb(filepath, image_names=image_names)
+    return archive_thumb(filepath, image_names)
