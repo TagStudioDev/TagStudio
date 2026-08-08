@@ -17,14 +17,14 @@ import sys
 import time
 from argparse import Namespace
 from collections import OrderedDict
+from functools import partial
 from pathlib import Path
 from queue import Queue
-from shutil import which
 from typing import TypeVar
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_size, format_timespan
+from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
@@ -37,22 +37,13 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPalette,
 )
-from PySide6.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-)
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
-import tagstudio.qt.resources_rc  # noqa: F401
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
+import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
+from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VERSION
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.library.alchemy.enums import (
-    BrowsingState,
-    SortingModeEnum,
-)
+from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
+from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -60,21 +51,20 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.module_status import ModuleStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
-from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
-
-# this import has side-effect of import PySide resources
+from tagstudio.qt.controllers.field_template_search_panel_controller import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
-from tagstudio.qt.controllers.out_of_date_message_box import OutOfDateMessageBox
-from tagstudio.qt.global_settings import (
-    DEFAULT_GLOBAL_SETTINGS_PATH,
-    GlobalSettings,
-    Theme,
-)
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
+from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
+from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.qt.mixed.about_modal import AboutModal
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
@@ -86,19 +76,17 @@ from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
-from tagstudio.qt.mixed.tag_database import TagDatabasePanel
-from tagstudio.qt.mixed.tag_search import TagSearchModal
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, Palette, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
-from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.main_window import MainWindow
-from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.splash import SplashScreen
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -110,9 +98,9 @@ BADGE_TAGS = {
 if sys.platform == "win32":
     from signal import SIGINT, SIGTERM, signal
 
-    SIGQUIT = SIGTERM
+    SIGQUIT = SIGTERM  # pyright: ignore
 else:
-    from signal import SIGINT, SIGQUIT, SIGTERM, signal
+    from signal import SIGINT, SIGQUIT, SIGTERM, signal  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
 
@@ -179,10 +167,12 @@ class QtDriver(DriverMixin, QObject):
     favorite_updated = Signal(bool)
     archived_updated = Signal(bool)
 
-    tag_manager_panel: PanelModal | None = None
+    tag_manager: Modal | None = None
     color_manager_panel: TagColorManager | None = None
-    ignore_modal: PanelModal | None = None
-    add_tag_modal: PanelModal | None = None
+    field_template_manager: Modal | None = None
+    ignore_modal: Modal | None = None
+    add_tag_modal: Modal | None = None
+    add_field_modal: Modal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
@@ -193,7 +183,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager | None
+    cache_manager: CacheManager | None = None
 
     browsing_history: History[BrowsingState]
 
@@ -211,7 +201,7 @@ class QtDriver(DriverMixin, QObject):
         self.scrollbar_pos = 0
         self.spacing = None
 
-        self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
+        self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
         # self.title_text: str = self.base_title
         # self.buffer = {}
@@ -282,7 +272,7 @@ class QtDriver(DriverMixin, QObject):
         dir = QFileDialog.getExistingDirectory(
             parent=None,
             caption=Translations["window.title.open_create_library"],
-            dir="/",
+            dir=str(Path.home()),
             options=QFileDialog.Option.ShowDirsOnly,
         )
         if dir not in (None, ""):
@@ -311,19 +301,28 @@ class QtDriver(DriverMixin, QObject):
         elif self.settings.theme == Theme.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
 
+        pal: QPalette = self.app.palette()
+        # BUG: Changing the palette in any way here seems to affect the accent colors of certain
+        # widgets, like QLineEdit focused borders and QComboBox highlighted items and borders.
+        # Need to figure out the cause of this.
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
         ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-            pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipBase, QColor("#1e1e1e")
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipText, QColor("#FFFFFF")
+            )
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
             pal.setColor(
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
-
-            self.app.setPalette(pal)
+        Palette.set_palette(pal)
+        self.app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
@@ -331,6 +330,9 @@ class QtDriver(DriverMixin, QObject):
         timer = QTimer()
         timer.start(500)
         timer.timeout.connect(lambda: None)
+
+        # Detect optional modules and versions for logging
+        self.log_optional_modules()
 
         # self.main_window = loader.load(home_path)
         self.main_window = MainWindow(self)
@@ -362,26 +364,51 @@ class QtDriver(DriverMixin, QObject):
             if platform.system() != "Windows":
                 self.app.setDesktopFileName("tagstudio")
 
-        # Initialize the Tag Manager panel
-        self.tag_manager_panel = PanelModal(
-            widget=TagDatabasePanel(self, self.lib),
-            title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False: (
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
-            ),
-            has_save=False,
+        tsp_view = SearchPanelView(
+            placeholder_text=Translations["home.search_tags"],
+            create_text=Translations["tag.create"],
+            is_chooser=False,
+        )
+        tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
+        tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
+        self.tag_manager.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
+            )
         )
 
         # Initialize the Color Group Manager panel
         self.color_manager_panel = TagColorManager(self)
 
-        # Initialize the Tag Search panel
-        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
-        self.add_tag_modal.tsp.set_driver(self)
-        self.add_tag_modal.tsp.tag_chosen.connect(
+        # Initialize the Field Template Manager panel
+        self.field_template_manager = Modal(
+            content_widget=FieldTemplateSearchPanel(
+                self.lib,
+                is_chooser=False,
+                view=SearchPanelView(Translations["home.search_field_templates"], is_chooser=False),
+            ),
+            title=Translations["field_template_manager.title"],
+            is_savable=False,
+        )
+        self.field_template_manager.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
+            )
+        )
+
+        # TODO: Remove/replace this with a suite of persistently visible tagging panels, including
+        # tag search. These will be docked on the left-hand side of the main window.
+
+        # Initialize the "Add Tag" panel
+        add_tag_tsp_view = SearchPanelView(placeholder_text=Translations["home.search_tags"])
+        add_tag_tsp = TagSearchPanel(self.lib, view=add_tag_tsp_view)
+        add_tag_tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.add_tag_modal = Modal(add_tag_tsp, Translations["tag.add.plural"])
+        add_tag_tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
-                self.main_window.preview_panel.set_selection(self.selected),
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False),
             )
         )
 
@@ -401,7 +428,7 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.call_if_library_open(self.backup_library)
         )
 
-        # Settings...
+        # Settings
         self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
 
         # Open Library on Start
@@ -462,10 +489,14 @@ class QtDriver(DriverMixin, QObject):
             lambda f="": self.delete_files_callback(f)
         )
 
-        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
+        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager.show)
 
         self.main_window.menu_bar.color_manager_action.triggered.connect(
             self.color_manager_panel.show
+        )
+
+        self.main_window.menu_bar.field_template_manager_action.triggered.connect(
+            self.field_template_manager.show
         )
 
         # endregion
@@ -606,15 +637,10 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        # Check if FFmpeg or FFprobe are missing and show warning if so
-        if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
-            FfmpegMissingMessageBox().show()
-
-        latest_version = TagStudioCore.get_most_recent_release_version()
-        if latest_version and is_version_outdated(VERSION, latest_version):
-            OutOfDateMessageBox().exec()
+        self.main_window.search_field.setFocus()
 
         self.app.exec()
+        self.check_for_update()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
@@ -710,10 +736,10 @@ class QtDriver(DriverMixin, QObject):
             self.ignore_modal = None
 
         panel = IgnoreModal(self.lib)
-        self.ignore_modal = PanelModal(
+        self.ignore_modal = Modal(
             panel,
             Translations["menu.edit.ignore_files"],
-            has_save=True,
+            is_savable=True,
         )
         self.ignore_modal.saved.connect(panel.save)
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
@@ -753,7 +779,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.cached_values.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.cached_values.sync()
 
         # Reset library state
@@ -794,6 +820,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
+            self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
             self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
@@ -847,11 +874,11 @@ class QtDriver(DriverMixin, QObject):
 
     def add_tag_action_callback(self):
         panel = BuildTagPanel(self.lib)
-        self.modal = PanelModal(
+        self.modal = Modal(
             panel,
             Translations["tag.new"],
-            Translations["tag.add"],
-            has_save=True,
+            Translations["tag.create"],
+            is_savable=True,
         )
 
         self.modal.saved.connect(
@@ -859,13 +886,17 @@ class QtDriver(DriverMixin, QObject):
                 self.lib.add_tag(
                     panel.build_tag(),
                     set(panel.parent_ids),
-                    set(panel.alias_names),
-                    set(panel.alias_ids),
+                    set(panel.aliases),
                 ),
                 self.modal.hide(),
             )
         )
         self.modal.show()
+
+    def search_for_tag_callback(self, tag_id: int) -> None:
+        """Callback to search for a given Tag ID."""
+        self.main_window.search_field.setText(f"tag_id:{tag_id}")
+        self.update_browsing_state(BrowsingState.from_tag_id(tag_id, self.browsing_history.current))
 
     def select_all_action_callback(self):
         """Set the selection to all visible items."""
@@ -940,7 +971,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.preview_thumb.media_player.stop()
+                        self.main_window.preview_panel.stop_media_playback()
 
                     msg = Translations.format(
                         "status.deleting_file", i=i, count=len(pending), path=f
@@ -984,9 +1015,8 @@ class QtDriver(DriverMixin, QObject):
         perm_warning_msg = Translations.format(
             "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
-        perm_warning: str = (
-            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
-            f"{perm_warning_msg}</h4>"
+        perm_warning: str = header(
+            perm_warning_msg, 4, get_ui_color(ColorType.PRIMARY, UiColor.RED)
         )
 
         msg = QMessageBox()
@@ -1003,8 +1033,8 @@ class QtDriver(DriverMixin, QObject):
                 "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.singular']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.singular'], 4)}"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
@@ -1015,8 +1045,8 @@ class QtDriver(DriverMixin, QObject):
                 trash_term=trash_term(),
             )
             msg.setText(
-                f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations['trash.dialog.disambiguation_warning.plural']}</h4>"
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.plural'], 4)}"
                 f"{perm_warning}<br>"
             )
 
@@ -1039,9 +1069,7 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(
-            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
-        )
+        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -1486,7 +1514,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def remove_recent_library(self, item_key: str):
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
         self.cached_values.remove(item_key)
         self.cached_values.endGroup()
         self.cached_values.sync()
@@ -1496,7 +1524,7 @@ class QtDriver(DriverMixin, QObject):
         item_limit: int = 10
         path = Path(path)
 
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
 
         all_libs = {str(time.time()): str(path)}
 
@@ -1523,7 +1551,7 @@ class QtDriver(DriverMixin, QObject):
         lib_items: dict[str, tuple[str, str]] = {}
 
         # get recent libraries sorted by timestamp
-        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
         for item_tstamp in self.cached_values.allKeys():
             val = str(self.cached_values.value(item_tstamp, type=str))
             cut_val = val
@@ -1544,8 +1572,8 @@ class QtDriver(DriverMixin, QObject):
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
-        settings = self.cached_values
-        settings.beginGroup(SettingItems.LIBS_LIST)
+        cache = self.cached_values
+        cache.beginGroup(AppCacheItems.LIBS_LIST)
         self.cached_values.remove("")
         self.cached_values.endGroup()
         self.cached_values.sync()
@@ -1553,6 +1581,23 @@ class QtDriver(DriverMixin, QObject):
 
     def open_settings_modal(self):
         SettingsPanel.build_modal(self).show()
+
+    def check_for_update(self):
+        """Check for an update to TagStudio and display a message box if there is one."""
+        latest_version = TagStudioCore.get_most_recent_release_version()
+        if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
+            return
+
+        if latest_version and is_version_outdated(VERSION, latest_version):
+            update_box = UpdateAvailableMessageBox()
+            update_box.button(QMessageBox.StandardButton.Ignore).clicked.connect(
+                partial(self.dismiss_update, str(latest_version))
+            )
+            update_box.exec()
+
+    def dismiss_update(self, version: str):
+        """Dismiss an update notification for a specific new version of TagStudio."""
+        self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
@@ -1646,6 +1691,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
+        self.main_window.menu_bar.field_template_manager_action.setEnabled(True)
         self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
@@ -1733,3 +1779,17 @@ class QtDriver(DriverMixin, QObject):
     def clear_selected(self):
         self._selected.clear()
         self.main_window.thumb_layout.update_selected()
+
+    def log_optional_modules(self) -> None:
+        """Logs the status of optional modules."""
+        status_classes: list[tuple[str, type[ModuleStatus]]] = [
+            ("FFmpeg", FfmpegStatus),
+            ("FFprobe", FfprobeStatus),
+            ("ripgrep", RipgrepStatus),
+        ]
+
+        for name, sc in status_classes:
+            if sc.which():
+                logger.info(f"[QtDriver] {name} found", which=sc.which(), version=sc.version())
+            else:
+                logger.warning(f"[QtDriver] {sc} not found")

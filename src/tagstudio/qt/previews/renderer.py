@@ -2,166 +2,70 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import base64
 import contextlib
 import hashlib
 import math
-import os
-import sqlite3
-import struct
-import tarfile
-import xml.etree.ElementTree as ET
-import zipfile
-import zlib
 from copy import deepcopy
-from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, cast
-from warnings import catch_warnings
-from xml.etree.ElementTree import Element
 
-import cv2
-import numpy as np
-import py7zr
-import py7zr.io
-import rarfile
-import rawpy
-import srctools
 import structlog
-from cv2.typing import MatLike
-from mutagen import flac, id3, mp4
-from mutagen._util import MutagenError
-from PIL import (
-    Image,
-    ImageChops,
-    ImageDraw,
-    ImageEnhance,
-    ImageFile,
-    ImageFont,
-    ImageOps,
-    ImageQt,
-    UnidentifiedImageError,
-)
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFile, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from pillow_heif import register_heif_opener  # pyright: ignore[reportUnknownVariableType]
-from PySide6.QtCore import (
-    QBuffer,
-    QFile,
-    QFileDevice,
-    QIODeviceBase,
-    QObject,
-    QSize,
-    QSizeF,
-    Qt,
-    Signal,
-)
-from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
-from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
-from PySide6.QtSvg import QSvgRenderer
-from rawpy import (
-    LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
-    LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
-)
 
-from tagstudio.core.constants import (
-    FONT_SAMPLE_SIZES,
-    FONT_SAMPLE_TEXT,
-)
 from tagstudio.core.exceptions import NoRendererError
+from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
-from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
-from tagstudio.qt.helpers.file_tester import is_readable_video
+from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.global_settings import (
+    DEFAULT_CACHED_THUMB_RES,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
+    GlobalSettings,
+    Theme,
+)
 from tagstudio.qt.helpers.gradients import four_corner_gradient
-from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
-from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
-from tagstudio.qt.previews.vendored.blender_renderer import (
-    blend_thumb,  # pyright: ignore[reportUnknownVariableType]
-)
-from tagstudio.qt.previews.vendored.pydub.audio_segment import (
-    _AudioSegment as AudioSegment,  # pyright: ignore[reportPrivateUsage]
-)
 from tagstudio.qt.resource_manager import ResourceManager
-
-if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.renderers.archive import (
+    apple_embedded_thumb,
+    archive_thumb,
+    krita_thumb,
+    open_doc_thumb,
+    powerpoint_thumb,
+)
+from tagstudio.renderers.audio import audio_album_thumb, audio_waveform_thumb
+from tagstudio.renderers.blender import blender_thumb
+from tagstudio.renderers.clip_studio import clip_studio_thumb
+from tagstudio.renderers.ebook import epub_thumb
+from tagstudio.renderers.font import font_full_preview, font_small_thumb
+from tagstudio.renderers.medibang_paint import medibang_paint_thumb
+from tagstudio.renderers.paint_dot_net import paint_dot_net_thumb
+from tagstudio.renderers.pdf import pdf_thumb
+from tagstudio.renderers.raster_image import exr_image_thumb, raster_image_thumb, raw_image_thumb
+from tagstudio.renderers.source_engine import vtf_thumb
+from tagstudio.renderers.text import text_thumb
+from tagstudio.renderers.vector_image import vector_image_thumb
+from tagstudio.renderers.video import video_thumb
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+Image.MAX_IMAGE_PIXELS = None
+
 
 logger = structlog.get_logger(__name__)
-Image.MAX_IMAGE_PIXELS = None
-register_heif_opener()
-
-try:
-    import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
-except ImportError:
-    logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
 
 
-class _SevenZipFile(py7zr.SevenZipFile):
-    """Wrapper around py7zr.SevenZipFile to mimic zipfile.ZipFile's API."""
-
-    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
-        super().__init__(filepath, mode)
-
-    def read(self, name: str) -> bytes:
-        # SevenZipFile must be reset after every extraction
-        # See https://py7zr.readthedocs.io/en/stable/api.html#py7zr.SevenZipFile.extract
-        self.reset()
-        factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
-        self.extract(targets=[name], factory=factory)
-        return factory.get(name).read()
-
-
-class _TarFile:
-    """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
-
-    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
-        self.tar: tarfile.TarFile
-        self.filepath = filepath
-        self.mode: Literal["r"] = mode
-
-    def namelist(self) -> list[str]:
-        return self.tar.getnames()
-
-    def read(self, name: str) -> bytes:
-        return unwrap(self.tar.extractfile(name)).read()
-
-    def __enter__(self) -> "_TarFile":
-        self.tar = tarfile.open(name=self.filepath, mode=self.mode).__enter__()
-        return self
-
-    def __exit__(self, *args) -> None:  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
-        self.tar.__exit__(*args)
-
-
-type _Archive = zipfile.ZipFile | rarfile.RarFile | _SevenZipFile | _TarFile
-
-
-class ThumbRenderer(QObject):
-    """A class for rendering image and file thumbnails."""
+class FileRenderer:
+    """A class for rendering image previews and thumbnails from files."""
 
     rm: ResourceManager = ResourceManager()
-    updated = Signal(float, QPixmap, QSize, Path)
-    updated_ratio = Signal(float)
     cached_img_ext: str = ".webp"
 
-    def __init__(self, driver: "QtDriver") -> None:
-        """Initialize the class."""
+    def __init__(self, library: Library, settings: GlobalSettings) -> None:
         super().__init__()
-        self.driver = driver
-
-        settings_res = self.driver.settings.cached_thumb_resolution
-        self.cached_img_res = (
-            settings_res
-            if settings_res >= 16 and settings_res <= 2048
-            else DEFAULT_CACHED_IMAGE_RES
-        )
+        self.lib = library
+        self.settings = settings
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -204,6 +108,7 @@ class ThumbRenderer(QObject):
 
         return "file_generic"
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _get_mask(
         self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
     ) -> Image.Image:
@@ -227,6 +132,7 @@ class ThumbRenderer(QObject):
             self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
         return item
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _get_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -249,7 +155,8 @@ class ThumbRenderer(QObject):
         name: str,
         color: UiColor,
         size: tuple[int, int],
-        pixel_ratio: float = 1.0,
+        theme: Theme,
+        dpi_scale: float = 1.0,
         bg_image: Image.Image | None = None,
         draw_edge: bool = True,
         is_corner: bool = False,
@@ -260,7 +167,8 @@ class ThumbRenderer(QObject):
             name (str): The name of the icon resource. "thumb_loading" will not draw a border.
             color (str): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
-            pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
+            dpi_scale (float): The screen pixel ratio.
             bg_image (Image.Image): Optional background image to go behind the icon.
             draw_edge (bool): Flag for is the raised edge should be drawn.
             is_corner (bool): Flag for is the icon should render with the "corner" style
@@ -269,21 +177,24 @@ class ThumbRenderer(QObject):
         if name == "thumb_loading":
             draw_border = False
 
-        item: Image.Image | None = self.icons.get((name, color, *size, pixel_ratio))
+        item: Image.Image | None = self.icons.get((name, color, *size, dpi_scale))
         if not item:
             item_flat: Image.Image = (
-                self._render_corner_icon(name, color, size, pixel_ratio, bg_image)
+                self._render_corner_icon(name, color, size, dpi_scale, theme, bg_image)
                 if is_corner
-                else self._render_center_icon(name, color, size, pixel_ratio, draw_border, bg_image)
+                else self._render_center_icon(
+                    name, color, size, dpi_scale, theme, draw_border, bg_image
+                )
             )
             if draw_edge:
-                edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
-                item = self._apply_edge(item_flat, edge, faded=True)
-                self.icons[(name, color, *size, pixel_ratio)] = item
+                edge: tuple[Image.Image, Image.Image] = self._get_edge(size, dpi_scale)
+                item = self._apply_edge(item_flat, edge, theme, faded=True)
+                self.icons[(name, color, *size, dpi_scale)] = item
             else:
                 item = item_flat
         return item
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _render_mask(
         self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
     ) -> Image.Image:
@@ -314,6 +225,7 @@ class ThumbRenderer(QObject):
         )
         return im
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _render_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
@@ -341,10 +253,7 @@ class ThumbRenderer(QObject):
             outline="white",
             width=width,
         )
-        im_hl = im_hl.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
+        im_hl = im_hl.resize(size, resample=Image.Resampling.BILINEAR)
 
         # Shadow
         im_sh: Image.Image = Image.new(
@@ -360,10 +269,7 @@ class ThumbRenderer(QObject):
             outline="black",
             width=width,
         )
-        im_sh = im_sh.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
+        im_sh = im_sh.resize(size, resample=Image.Resampling.BILINEAR)
 
         return (im_hl, im_sh)
 
@@ -373,6 +279,7 @@ class ThumbRenderer(QObject):
         color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme,
         draw_border: bool = True,
         bg_image: Image.Image | None = None,
     ) -> Image.Image:
@@ -383,6 +290,7 @@ class ThumbRenderer(QObject):
             color (UiColor): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             draw_border (bool): Option to draw a border.
             bg_image (Image.Image): Optional background image to go behind the icon.
         """
@@ -438,22 +346,14 @@ class ThumbRenderer(QObject):
             )
 
         # Resize image to final size
-        im = im.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
-        fg: Image.Image = Image.new(
-            "RGB",
-            size=size,
-            color="#00FF00",
-        )
+        im = im.resize(size, resample=Image.Resampling.BILINEAR)
+        fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image) or icon is None
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -469,10 +369,7 @@ class ThumbRenderer(QObject):
         )
 
         # Apply color overlay
-        im = self._apply_overlay_color(
-            im,
-            color,
-        )
+        im = self._apply_overlay_color(im, color, theme)
 
         return im
 
@@ -482,6 +379,7 @@ class ThumbRenderer(QObject):
         color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
+        theme: Theme,
         bg_image: Image.Image | None = None,
     ) -> Image.Image:
         """Render a thumbnail icon with the icon in the upper-left corner.
@@ -491,6 +389,7 @@ class ThumbRenderer(QObject):
             color (UiColor): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             draw_border (bool): Option to draw a border.
             bg_image (Image.Image): Optional background image to go behind the icon.
         """
@@ -517,10 +416,7 @@ class ThumbRenderer(QObject):
                 color="#000000",
             )
             # Apply color overlay
-            bg = self._apply_overlay_color(
-                im,
-                color,
-            )
+            bg = self._apply_overlay_color(im, color, theme)
 
         # Paste background color with rounded rectangle mask onto blank image
         im.paste(
@@ -536,46 +432,28 @@ class ThumbRenderer(QObject):
         primary_color = colors.get(ColorType.PRIMARY)
 
         # Resize image to final size
-        im = im.resize(
-            size,
-            resample=Image.Resampling.BILINEAR,
-        )
-        fg: Image.Image = Image.new(
-            "RGB",
-            size=size,
-            color=primary_color,
-        )
+        im = im.resize(size, resample=Image.Resampling.BILINEAR)
+        fg: Image.Image = Image.new("RGB", size=size, color=primary_color)
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
+        icon = self.rm.get(name)
+        assert isinstance(icon, Image.Image)
         if not icon:
-            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
-            if not icon:
-                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+            icon = self.rm.file_generic
 
         # Resize icon to fit icon_ratio
-        icon = icon.resize(
-            (
-                math.ceil(size[0] // icon_ratio),
-                math.ceil(size[1] // icon_ratio),
-            )
-        )
+        icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
 
         # Paste icon
         im.paste(
-            im=fg.resize(
-                (
-                    math.ceil(size[0] // icon_ratio),
-                    math.ceil(size[1] // icon_ratio),
-                )
-            ),
+            im=fg.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))),
             box=(size[0] // padding_factor, size[1] // padding_factor),
             mask=icon.getchannel(3),
         )
 
         return im
 
-    def _apply_overlay_color(self, image: Image.Image, color: UiColor) -> Image.Image:
+    def _apply_overlay_color(self, image: Image.Image, color: UiColor, theme: Theme) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
 
         Red channel for foreground, green channel for outline, none for background.
@@ -583,20 +461,21 @@ class ThumbRenderer(QObject):
         Args:
             image (Image.Image): The image to apply an overlay to.
             color (UiColor): The name of the ColorType color to use.
+            theme (Theme): A theme enum to determine the light/dark theme.
         """
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.PRIMARY, color)
         )
         fg_color: str = (
             get_ui_color(ColorType.PRIMARY, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
         ol_color: str = (
             get_ui_color(ColorType.BORDER, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            if theme == Theme.DARK
             else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
 
@@ -616,10 +495,12 @@ class ThumbRenderer(QObject):
 
         return bg
 
+    # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
     def _apply_edge(
         self,
         image: Image.Image,
         edge: tuple[Image.Image, Image.Image],
+        theme: Theme,
         faded: bool = False,
     ) -> Image.Image:
         """Apply a given edge effect to an image.
@@ -628,13 +509,12 @@ class ThumbRenderer(QObject):
             image (Image.Image): The image to apply the edge to.
             edge (tuple[Image.Image, Image.Image]): The edge images to apply.
                 Item 0 is the inner highlight, and item 1 is the outer shadow.
-            faded (bool): Whether or not to apply a faded version of the edge.
+            theme (Theme): A theme enum to determine the light/dark theme.
+            faded (bool): Whether to apply a faded version of the edge.
                 Used for light themes.
         """
         opacity: float = 1.0 if not faded else 0.8
-        shade_reduction: float = (
-            0 if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark else 0.3
-        )
+        shade_reduction: float = 0 if theme == Theme.DARK else 0.3
         im: Image.Image = image
         im_hl, im_sh = deepcopy(edge)
 
@@ -652,966 +532,71 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @staticmethod
-    def _audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
-        """Return an album cover thumb from an audio file if a cover is present.
-
-        Args:
-            filepath (Path): The path of the file.
-            ext (str): The file extension (with leading ".").
-        """
-        image: Image.Image | None = None
-        try:
-            if not filepath.is_file():
-                raise FileNotFoundError
-
-            artwork = None
-            if ext in [".mp3"]:
-                id3_tags: id3.ID3 = id3.ID3(filepath)
-                id3_covers: list = id3_tags.getall("APIC")  # pyright: ignore[reportUnknownVariableType]
-                if id3_covers:
-                    artwork = Image.open(BytesIO(id3_covers[0].data))
-            elif ext in [".flac"]:
-                flac_tags: flac.FLAC = flac.FLAC(filepath)
-                flac_covers: list = flac_tags.pictures  # pyright: ignore[reportUnknownVariableType]
-                if flac_covers:
-                    artwork = Image.open(BytesIO(flac_covers[0].data))
-            elif ext in [".mp4", ".m4a", ".aac"]:
-                mp4_tags: mp4.MP4 = mp4.MP4(filepath)
-                mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportUnknownVariableType]
-                if mp4_covers:
-                    artwork = Image.open(BytesIO(mp4_covers[0]))
-            if artwork:
-                image = artwork
-        except (
-            FileNotFoundError,
-            id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
-            mp4.MP4MetadataError,
-            mp4.MP4StreamInfoError,
-            MutagenError,
-        ) as e:
-            logger.error("Couldn't read album artwork", path=filepath, error=type(e).__name__)
-        return image
-
-    @staticmethod
-    def _audio_waveform_thumb(
-        filepath: Path, ext: str, size: int, pixel_ratio: float
-    ) -> Image.Image | None:
-        """Render a waveform image from an audio file.
-
-        Args:
-            filepath (Path): The path of the file.
-            ext (str): The file extension (with leading ".").
-            size (tuple[int,int]): The size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
-        """
-        # BASE_SCALE used for drawing on a larger image and resampling down
-        # to provide an antialiased effect.
-        base_scale: int = 2
-        samples_per_bar: int = 3
-        size_scaled: int = size * base_scale
-        allow_small_min: bool = False
-        im: Image.Image | None = None
-
-        try:
-            bar_count: int = min(math.floor((size // pixel_ratio) / 5), 64)
-            audio = AudioSegment.from_file(filepath, ext[1:])
-            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
-            data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
-            bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
-            line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
-            bar_height: float = (size_scaled) - (size_scaled // bar_margin)
-
-            count: int = 0
-            maximum_item: int = 0
-            max_array: list[int] = []
-            highest_line: int = 0
-
-            for i in range(-1, len(data_indices)):
-                d = data[math.ceil(data_indices[i]) - 1]
-                if count < samples_per_bar:
-                    count = count + 1
-                    with catch_warnings(record=True):
-                        if abs(d) > maximum_item:
-                            maximum_item = int(abs(d))
-                else:
-                    max_array.append(maximum_item)
-
-                    if maximum_item > highest_line:
-                        highest_line = maximum_item
-
-                    maximum_item = 0
-                    count = 1
-
-            line_ratio = max(highest_line / bar_height, 1)
-
-            im = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
-            draw = ImageDraw.Draw(im)
-
-            current_x = bar_margin
-            for item in max_array:
-                item_height = item / line_ratio
-
-                # If small minimums are not allowed, raise all values
-                # smaller than the line width to the same value.
-                if not allow_small_min:
-                    item_height = max(item_height, line_width)
-
-                current_y = (bar_height - item_height + (size_scaled // bar_margin)) // 2
-
-                draw.rounded_rectangle(
-                    (
-                        current_x,
-                        current_y,
-                        (current_x + line_width),
-                        (current_y + item_height),
-                    ),
-                    radius=100 * base_scale,
-                    fill=("#FF0000"),
-                    outline=("#FFFF00"),
-                    width=max(math.ceil(line_width / 6), base_scale),
-                )
-
-                current_x = current_x + line_width + bar_margin
-
-            im.resize((size, size), Image.Resampling.BILINEAR)
-
-        except Exception as e:
-            logger.error("Couldn't render waveform", path=filepath.name, error=type(e).__name__)
-
-        return im
-
-    @staticmethod
-    def _blender(filepath: Path) -> Image.Image | None:
-        """Get an emended thumbnail from a Blender file, if a thumbnail is present.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        bg_color: str = (
-            "#1e1e1e"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-        im: Image.Image | None = None
-        try:
-            if (blend_image := blend_thumb(str(filepath))) is not None:
-                bg = Image.new("RGB", blend_image.size, color=bg_color)
-                bg.paste(blend_image, mask=blend_image.getchannel(3))
-                im = bg
-            else:
-                logger.info(
-                    f"[ThumbRenderer][BLENDER][INFO] {filepath.name} "
-                    "Doesn't have an embedded thumbnail."
-                )
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _vtf_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for VTF (Valve Texture Format) images.
-
-        Uses the srctools library for reading VTF files.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            with open(filepath, "rb") as f:
-                vtf = srctools.VTF.read(f)
-                im = vtf.get(frame=0).to_PIL()
-
-        except (ValueError, FileNotFoundError) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _open_doc_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an OpenDocument file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        file_path_within_zip = "Thumbnails/thumbnail.png"
-        im: Image.Image | None = None
-        with zipfile.ZipFile(filepath, "r") as zip_file:
-            # Check if the file exists in the zip
-            if file_path_within_zip in zip_file.namelist():
-                # Read the specific file into memory
-                file_data = zip_file.read(file_path_within_zip)
-                thumb_im = Image.open(BytesIO(file_data))
-                if thumb_im:
-                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
-                    im.paste(thumb_im)
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath)
-
-        return im
-
-    @staticmethod
-    def _krita_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Krita file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        file_path_within_zip = "preview.png"
-        im: Image.Image | None = None
-        with zipfile.ZipFile(filepath, "r") as zip_file:
-            # Check if the file exists in the zip
-            if file_path_within_zip in zip_file.namelist():
-                # Read the specific file into memory
-                file_data = zip_file.read(file_path_within_zip)
-                thumb_im = Image.open(BytesIO(file_data))
-                if thumb_im:
-                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
-                    im.paste(thumb_im)
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath)
-
-        return im
-
-    @staticmethod
-    def _powerpoint_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for a Microsoft PowerPoint file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        file_path_within_zip = "docProps/thumbnail.jpeg"
-        im: Image.Image | None = None
-        try:
-            with zipfile.ZipFile(filepath, "r") as zip_file:
-                # Check if the file exists in the zip
-                if file_path_within_zip in zip_file.namelist():
-                    # Read the specific file into memory
-                    file_data = zip_file.read(file_path_within_zip)
-                    thumb_im = Image.open(BytesIO(file_data))
-                    if thumb_im:
-                        im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
-                        im.paste(thumb_im)
-                else:
-                    logger.error("Couldn't render thumbnail", filepath=filepath)
-        except zipfile.BadZipFile as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-
-        return im
-
-    @staticmethod
-    def _epub_cover(filepath: Path, ext: str) -> Image.Image | None:
-        """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
-
-        Args:
-            filepath (Path): The path to the ePub file.
-            ext (str): The file extension.
-
-        Returns:
-            Image: The cover specified in ComicInfo.xml,
-            the first image found in the ePub file, or None by default.
-        """
-        im: Image.Image | None = None
-        try:
-            with ThumbRenderer.__open_archive(filepath, ext) as archive:
-                if "ComicInfo.xml" in archive.namelist():
-                    comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
-                    im = ThumbRenderer.__cover_from_comic_info(archive, comic_info, "FrontCover")
-                    if not im:
-                        im = ThumbRenderer.__cover_from_comic_info(
-                            archive, comic_info, "InnerCover"
-                        )
-
-                if not im:
-                    im = ThumbRenderer.__first_image(archive)
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return im
-
-    @staticmethod
-    def __cover_from_comic_info(
-        archive: _Archive, comic_info: Element, cover_type: str
-    ) -> Image.Image | None:
-        """Extract the cover specified in ComicInfo.xml.
-
-        Args:
-            archive (_Archive): The current ePub file.
-            comic_info (Element): The parsed ComicInfo.xml.
-            cover_type (str): The type of cover to load.
-
-        Returns:
-            Image: The cover specified in ComicInfo.xml.
-        """
-        im: Image.Image | None = None
-
-        cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
-        if cover is not None:
-            pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
-            page_name = pages[int(unwrap(cover.get("Image")))]
-            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-                image_data = archive.read(page_name)
-                im = Image.open(BytesIO(image_data))
-
-        return im
-
-    @staticmethod
-    def _archive_thumb(filepath: Path, ext: str) -> Image.Image | None:
-        """Extract the first image found in the archive.
-
-        Args:
-            filepath (Path): The path to the archive.
-            ext (str): The file extension.
-
-        Returns:
-            Image: The first image found in the archive.
-        """
-        im: Image.Image | None = None
-        try:
-            with ThumbRenderer.__open_archive(filepath, ext) as archive:
-                im = ThumbRenderer.__first_image(archive)
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return im
-
-    @staticmethod
-    def __open_archive(filepath: Path, ext: str) -> _Archive:
-        """Open an archive with its corresponding archiver.
-
-        Args:
-            filepath (Path): The path to the archive.
-            ext (str): The file extension.
-
-        Returns:
-            _Archive: The opened archive.
-        """
-        archiver: type[_Archive] = zipfile.ZipFile
-        if ext in {".7z", ".cb7", ".s7z"}:
-            archiver = _SevenZipFile
-        elif ext in {".cbr", ".rar"}:
-            archiver = rarfile.RarFile
-        elif ext in {".cbt", ".tar", ".tgz"}:
-            archiver = _TarFile
-        return archiver(filepath, "r")
-
-    @staticmethod
-    def __first_image(archive: _Archive) -> Image.Image | None:
-        """Find and extract the first renderable image in the archive.
-
-        Args:
-            archive (_Archive): The current archive.
-
-        Returns:
-            Image: The first renderable image in the archive.
-        """
-        for file_name in archive.namelist():
-            if file_name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-                image_data = archive.read(file_name)
-                return Image.open(BytesIO(image_data))
-
-        return None
-
-    def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image | None:
-        """Render a small font preview ("Aa") thumbnail from a font file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        im: Image.Image | None = None
-        try:
-            bg = Image.new("RGB", (size, size), color="#000000")
-            raw = Image.new("RGB", (size * 3, size * 3), color="#000000")
-            draw = ImageDraw.Draw(raw)
-            font = ImageFont.truetype(filepath, size=size)
-            # NOTE: While a stroke effect is desired, the text
-            # method only allows for outer strokes, which looks
-            # a bit weird when rendering fonts.
-            draw.text(
-                (size // 8, size // 8),
-                "Aa",
-                font=font,
-                fill="#FF0000",
-                # stroke_width=math.ceil(size / 96),
-                # stroke_fill="#FFFF00",
-            )
-            # NOTE: Change to getchannel(1) if using an outline.
-            data = np.asarray(raw.getchannel(0))
-
-            m, n = data.shape[:2]
-            col: np.ndarray = cast(np.ndarray, data.any(0))
-            row: np.ndarray = cast(np.ndarray, data.any(1))
-            cropped_data = np.asarray(raw)[
-                row.argmax() : m - row[::-1].argmax(),
-                col.argmax() : n - col[::-1].argmax(),
-            ]
-            cropped_im: Image.Image = Image.fromarray(cropped_data, "RGB")
-
-            margin: int = math.ceil(size // 16)
-
-            orig_x, orig_y = cropped_im.size
-            new_x, new_y = (size, size)
-            if orig_x > orig_y:
-                new_x = size
-                new_y = math.ceil(size * (orig_y / orig_x))
-            elif orig_y > orig_x:
-                new_y = size
-                new_x = math.ceil(size * (orig_x / orig_y))
-
-            cropped_im = cropped_im.resize(
-                size=(new_x - (margin * 2), new_y - (margin * 2)),
-                resample=Image.Resampling.BILINEAR,
-            )
-            bg.paste(
-                cropped_im,
-                box=(margin, margin + ((size - new_y) // 2)),
-            )
-            im = self._apply_overlay_color(bg, UiColor.BLUE)
-        except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _font_long_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a large font preview ("Alphabet") thumbnail from a font file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        # Scale the sample font sizes to the preview image
-        # resolution,assuming the sizes are tuned for 256px.
-        im: Image.Image | None = None
-        try:
-            scaled_sizes: list[int] = [math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES]
-            bg = Image.new("RGBA", (size, size), color="#00000000")
-            draw = ImageDraw.Draw(bg)
-            lines_of_padding = 2
-            y_offset = 0.0
-
-            for font_size in scaled_sizes:
-                font = ImageFont.truetype(filepath, size=font_size)
-                text_wrapped: str = wrap_full_text(
-                    FONT_SAMPLE_TEXT,
-                    font=font,
-                    width=size,
-                    draw=draw,
-                )
-                draw.multiline_text((0, y_offset), text_wrapped, font=font)
-                y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
-                    (0, 0), "A", font=font
-                )[-1]
-            im = theme_fg_overlay(bg, use_alpha=False)
-        except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_raw_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a RAW image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            with rawpy.imread(str(filepath)) as raw:
-                rgb = raw.postprocess(use_camera_wb=True)
-                im = Image.frombytes(
-                    "RGB",
-                    (rgb.shape[1], rgb.shape[0]),
-                    rgb,
-                    decoder_name="raw",
-                )
-        except (
-            DecompressionBombError,
-            LibRawIOError,
-            LibRawFileUnsupportedError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_exr_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a EXR image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            # Load the EXR data to an array and rotate the color space from BGRA -> RGBA
-            raw_array = cv2.imread(str(filepath), cv2.IMREAD_UNCHANGED)
-            assert raw_array is not None
-            raw_array[..., :3] = raw_array[..., 2::-1]
-
-            # Correct the gamma of the raw array
-            gamma = 2.2
-            array_gamma = np.power(np.clip(raw_array, 0, 1), 1 / gamma)
-            array = (array_gamma * 255).astype(np.uint8)
-
-            im = Image.fromarray(array, mode="RGBA")
-
-            # Paste solid background
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a standard image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            im = Image.open(filepath)
-            if im.mode != "RGB" and im.mode != "RGBA":
-                im = im.convert(mode="RGBA")
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-            im = unwrap(ImageOps.exif_transpose(im))
-        except (
-            FileNotFoundError,
-            UnidentifiedImageError,
-            DecompressionBombError,
-            NotImplementedError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_vector_thumb(filepath: Path, size: int) -> Image.Image:
-        """Render a thumbnail for a vector image, such as SVG.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        im: Image.Image | None = None
-        # Create an image to draw the svg to and a painter to do the drawing
-        q_image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
-        q_image.fill("#1e1e1e")
-
-        # Create an svg renderer, then render to the painter
-        svg: QSvgRenderer = QSvgRenderer(str(filepath))
-
-        if not svg.isValid():
-            raise UnidentifiedImageError
-
-        painter: QPainter = QPainter(q_image)
-        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
-        svg.render(painter)
-        painter.end()
-
-        # Write the image to a buffer as png
-        buffer: QBuffer = QBuffer()
-        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(buffer, "PNG")  # pyright: ignore[reportCallIssue, reportArgumentType]
-
-        # Load the image from the buffer
-        im = Image.new("RGB", (size, size), color="#1e1e1e")
-        im.paste(Image.open(BytesIO(buffer.data().data())))
-        im = im.convert(mode="RGB")
-
-        buffer.close()
-        return im
-
-    @staticmethod
-    def _iwork_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        preview_thumb_dir = "preview.jpg"
-        quicklook_thumb_dir = "QuickLook/Thumbnail.jpg"
-        im: Image.Image | None = None
-
-        def get_image(path: str) -> Image.Image | None:
-            thumb_im: Image.Image | None = None
-            # Read the specific file into memory
-            file_data = zip_file.read(path)
-            thumb_im = Image.open(BytesIO(file_data))
-            return thumb_im
-
-        try:
-            with zipfile.ZipFile(filepath, "r") as zip_file:
-                thumb: Image.Image | None = None
-
-                # Check if the file exists in the zip
-                if preview_thumb_dir in zip_file.namelist():
-                    thumb = get_image(preview_thumb_dir)
-                elif quicklook_thumb_dir in zip_file.namelist():
-                    thumb = get_image(quicklook_thumb_dir)
-                else:
-                    logger.error("Couldn't render thumbnail", filepath=filepath)
-
-                if thumb:
-                    im = Image.new("RGB", thumb.size, color="#1e1e1e")
-                    im.paste(thumb)
-        except zipfile.BadZipFile as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-
-        return im
-
-    @staticmethod
-    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:  # pyright: ignore[reportUnusedParameter]
-        """Render a thumbnail for an STL file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the icon.
-        """
-        # TODO: Implement.
-        # The following commented code describes a method for rendering via
-        # matplotlib.
-        # This implementation did not play nice with multithreading.
-        im: Image.Image | None = None
-        # # Create a new plot
-        # matplotlib.use('agg')
-        # figure = plt.figure()
-        # axes = figure.add_subplot(projection='3d')
-
-        # # Load the STL files and add the vectors to the plot
-        # your_mesh = mesh.Mesh.from_file(_filepath)
-
-        # poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-        # poly_collection.set_color((0,0,1))  # play with color
-        # scale = your_mesh.points.flatten()
-        # axes.auto_scale_xyz(scale, scale, scale)
-        # axes.add_collection3d(poly_collection)
-        # # plt.show()
-        # img_buf = io.BytesIO()
-        # plt.savefig(img_buf, format='png')
-        # im = Image.open(img_buf)
-
-        return im
-
-    @staticmethod
-    def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a thumbnail for a PDF file.
-
-        filepath (Path): The path of the file.
-            size (int): The size of the icon.
-        """
-        im: Image.Image | None = None
-
-        file: QFile = QFile(filepath)
-        success: bool = file.open(
-            QIODeviceBase.OpenModeFlag.ReadOnly, QFileDevice.Permission.ReadUser
-        )
-        if not success:
-            logger.error("Couldn't render thumbnail", filepath=filepath)
-            return im
-        document: QPdfDocument = QPdfDocument()
-        document.load(file)
-        file.close()
-        # Transform page_size in points to pixels with proper aspect ratio
-        page_size: QSizeF = document.pagePointSize(0)
-        ratio_hw: float = page_size.height() / page_size.width()
-        if ratio_hw >= 1:
-            page_size *= size / page_size.height()
-        else:
-            page_size *= size / page_size.width()
-        # Enlarge image for antialiasing
-        scale_factor = 2.5
-        page_size *= scale_factor
-        # Render image with no anti-aliasing for speed
-        render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
-        render_options.setRenderFlags(
-            QPdfDocumentRenderOptions.RenderFlag.TextAliased
-            | QPdfDocumentRenderOptions.RenderFlag.ImageAliased
-            | QPdfDocumentRenderOptions.RenderFlag.PathAliased
-        )
-        # Convert QImage to PIL Image
-        q_image: QImage = document.render(0, page_size.toSize(), render_options)
-        buffer: QBuffer = QBuffer()
-        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        try:
-            q_image.save(buffer, "PNG")  # pyright: ignore
-            im = Image.open(BytesIO(buffer.buffer().data()))
-        finally:
-            buffer.close()
-        # Replace transparent pixels with white (otherwise Background defaults to transparent)
-        return replace_transparent_pixels(im)
-
-    @staticmethod
-    def _text_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a plaintext file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-
-        bg_color: str = (
-            "#1e1e1e"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-        fg_color: str = (
-            "#FFFFFF"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#111111"
-        )
-
-        try:
-            encoding = detect_char_encoding(filepath)
-            with open(filepath, encoding=encoding) as text_file:
-                text = text_file.read(256)
-            bg = Image.new("RGB", (256, 256), color=bg_color)
-            draw = ImageDraw.Draw(bg)
-            draw.text((16, 16), text, fill=fg_color)
-            im = bg
-        except (
-            UnidentifiedImageError,
-            cv2.error,
-            DecompressionBombError,
-            UnicodeDecodeError,
-            OSError,
-            FileNotFoundError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _video_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a video file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        frame: MatLike | None = None
-        try:
-            if is_readable_video(filepath):
-                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
-                # TODO: Move this check to is_readable_video()
-                if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                    raise cv2.error("File is invalid or has 0 frames")
-                video.set(
-                    cv2.CAP_PROP_POS_FRAMES,
-                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                )
-                # NOTE: Depending on the video format, compression, and
-                # frame count, seeking halfway does not work and the thumb
-                # must be pulled from the earliest available frame.
-                max_frame_seek: int = 10
-                for i in range(
-                    0,
-                    min(max_frame_seek, math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT))),
-                ):
-                    success, frame = video.read()
-                    if not success:
-                        video.set(cv2.CAP_PROP_POS_FRAMES, i)
-                    else:
-                        break
-                if frame is not None:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    im = Image.fromarray(frame)
-        except (
-            UnidentifiedImageError,
-            cv2.error,
-            DecompressionBombError,
-            OSError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _mdp_thumb(filepath: Path) -> Image.Image | None:
-        """Extract the thumbnail from a .mdp file.
-
-        Args:
-            filepath (Path): The path of the .mdp file.
-
-        Returns:
-            Image: The embedded thumbnail.
-        """
-        im: Image.Image | None = None
-        try:
-            with open(filepath, "rb") as f:
-                magic = struct.unpack("<7sx", f.read(8))[0]
-                if magic != b"mdipack":
-                    return im
-
-                bin_header = struct.unpack("<LLL", f.read(12))
-                xml_header = ET.fromstring(f.read(bin_header[1]))
-                mdibin_count = len(xml_header.findall("./*Layer")) + 1
-                for _ in range(mdibin_count):
-                    pac_header = struct.unpack("<3sxLLLL48s64s", f.read(132))
-                    if not pac_header[6].startswith(b"thumb"):
-                        f.seek(pac_header[3], os.SEEK_CUR)
-                        continue
-
-                    thumb_element = unwrap(xml_header.find("Thumb"))
-                    dimensions = (
-                        int(unwrap(thumb_element.get("width"))),
-                        int(unwrap(thumb_element.get("height"))),
-                    )
-                    thumb_blob = f.read(pac_header[3])
-                    if pac_header[2] == 1:
-                        thumb_blob = zlib.decompress(thumb_blob, bufsize=pac_header[4])
-
-                    im = Image.frombytes("RGBA", dimensions, thumb_blob, "raw", "BGRA")
-                    break
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return im
-
-    @staticmethod
-    def _pdn_thumb(filepath: Path) -> Image.Image | None:
-        """Extract the base64-encoded thumbnail from a .pdn file header.
-
-        Args:
-            filepath (Path): The path of the .pdn file.
-
-        Returns:
-            Image: the decoded PNG thumbnail or None by default.
-        """
-        im: Image.Image | None = None
-        with open(filepath, "rb") as f:
-            try:
-                # First 4 bytes are the magic number
-                if f.read(4) != b"PDN3":
-                    return im
-
-                # Header length is a little-endian 24-bit int
-                header_size = struct.unpack("<i", f.read(3) + b"\x00")[0]
-                thumb_element = ET.fromstring(f.read(header_size)).find("./*thumb")
-                if thumb_element is None:
-                    return im
-
-                encoded_png = thumb_element.get("png")
-                if encoded_png:
-                    decoded_png = base64.b64decode(encoded_png)
-                    im = Image.open(BytesIO(decoded_png))
-                    if im.mode == "RGBA":
-                        new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                        new_bg.paste(im, mask=im.getchannel(3))
-                        im = new_bg
-            except Exception as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return im
-
-    @staticmethod
-    def _clip_thumb(filepath: Path) -> Image.Image | None:
-        """Extract the thumbnail from the SQLite database embedded in a .clip file.
-
-        Args:
-            filepath (Path): The path of the .clip file.
-
-        Returns:
-            Image: The embedded thumbnail, if extractable.
-        """
-        im: Image.Image | None = None
-        try:
-            with open(filepath, "rb") as f:
-                blob = f.read()
-                sqlite_index = blob.find(b"SQLite format 3")
-                if sqlite_index == -1:
-                    return im
-
-            with sqlite3.connect(":memory:") as conn:
-                conn.deserialize(blob[sqlite_index:])
-                thumbnail = conn.execute("SELECT ImageData FROM CanvasPreview").fetchone()
-                if thumbnail:
-                    im = Image.open(BytesIO(thumbnail[0]))
-            conn.close()
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return im
-
     def render(
         self,
+        cache: CacheManager | None,
         timestamp: float,
         filepath: Path | str,
-        base_size: tuple[int, int],
-        pixel_ratio: float,
+        size: tuple[int, int],
+        dpi_scale: float,
+        theme: Theme = Theme.DARK,
         is_loading: bool = False,
-        is_grid_thumb: bool = False,
-        update_on_ratio_change: bool = False,
+        is_thumb: bool = False,
     ):
         """Render a thumbnail or preview image.
 
         Args:
+            cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
-            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
+            size (tuple[int, int]): The unmodified base size of the thumbnail.
+            dpi_scale (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
             is_loading (bool): Is this a loading graphic?
-            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
-                Or else the Preview Pane?
+            is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
             update_on_ratio_change (bool): Should an updated ratio signal be sent?
         """
         render_mask_and_edge: bool = True
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        theme_color: UiColor = (
-            UiColor.THEME_LIGHT
-            if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
-            else UiColor.THEME_DARK
-        )
+        scaled_size = math.ceil(max(size[0], size[1]) * dpi_scale)
+        theme_color: UiColor = UiColor.THEME_LIGHT if theme == Theme.LIGHT else UiColor.THEME_DARK
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        def render_default(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        def render_default(size: tuple[int, int], dpi_scale: float) -> Image.Image:
             im = self._get_icon(
                 name=self._get_resource_id(filepath),
                 color=theme_color,
                 size=size,
-                pixel_ratio=pixel_ratio,
+                theme=theme,
+                dpi_scale=dpi_scale,
             )
             return im
 
         def render_unlinked(
-            size: tuple[int, int], pixel_ratio: float, cached_im: Image.Image | None = None
+            size: tuple[int, int], dpi_scale: float, cached_im: Image.Image | None = None
         ) -> Image.Image:
             im = self._get_icon(
                 name="broken_link_icon",
                 color=UiColor.RED,
                 size=size,
-                pixel_ratio=pixel_ratio,
+                theme=theme,
+                dpi_scale=dpi_scale,
                 bg_image=cached_im,
                 draw_edge=not cached_im,
                 is_corner=False,
             )
             return im
 
-        def render_ignored(
-            size: tuple[int, int], pixel_ratio: float, im: Image.Image
-        ) -> Image.Image:
+        def render_ignored(size: tuple[int, int], im: Image.Image) -> Image.Image:
             icon_ratio: float = 5
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
-
-            icon = icon.resize(
-                (
-                    math.ceil(size[0] // icon_ratio),
-                    math.ceil(size[1] // icon_ratio),
-                )
-            )
-
+            icon: Image.Image = self.rm.ignored
+            icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
             im_.paste(
                 im=icon.resize(
-                    (
-                        math.ceil(size[0] // icon_ratio),
-                        math.ceil(size[1] // icon_ratio),
-                    )
+                    (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
                 ),
                 box=(size[0] // padding_factor, size[1] // padding_factor),
                 mask=icon.getchannel(3),
@@ -1621,8 +606,9 @@ class ThumbRenderer(QObject):
 
         def fetch_cached_image(file_name: Path):
             image: Image.Image | None = None
-            assert self.driver.cache_manager is not None
-            cached_path = self.driver.cache_manager.get_file_path(file_name)
+            if not cache:
+                return image
+            cached_path = cache.get_file_path(file_name)
 
             if cached_path and cached_path.is_file():
                 try:
@@ -1631,57 +617,63 @@ class ThumbRenderer(QObject):
                         raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
                 except Exception as e:
                     logger.error(
-                        "[ThumbRenderer] Couldn't open cached thumbnail!",
-                        path=cached_path,
-                        error=e,
+                        "[FileRenderer] Couldn't open cached thumbnail!", path=cached_path, error=e
                     )
             return image
 
         image: Image.Image | None = None
         # Try to get a non-loading thumbnail for the grid.
-        if not is_loading and is_grid_thumb and filepath and filepath != Path("."):
+        if not is_loading and is_thumb and filepath and filepath != Path("."):
             # Attempt to retrieve cached image from disk
             mod_time: str = ""
             with contextlib.suppress(Exception):
                 mod_time = str(filepath.stat().st_mtime_ns)
             hashable_str: str = f"{str(filepath)}{mod_time}"
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
-            file_name = Path(f"{hash_value}{ThumbRenderer.cached_img_ext}")
+            file_name = Path(f"{hash_value}{FileRenderer.cached_img_ext}")
             image = fetch_cached_image(file_name)
 
-            if not image and self.driver.settings.generate_thumbs:
+            if not image and self.settings.generate_thumbs:
+                settings_res = self.settings.cached_thumb_resolution
+                thumb_res = (
+                    settings_res
+                    if settings_res >= MIN_CACHED_THUMB_RES and settings_res <= MAX_CACHED_THUMB_RES
+                    else DEFAULT_CACHED_THUMB_RES
+                )
+
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
                 image = self._render(
-                    timestamp,
-                    filepath,
-                    (self.cached_img_res, self.cached_img_res),
-                    1,
-                    is_grid_thumb,
-                    save_to_file=file_name,
+                    cache=cache,
+                    filepath=filepath,
+                    size=(thumb_res, thumb_res),
+                    dpi_scale=1,
+                    theme=theme,
+                    is_thumb=is_thumb,
+                    cache_filename=file_name,
                 )
 
             # If the normal renderer failed, fallback the defaults
             # (with native non-cached sizing!)
             if not image:
                 image = (
-                    render_unlinked((adj_size, adj_size), pixel_ratio)
+                    render_unlinked((scaled_size, scaled_size), dpi_scale)
                     if not filepath.exists() or filepath.is_dir()
-                    else render_default((adj_size, adj_size), pixel_ratio)
+                    else render_default((scaled_size, scaled_size), dpi_scale)
                 )
                 render_mask_and_edge = False
 
             # Apply the mask and edge
             if image:
-                image = self._resize_image(image, (adj_size, adj_size))
+                image = self._resize_image(image, (scaled_size, scaled_size))
                 if render_mask_and_edge:
-                    mask = self._get_mask((adj_size, adj_size), pixel_ratio)
+                    mask = self._get_mask((scaled_size, scaled_size), dpi_scale)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
-                        (adj_size, adj_size), pixel_ratio
+                        (scaled_size, scaled_size), dpi_scale
                     )
                     image = self._apply_edge(
-                        four_corner_gradient(image, (adj_size, adj_size), mask), edge
+                        four_corner_gradient(image, (scaled_size, scaled_size), mask), edge, theme
                     )
 
             # Check if the file is supposed to be ignored and render an overlay if needed
@@ -1690,10 +682,10 @@ class ThumbRenderer(QObject):
                     image
                     and Ignore.compiled_patterns
                     and Ignore.compiled_patterns.match(
-                        filepath.relative_to(unwrap(self.driver.lib.library_dir))
+                        filepath.relative_to(unwrap(self.lib.library_dir))
                     )
                 ):
-                    image = render_ignored((adj_size, adj_size), pixel_ratio, image)
+                    image = render_ignored((scaled_size, scaled_size), image)
             except TypeError:
                 pass
 
@@ -1701,13 +693,15 @@ class ThumbRenderer(QObject):
         elif is_loading:
             # Initialize "Loading" thumbnail
             loading_thumb: Image.Image = self._get_icon(
-                "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
+                "thumb_loading", theme_color, (scaled_size, scaled_size), theme, dpi_scale
             )
-            image = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+            image = loading_thumb.resize(
+                (scaled_size, scaled_size), resample=Image.Resampling.BILINEAR
+            )
 
         # A full preview image (never cached)
-        elif not is_grid_thumb:
-            image = self._render(timestamp, filepath, base_size, pixel_ratio)
+        elif not is_thumb:
+            image = self._render(cache, filepath, size, dpi_scale, theme)
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
@@ -1715,7 +709,7 @@ class ThumbRenderer(QObject):
                     else render_default((512, 512), 2)
                 )
                 render_mask_and_edge = False
-            mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
+            mask = self._get_mask(image.size, dpi_scale, scale_radius=True)
             bg = Image.new("RGBA", image.size, (0, 0, 0, 0))
             bg.paste(image, mask=mask.getchannel(0))
             image = bg
@@ -1724,168 +718,157 @@ class ThumbRenderer(QObject):
         if not image:
             image = Image.new("RGBA", (128, 128), color="#FF00FF")
 
-        # Convert the final image to a pixmap to emit.
-        qim = ImageQt.ImageQt(image)
-        pixmap = QPixmap.fromImage(qim)
-        pixmap.setDevicePixelRatio(pixel_ratio)
-        self.updated_ratio.emit(image.size[0] / image.size[1])
-        if pixmap:
-            self.updated.emit(
-                timestamp,
-                pixmap,
-                QSize(
-                    math.ceil(adj_size / pixel_ratio),
-                    math.ceil(image.size[1] / pixel_ratio),
-                ),
-                filepath,
-            )
-        else:
-            self.updated.emit(
-                timestamp,
-                QPixmap(),
-                QSize(*base_size),
-                filepath,
-            )
+        return (
+            image,
+            (math.ceil(scaled_size / dpi_scale), math.ceil(image.size[1] / dpi_scale)),
+            timestamp,
+        )
 
     def _render(
         self,
-        timestamp: float,
+        cache: CacheManager | None,
         filepath: str | Path,
-        base_size: tuple[int, int],
-        pixel_ratio: float,
-        is_grid_thumb: bool = False,
-        save_to_file: Path | None = None,
+        size: tuple[int, int],
+        dpi_scale: float,
+        theme: Theme = Theme.DARK,
+        is_thumb: bool = False,
+        cache_filename: Path | None = None,
     ) -> Image.Image | None:
         """Render a thumbnail or preview image.
 
         Args:
+            cache (CacheManager | None): A cache manager instance.
             timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
-            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
-            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
-                Or else the Preview Pane?
-            save_to_file(Path | None): A filepath to optionally save the output to.
+            size (tuple[int, int]): The unmodified base size of the thumbnail.
+            dpi_scale (float): The screen pixel ratio.
+            theme (Theme): A theme enum to determine the light/dark theme.
+            is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
+            cache_filename (Path | None): An optional filename to use to save to the cache.
 
         """
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        scaled_size = math.ceil(max(size[0], size[1]) * dpi_scale)
         image: Image.Image | None = None
-        _filepath: Path = Path(filepath)
-        savable_media_type: bool = True
+        filepath_: Path = Path(filepath)
+        is_savable_type: bool = True
 
-        if _filepath and _filepath.is_file():
+        if filepath_ and filepath_.is_file():
             try:
-                ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
-                # Ebooks =======================================================
+                ext: str = filepath_.suffix.lower() if filepath_.suffix else filepath_.stem.lower()
+                # eBooks ===========================================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = self._epub_cover(_filepath, ext)
-                # Krita ========================================================
+                    image = epub_thumb(filepath_, ext)
+                # Krita ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
                 ):
-                    image = self._krita_thumb(_filepath)
-                # Clip Studio Paint ============================================
+                    image = krita_thumb(filepath_)
+                # Clip Studio Paint ================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
                 ):
-                    image = self._clip_thumb(_filepath)
-                # VTF ==========================================================
+                    image = clip_studio_thumb(filepath_)
+                # VTF ==============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
-                    image = self._vtf_thumb(_filepath)
-                # Images =======================================================
+                    image = vtf_thumb(filepath_)
+                # Images ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
                 ):
-                    # Raw Images -----------------------------------------------
+                    # Raw Images -------------------------------------------------------------------
                     if MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
-                        image = self._image_raw_thumb(_filepath)
-                    # Vector Images --------------------------------------------
+                        image = raw_image_thumb(filepath_)
+                    # Vector Images ----------------------------------------------------------------
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
-                        image = self._image_vector_thumb(_filepath, adj_size)
-                    # EXR Images -----------------------------------------------
+                        image = vector_image_thumb(filepath_, scaled_size)
+                    # EXR Images -------------------------------------------------------------------
                     elif ext in [".exr"]:
-                        image = self._image_exr_thumb(_filepath)
-                    # Normal Images --------------------------------------------
+                        image = exr_image_thumb(filepath_)
+                    # Normal Images ----------------------------------------------------------------
                     else:
-                        image = self._image_thumb(_filepath)
-                # Videos =======================================================
+                        image = raster_image_thumb(filepath_)
+                # Videos ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
-                    image = self._video_thumb(_filepath)
-                # PowerPoint Slideshow
+                    image = video_thumb(filepath_)
+                # PowerPoint =======================================================================
                 elif ext in {".pptx"}:
-                    image = self._powerpoint_thumb(_filepath)
-                # OpenDocument/OpenOffice ======================================
+                    image = powerpoint_thumb(filepath_)
+                # OpenDocument/OpenOffice ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
                 ):
-                    image = self._open_doc_thumb(_filepath)
-                # Apple iWork Suite ============================================
-                elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
-                    image = self._iwork_thumb(_filepath)
-                # Plain Text ===================================================
+                    image = open_doc_thumb(filepath_)
+                # Apple iWork + Creator Studio =====================================================
+                elif (
+                    MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES)
+                    or ext == ".pxd"
+                ):
+                    image = apple_embedded_thumb(filepath_)
+                # Plain Text =======================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
                 ):
-                    image = self._text_thumb(_filepath)
-                # Fonts ========================================================
+                    image = text_thumb(filepath_)
+                # Fonts ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
-                    if is_grid_thumb:
+                    if is_thumb:
                         # Short (Aa) Preview
-                        image = self._font_short_thumb(_filepath, adj_size)
+                        image = font_small_thumb(filepath_, scaled_size)
+                        if image is not None:
+                            image = self._apply_overlay_color(image, UiColor.BLUE, theme)
                     else:
                         # Large (Full Alphabet) Preview
-                        image = self._font_long_thumb(_filepath, adj_size)
+                        image = font_full_preview(filepath_, scaled_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
                 ):
-                    image = self._audio_album_thumb(_filepath, ext)
+                    image = audio_album_thumb(filepath_, ext)
                     if image is None:
-                        image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
-                        savable_media_type = False
+                        image = audio_waveform_thumb(filepath_, ext, scaled_size, dpi_scale)
+                        is_savable_type = False
                         if image is not None:
-                            image = self._apply_overlay_color(image, UiColor.GREEN)
+                            image = self._apply_overlay_color(image, UiColor.GREEN, theme)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
-                    image = self._blender(_filepath)
+                    image = blender_thumb(filepath_)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
-                    image = self._pdf_thumb(_filepath, adj_size)
+                    image = pdf_thumb(filepath_, scaled_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
-                    image = self._archive_thumb(_filepath, ext)
+                    image = archive_thumb(filepath_, ext=ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
-                    image = self._mdp_thumb(_filepath)
+                    image = medibang_paint_thumb(filepath_)
                 # Paint.NET ====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
-                    image = self._pdn_thumb(_filepath)
+                    image = paint_dot_net_thumb(filepath_)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
 
                 if image:
-                    image = self._resize_image(image, (adj_size, adj_size))
+                    image = self._resize_image(image, (scaled_size, scaled_size))
 
-                if save_to_file and savable_media_type and image:
-                    assert self.driver.cache_manager is not None
-                    self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
+                if cache_filename and is_savable_type and image and cache:
+                    cache.save_image(image, cache_filename, mode="RGBA")
 
             except (
                 AssertionError,
@@ -1894,7 +877,11 @@ class ThumbRenderer(QObject):
                 UnidentifiedImageError,
                 ValueError,
             ) as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+                logger.error(
+                    "[FileRenderer] Couldn't render thumbnail",
+                    filepath=filepath,
+                    error=type(e).__name__,
+                )
                 image = None
             except NoRendererError:
                 image = None

@@ -11,7 +11,7 @@ def test_github_api_unavailable(qtbot: QtBot, mocker) -> None:
     mocker.patch(
         "requests.get",
         side_effect=ConnectionError(
-            "Failed to resolve 'api.github.com' ([Errno -3] Temporary failure in name resolution)"
+            "Emulating a failure with 'api.github.com' ([Errno 0] This should be handled)"
         ),
     )
     modal = AboutModal("/tmp")

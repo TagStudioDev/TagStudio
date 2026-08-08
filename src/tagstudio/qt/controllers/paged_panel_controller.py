@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from tagstudio.qt.controllers.paged_panel_state import PagedPanelState
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -89,7 +90,7 @@ class PagedPanel(QWidget):
 
         # Update Title
         self.setWindowTitle(frame.title)
-        self.title_label.setText(f"<h1>{frame.title}</h1>")
+        self.title_label.setText(header(frame.title, 1))
 
         # Update Body Widget
         if self.body_layout.itemAt(0):
@@ -107,7 +108,7 @@ class PagedPanel(QWidget):
             if isinstance(item, QWidget):
                 self.button_nav_layout.addWidget(item)
                 item.setHidden(False)
-            elif isinstance(item, int):
+            elif isinstance(item, int):  # pyright: ignore[reportUnnecessaryIsInstance]
                 self.button_nav_layout.addStretch(item)
 
     @override

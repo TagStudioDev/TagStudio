@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import enum
 import mimetypes
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 import structlog
@@ -12,18 +12,18 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 FILETYPE_EQUIVALENTS = [
-    set(["aif", "aiff", "aifc"]),
-    set(["html", "htm", "xhtml", "shtml", "dhtml"]),
-    set(["jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"]),
-    set(["json", "jsonc", "json5"]),
-    set(["md", "markdown", "mkd", "rmd"]),
-    set(["tar.gz", "tgz"]),
-    set(["xml", "xul"]),
-    set(["yaml", "yml"]),
+    {"aif", "aiff", "aifc"},
+    {"html", "htm", "xhtml", "shtml", "dhtml"},
+    {"jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"},
+    {"json", "jsonc", "json5"},
+    {"md", "markdown", "mkd", "rmd"},
+    {"tar.gz", "tgz"},
+    {"xml", "xul"},
+    {"yaml", "yml"},
 ]
 
 
-class MediaType(str, Enum):
+class MediaType(enum.StrEnum):
     """Names of media types."""
 
     ADOBE_PHOTOSHOP = "adobe_photoshop"
@@ -75,7 +75,7 @@ class MediaCategory:
         extensions (set[str]): The set of file extensions associated with this category.
             Includes leading ".", all lowercase, and does not need to be unique to this category.
 
-        is_iana (bool): Represents whether or not this is an IANA registered category.
+        is_iana (bool): Represents whether this is an IANA registered category.
     """
 
     media_type: MediaType
@@ -105,6 +105,7 @@ class MediaCategories:
     # These sets are used either individually or together to form the final sets
     # for the MediaCategory(s).
     # These sets may be combined and are NOT 1:1 with the final categories.
+    _ADOBE_ILLUSTRATOR_SET: set[str] = {".ai"}
     _ADOBE_PHOTOSHOP_SET: set[str] = {
         ".pdd",
         ".psb",
@@ -257,6 +258,7 @@ class MediaCategories:
         ".odt",
         ".pages",
         ".pdf",
+        ".pxd",
         ".rtf",
         ".tex",
         ".wpd",
@@ -303,6 +305,7 @@ class MediaCategories:
         ".nef",
         ".nrw",
         ".orf",
+        ".r3d",
         ".raf",
         ".raw",
         ".rw2",
@@ -336,7 +339,7 @@ class MediaCategories:
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
-    _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
+    _IWORK_SET: set[str] = {".key", ".numbers", ".pages"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MDIPACK_SET: set[str] = {".mdp"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
@@ -579,7 +582,7 @@ class MediaCategories:
     )
     PDF_TYPES = MediaCategory(
         media_type=MediaType.PDF,
-        extensions=_PDF_SET,
+        extensions=_PDF_SET | _ADOBE_ILLUSTRATOR_SET,
         is_iana=False,
         name="pdf",
     )

@@ -2,80 +2,87 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import traceback
+import math
 import typing
-from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QPushButton,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.types import unwrap
+from tagstudio.core.constants import FFMPEG_HELP_URL
+from tagstudio.qt.controllers.field_suggest_box import FieldSuggestBox
 from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
+from tagstudio.qt.controllers.return_button import ReturnButton
+from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
 from tagstudio.qt.mixed.field_containers import FieldContainers
-from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.mixed.file_attributes import FileAttributes
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import button_style, preview_warning_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
-BUTTON_STYLE = f"""
-    QPushButton{{
-        background-color: {Theme.COLOR_BG.value};
-        border-radius: 6px;
-        font-weight: 500;
-        text-align: center;
-    }}
-    QPushButton::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
-        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QPushButton::disabled{{
-        background-color: {Theme.COLOR_DISABLED_BG.value};
-    }}
-"""
 
-
-class PreviewPanelView(QWidget):
-    lib: Library
-
-    _selected: list[int]
-
-    def __init__(self, library: Library, driver: "QtDriver"):
+class PreviewPanelView(QVBoxLayout):
+    def __init__(self, driver: "QtDriver", pixel_ratio: float) -> None:
         super().__init__()
-        self.lib = library
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(6)
+        rm = ResourceManager()
 
-        self.__thumb = PreviewThumb(self.lib, driver)
-        self.__file_attrs = FileAttributes(self.lib, driver)
-        self._fields = FieldContainers(
-            self.lib, driver
-        )  # TODO: this should be name mangled, but is still needed on the controller side atm
+        # Search/Create Boxes
+        def ph_text(key: str) -> str:
+            return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
 
+        self.field_search_box = FieldSuggestBox(
+            driver.lib, driver.settings, ph_text("home.search_or_create_fields")
+        )
+        self.tag_search_box = TagSuggestBox(
+            driver.lib, driver.settings, ph_text("home.search_or_create_tags")
+        )
+
+        self.preview_thumb = PreviewThumb(driver.lib, driver)
+        self.file_attrs = FileAttributes(driver.lib, driver)
+        self.containers = FieldContainers(driver.lib, driver)
+
+        # Visual Preview
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
         preview_layout.setContentsMargins(0, 0, 0, 0)
         preview_layout.setSpacing(6)
 
+        # Warning Banner (Missing FFmpeg, etc.)
+        self.warning_banner = QWidget()
+        self.warning_banner.setObjectName("ffmpeg_widget")
+        ffmpeg_warning_layout = QHBoxLayout(self.warning_banner)
+        ffmpeg_warning_layout.setContentsMargins(3, 3, 3, 3)
+        self.warning_banner.setStyleSheet(preview_warning_style())
+        ffmpeg_warning_label = QLabel(
+            Translations.format(
+                "preview.missing_module.multimedia",
+                module=f'<a href="{FFMPEG_HELP_URL}">FFmpeg</a>',
+            )
+        )
+        ffmpeg_warning_label.setWordWrap(True)
+        ffmpeg_warning_label.linkActivated.connect(
+            lambda x: QDesktopServices.openUrl(FFMPEG_HELP_URL)
+        )
+        warning_icon = QLabel()
+        warning_icon_pixmap = rm.alert.scaled(
+            math.floor(20 * pixel_ratio), math.floor(20 * pixel_ratio)
+        )
+        warning_icon_pixmap.setDevicePixelRatio(pixel_ratio)
+        warning_icon.setPixmap(warning_icon_pixmap)
+        ffmpeg_warning_layout.addWidget(warning_icon)
+        ffmpeg_warning_layout.addWidget(ffmpeg_warning_label)
+        ffmpeg_warning_layout.setStretch(1, 1)
+        self.warning_banner.hide()
+
+        # File Information
         info_section = QWidget()
         info_layout = QVBoxLayout(info_section)
         info_layout.setContentsMargins(0, 0, 0, 0)
@@ -85,130 +92,38 @@ class PreviewPanelView(QWidget):
         splitter.setOrientation(Qt.Orientation.Vertical)
         splitter.setHandleWidth(12)
 
+        # Add Tag/Field Buttons
         add_buttons_container = QWidget()
         add_buttons_layout = QHBoxLayout(add_buttons_container)
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.__add_tag_button = QPushButton(Translations["tag.add"])
-        self.__add_tag_button.setEnabled(False)
-        self.__add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.__add_tag_button.setMinimumHeight(28)
-        self.__add_tag_button.setStyleSheet(BUTTON_STYLE)
+        self.add_tag_button = ReturnButton(Translations["tag.add"])
+        self.add_tag_button.setEnabled(False)
+        self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_tag_button.setMinimumHeight(30)
+        self.add_tag_button.setStyleSheet(button_style())
 
-        self.__add_field_button = QPushButton(Translations["library.field.add"])
-        self.__add_field_button.setEnabled(False)
-        self.__add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.__add_field_button.setMinimumHeight(28)
-        self.__add_field_button.setStyleSheet(BUTTON_STYLE)
+        self.add_field_button = ReturnButton(Translations["field.add"])
+        self.add_field_button.setEnabled(False)
+        self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_field_button.setMinimumHeight(30)
+        self.add_field_button.setStyleSheet(button_style())
 
-        add_buttons_layout.addWidget(self.__add_tag_button)
-        add_buttons_layout.addWidget(self.__add_field_button)
+        add_buttons_layout.addWidget(self.add_tag_button)
+        add_buttons_layout.addWidget(self.add_field_button)
+        add_buttons_layout.addWidget(self.tag_search_box)
+        add_buttons_layout.addWidget(self.field_search_box)
 
-        preview_layout.addWidget(self.__thumb)
-        info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self._fields)
+        # Finalize Layout
+        preview_layout.addWidget(self.preview_thumb)
+        info_layout.addWidget(self.warning_banner)
+        info_layout.addWidget(self.file_attrs)
+        info_layout.addWidget(self.containers)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
         splitter.setStretchFactor(1, 2)
 
-        root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.addWidget(splitter)
-        root_layout.addWidget(add_buttons_container)
-
-        self.__connect_callbacks()
-
-    def __connect_callbacks(self):
-        self.__add_field_button.clicked.connect(self._add_field_button_callback)
-        self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
-
-    def _add_field_button_callback(self):
-        raise NotImplementedError()
-
-    def _add_tag_button_callback(self):
-        raise NotImplementedError()
-
-    def _set_selection_callback(self):
-        raise NotImplementedError()
-
-    def refresh_selection(self, update_preview: bool = False) -> None:
-        """Refresh the current selection without requiring the caller to re-read it."""
-        self.set_selection(self._selected, update_preview=update_preview)
-
-    def set_selection(self, selected: list[int], update_preview: bool = True):
-        """Render the panel widgets with the newest data from the Library.
-
-        Args:
-            selected  (list[int]): List of the IDs of the selected entries.
-            update_preview (bool): Should the file preview be updated?
-            (Only works with one or more items selected)
-        """
-        self._selected = selected
-        try:
-            # No Items Selected
-            if len(selected) == 0:
-                self.__thumb.hide_preview()
-                self.__file_attrs.update_stats()
-                self.__file_attrs.update_date_label()
-                self._fields.hide_containers()
-
-                self.add_buttons_enabled = False
-
-            # One Item Selected
-            elif len(selected) == 1:
-                entry_id = selected[0]
-                entry: Entry = unwrap(self.lib.get_entry(entry_id))
-
-                filepath: Path = unwrap(self.lib.library_dir) / entry.path
-
-                self.add_buttons_enabled = True
-
-                if update_preview:
-                    stats: FileAttributeData = self.__thumb.display_file(filepath)
-                    self.__file_attrs.update_stats(filepath, stats)
-                self.__file_attrs.update_date_label(filepath)
-                self._fields.update_from_entry(entry_id)
-
-                self._set_selection_callback()
-
-            # Multiple Selected Items
-            elif len(selected) > 1:
-                self.add_buttons_enabled = True
-                self.__thumb.hide_preview()  # TODO: Render mixed selection
-                self.__file_attrs.update_multi_selection(len(selected))
-                self.__file_attrs.update_date_label()
-                self._fields.update_from_entries(selected)
-
-                self._set_selection_callback()
-
-        except Exception as e:
-            logger.error("[Preview Panel] Error updating selection", error=e)
-            traceback.print_exc()
-
-    @property
-    def add_buttons_enabled(self) -> bool:  # needed for the tests
-        field = self.__add_field_button.isEnabled()
-        tag = self.__add_tag_button.isEnabled()
-        assert field == tag
-        return field
-
-    @add_buttons_enabled.setter
-    def add_buttons_enabled(self, enabled: bool):
-        self.__add_field_button.setEnabled(enabled)
-        self.__add_tag_button.setEnabled(enabled)
-
-    @property
-    def _file_attributes_widget(self) -> FileAttributes:  # needed for the tests
-        """Getter for the file attributes widget."""
-        return self.__file_attrs
-
-    @property
-    def field_containers_widget(self) -> FieldContainers:  # needed for the tests
-        """Getter for the field containers widget."""
-        return self._fields
-
-    @property
-    def preview_thumb(self) -> PreviewThumb:
-        return self.__thumb
+        self.addWidget(splitter)
+        self.addWidget(add_buttons_container)

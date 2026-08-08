@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
@@ -25,10 +25,9 @@ def test_library_add_alias(library: Library, generate_tag: Callable[..., Tag]):
     tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
-    alias_ids: set[int] = set()
-    alias_names: set[str] = set()
-    alias_names.add("test_alias")
-    library.update_tag(tag, parent_ids, alias_names, alias_ids)
+    aliases: set[TagAlias] = set()
+    aliases.add(TagAlias("test_alias", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
     tag = unwrap(library.get_tag(tag.id))
     alias_ids = set(tag.alias_ids)
 
@@ -39,10 +38,9 @@ def test_library_get_alias(library: Library, generate_tag: Callable[..., Tag]):
     tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
-    alias_ids: list[int] = []
-    alias_names: set[str] = set()
-    alias_names.add("test_alias")
-    library.update_tag(tag, parent_ids, alias_names, alias_ids)
+    aliases: set[TagAlias] = set()
+    aliases.add(TagAlias("test_alias", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
     tag = unwrap(library.get_tag(tag.id))
     alias_ids = tag.alias_ids
 
@@ -54,19 +52,19 @@ def test_library_update_alias(library: Library, generate_tag: Callable[..., Tag]
     tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
-    alias_ids: list[int] = []
-    alias_names: set[str] = set()
-    alias_names.add("test_alias")
-    library.update_tag(tag, parent_ids, alias_names, alias_ids)
+    aliases: set[TagAlias] = set()
+    test_alias = TagAlias("test_alias", tag.id)
+    aliases.add(test_alias)
+    library.update_tag(tag, parent_ids, aliases)
     tag = unwrap(library.get_tag(tag.id))
     alias_ids = tag.alias_ids
 
     alias = unwrap(library.get_alias(tag.id, alias_ids[0]))
     assert alias.name == "test_alias"
 
-    alias_names.remove("test_alias")
-    alias_names.add("alias_update")
-    library.update_tag(tag, parent_ids, alias_names, alias_ids)
+    aliases.remove(test_alias)
+    aliases.add(TagAlias("alias_update", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
 
     tag = unwrap(library.get_tag(tag.id))
     assert len(tag.alias_ids) == 1
@@ -79,7 +77,6 @@ def test_library_add_file(library: Library):
     """Check Entry.path handling for insert vs lookup"""
     entry = Entry(
         path=Path("bar.txt"),
-        folder=unwrap(library.folder),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
@@ -108,7 +105,7 @@ def test_tag_self_parent(library: Library, generate_tag: Callable[..., Tag]):
     tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
     assert tag.id == 123
 
-    library.update_tag(tag, {tag.id}, [], [])
+    library.update_tag(tag, {tag.id}, [])
     tag = unwrap(library.get_tag(tag.id))
     assert len(tag.parent_ids) == 0
 
@@ -141,8 +138,7 @@ def test_get_entry(library: Library, entry_min: Entry):
 
 
 def test_entries_count(library: Library):
-    folder = unwrap(library.folder)
-    entries = [Entry(path=Path(f"{x}.txt"), folder=folder, fields=[]) for x in range(10)]
+    entries = [Entry(path=Path(f"{x}.txt"), fields=[]) for x in range(10)]
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
@@ -225,7 +221,9 @@ def test_remove_text_field_entry_with_multiple_fields(library: Library, entry_fu
 def test_update_entry_field(library: Library, entry_full: Entry):
     title_field = entry_full.text_fields[0]
 
-    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
 
     entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
@@ -241,7 +239,9 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
     library.add_field_to_entries(entry_full.id, field=empty_title)
 
     # update one of the fields
-    library.update_text_field(entry_full.id, title_field, "new value", title_field.is_multiline)
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
 
     # Then only one should be updated
     entry = next(library.all_entries(with_joins=True))
@@ -252,7 +252,6 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
 def test_mirror_entry_fields(library: Library):
     # Create and add entries with fields
     entry_a = Entry(
-        folder=unwrap(library.folder),
         path=Path("title_and_date.txt"),
         fields=[
             TextField(name="Title", value="I'm a Test Title"),
@@ -260,7 +259,6 @@ def test_mirror_entry_fields(library: Library):
         ],
     )
     entry_b = Entry(
-        folder=unwrap(library.folder),
         path=Path("notes.txt"),
         fields=[
             TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True),
@@ -268,7 +266,6 @@ def test_mirror_entry_fields(library: Library):
         ],
     )
     entry_c = Entry(
-        folder=unwrap(library.folder),
         path=Path("date_published.txt"),
         fields=[
             DatetimeField(name="Date Published", value="2000-01-01 12:00:00"),
@@ -317,14 +314,11 @@ def test_mirror_entry_fields(library: Library):
 
 
 def test_merge_entries(library: Library):
-    folder = unwrap(library.folder)
-
     tag_0: Tag = unwrap(library.add_tag(Tag(id=1010, name="tag_0")))
     tag_1: Tag = unwrap(library.add_tag(Tag(id=1011, name="tag_1")))
     tag_2: Tag = unwrap(library.add_tag(Tag(id=1012, name="tag_2")))
 
     entry_a = Entry(
-        folder=folder,
         path=Path("a"),
         fields=[
             TextField(name="Author", value="Author McAuthorson"),
@@ -332,7 +326,6 @@ def test_merge_entries(library: Library):
         ],
     )
     entry_b = Entry(
-        folder=folder,
         path=Path("b"),
         fields=[TextField(name="Notes", value="test note", is_multiline=True)],
     )

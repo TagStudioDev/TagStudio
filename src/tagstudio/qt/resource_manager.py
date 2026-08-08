@@ -3,22 +3,14 @@
 
 
 from pathlib import Path
-from typing import Literal, TypedDict
 
 import structlog
 import ujson
-from PIL import Image, ImageFile
+from PIL import Image
 from PySide6.QtGui import QPixmap
 
 logger = structlog.get_logger(__name__)
 
-
-class TResourceJsonAttrDict(TypedDict):
-    path: str
-    mode: Literal["qpixmap", "pil", "rb", "r"]
-
-
-TData = bytes | str | ImageFile.ImageFile | QPixmap
 
 RESOURCE_FOLDER: Path = Path(__file__).parents[1]
 
@@ -26,8 +18,8 @@ RESOURCE_FOLDER: Path = Path(__file__).parents[1]
 class ResourceManager:
     """A resource manager for retrieving resources."""
 
-    _map: dict[str, TResourceJsonAttrDict] = {}
-    _cache: dict[str, TData] = {}
+    _map: dict[str, dict[str, str]] = {}
+    _cache: dict[str, bytes | str | Image.Image | QPixmap] = {}
     _instance: "ResourceManager | None" = None
 
     def __new__(cls):
@@ -43,7 +35,7 @@ class ResourceManager:
         return ResourceManager._instance
 
     @staticmethod
-    def get_path(id: str) -> Path | None:
+    def get_path(id: str):
         """Get a resource's path from the ResourceManager.
 
         Args:
@@ -52,12 +44,21 @@ class ResourceManager:
         Returns:
             Path: The resource path if found, else None.
         """
-        res: TResourceJsonAttrDict | None = ResourceManager._map.get(id)
-        if res is not None:
-            return RESOURCE_FOLDER / "resources" / res.get("path")
-        return None
+        try:
+            res = ResourceManager._map.get(id)
+            if res is None:
+                raise AttributeError
+            resource_path = res.get("path")
+            if resource_path is None:
+                raise FileNotFoundError
 
-    def get(self, id: str) -> TData | None:
+        except (FileNotFoundError, AttributeError) as e:
+            logger.error("[ResourceManager]: Could not find path for resource: ", id=str, error=e)
+            return None
+
+        return RESOURCE_FOLDER / "resources" / resource_path
+
+    def get(self, id: str):
         """Get a resource from the ResourceManager.
 
         Args:
@@ -70,42 +71,51 @@ class ResourceManager:
             QPixmap: When the data is in PySide6.QtGui.QPixmap format.
             None: If resource couldn't load.
         """
-        cached_res: TData | None = ResourceManager._cache.get(id)
+        cached_res = ResourceManager._cache.get(id)
         if cached_res is not None:
             return cached_res
 
         else:
-            res: TResourceJsonAttrDict | None = ResourceManager._map.get(id)
-            if res is None:
+            res: dict[str, str] | None = ResourceManager._map.get(id)
+
+            try:
+                if res is None:
+                    raise AttributeError
+                resource_path = res.get("path")
+                if resource_path is None:
+                    raise FileNotFoundError
+            except (FileNotFoundError, AttributeError) as e:
+                logger.error("[ResourceManager]: Could not find resource", id=id, error=e)
                 return None
 
-            file_path: Path = RESOURCE_FOLDER / "resources" / res.get("path")
+            file_path = RESOURCE_FOLDER / "resources" / resource_path
             mode = res.get("mode")
 
-            data: TData | None = None
+            data = None
             try:
                 match mode:
                     case "r":
                         data = file_path.read_text()
-
                     case "rb":
                         data = file_path.read_bytes()
-
                     case "pil":
                         data = Image.open(file_path)
                         data.load()
-
                     case "qpixmap":
                         data = QPixmap(file_path.as_posix())
+                    case _:
+                        raise AttributeError
 
-            except FileNotFoundError:
-                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=file_path)
+            except (FileNotFoundError, AttributeError) as e:
+                logger.error(
+                    "[ResourceManager]: Could not find resource", path=file_path, id=id, error=e
+                )
+                return None
 
-        if data is not None:
-            ResourceManager._cache[id] = data
+        ResourceManager._cache[id] = data
         return data
 
-    def __getattr__(self, __name: str) -> TData:
+    def __getattr__(self, __name: str):
         attr = self.get(__name)
         if attr is not None:
             return attr

@@ -16,32 +16,38 @@ logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
-LANGUAGES = {
-    "Chinese (Simplified)": "zh_Hans",
-    "Chinese (Traditional)": "zh_Hant",
-    "Czech": "cs",
-    # "Danish": "da",  # Minimal
-    "Dutch": "nl",
-    "English": "en",
-    "Filipino": "fil",
-    "French": "fr",
-    "German": "de",
-    "Hungarian": "hu",
-    "Italian": "it",
-    "Japanese": "ja",
-    "Norwegian Bokmål": "nb_NO",
-    "Polish": "pl",
-    "Portuguese (Brazil)": "pt_BR",
-    "Portuguese (Portugal)": "pt",
-    "Romanian": "ro",
-    "Russian": "ru",
-    "Spanish": "es",
-    "Swedish": "sv",
-    "Tamil": "ta",
-    "Toki Pona": "tok",
-    "Turkish": "tr",
-    "Viossa": "qpv",
-}
+LANGUAGES = [
+    # "am",  # Minimal
+    "ceb",
+    "cs",
+    # "da",  # Minimal
+    "de",
+    "el",
+    "en",
+    "es",
+    "fi",
+    "fil",
+    "fr",
+    "hu",
+    # "is",  # Minimal
+    "it",
+    "ja",
+    "nb_NO",
+    "nl",
+    "pl",
+    "pt_BR",
+    "pt",
+    "qpv",
+    "ro",
+    "ru",
+    "sv",
+    "ta",
+    # "th",  # Minimal
+    "tok",
+    "tr",
+    "zh_Hans",
+    "zh_Hant",
+]
 
 # A map of field class names to their respective translation keys.
 FIELD_TYPE_KEYS = {
@@ -77,7 +83,7 @@ class Translator:
             for k, v in self._strings.items():
                 self._strings[k] = remove_mnemonic_marker(v)
 
-    def __format(self, text: str, **kwargs) -> str:
+    def __format(self, text: str, **kwargs: ...) -> str:
         try:
             return text.format(**kwargs)
         except (KeyError, ValueError):
@@ -87,11 +93,11 @@ class Translator:
                 kwargs=kwargs,
                 language=self.__lang,
             )
-            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
+            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")  # pyright: ignore[reportExplicitAny]
             params.update(kwargs)
             return text.format_map(params)
 
-    def format(self, key: str, **kwargs) -> str:
+    def format(self, key: str, **kwargs: ...) -> str:
         return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:

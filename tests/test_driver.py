@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QSettings
 
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import SettingItems
+from tagstudio.core.enums import AppCacheItems
 from tagstudio.core.library.alchemy.library import LibraryStatus
 from tagstudio.qt.global_settings import GlobalSettings
 
@@ -43,7 +43,7 @@ def test_evaluate_path_missing():
 def test_evaluate_path_last_lib_not_exists():
     # Given
     cache = QSettings()
-    cache.setValue(SettingItems.LAST_LIBRARY, "/0/4/5/1/")
+    cache.setValue(AppCacheItems.LAST_LIBRARY, "/0/4/5/1/")
     driver = TestDriver(GlobalSettings(), cache)
 
     # When
@@ -57,7 +57,7 @@ def test_evaluate_path_last_lib_present(library_dir: Path):
     # Given
     cache_file = library_dir / "test_settings.ini"
     cache = QSettings(str(cache_file), QSettings.Format.IniFormat)
-    cache.setValue(SettingItems.LAST_LIBRARY, library_dir)
+    cache.setValue(AppCacheItems.LAST_LIBRARY, library_dir)
     cache.sync()
 
     settings = GlobalSettings()

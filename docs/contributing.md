@@ -23,7 +23,7 @@ If you wish to discuss TagStudio further, feel free to join the [Discord Server]
 
 #### Feature Additions
 
-- [x] I've read the [Feature Roadmap](roadmap.md) and understand what core features are planned, their priorities, and their scheduled timelines
+- [x] I've read the [Roadmap](roadmap.md) and understand what core features are planned, their priorities, and their scheduled timelines
 - [x] I've found an existing [feature request](https://github.com/TagStudioDev/TagStudio/issues) or created my own **_before starting work on a feature_** so that the feature can be discussed beforehand
 
 <!-- prettier-ignore -->
@@ -117,7 +117,7 @@ Licensing is now accomplished using the [REUSE](https://reuse.software/spec-3.3/
 !!! tip "PR Scope"
     If you're unsure where to stop the scope of your PR, ask yourself: _"If I broke this up, could any parts of it still be used by the project in the meantime?"_
 
-### Workflow Checks
+### :material-check-circle: Workflow Checks
 
 When pushing your code, several automated [workflows](https://github.com/TagStudioDev/TagStudio/tree/main/.github/workflows) will check it against predefined tests and style checks. It's _highly recommended_ that you run these checks locally beforehand to avoid having to fight back-and-forth with the workflow checks inside your pull requests. These checks currently include:
 
@@ -126,7 +126,7 @@ When pushing your code, several automated [workflows](https://github.com/TagStud
 - [Pytest](developing.md#pytest) tests
 - REUSE [license compliance](#licenses)
 
-### Runtime Requirements
+## :material-timer-play: Runtime Requirements
 
 Code must function on all of the supported operating systems and versions:
 
@@ -134,18 +134,8 @@ Code must function on all of the supported operating systems and versions:
 - macOS 14.0+
 - Common Linux distributions and versions
 
-## :material-file-document: Documentation Guidelines
+Final submitted code must **_NOT:_**
 
-Documentation contributions include anything inside of the `docs/` folder as well as the `README.md`. Documentation inside the `docs/` folder is built and hosted on our static documentation site, [docs.tagstud.io](https://docs.tagstud.io/).
-
-- Use "[dash-case / kebab-case](https://developer.mozilla.org/en-US/docs/Glossary/Kebab_case)" for file and folder names
-- Follow the folder structure pattern
-- Don't add images or other media with excessively large file sizes
-- Provide alt text for embedded media
-- Use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" for title capitalization
-
-## :material-translate: Translation Guidelines
-
-Translations are performed on the TagStudio [Weblate project](https://hosted.weblate.org/projects/tagstudio/).
-
-_Translation guidelines coming soon._
+- Contain superfluous or unnecessary logging statements
+- Cause unreasonable slowdowns to the program outside of a progress-indicated task
+- Cause undesirable visual glitches or artifacts on screen

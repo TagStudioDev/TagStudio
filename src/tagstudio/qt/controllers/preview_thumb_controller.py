@@ -32,8 +32,6 @@ Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumb(PreviewThumbView):
-    __current_file: Path
-
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__(library, driver)
 
@@ -114,7 +112,7 @@ class PreviewThumb(PreviewThumbView):
 
     def display_file(self, filepath: Path) -> FileAttributeData:
         """Render a single file preview."""
-        self.__current_file = filepath
+        self._current_file = filepath
 
         ext = filepath.suffix.lower()
 
@@ -150,21 +148,26 @@ class PreviewThumb(PreviewThumbView):
 
     @override
     def _open_file_action_callback(self):
-        open_file(
-            self.__current_file, windows_start_command=self.__driver.settings.windows_start_command
-        )
+        if self._current_file:
+            open_file(
+                self._current_file,
+                windows_start_command=self.__driver.settings.windows_start_command,
+            )
 
     @override
     def _open_explorer_action_callback(self):
-        open_file(self.__current_file, file_manager=True)
+        if self._current_file:
+            open_file(self._current_file, file_manager=True)
 
     @override
     def _delete_action_callback(self):
-        if bool(self.__current_file):
-            self.__driver.delete_files_callback(self.__current_file)
+        if self._current_file:
+            self.__driver.delete_files_callback(self._current_file)
 
     @override
     def _button_wrapper_callback(self):
-        open_file(
-            self.__current_file, windows_start_command=self.__driver.settings.windows_start_command
-        )
+        if self._current_file:
+            open_file(
+                self._current_file,
+                windows_start_command=self.__driver.settings.windows_start_command,
+            )

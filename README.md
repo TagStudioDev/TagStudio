@@ -3,14 +3,13 @@
 
 # TagStudio: A User-Focused Photo & File Management System
 
-[![Downloads](https://img.shields.io/github/downloads/TagStudioDev/TagStudio/total.svg?maxAge=2592001)](https://github.com/TagStudioDev/TagStudio/releases)
+[![Downloads](https://img.shields.io/github/downloads/TagStudioDev/TagStudio/total.svg)](https://github.com/TagStudioDev/TagStudio/releases)
 [![Translations](https://hosted.weblate.org/widget/tagstudio/strings/svg-badge.svg)](https://hosted.weblate.org/projects/tagstudio/strings/)
-[![PyTest](https://github.com/TagStudioDev/TagStudio/actions/workflows/pytest.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/pytest.yaml)
-[![MyPy](https://github.com/TagStudioDev/TagStudio/actions/workflows/mypy.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/mypy.yaml)
-[![Ruff](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml)
+[![REUSE Status](https://api.reuse.software/badge/github.com/TagStudioDev/TagStudio)](https://api.reuse.software/info/github.com/TagStudioDev/TagStudio)
+[![Python Checks](https://github.com/TagStudioDev/TagStudio/actions/workflows/checks_python.yml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/checks_python.yml)
 
 <p align="center">
-  <img width="60%" src="docs/assets/ts-9-3_logo_text.png">
+  <img width="60%" src="src/tagstudio/resources/qt/images/tagstudio_logo-text_color.png">
 </p>
 
 TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure. **Read the documentation and more at [docs.tagstud.io](https://docs.tagstud.io)!**
@@ -172,7 +171,6 @@ See the [**Roadmap**](docs/roadmap.md) on the documentation site for a complete 
 - To provide powerful methods for organization, notably the concept of tag inheritance, or "taggable tags" _(and in the near future, the combination of composition-based tags)._
 - To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or requiring them to change their existing file structures and workflows.
 - To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
-- To make the dang thing look nice, too. It’s 2025, not 1995.
 
 ### Project Priorities
 

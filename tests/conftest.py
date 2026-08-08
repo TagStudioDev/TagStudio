@@ -20,7 +20,6 @@ sys.path.insert(0, str(CWD.parent))
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
-from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -36,22 +35,18 @@ def file_mediatypes_library():
 
     status = lib.open_library(Path(""), in_memory=True)
     assert status.success
-    folder = unwrap(lib.folder)
 
     entry1 = Entry(
-        folder=folder,
         path=Path("foo.png"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     entry2 = Entry(
-        folder=folder,
         path=Path("bar.png"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
     entry3 = Entry(
-        folder=folder,
         path=Path("baz.apng"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
@@ -87,7 +82,6 @@ def library(request, library_dir: Path):  # pyright: ignore
     lib = Library()
     status = lib.open_library(library_path, in_memory=True)
     assert status.success
-    folder = unwrap(lib.folder)
 
     tag = Tag(
         name="foo",
@@ -116,7 +110,6 @@ def library(request, library_dir: Path):  # pyright: ignore
     # default item with deterministic name
     entry = Entry(
         id=1,
-        folder=folder,
         path=Path("foo.txt"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
@@ -124,7 +117,6 @@ def library(request, library_dir: Path):  # pyright: ignore
 
     entry2 = Entry(
         id=2,
-        folder=folder,
         path=Path("one/two/bar.md"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )

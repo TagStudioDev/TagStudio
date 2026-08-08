@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
 {
   lib,
   pkgs,
@@ -28,11 +27,11 @@ let
         libdrm
         libpulseaudio
         libva
+        libx11
         libxkbcommon
+        libxrandr
         pipewire
         qt6.qtwayland
-        xorg.libX11
-        xorg.libXrandr
       ]
     );
 
@@ -74,18 +73,17 @@ let
   };
 in
 pkgs.mkShellNoCC {
-  nativeBuildInputs = with pkgs; [
-    coreutils
-    uv
-
-    ruff
-  ];
-  buildInputs = [
+  packages = [
     python3Wrapped
   ]
   ++ (with pkgs; [
+    coreutils
     ffmpeg-headless
     ripgrep
+    uv
+
+    pyright
+    ruff
   ]);
 
   env = {
@@ -120,7 +118,7 @@ pkgs.mkShellNoCC {
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          uv pip install --quiet --editable '.[mkdocs,mypy,pre-commit,pytest]'
+          uv pip install --quiet --editable . --group docs --group extra --group test
           cp pyproject.toml "''${venv}"/pyproject.toml
       fi
 

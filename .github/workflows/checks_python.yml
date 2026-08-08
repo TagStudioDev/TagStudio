@@ -1,0 +1,227 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: CC0-1.0
+---
+name: Checks (Python)
+
+on:
+  pull_request:
+    paths: &on_paths
+      - .github/actions/setup-python/action.yml
+      - .github/workflows/checks_python.yml
+      - src/**/resources/**
+      - src/**/*.json
+      - src/**/*.qrc
+      - tests/**
+      - .editorconfig
+      - pyproject.toml
+      - uv.lock
+      - '**.pyi?'
+  push:
+    branches-ignore:
+      - translations
+    paths: *on_paths
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  run-conditions:
+    permissions:
+      pull-requests: read
+
+    name: Run Conditions
+    runs-on: ubuntu-latest
+    outputs:
+      pyright: ${{ steps.run-conditions.outputs.pyright }}
+      pytest: ${{ steps.run-conditions.outputs.pytest }}
+      ruff: ${{ steps.run-conditions.outputs.ruff }}
+    steps:
+      - name: Checkout repository
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          # Largest positive number; infinite depth.
+          # Using 0 would grab all branches.
+          # See: https://github.com/actions/checkout/issues/520
+          # See: https://stackoverflow.com/questions/6802145/how-to-convert-a-git-shallow-clone-to-a-full-clone/6802238#6802238
+          # `git fetch --unshallow` as suggested in later answers would be an extra operation.
+          fetch-depth: '2147483647'
+
+      - name: Check changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v47.0.6
+        with:
+          fail_on_initial_diff_error: 'true'
+          fail_on_submodule_diff_error: 'true'
+          skip_initial_fetch: 'true'
+
+          # WARNING: Does not support `?` glob operand!
+          files_yaml: |
+            generic:
+              - .github/workflows/checks_python.yml
+              - pyproject.toml
+              - uv.lock
+              - '**.py'
+              - '**.pyi'
+            pyright:
+              - .github/actions/setup-python/action.yml
+            pytest:
+              - .github/actions/setup-python/action.yml
+              - src/**/resources/**
+              - src/**/*.json
+              - src/**/*.qrc
+              - tests/**
+            ruff:
+              - .editorconfig
+
+      - name: Set run conditions
+        id: run-conditions
+        env:
+          CHANGED_GENERIC: ${{ steps.changed-files.outputs.generic_any_changed }}
+          CHANGED_PYRIGHT: ${{ steps.changed-files.outputs.pyright_any_changed }}
+          CHANGED_PYTEST: ${{ steps.changed-files.outputs.pytest_any_changed }}
+          CHANGED_RUFF: ${{ steps.changed-files.outputs.ruff_any_changed }}
+        run: |
+          pyright=false
+          pytest=false
+          ruff=false
+          if [ "${CHANGED_GENERIC}" = true ]; then
+              pyright=true
+              pytest=true
+              ruff=true
+          else
+              if [ "${CHANGED_PYRIGHT}" = true ]; then
+                  pyright=true
+              fi
+              if [ "${CHANGED_PYTEST}" = true ]; then
+                  pytest=true
+              fi
+              if [ "${CHANGED_RUFF}" = true ]; then
+                  ruff=true
+              fi
+          fi
+
+          cat <<EOF >>"${GITHUB_OUTPUT}"
+          pyright=${pyright}
+          pytest=${pytest}
+          ruff=${ruff}
+          EOF
+
+  check-pyright:
+    concurrency:
+      group: pyright-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    name: Pyright
+    needs: run-conditions
+    if: needs.run-conditions.outputs.pyright == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python
+        with:
+          groups: |
+            pyright
+            pytest
+
+      - name: Execute Pyright
+        run: pyright
+
+  check-pytest:
+    concurrency:
+      group: ${{ matrix.os }}-pytest-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-label: Linux
+
+          - os: windows-2022
+            os-label: Windows
+
+    name: pytest${{ matrix.os-label && format(' ({0})', matrix.os-label) }}
+    needs: run-conditions
+    if: needs.run-conditions.outputs.pytest == 'true'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - *checkout
+
+      - name: Setup Python
+        uses: ./.github/actions/setup-python
+        with:
+          groups: pytest
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 \
+            libgl1 \
+            libopengl0 \
+            libpulse0 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xinerama0 \
+            libxkbcommon-x11-0 \
+            libyaml-dev \
+            ripgrep \
+            x11-utils
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ripgrep
+
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install ripgrep
+
+      - name: Execute pytest (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: pytest
+
+      - name: Execute pytest (non-Windows)
+        if: runner.os != 'Windows'
+        run: pytest
+
+  check-ruff:
+    concurrency:
+      group: ruff-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    name: Ruff
+    needs: run-conditions
+    if: needs.run-conditions.outputs.ruff == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Setup Ruff
+        uses: astral-sh/ruff-action@v4.0.0
+        with:
+          # No-op operation, since executing Ruff cannot be disabled for the action.
+          # Note that `--version` has different behavior than `version`, as the
+          # latter will fail if passed any extra args, even if that arg is empty.
+          args: --version
+          src: ''
+
+      - parallel:
+          - name: Run Ruff linter
+            run: ruff check
+
+          - name: Run Ruff formatter
+            run: ruff format --check

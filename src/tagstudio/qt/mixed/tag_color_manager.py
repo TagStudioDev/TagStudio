@@ -3,7 +3,7 @@
 
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -23,11 +23,12 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
 
 
 class TagColorManager(QWidget):
-    create_namespace_modal: PanelModal | None = None
+    create_namespace_modal: Modal | None = None
 
     def __init__(
         self,
@@ -62,7 +63,7 @@ class TagColorManager(QWidget):
         self.title_label = QLabel()
         self.title_label.setObjectName("titleLabel")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setText(f"<h3>{Translations['color_manager.title']}</h3>")
+        self.title_label.setText(header(Translations["color_manager.title"], 3))
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -124,7 +125,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -141,7 +142,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
@@ -173,10 +174,10 @@ class TagColorManager(QWidget):
     def create_namespace(self):
         build_namespace_panel = BuildNamespacePanel(self.lib)
 
-        self.create_namespace_modal = PanelModal(
+        self.create_namespace_modal = Modal(
             build_namespace_panel,
             Translations["namespace.create.title"],
-            has_save=True,
+            is_savable=True,
         )
 
         self.create_namespace_modal.saved.connect(
@@ -189,7 +190,7 @@ class TagColorManager(QWidget):
 
         self.create_namespace_modal.show()
 
-    def delete_namespace_dialog(self, prompt: str, callback: Callable) -> None:
+    def delete_namespace_dialog(self, prompt: str, callback: Callable[..., Any]) -> None:  # pyright: ignore[reportExplicitAny]
         message_box = QMessageBox()
         message_box.setText(prompt)
         message_box.setWindowTitle(Translations["color.namespace.delete.title"])
@@ -207,13 +208,13 @@ class TagColorManager(QWidget):
         callback()
 
     @override
-    def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa N802
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
         if not self.is_initialized:
             self.setup_color_groups()
         return super().showEvent(event)
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == QtCore.Qt.Key.Key_Escape:  # noqa SIM114
             self.done_button.click()
         elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:

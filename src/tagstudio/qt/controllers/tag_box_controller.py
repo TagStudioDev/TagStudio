@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from functools import partial
 from typing import TYPE_CHECKING, override
 
 import structlog
@@ -11,8 +12,8 @@ from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
-from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.tag_box_view import TagBoxWidgetView
 
 if TYPE_CHECKING:
@@ -96,23 +97,22 @@ class TagBoxWidget(TagBoxWidgetView):
     def _on_edit(self, tag: Tag) -> None:
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
 
-        edit_modal = PanelModal(
+        edit_modal = Modal(
             build_tag_panel,
             self.__driver.lib.tag_display_name(tag),
             "Edit Tag",
-            done_callback=self.on_update.emit,
-            has_save=True,
+            is_savable=True,
         )
-        # TODO - this was update_tag()
-        edit_modal.saved.connect(
-            lambda: self.__driver.lib.update_tag(
-                build_tag_panel.build_tag(),
-                parent_ids=set(build_tag_panel.parent_ids),
-                alias_names=set(build_tag_panel.alias_names),
-                alias_ids=set(build_tag_panel.alias_ids),
-            )
-        )
+        edit_modal.saved.connect(partial(self._update_tag_callback, build_tag_panel))
         edit_modal.show()
+
+    def _update_tag_callback(self, build_tag_panel: BuildTagPanel):
+        self.__driver.lib.update_tag(
+            build_tag_panel.build_tag(),
+            parent_ids=set(build_tag_panel.parent_ids),
+            aliases=set(build_tag_panel.aliases),
+        )
+        self.on_update.emit()
 
     @override
     def _on_search(self, tag: Tag) -> None:

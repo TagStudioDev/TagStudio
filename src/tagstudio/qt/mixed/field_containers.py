@@ -2,20 +2,18 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import sys
 import typing
 from collections.abc import Callable
 from datetime import datetime as dt
+from functools import partial
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
-    QListWidgetItem,
     QMessageBox,
     QScrollArea,
     QSizePolicy,
@@ -23,7 +21,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BaseFieldTemplate,
@@ -33,14 +30,14 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
-from tagstudio.qt.mixed.text_field import TextWidget
+from tagstudio.qt.mixed.text_field import TextContainerWidget
 from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
-from tagstudio.qt.views.edit_text_box_modal import EditTextBox
-from tagstudio.qt.views.edit_text_line_modal import EditTextLine
-from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.stylesheets.stylesheets import inset_container_style
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -49,9 +46,11 @@ logger = structlog.get_logger(__name__)
 
 
 class FieldContainers(QWidget):
-    """The Preview Panel Widget."""
+    """Widget for the tag and field containers displayed inside the Preview Panel."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    on_tags_update = Signal()
+
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
         self.lib = library
@@ -61,18 +60,12 @@ class FieldContainers(QWidget):
         self.common_fields: list = []
         self.mixed_fields: list = []
         self.cached_entries: list[Entry] = []
-        self.containers: list[FieldContainer] = []
-
-        self.panel_bg_color = (
-            Theme.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value
-        )
+        self._containers: list[FieldContainer] = []
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(0)
+        self.scroll_layout.setSpacing(6)
 
         scroll_container: QWidget = QWidget()
         scroll_container.setObjectName("entryScrollContainer")
@@ -95,24 +88,29 @@ class FieldContainers(QWidget):
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(
-            f"QWidget#entryScrollContainer{{background:{self.panel_bg_color};border-radius:6px;}}"
-        )
+        self.scroll_area.setStyleSheet(inset_container_style("entryScrollContainer"))
         self.scroll_area.setWidget(scroll_container)
 
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(self.scroll_area)
 
-    def update_from_entry(self, entry_id: int, update_badges: bool = True):
+    @property
+    def top_entry_id(self) -> int:
+        """Get the topmost entry ID in the (cached) selected entries."""
+        return self.cached_entries[0].id
+
+    def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
         self.update_from_selection(entry_id, update_badges)
 
-    def update_from_entries(self, entry_ids: list[int], update_badges: bool = True):
+    def update_from_entries(self, entry_ids: list[int], update_badges: bool = True) -> None:
         """Update tags and fields from multiple Entry sources, showing shared tags."""
         self.update_from_selection(entry_ids, update_badges)
 
-    def update_from_selection(self, entry_ids: int | list[int], update_badges: bool = True):
+    def update_from_selection(
+        self, entry_ids: int | list[int], update_badges: bool = True
+    ) -> None:
         """Update tags and fields from one or more Entry sources."""
         entry_ids = [entry_ids] if isinstance(entry_ids, int) else list(entry_ids)
         logger.warning("[FieldContainers] Updating Selection", entry_ids=entry_ids)
@@ -159,7 +157,7 @@ class FieldContainers(QWidget):
                     next_index += 1
 
             for field in mixed_fields:
-                self.write_container(next_index, field, is_mixed=True)
+                self.write_field_container(next_index, field, is_mixed=True)
                 next_index += 1
 
         self.hide_unused_containers(next_index)
@@ -174,28 +172,6 @@ class FieldContainers(QWidget):
             shared_tags &= set(entry.tags)
 
         return shared_tags
-
-    def _get_shared_fields(self, entries: list[Entry]) -> list[BaseField]:
-        """Get fields that are present in all entries with the same value."""
-        if not entries:
-            return []
-
-        shared_fields = []
-        first_entry_fields = entries[0].fields
-
-        for field in first_entry_fields:
-            if all(
-                any(
-                    f.name == field.name
-                    and type(f) is type(field)
-                    and f.value == field.value
-                    for f in entry.fields
-                )
-                for entry in entries[1:]
-            ):
-                shared_fields.append(field)
-
-        return shared_fields
 
     def _split_fields(self, entries: list[Entry]) -> tuple[list[BaseField], list[BaseField]]:
         """Split fields into shared and mixed groups for a multi-selection."""
@@ -239,7 +215,7 @@ class FieldContainers(QWidget):
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
-            self.write_container(index, field, is_mixed=False)
+            self.write_field_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
         if hide_leftovers:
@@ -247,7 +223,7 @@ class FieldContainers(QWidget):
 
         return container_len
 
-    def update_toggled_tag(self, tag_id: int, toggle_value: bool):
+    def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
         """Visually add or remove a tag from the item preview without needing to query the db."""
         entry = self.cached_entries[0]
         tag = self.lib.get_tag(tag_id)
@@ -260,14 +236,14 @@ class FieldContainers(QWidget):
 
         self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
 
-    def hide_containers(self):
+    def hide_containers(self) -> None:
         """Hide all field and tag containers."""
-        for c in self.containers:
+        for c in self._containers:
             c.setHidden(True)
 
     def hide_unused_containers(self, visible_count: int) -> None:
         """Hide containers that are no longer part of the active selection view."""
-        for i, container in enumerate(self.containers):
+        for i, container in enumerate(self._containers):
             if i >= visible_count:
                 container.setHidden(True)
 
@@ -317,165 +293,131 @@ class FieldContainers(QWidget):
         return dict((c, d) for c, d in categories.items() if len(d) > 0)
 
     def remove_field_prompt(self, name: str) -> str:
-        return Translations.format("library.field.confirm_remove", name=name)
+        return Translations.format("field.confirm_remove", name=name)
 
-    def add_field_to_selected(self, field_list: list[QListWidgetItem]):
-        """Add list of entry fields to one or more selected items.
+    def add_field_to_selected(
+        self, field_templates: BaseFieldTemplate | list[BaseFieldTemplate]
+    ) -> None:
+        """Add list of fields to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
         """
+        if isinstance(field_templates, BaseFieldTemplate):
+            field_templates = [field_templates]
+
+        assert isinstance(field_templates, list)
+
         logger.info(
             "[FieldContainers][add_field_to_selected]",
             selected=self.driver.selected,
-            fields=field_list,
+            fields=[
+                (field_template.class_name, field_template.id) for field_template in field_templates
+            ],
         )
+
         for entry_id in self.driver.selected:
-            for field in field_list:
-                template: BaseFieldTemplate = field.data(Qt.ItemDataRole.UserRole)
+            for field_template in field_templates:
                 logger.info(
                     "[FieldContainers][add_field_to_selected] Adding field",
-                    name=template.name,
-                    type=template.class_name,
+                    name=field_template.name,
+                    type=field_template.class_name,
                 )
-                self.lib.add_field_to_entries(entry_id, template.to_field())
+                self.lib.add_field_to_entries(entry_id, field_template.to_field())
 
-    def add_tags_to_selected(self, tags: int | list[int]):
+    def add_tags_to_selected(self, tag_ids: int | list[int]) -> None:
         """Add list of tags to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
         """
-        if isinstance(tags, int):
-            tags = [tags]
+        if isinstance(tag_ids, int):
+            tag_ids = [tag_ids]
         logger.info(
             "[FieldContainers][add_tags_to_selected]",
             selected=self.driver.selected,
-            tags=tags,
+            tag_ids=tag_ids,
         )
-        self.driver.add_tags_to_selected_callback(tags)
+        self.driver.add_tags_to_selected_callback(tag_ids)
 
-    def set_container_partial(self, container: FieldContainer, partial: bool) -> None:
+    def set_container_partial(self, container: FieldContainer, is_partial: bool) -> None:
         """Apply a visual partial-selection treatment to a container."""
-        if partial:
+        if is_partial:
             effect = QGraphicsOpacityEffect(container)
             effect.setOpacity(0.7)
             container.setGraphicsEffect(effect)
         else:
             container.setGraphicsEffect(None)
 
-    def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
-        """Update/Create data for a FieldContainer.
+    def update_text_field_callback(
+        self, field: TextField, entry_id: int, content: dict[str, str | bool]
+    ) -> None:
+        """Callback called when a text field has updated data."""
+        self._update_text_field(
+            field, str(content["name"]), str(content["value"]), bool(content["is_multiline"])
+        )
+        self.update_from_entry(entry_id)
+
+    def update_datetime_field_callback(
+        self, field: DatetimeField, entry_id: int, content: dict[str, str]
+    ) -> None:
+        """Callback called when a datetime field has updated data."""
+        self.update_datetime_field(field, str(content["name"]), str(content["value"]))
+        self.update_from_entry(entry_id)
+
+    def remove_field_callback(self, field: BaseField, entry_id: int) -> None:
+        """Callback called when a field needs to be removed from an entry."""
+        self._remove_field(field)
+        self.update_from_entry(entry_id)
+
+    def write_field_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
+        """Update/Create data for a field FieldContainer.
 
         Args:
             index(int): The container index.
-            field(BaseField): The type of field to write to.
+            field(BaseField): The field to write in this container.
             is_mixed(bool): Relevant when multiple items are selected.
-
-            If True, field is not present in all selected items.
+                If True, field is not present in all selected items.
         """
-        logger.info(
-            "[FieldContainers][write_container]",
-            index=index,
-            name=field.name,
-            type=field.class_name,
-        )
-        if len(self.containers) < (index + 1):
-            container = FieldContainer()
-            self.containers.append(container)
-            self.scroll_layout.addWidget(container)
-        else:
-            container = self.containers[index]
 
-        self.set_container_partial(container, is_mixed)
-        container.set_copy_callback()
-        container.set_edit_callback()
-        container.set_remove_callback()
-
-        # Set field title
-        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
-        title = f"{field.name} ({Translations[field_name_key]})"
-
-        # Single-line Text
-        if type(field) is TextField and not field.is_multiline:
+        def write_text_container(
+            container: FieldContainer, field: TextField, title: str, is_mixed: bool
+        ):
             container.set_title(field.name)
-            container.set_inline(False)
 
-            # Normalize line endings in any text content.
-            if not is_mixed:
-                assert isinstance(field.value, str | type(None))
-                text = field.value or ""
-            else:
-                text = "<i>Mixed Data</i>"  # TODO: Localize this
-
-            inner_widget = TextWidget(title, text)
-            container.set_inner_widget(inner_widget)
-            if not is_mixed:
-                modal = PanelModal(
-                    EditTextLine(field.value),
-                    title=title,
-                    window_title=f"Edit {field.name}",  # TODO: Localize this
-                    save_callback=(  # pyright: ignore[reportArgumentType]
-                        lambda content: (
-                            self.update_text_field(field, content, is_multiline=False),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        )
-                    ),
-                )
-                if "pytest" in sys.modules:
-                    # for better testability
-                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
-
-                container.set_edit_callback(modal.show)
-                container.set_remove_callback(
-                    lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(title),
-                        callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        ),
-                    )
-                )
-
-        # Multiline Text
-        elif type(field) is TextField and field.is_multiline:
-            container.set_title(field.name)
-            container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
                 assert isinstance(field.value, str | type(None))
                 text = (field.value or "").replace("\r", "\n")
             else:
-                text = "<i>Mixed Data</i>"  # TODO: Localize this
-            inner_widget = TextWidget(title, text)
+                text = f"<i>{Translations['field.mixed_data']}</i>"
+
+            inner_widget = TextContainerWidget(title, text)
             container.set_inner_widget(inner_widget)
+
             if not is_mixed:
-                modal = PanelModal(
-                    EditTextBox(field.value),
-                    title=title,
-                    window_title=f"Edit {field.name}",  # TODO: Localize this
-                    save_callback=(  # pyright: ignore[reportArgumentType]
-                        lambda content: (
-                            self.update_text_field(field, content, is_multiline=True),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        )
-                    ),
+                edit_modal = Modal(
+                    EditText(field.name, field.value, field.is_multiline),
+                    window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                    is_savable=True,
+                    inline_title=False,
                 )
-                container.set_edit_callback(modal.show)
+                edit_modal.saved_data.connect(
+                    partial(self.update_text_field_callback, field, self.top_entry_id)
+                )
+
+                container.set_edit_callback(edit_modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.name),
-                        callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        ),
+                        prompt=self.remove_field_prompt(title),
+                        callback=partial(self.remove_field_callback, field, self.top_entry_id),
                     )
                 )
 
-        elif type(field) is DatetimeField:
-            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
-            if not is_mixed:
-                container.set_title(field.name)
-                container.set_inline(False)
+        def write_datetime_container(
+            container: FieldContainer, field: DatetimeField, title: str, is_mixed: bool
+        ):
+            container.set_title(field.name)
 
+            if not is_mixed:
                 try:
                     assert field.value is not None
                     text = self.driver.settings.format_datetime(
@@ -483,69 +425,90 @@ class FieldContainers(QWidget):
                     )
                 except (ValueError, AssertionError):
                     text = str(field.value)
+            else:
+                text = f"<i>{Translations['field.mixed_data']}</i>"
 
-                inner_widget = TextWidget(title, text)
-                container.set_inner_widget(inner_widget)
+            inner_widget = TextContainerWidget(title, text)
+            container.set_inner_widget(inner_widget)
 
-                modal = PanelModal(
-                    DatetimePicker(self.driver, field.value or dt.now()),
-                    title=f"Edit {field.name}",
-                    save_callback=(  # pyright: ignore[reportArgumentType]
-                        lambda content: (
-                            self.update_datetime_field(field, content),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        )
-                    ),
+            if not is_mixed:
+                edit_modal = Modal(
+                    DatetimePicker(self.driver, field.name, field.value or dt.now()),
+                    window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                    is_savable=True,
+                    inline_title=False,
+                )
+                edit_modal.saved_data.connect(
+                    partial(self.update_datetime_field_callback, field, self.top_entry_id)
                 )
 
-                container.set_edit_callback(modal.show)
+                container.set_edit_callback(edit_modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.name),
-                        callback=lambda: (
-                            self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0].id),
-                        ),
+                        callback=partial(self.remove_field_callback, field, self.top_entry_id),
                     )
                 )
-            else:
-                text = "<i>Mixed Data</i>"  # TODO: Localize this
-                inner_widget = TextWidget(title, text)
-                container.set_inner_widget(inner_widget)
-        else:
-            logger.warning(
-                "[FieldContainers][write_container] Unknown Field", field=field
-            )  # TODO: Localize this
+
+        def write_unknown_container():
             container.set_title(field.name)
-            container.set_inline(False)
-            inner_widget = TextWidget(title, field.name)
+            inner_widget = TextContainerWidget(title, field.name)
             container.set_inner_widget(inner_widget)
             container.set_remove_callback(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.name),
-                    callback=lambda: (
-                        self.remove_field(field),
-                        self.update_from_entry(self.cached_entries[0].id),
-                    ),
+                    callback=partial(self.remove_field_callback, field, self.top_entry_id),
                 )
             )
+
+        logger.info(
+            "[FieldContainers][write_container]",
+            index=index,
+            name=field.name,
+            type=field.class_name,
+        )
+
+        # Create new containers if necessary
+        if len(self._containers) < (index + 1):
+            container = FieldContainer()
+            self._containers.append(container)
+            self.scroll_layout.addWidget(container)
+        else:
+            container = self._containers[index]
+
+        self.set_container_partial(container, is_mixed)
+        # Reset any callbacks left over from this container's previous contents, since not
+        # every branch below re-assigns them (e.g. mixed fields are not editable/removable).
+        container.set_edit_callback()
+        container.set_remove_callback()
+
+        # Set field title
+        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
+        title = f"{field.name} ({Translations[field_name_key]})"
+
+        # Write containers
+        if type(field) is TextField:
+            write_text_container(container, field, title, is_mixed)
+        elif type(field) is DatetimeField:
+            write_datetime_container(container, field, title, is_mixed)
+        else:
+            write_unknown_container()
 
         container.setHidden(False)
 
     def write_info_container(self, index: int, title: str, text: str) -> int:
         """Render a non-interactive informational container."""
         logger.info("[FieldContainers][write_info_container]", index=index)
-        if len(self.containers) < (index + 1):
+        if len(self._containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self._containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self._containers[index]
 
-        self.set_container_partial(container, False)
+        self.set_container_partial(container, is_partial=False)
         container.set_title(title)
-        container.set_inline(False)
-        container.set_inner_widget(TextWidget(title, text))
+        container.set_inner_widget(TextContainerWidget(title, text))
         container.set_copy_callback()
         container.set_edit_callback()
         container.set_remove_callback()
@@ -554,30 +517,26 @@ class FieldContainers(QWidget):
 
     def write_tag_container(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
-    ):
-        """Update/Create tag data for a FieldContainer.
+    ) -> None:
+        """Update/Create tag data for a tag FieldContainer.
 
         Args:
             index(int): The container index.
             tags(set[Tag]): The list of tags for this container.
             category_tag(Tag|None): The category tag this container represents.
             is_mixed(bool): Relevant when multiple items are selected.
-
-            If True, field is not present in all selected items.
+                If True, field is not present in all selected items.
         """
         logger.info("[FieldContainers][write_tag_container]", index=index)
-        if len(self.containers) < (index + 1):
+        if len(self._containers) < (index + 1):
             container = FieldContainer()
-            self.containers.append(container)
+            self._containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self._containers[index]
 
         self.set_container_partial(container, is_mixed)
-        container.set_title(
-            "Tags" if not category_tag else category_tag.name
-        )  # TODO: Localize this
-        container.set_inline(False)
+        container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
 
         inner_widget = container.get_inner_widget()
 
@@ -585,17 +544,11 @@ class FieldContainers(QWidget):
             with catch_warnings(record=True):
                 inner_widget.on_update.disconnect()
         else:
-            inner_widget = TagBoxWidget(
-                "Tags",  # TODO: Localize this
-                self.driver,
-            )
+            inner_widget = TagBoxWidget(Translations["entries.tags"], self.driver)
             container.set_inner_widget(inner_widget)
 
         # For mixed tag containers, mark the widget so it can gray out all tags.
-        if is_mixed:
-            inner_widget.set_mixed_only(True)
-        else:
-            inner_widget.set_mixed_only(False)
+        inner_widget.set_mixed_only(is_mixed)
 
         inner_widget.set_entries([e.id for e in self.cached_entries])
         inner_widget.set_tags(tags)
@@ -606,6 +559,7 @@ class FieldContainers(QWidget):
             else:
                 entry_ids = [e.id for e in self.cached_entries]
                 self.update_from_entries(entry_ids, update_badges=True)
+            self.on_tags_update.emit()
 
         inner_widget.on_update.connect(update_callback)
 
@@ -613,7 +567,7 @@ class FieldContainers(QWidget):
         container.set_remove_callback()
         container.setHidden(False)
 
-    def remove_field(self, field: BaseField):
+    def _remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
             "[FieldContainers] Removing Field",
@@ -623,24 +577,26 @@ class FieldContainers(QWidget):
         entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
-    def update_text_field(self, field: TextField, value: str, is_multiline: bool):
+    def _update_text_field(
+        self, field: TextField, name: str, value: str, is_multiline: bool
+    ) -> None:
         """Update a text field across selected entries."""
         entry_ids = [e.id for e in self.cached_entries]
         assert entry_ids, "No entries selected"
 
-        self.lib.update_text_field(entry_ids, field, value, is_multiline)
+        self.lib.update_text_field(entry_ids, field, name, value, is_multiline)
 
-    def update_datetime_field(self, field: DatetimeField, value: str):
+    def update_datetime_field(self, field: DatetimeField, name: str, value: str) -> None:
         """Update a datetime field across selected entries."""
         entry_ids = [e.id for e in self.cached_entries]
         assert entry_ids, "No entries selected"
 
-        self.lib.update_datetime_field(entry_ids, field, dt.fromisoformat(value))
+        self.lib.update_datetime_field(entry_ids, field, name, dt.fromisoformat(value))
 
-    def remove_message_box(self, prompt: str, callback: Callable) -> None:
+    def remove_message_box(self, prompt: str, callback: Callable[..., None]) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")  # TODO: Localize
+        remove_mb.setWindowTitle(Translations["Remove Field"])
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
@@ -650,3 +606,13 @@ class FieldContainers(QWidget):
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
             callback()
+
+    @property
+    def tags(self) -> list[int]:
+        if len(self.cached_entries) <= 0:
+            return []
+        entry = self.cached_entries[0]
+        entry_ = self.lib.get_entry_full(entry.id, with_fields=False)
+        if not entry_:
+            return []
+        return [tag.id for tag in entry_.tags]

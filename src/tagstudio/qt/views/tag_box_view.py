@@ -42,15 +42,11 @@ class TagBoxWidgetView(FieldWidget):
             tag_widget.set_partial(bool(partial_tag_ids and tag.id in partial_tag_ids))
 
             tag_widget.on_click.connect(lambda t=tag: self._on_click(t))
-
             tag_widget.on_remove.connect(lambda t=tag: self._on_remove(t))
-
             tag_widget.on_edit.connect(lambda t=tag: self._on_edit(t))
-
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, t=tag: self._on_search(t)
             )
-
             self.__root_layout.addWidget(tag_widget)
 
     def _on_click(self, tag: Tag) -> None:

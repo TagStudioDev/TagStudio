@@ -1,150 +1,178 @@
 {
-    "splash_classic": {
-        "path": "qt/images/splash/classic.png",
-        "mode": "qpixmap"
-    },
-    "splash_goo_gears": {
-        "path": "qt/images/splash/goo_gears.png",
-        "mode": "qpixmap"
-    },
-    "splash_95": {
-        "path": "qt/images/splash/95.png",
-        "mode": "qpixmap"
-    },
-    "icon": {
-        "path": "icon.png",
-        "mode": "pil"
-    },
-    "play_icon": {
-        "path": "qt/images/play.svg",
-        "mode": "rb"
-    },
-    "pause_icon": {
-        "path": "qt/images/pause.svg",
-        "mode": "rb"
-    },
-    "volume_icon": {
-        "path": "qt/images/volume.svg",
-        "mode": "rb"
-    },
-    "volume_mute_icon": {
-        "path": "qt/images/volume_mute.svg",
-        "mode": "rb"
-    },
-    "broken_link_icon": {
-        "path": "qt/images/broken_link_icon.png",
-        "mode": "pil"
-    },
-    "ignored": {
-        "path": "qt/images/ignored_128.png",
-        "mode": "pil"
+    "about_bg": {
+        "mode": "qpixmap",
+        "path": "qt/images/about_bg.jpg"
     },
     "adobe_illustrator": {
-        "path": "qt/images/file_icons/adobe_illustrator.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/adobe_illustrator.png"
     },
     "adobe_photoshop": {
-        "path": "qt/images/file_icons/adobe_photoshop.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/adobe_photoshop.png"
     },
     "affinity_photo": {
-        "path": "qt/images/file_icons/affinity_photo.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/affinity_photo.png"
+    },
+    "alert": {
+        "mode": "qpixmap",
+        "path": "qt/images/alert.png"
     },
     "archive": {
-        "path": "qt/images/file_icons/archive.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/archive.png"
     },
     "audio": {
-        "path": "qt/images/file_icons/audio.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/audio.png"
+    },
+    "broken_link_icon": {
+        "mode": "pil",
+        "path": "qt/images/broken_link_icon.png"
+    },
+    "bxs_left_arrow": {
+        "mode": "pil",
+        "path": "qt/images/bxs-left-arrow.png"
+    },
+    "bxs_right_arrow": {
+        "mode": "pil",
+        "path": "qt/images/bxs-right-arrow.png"
+    },
+    "copy": {
+        "mode": "pil",
+        "path": "qt/images/bxs-clipboard-regular.png"
     },
     "database": {
-        "path": "qt/images/file_icons/database.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/database.png"
     },
     "document": {
-        "path": "qt/images/file_icons/document.png",
-        "mode": "pil"
-    },
-    "ebook": {
-        "path": "qt/images/file_icons/ebook.png",
-        "mode": "pil"
-    },
-    "file_generic": {
-        "path": "qt/images/file_icons/file_generic.png",
-        "mode": "pil"
-    },
-    "font": {
-        "path": "qt/images/file_icons/font.png",
-        "mode": "pil"
-    },
-    "image": {
-        "path": "qt/images/file_icons/image.png",
-        "mode": "pil"
-    },
-    "image_vector": {
-        "path": "qt/images/file_icons/image_vector.png",
-        "mode": "pil"
-    },
-    "material": {
-        "path": "qt/images/file_icons/material.png",
-        "mode": "pil"
-    },
-    "model": {
-        "path": "qt/images/file_icons/model.png",
-        "mode": "pil"
-    },
-    "presentation": {
-        "path": "qt/images/file_icons/presentation.png",
-        "mode": "pil"
-    },
-    "program": {
-        "path": "qt/images/file_icons/program.png",
-        "mode": "pil"
-    },
-    "shader": {
-        "path": "qt/images/file_icons/shader.png",
-        "mode": "pil"
-    },
-    "shortcut": {
-        "path": "qt/images/file_icons/shortcut.png",
-        "mode": "pil"
-    },
-    "spreadsheet": {
-        "path": "qt/images/file_icons/spreadsheet.png",
-        "mode": "pil"
-    },
-    "text": {
-        "path": "qt/images/file_icons/text.png",
-        "mode": "pil"
-    },
-    "video": {
-        "path": "qt/images/file_icons/video.png",
-        "mode": "pil"
-    },
-    "thumb_loading": {
-        "path": "qt/images/thumb_loading.png",
-        "mode": "pil"
-    },
-    "bxs-left-arrow": {
-        "path": "qt/images/bxs-left-arrow.png",
-        "mode": "pil"
-    },
-    "bxs-right-arrow": {
-        "path": "qt/images/bxs-right-arrow.png",
-        "mode": "pil"
-    },
-    "unlinked_stat": {
-        "path": "qt/images/unlinked_stat.png",
-        "mode": "pil"
-    },
-    "ignored_stat": {
-        "path": "qt/images/ignored_stat.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/file_icons/document.png"
     },
     "dupe_file_stat": {
-        "path": "qt/images/dupe_file_stat.png",
-        "mode": "pil"
+        "mode": "pil",
+        "path": "qt/images/dupe_file_stat.png"
+    },
+    "ebook": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/ebook.png"
+    },
+    "edit": {
+        "mode": "pil",
+        "path": "qt/images/bxs-pencil-solid.png"
+    },
+    "file_generic": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/file_generic.png"
+    },
+    "font": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/font.png"
+    },
+    "icon": {
+        "mode": "pil",
+        "path": "icon.png"
+    },
+    "ignored": {
+        "mode": "pil",
+        "path": "qt/images/ignored_128.png"
+    },
+    "ignored_stat": {
+        "mode": "pil",
+        "path": "qt/images/ignored_stat.png"
+    },
+    "image": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/image.png"
+    },
+    "image_vector": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/image_vector.png"
+    },
+    "material": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/material.png"
+    },
+    "model": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/model.png"
+    },
+    "mute_icon": {
+        "mode": "pil",
+        "path": "qt/images/bxs-volume-mute-solid.png"
+    },
+    "pause_icon": {
+        "mode": "pil",
+        "path": "qt/images/pause.png"
+    },
+    "presentation": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/presentation.png"
+    },
+    "program": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/program.png"
+    },
+    "shader": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/shader.png"
+    },
+    "shortcut": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/shortcut.png"
+    },
+    "splash_95": {
+        "mode": "qpixmap",
+        "path": "qt/images/splash/95.png"
+    },
+    "splash_aurora": {
+        "mode": "qpixmap",
+        "path": "qt/images/splash/aurora.png"
+    },
+    "splash_classic": {
+        "mode": "qpixmap",
+        "path": "qt/images/splash/classic.png"
+    },
+    "splash_goo_gears": {
+        "mode": "qpixmap",
+        "path": "qt/images/splash/goo_gears.png"
+    },
+    "spreadsheet": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/spreadsheet.png"
+    },
+    "text": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/text.png"
+    },
+    "thumb_loading": {
+        "mode": "pil",
+        "path": "qt/images/thumb_loading.png"
+    },
+    "trash": {
+        "mode": "pil",
+        "path": "qt/images/bxs-trash-solid.png"
+    },
+    "ts_logo_text_color": {
+        "mode": "pil",
+        "path": "qt/images/tagstudio_logo-text_color.png"
+    },
+    "ts_logo_text_mono": {
+        "mode": "pil",
+        "path": "qt/images/tagstudio_logo-text_mono.png"
+    },
+    "unlinked_stat": {
+        "mode": "pil",
+        "path": "qt/images/unlinked_stat.png"
+    },
+    "video": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/video.png"
+    },
+    "volume_icon": {
+        "mode": "pil",
+        "path": "qt/images/bxs-volume-full-solid.png"
     }
 }

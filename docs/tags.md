@@ -70,7 +70,7 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 <!-- prettier-ignore -->
 !!! warning ""
-    **_Coming in version 9.6.x_**
+    **_Planned for future version_** *(See the [Roadmap](roadmap.md))*
 
 Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming "Tag Override" feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 
@@ -116,11 +116,9 @@ Due to the nature of how tags and Tag Felids operated prior to v9.5, the organiz
 
 #### Is Hidden
 
-<!-- prettier-ignore -->
-!!! warning ""
-    **_Coming in version 9.6.x_**
-
 When the "Is Hidden" property is checked, any file entries tagged with this tag will not show up in searches by default. This property comes by default with the built-in "Archived" tag.
+
+---
 
 ## Tag Search Examples
 

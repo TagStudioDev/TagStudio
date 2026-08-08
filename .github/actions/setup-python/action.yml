@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: CC0-1.0
+---
+name: Setup Python
+description: Combination of Python setup actions
+
+inputs:
+  skip-setup:
+    default: 'false'
+    description: Whether to skip setup actions and only execute installs
+  groups:
+    description: Newline-separated list of dependency groups to install
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python install
+      if: inputs.skip-setup != 'true'
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Setup uv install
+      if: inputs.skip-setup != 'true'
+      uses: astral-sh/setup-uv@v8.2.0
+
+    - name: Run pip install (Windows)
+      if: runner.os == 'Windows'
+      env:
+        INPUT_GROUPS: ${{ inputs.groups }}
+        UV_PYTHON_DOWNLOADS: never
+        UV_SYSTEM_PYTHON: '1'
+      shell: pwsh
+      run: |
+        if (![string]::IsNullOrEmpty(${env:INPUT_GROUPS})) {
+            $groupArgs = -split ${env:INPUT_GROUPS} -replace '^', '--group='
+        }
+
+        uv pip install . ${groupArgs}
+
+    - name: Run pip install (non-Windows)
+      if: runner.os != 'Windows'
+      env:
+        INPUT_GROUPS: ${{ inputs.groups }}
+        UV_PYTHON_DOWNLOADS: never
+        UV_SYSTEM_PYTHON: '1'
+      shell: bash
+      run: |
+        extra_args=()
+
+        if [ -n "${INPUT_GROUPS}" ]; then
+            while IFS= read -r group; do
+                if [ -n "${group}" ]; then
+                    extra_args+=("--group=${group}")
+                fi
+            done <<<"${INPUT_GROUPS}"
+        fi
+
+        uv pip install . "${extra_args[@]}"

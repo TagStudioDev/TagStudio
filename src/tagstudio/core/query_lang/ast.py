@@ -24,7 +24,7 @@ class ConstraintType(Enum):
             "filetype": ConstraintType.FileType,
             "path": ConstraintType.Path,
             "special": ConstraintType.Special,
-        }.get(text.lower(), None)
+        }.get(text.lower())
 
 
 class AST:

@@ -6,9 +6,7 @@ from pathlib import Path
 
 import ffmpeg
 
-from tagstudio.qt.previews.vendored.ffmpeg import (
-    probe,  # pyright: ignore[reportUnknownVariableType]
-)
+from tagstudio.renderers.vendored.probe import probe
 
 
 def is_readable_video(filepath: Path | str):
@@ -21,13 +19,11 @@ def is_readable_video(filepath: Path | str):
     """
     try:
         result = probe(Path(filepath))
+        if not result:
+            return False
         for stream in result["streams"]:
             # DRM check
-            if stream.get("codec_tag_string") in [
-                "drma",
-                "drms",
-                "drmi",
-            ]:
+            if stream.get("codec_tag_string") in ["drma", "drms", "drmi"]:
                 return False
     except ffmpeg.Error:
         return False

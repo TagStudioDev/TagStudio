@@ -5,12 +5,13 @@
 import typing
 from collections.abc import Callable
 from pathlib import Path
+from typing import override
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QColor, QPixmap
+from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -35,18 +36,17 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
+from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
 from tagstudio.qt.mnemonics import assign_mnemonics
-from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -77,6 +77,7 @@ class MainMenuBar(QMenuBar):
     delete_file_action: QAction
     ignore_modal_action: QAction
     tag_manager_action: QAction
+    field_template_manager_action: QAction
     color_manager_action: QAction
 
     view_menu: QMenu
@@ -182,10 +183,10 @@ class MainMenuBar(QMenuBar):
         self.new_tag_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
+                QtCore.Qt.Key.Key_N,
             )
         )
-        self.new_tag_action.setToolTip("Ctrl+T")
+        self.new_tag_action.setToolTip("Ctrl+N")
         self.new_tag_action.setEnabled(False)
         self.edit_menu.addAction(self.new_tag_action)
 
@@ -220,9 +221,8 @@ class MainMenuBar(QMenuBar):
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
-        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.clear_select_action.setToolTip("Esc")
         self.clear_select_action.setEnabled(False)
+        self.clear_select_action.setToolTip("Esc")
         self.edit_menu.addAction(self.clear_select_action)
 
         # Copy Fields
@@ -298,6 +298,13 @@ class MainMenuBar(QMenuBar):
         self.color_manager_action = QAction(Translations["edit.color_manager"], self)
         self.color_manager_action.setEnabled(False)
         self.edit_menu.addAction(self.color_manager_action)
+
+        # Manage Field Templates
+        self.field_template_manager_action = QAction(
+            Translations["menu.edit.manage_field_templates"], self
+        )
+        self.field_template_manager_action.setEnabled(False)
+        self.edit_menu.addAction(self.field_template_manager_action)
 
         assign_mnemonics(self.edit_menu)
         self.addMenu(self.edit_menu)
@@ -539,8 +546,8 @@ class MainWindow(QMainWindow):
         self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
         self.back_button = QPushButton(self.central_widget)
-        back_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
-        back_icon = theme_fg_overlay(back_icon, use_alpha=False)
+        back_icon: Image.Image = self.rm.bxs_left_arrow
+        back_icon = auto_theme_overlay(back_icon, use_alpha=False)
         self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
         self.back_button.setObjectName("back_button")
         self.back_button.setMinimumSize(QSize(32, 32))
@@ -548,8 +555,8 @@ class MainWindow(QMainWindow):
         self.search_bar_layout.addWidget(self.back_button)
 
         self.forward_button = QPushButton(self.central_widget)
-        forward_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
-        forward_icon = theme_fg_overlay(forward_icon, use_alpha=False)
+        forward_icon: Image.Image = self.rm.bxs_right_arrow
+        forward_icon = auto_theme_overlay(forward_icon, use_alpha=False)
         self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
         self.forward_button.setIconSize(QSize(16, 16))
         self.forward_button.setObjectName("forward_button")
@@ -581,11 +588,6 @@ class MainWindow(QMainWindow):
         self.extra_input_layout = QHBoxLayout()
         self.extra_input_layout.setObjectName("extra_input_layout")
 
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-
         ## Show hidden entries checkbox
         self.show_hidden_entries_widget = QWidget()
         self.show_hidden_entries_layout = QHBoxLayout(self.show_hidden_entries_widget)
@@ -596,33 +598,7 @@ class MainWindow(QMainWindow):
         self.show_hidden_entries_title = QLabel(Translations["home.show_hidden_entries"])
         self.show_hidden_entries_checkbox = QCheckBox()
         self.show_hidden_entries_checkbox.setFixedSize(22, 22)
-
-        self.show_hidden_entries_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
+        self.show_hidden_entries_checkbox.setStyleSheet(checkbox_style())
 
         self.show_hidden_entries_checkbox.setChecked(False)  # Default: No
 
@@ -724,10 +700,12 @@ class MainWindow(QMainWindow):
         self.content_splitter.addWidget(self.entry_list_container)
 
     def setup_preview_panel(self, driver: "QtDriver"):
-        self.preview_panel = PreviewPanel(driver.lib, driver)
+        self.preview_panel = PreviewPanel(driver)
         self.content_splitter.addWidget(self.preview_panel)
 
     def setup_status_bar(self):
+        # BUG: Clicking the status bar does not count as losing focus on other widgets
+        # (for example, the "Add Tag" line edit). Can this be fixed?
         self.status_bar = QStatusBar(self)
         self.status_bar.setObjectName("status_bar")
         status_bar_size_policy = QSizePolicy(
@@ -770,3 +748,9 @@ class MainWindow(QMainWindow):
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with hidden tags."""
         return self.show_hidden_entries_checkbox.isChecked()
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.menu_bar.clear_select_action.trigger()
+        return super().keyPressEvent(event)

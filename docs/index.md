@@ -13,7 +13,7 @@ hide:
 <link rel="stylesheet" href="stylesheets/home.css">
 
 <figure markdown="span">
-  ![TagStudio](./assets/ts-9-3_logo_text.png){ width=80% }<h2>A User-Focused Photo & File Management System</h2>
+  ![TagStudio](./assets/tagstudio_logo-text_color.png){ width=80% }<h2>A User-Focused Photo & File Management System</h2>
 </figure>
 
 <br>
@@ -27,12 +27,12 @@ hide:
 
 ![TagStudio screenshot](./assets/tag_bubbles.png)
 
-**TagStudio** is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
+<span style="font-family: Bai Jamjuree, Roboto, sans-serif; font-size: 1.1rem; letter-spacing: -0.05rem;"><span style="font-weight: 900;">Tag</span><span style="font-weight: 500;"><i>Studio</i></span></span> is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
 </div>
 
 <figure markdown="span">
-  [:material-download: Download Latest Release](https://github.com/TagStudioDev/TagStudio/releases){ .md-button .md-button--primary }
+  [:material-github: Download Latest Release](https://github.com/TagStudioDev/TagStudio/releases){ .md-button .md-button--primary }
 </figure>
 
 ## :material-star: Core Features
@@ -87,7 +87,7 @@ hide:
 
     [:material-arrow-right: View License](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE)
 
-    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#core-library-api)
+    [:material-arrow-right: Roadmap to MIT Core Library License](roadmap.md#core-library-cli)
 
 - :material-database:{ .lg .middle } **Central Save File**
 

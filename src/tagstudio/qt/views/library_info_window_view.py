@@ -21,9 +21,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.stylesheets.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -65,7 +66,7 @@ class LibraryInfoWindowView(QWidget):
         self.stats_layout.setContentsMargins(0, 0, 0, 0)
         self.stats_layout.setSpacing(12)
 
-        self.stats_label = QLabel(f"<h3>{Translations['library_info.stats']}</h3>")
+        self.stats_label = QLabel(header(Translations["library_info.stats"], 3))
         self.stats_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.stats_grid: QWidget = QWidget()
@@ -223,7 +224,7 @@ class LibraryInfoWindowView(QWidget):
         self.cleanup_layout.setContentsMargins(0, 0, 0, 0)
         self.cleanup_layout.setSpacing(12)
 
-        self.cleanup_label = QLabel(f"<h3>{Translations['library_info.cleanup']}</h3>")
+        self.cleanup_label = QLabel(header(Translations["library_info.cleanup"], 3))
         self.cleanup_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.cleanup_grid: QWidget = QWidget()
@@ -268,7 +269,7 @@ class LibraryInfoWindowView(QWidget):
         )
 
         self.unlinked_icon = QLabel()
-        unlinked_image: Image.Image = self.driver.rm.get("unlinked_stat")  # pyright: ignore[reportAssignmentType]
+        unlinked_image: Image.Image = self.driver.rm.unlinked_stat
         unlinked_pixmap = QPixmap.fromImage(ImageQt.ImageQt(unlinked_image))
         unlinked_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         unlinked_pixmap = unlinked_pixmap.scaledToWidth(
@@ -278,7 +279,7 @@ class LibraryInfoWindowView(QWidget):
         self.unlinked_icon.setPixmap(unlinked_pixmap)
 
         self.ignored_icon = QLabel()
-        ignored_image: Image.Image = self.driver.rm.get("ignored_stat")  # pyright: ignore[reportAssignmentType]
+        ignored_image: Image.Image = self.driver.rm.ignored_stat
         ignored_pixmap = QPixmap.fromImage(ImageQt.ImageQt(ignored_image))
         ignored_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         ignored_pixmap = ignored_pixmap.scaledToWidth(
@@ -288,9 +289,9 @@ class LibraryInfoWindowView(QWidget):
         self.ignored_icon.setPixmap(ignored_pixmap)
 
         self.dupe_file_icon = QLabel()
-        dupe_file_image: Image.Image = self.driver.rm.get("dupe_file_stat")  # pyright: ignore[reportAssignmentType]
+        dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
         dupe_file_pixmap = QPixmap.fromImage(
-            ImageQt.ImageQt(theme_fg_overlay(dupe_file_image, use_alpha=False))
+            ImageQt.ImageQt(auto_theme_overlay(dupe_file_image, use_alpha=False))
         )
         dupe_file_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         dupe_file_pixmap = dupe_file_pixmap.scaledToWidth(

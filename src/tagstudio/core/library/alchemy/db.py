@@ -42,13 +42,17 @@ def make_engine(connection_string: str) -> Engine:
 
 def make_tables(engine: Engine) -> None:
     logger.info("[Library] Creating DB tables...")
-    Base.metadata.create_all(engine)
-
-    # tag IDs < 1000 are reserved
-    # create tag and delete it to bump the autoincrement sequence
-    # TODO - find a better way
-    # is this the better way?
     with engine.connect() as conn:
+        # TODO: this should instead be migrations that create the exact tables that were added in
+        # the respective DB versions
+        Base.metadata.create_all(conn)
+        conn.commit()
+
+        # TODO: this needs to be a migration
+        # tag IDs < 1000 are reserved
+        # create tag and delete it to bump the autoincrement sequence
+        # TODO - find a better way
+        # is this the better way?
         result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
         autoincrement_val = result.scalar()
         if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
