@@ -88,6 +88,7 @@ class TagBoxWidget(TagBoxWidgetView):
             build_tag_panel.build_tag(),
             parent_ids=set(build_tag_panel.parent_ids),
             aliases=set(build_tag_panel.aliases),
+            exclusion_ids=set(build_tag_panel.exclusion_ids),
         )
         self.on_update.emit()
 

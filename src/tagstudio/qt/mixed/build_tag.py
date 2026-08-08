@@ -4,6 +4,7 @@
 
 from collections.abc import Callable
 from functools import partial
+from types import BuiltinFunctionType
 from typing import cast, override
 
 import structlog
@@ -45,6 +46,7 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
     get_tag_text_color,
     header,
     line_edit_style,
+    colored_checkbox_style,
 )
 
 logger = structlog.get_logger(__name__)
@@ -86,6 +88,7 @@ class BuildTagPanel(ModalContent):
         self.tag_color_slug: str | None
         self.disambiguation_id: int | None
         self.parent_ids: set[int] = set()
+        self.exclusion_ids: set[int] = set()
         self.aliases: list[TagAlias] = []
 
         self.setMinimumSize(300, 460)
@@ -184,6 +187,31 @@ class BuildTagPanel(ModalContent):
 
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
+        # Categories -----------------------------------------------------------
+        self.category_widget = QWidget()
+        self.category_widget.setMinimumHeight(128)
+
+        self.category_layout = QVBoxLayout(self.category_widget)
+        self.category_layout.setStretch(1, 1)
+        self.category_layout.setContentsMargins(0, 0, 0, 0)
+        self.category_layout.setSpacing(0)
+        self.category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.category_layout.addWidget(QLabel(Translations["tag.categories"]))
+
+        self.category_scroll_contents = QWidget()
+
+        self.category_scroll_layout = QVBoxLayout(self.category_scroll_contents)
+        self.category_scroll_layout.setContentsMargins(6, 6, 6, 0)
+        self.category_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.category_scroll_area = QScrollArea()
+        self.category_scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.category_scroll_area.setWidgetResizable(True)
+        self.category_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.category_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.category_scroll_area.setWidget(self.category_scroll_contents)
+        self.category_layout.addWidget(self.category_scroll_area)
+
         # Color ----------------------------------------------------------------
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
@@ -247,6 +275,7 @@ class BuildTagPanel(ModalContent):
         self.root_layout.addWidget(self.aliases_table)
         self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
+        self.root_layout.addWidget(self.category_widget)
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
         self.root_layout.addWidget(self.cat_widget)
@@ -285,10 +314,12 @@ class BuildTagPanel(ModalContent):
     def _add_parent_tag_callback(self, tag_id: int):
         self.parent_ids.add(tag_id)
         self.set_parent_tags()
+        self.set_categories(added_parent_id=tag_id)
 
     def _remove_parent_tag_callback(self, tag_id: int):
         self.parent_ids.remove(tag_id)
         self.set_parent_tags()
+        self.set_categories(removed_parent_id=tag_id)
 
     def _create_alias_callback(self):
         alias = TagAlias("", tag_id=self.tag.id)
@@ -314,6 +345,139 @@ class BuildTagPanel(ModalContent):
             self.tag_color_namespace = None
             self.tag_color_slug = None
         self.color_button.set_tag_color_group(tag_color_group)
+
+    def set_categories(
+        self, added_parent_id: int | None = None, removed_parent_id: int | None = None
+    ):
+        while self.category_scroll_layout.itemAt(0):
+            self.category_scroll_layout.takeAt(0).widget().deleteLater()
+
+        c = QWidget()
+        layout = QVBoxLayout(c)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
+
+        if removed_parent_id is not None:
+            tags_by_category: dict[Tag, set[Tag]] = {}
+            hierarchy = set(self._lib.get_tag_hierarchy([self.tag.id]).values())
+            hierarchy.remove(self.tag)
+            for tag in hierarchy:
+                if self._is_removed_parent(tag):
+                    continue
+                if tag.is_category:
+                    tags_by_category[tag] = set()
+            for tag in hierarchy:
+                if self._is_removed_parent(tag):
+                    continue
+                for parent in self._lib.get_tag_hierarchy([tag.id]).values():
+                    if parent in tags_by_category:
+                        if tag == parent and parent.id not in self.parent_ids:
+                            continue
+                        tags_by_category[parent].add(tag)
+
+            for category, tags in tags_by_category.items():
+                if len(tags) == 0:
+                    continue
+
+                last_tab, next_tab, container = self._build_category_row_widget(category)
+                layout.addWidget(container)
+                self.setTabOrder(last_tab, next_tab)
+        else:
+            tag_ids = {self.tag.id}
+            tag_ids.update(self.parent_ids)
+            if added_parent_id is not None:
+                tag_ids.add(added_parent_id)
+
+            for tag in self._lib.get_tag_hierarchy(tag_ids).values():
+                if not tag.is_category or tag == self.tag:
+                    continue
+                last_tab, next_tab, container = self._build_category_row_widget(tag)
+                layout.addWidget(container)
+                self.setTabOrder(last_tab, next_tab)
+        self.category_scroll_layout.addWidget(c)
+
+    def _is_removed_parent(self, tag: Tag) -> bool:
+        return tag in self.tag.parent_tags and tag.id not in self.parent_ids
+
+    def _build_category_row_widget(self, category: Tag) -> tuple[QPushButton, QCheckBox, QWidget]:
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        def update_parent_tag_callback(build_tag_panel: BuildTagPanel):
+            self._lib.update_tag(
+                build_tag_panel.build_tag(),
+                parent_ids=set(build_tag_panel.parent_ids),
+                aliases=set(build_tag_panel.aliases),
+                exclusion_ids=set(build_tag_panel.exclusion_ids),
+            )
+            self.set_categories()
+
+        def on_category_edit(category_tag: Tag) -> None:
+            build_tag_panel = BuildTagPanel(self._lib, tag=category_tag)
+            edit_modal = Modal(
+                build_tag_panel,
+                self._lib.tag_display_name(category_tag),
+                "Edit Tag",
+                is_savable=True,
+            )
+            edit_modal.saved.connect(partial(update_parent_tag_callback, build_tag_panel))
+            edit_modal.show()
+
+        def update_category_exclusion(category_tag: Tag, checked: bool) -> None:
+            if checked:
+                self.exclusion_ids.remove(category_tag.id)
+            else:
+                self.exclusion_ids.add(category_tag.id)
+
+        # Add Tag Widget
+        tag_widget = TagWidget(
+            category,
+            library=self._lib,
+            has_edit=True,
+            has_remove=False,
+        )
+        tag_widget.on_edit.connect(partial(on_category_edit, category))
+        row.addWidget(tag_widget)
+
+        # Add Category Exclusion Tag Button
+        include_checkbox = QCheckBox()
+        include_checkbox.setFixedSize(22, 22)
+        include_checkbox.setToolTip(Translations["tag.categories.tooltip"])
+        include_checkbox.setStyleSheet(colored_checkbox_style(*self._tag_colors(category)))
+
+        if category.id not in self.exclusion_ids:
+            include_checkbox.setChecked(True)
+        include_checkbox.toggled.connect(partial(update_category_exclusion, category))
+
+        row.addWidget(include_checkbox)
+
+        return tag_widget.bg_button, include_checkbox, container
+
+    @staticmethod
+    def _tag_colors(tag: Tag) -> tuple[QColor, QColor, QColor, QColor]:
+        primary_color = get_tag_primary_color(tag)
+
+        border_color = (
+            get_tag_border_color(primary_color)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
+            else (QColor(tag.color.secondary))
+        )
+
+        highlight_color = get_tag_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_tag_text_color(primary_color, highlight_color)
+
+        return primary_color, border_color, highlight_color, text_color
 
     def set_parent_tags(self):
         while self.parent_tags_scroll_layout.itemAt(0):
@@ -346,29 +510,12 @@ class BuildTagPanel(ModalContent):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
 
-        # Init Colors
-        primary_color = get_tag_primary_color(tag)
-        border_color = (
-            get_tag_border_color(primary_color)
-            if not (tag.color and tag.color.secondary and tag.color.color_border)
-            else (QColor(tag.color.secondary))
-        )
-        highlight_color = get_tag_highlight_color(
-            primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
-        )
-        text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
-        else:
-            text_color = get_tag_text_color(primary_color, highlight_color)
-
         def update_parent_tag_callback(build_tag_panel: BuildTagPanel):
             self._lib.update_tag(
                 build_tag_panel.build_tag(),
                 parent_ids=set(build_tag_panel.parent_ids),
                 aliases=set(build_tag_panel.aliases),
+                exclusion_ids=set(build_tag_panel.exclusion_ids),
             )
             self.set_parent_tags()
 
@@ -395,9 +542,7 @@ class BuildTagPanel(ModalContent):
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
-        disam_button.setStyleSheet(
-            colored_radio_button_style(primary_color, text_color, border_color, highlight_color)
-        )
+        disam_button.setStyleSheet(colored_radio_button_style(*self._tag_colors(tag)))
 
         self.disam_button_group.addButton(disam_button)
         if is_disambiguation:
@@ -477,6 +622,10 @@ class BuildTagPanel(ModalContent):
         for parent_id in self.tag.parent_ids:
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
+
+        for exclusion_id in tag.exclusion_ids:
+            self.exclusion_ids.add(exclusion_id)
+        self.set_categories()
 
         try:
             self.tag_color_namespace = tag.color_namespace
