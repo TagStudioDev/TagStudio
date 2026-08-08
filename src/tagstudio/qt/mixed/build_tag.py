@@ -4,7 +4,6 @@
 
 from collections.abc import Callable
 from functools import partial
-from types import BuiltinFunctionType
 from typing import cast, override
 
 import structlog
@@ -39,6 +38,7 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.stylesheets.stylesheets import (
     checkbox_style,
+    colored_checkbox_style,
     colored_radio_button_style,
     get_tag_border_color,
     get_tag_highlight_color,
@@ -46,7 +46,6 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
     get_tag_text_color,
     header,
     line_edit_style,
-    colored_checkbox_style,
 )
 
 logger = structlog.get_logger(__name__)

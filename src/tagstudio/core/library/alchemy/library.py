@@ -53,7 +53,6 @@ from sqlalchemy.orm import (
     make_transient,
     noload,
     selectinload,
-    immediateload,
 )
 
 from tagstudio.core.constants import (
@@ -92,7 +91,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
     TextFieldTemplate,
 )
-from tagstudio.core.library.alchemy.joins import TagEntry, TagParent, CategoryExclusion
+from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
     Entry,
     Namespace,

@@ -4,8 +4,8 @@ from collections.abc import Callable
 from pathlib import Path
 
 from tagstudio.core.library.alchemy.library import Library
-# pyright: reportPrivateUsage=false
 
+# pyright: reportPrivateUsage=false
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
@@ -185,6 +185,7 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
                 assert container.title != "<h4>Tags</h4>"
             case _:
                 pass
+
 
 def test_exclude_tag_category(
     qt_driver: QtDriver, library: Library, generate_tag: Callable[..., Tag]

@@ -4,6 +4,7 @@
 # pyright: reportPrivateUsage = false
 
 from collections.abc import Callable
+from typing import cast
 
 from PySide6.QtWidgets import QCheckBox
 from pytestqt.qtbot import QtBot
@@ -399,7 +400,7 @@ def __find_category_tag_widget(panel: BuildTagPanel, index: int = 0) -> TagWidge
         item = item.widget().layout().itemAt(0)
 
     if item is not None:
-        return item.widget()
+        return cast(TagWidget, item.widget())
     return None
 
 
