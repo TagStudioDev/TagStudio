@@ -419,6 +419,26 @@ class MigrationTo200(DBMigration):
         )
         session.execute(comm_stmt)
 
+        # Add field templates tables
+        session.execute(
+            text("""
+        CREATE TABLE text_field_templates (
+            id INTEGER NOT NULL PRIMARY KEY,
+            is_multiline BOOLEAN NOT NULL,
+            name VARCHAR NOT NULL
+        )
+        """)
+        )
+        session.execute(
+            text("""
+        CREATE TABLE datetime_field_templates (
+            id INTEGER NOT NULL PRIMARY KEY,
+            name VARCHAR NOT NULL
+        )
+        """)
+        )
+        session.flush()
+
         # Add default field templates
         logger.info(fmt_log("Adding default field templates..."))
         for template in DEFAULT_FIELD_TEMPLATES:
