@@ -106,6 +106,8 @@ This means that duplicates of tags can appear on entries if the tag inherits fro
 
 ![Tag Category Example](assets/tag_categories_example.png)
 
+If you don't want a tag to appear in one, more, or even all the applicable categories, simply uncheck the category in the "Edit Tag" panel.
+
 ### Built-In Tags and Categories
 
 The built-in tags "Favorite" and "Archived" inherit from the built-in "Meta Tags" category which is marked as a category by default. This behavior of default tags can be fully customized by disabling the category option and/or by adding/removing the tags' Parent Tags.
