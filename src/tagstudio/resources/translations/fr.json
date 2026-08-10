@@ -10,6 +10,7 @@
     "about.version.latest": "{built_version} (Dernière version : {latest_version})",
     "about.website": "Site Internet",
     "app.git": "Git Commit",
+    "app.nightly": "Version de développement",
     "app.pre_release": "Version Préliminaire",
     "app.title": "{base_title} - Bibliothèque '{library_dir}'",
     "color.color_border": "Utiliser la couleur secondaire sur la bordure",
