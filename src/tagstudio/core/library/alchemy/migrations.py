@@ -96,6 +96,7 @@ class DBMigrations:
             MigrationTo201,  # changes: field tables
             MigrationTo202,  # changes: tag_parents
             MigrationTo300,  # changes: deletes folders
+            MigrationTo301,  # changes: add category_exclusions
         ]
         with Session(self.engine) as session:
             for migration in migrations:
@@ -568,4 +569,24 @@ class MigrationTo300(DBMigration):
 
         ## drop table "folders"
         session.execute(text("DROP TABLE folders"))
+        session.flush()
+
+
+class MigrationTo301(DBMigration):
+    version = 301
+
+    @override
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log):
+        logger.info(fmt_log("Creating category_exclusions table..."))
+        session.execute(
+            text("""
+        CREATE TABLE category_exclusions (
+            tag_id      INTEGER NOT NULL REFERENCES tags(id),
+            category_id INTEGER NOT NULL REFERENCES tags(id),
+
+            PRIMARY KEY (tag_id, category_id)
+        )
+        """)
+        )
         session.flush()
