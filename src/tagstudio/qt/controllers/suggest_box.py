@@ -5,7 +5,7 @@ from typing import Any, override
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QShowEvent
+from PySide6.QtGui import QAction, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -13,6 +13,7 @@ from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.global_settings import GlobalSettings
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
@@ -42,7 +43,7 @@ def _item_name(item: object) -> str:
 
 class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
-    done = Signal()
+    done = Signal(str)  # Query
 
     def __init__(
         self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
@@ -57,7 +58,20 @@ class SuggestBox[T](QWidget):
         self.excluded: list[int] = []
 
         self.setLayout(SuggestBoxView(placeholder_text))
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self._connect_callbacks()
+
+        self._keep_box_open_action = QAction(Translations["settings.keep_suggest_boxes_open"], self)
+        self._keep_box_open_action.setCheckable(True)
+        self.addAction(self._keep_box_open_action)
+        self.layout().search_field.addAction(self._keep_box_open_action)
+        self._keep_box_open_action.triggered.connect(
+            lambda checked: self._toggle_keep_open(checked)
+        )
+
+    def _toggle_keep_open(self, checked: bool) -> None:
+        self._settings.keep_suggest_boxes_open = checked
+        self._settings.save()
 
     def set_placeholder_text(self, text: str) -> None:
         self.layout().search_field.setPlaceholderText(text)
@@ -108,10 +122,8 @@ class SuggestBox[T](QWidget):
 
     def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
-        logger.info("Query submitted")
         if not query:
-            self.done.emit()
-            self.hide_and_reset()
+            self.done.emit(query)
             return
         elif not self.isHidden():
             self.layout().search_field.setFocus()
@@ -197,9 +209,10 @@ class SuggestBox[T](QWidget):
         raise NotImplementedError()
 
     def _editing_finished_callback(self) -> None:
-        if self.layout().search_field.text() == "":
-            self.done.emit()
-            self.hide_and_reset()
+        # Only trigger when the search field is clicked off of and there's no query.
+        # NOTE: The search field is already cleared by this point when pressing enter.
+        if self.layout().search_field.text() == "" and not self.layout().search_field.hasFocus():
+            self.done.emit("")
 
     def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
@@ -213,6 +226,7 @@ class SuggestBox[T](QWidget):
         self._on_shift_held(held=False)
         self.layout().search_field.setDisabled(False)
         self._clear_search_query()
+        self._keep_box_open_action.setChecked(self._settings.keep_suggest_boxes_open)
         return super().showEvent(event)
 
     @override
@@ -222,9 +236,7 @@ class SuggestBox[T](QWidget):
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         # When Escape is pressed, focus back on the search box.
-        if event.key() in {
-            QtCore.Qt.Key.Key_Escape,
-            QtCore.Qt.Key.Key_Enter,
-            QtCore.Qt.Key.Key_Return,
-        }:
-            self.hide_and_reset()
+        if event.key() in {QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return}:
+            self.done.emit("*")
+        elif event.key() == QtCore.Qt.Key.Key_Escape:
+            self.done.emit("")

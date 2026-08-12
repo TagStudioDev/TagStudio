@@ -71,6 +71,7 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field.setMinimumHeight(28)
         self.search_field.setPlaceholderText(placeholder_text)
         self.scroll_area.setFocusProxy(self.search_field)
+        self.search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
         # Finalize Layout
         self.addWidget(scroll_area_container)
