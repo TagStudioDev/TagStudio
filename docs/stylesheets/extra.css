@@ -73,6 +73,10 @@
     border-color: #ffffff33;
 }
 
+img {
+    border-radius: 6px;
+}
+
 th,
 td {
     padding: 0.5em 1em 0.5em 1em !important;

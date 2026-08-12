@@ -98,7 +98,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
 - [x] Translations
 - [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
     - [ ] Improved Tag Autocomplete :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Tags appear as widgets in search bar :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    - [ ] Tags appear as widgets in search bar _(similar to new tag search/create bar)_ :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] Unified Media Player
     - [x] Auto-Hiding Player Controls
     - [x] Play/Pause
@@ -116,7 +116,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Basic Support
     - [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
     - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
-- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
+- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Top Tags
     - [ ] Recent Tags
     - [ ] Tag Search

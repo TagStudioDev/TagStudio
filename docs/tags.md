@@ -118,11 +118,9 @@ Due to the nature of how tags and Tag Felids operated prior to v9.5, the organiz
 
 #### Is Hidden
 
-<!-- prettier-ignore -->
-!!! warning ""
-    **_Coming in version 9.6.x_**
-
 When the "Is Hidden" property is checked, any file entries tagged with this tag will not show up in searches by default. This property comes by default with the built-in "Archived" tag.
+
+---
 
 ## Tag Search Examples
 

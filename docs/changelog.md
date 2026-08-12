@@ -9,6 +9,58 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+## 9.6.2 <small>August 6th, 2026</small>
+
+### Added
+
+- feat(thumbs): render `.ai` (Adobe Illustrator) thumbnails by @purpletennisball in #1453
+
+### Changed
+
+#### Tag & Field Search/Create Bars (by @CyanVoxel in #1451)
+
+The tagging workflow has gotten a major overhaul! Clicking the "Add Tag" button or pressing <kbd>Ctrl</kbd>+<kbd>T</kbd> will now activate an inline tag search bar that you can also use to quickly create and apply new or existing tags! Creating new tags in an empty library is now as simple as clicking the "Add Tag" button, typing in the name of a tag you wish to create, and hitting <kbd>Enter</kbd>! The whole workflow was redone with both casual and power users in mind, and is entirely keyboard friendly. And fields have also gotten the same treatment!
+
+![Empty File Entry](assets/tag_field_bars/add_buttons_normal.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/tag_bar_empty.png){ width=45% }
+![Empty File Entry](assets/tag_field_bars/tag_bar_search_match.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/field_bar_search.png){ width=45% }
+
+You can read the brief feature overview below or read the updated [documentation](https://docs.tagstud.io/usage/#tagging) to see the full changes and features:
+
+- Open tagging bar clicking "Add Tag" or using <kbd>Ctrl</kbd>+<kbd>T</kbd>
+- Open field bar clicking "Add Field" or using <kbd>Ctrl</kbd>+<kbd>L</kbd>
+- When searching, the underlined tag/field template will be added on <kbd>Enter</kbd>
+- With no search results, a new tag or field template will be created on <kbd>Enter</kbd> and added to the selection
+- Holding <kbd>Shift</kbd> while pressing <kbd>Enter</kbd> will force create a new tag/field template, regardless of the search results
+- An option to always open an Edit window for new tags after creation is available by right-clicking the search bar or by going to the Settings (**off** by default)
+- An option to always open an Edit window for field content after applying a template is available by right-clicking the search bar or by going to the Settings (**on** by default)
+    - Field templates are _always_ edited after being created
+- The classic tag search panel can be accessed from **File -> Add Tag to Selected** / <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>T</kbd>
+
+#### Internal Changes
+
+- refactor: split out sql migrations from library by @Computerdores in #1432
+- refactor: remove dead folders table by @Computerdores in #1444
+- ci(docs): migrate from mkdocs to properdocs by @CyanVoxel in #1459
+- refactor(ui): refactor PanelModal and PanelWidget into MVC Modal, ModalView, and ModalContent classes by @CyanVoxel in #1454
+- refactor(ui): apply new MVC guidelines to search panels by @CyanVoxel in #1461
+- refactor: split ThumbRenderer class by @CyanVoxel in #1462
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hungarian** updated by @smileyhead
+- **Chinese (Simplified Han Script)** updated by ？？？
+- **Spanish** updated by @2004milenadiaz-source, @JulArr22
+
+### Fixed
+
+- fix: thumbnail rendering for older pxd files by @purpletennisball in #1441
+- fix: correctly display duration statistic in preview panel by @ludvig-sandh in #1421
+- fix: fix new aliases not saving on new tags by @CyanVoxel in #1455
+- fix: don't update media playback when adding tags from menu modal by @CyanVoxel in f52e0fa56816ae43c4faf01b61d46ee8f49b206f
+
+---
+
 ## 9.6.1 <small>July 9th, 2026</small>
 
 ### Added

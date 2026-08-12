@@ -28,7 +28,7 @@ TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) fil
 
 ### :material-code-braces-box: Syntax Guidelines
 
-- Python files should always follow the [**PEP 8**]() style guide conventions, unless specifically allowed otherwise.
+- Python files should always follow the [**PEP 8**](https://peps.python.org/pep-0008/) style guide conventions, unless specifically allowed otherwise.
     - The most notable exception in our project is the line length limit of **100** characters, which is enforced via ruff.
     - Internal Qt methods also use `camelCase` instead of `snake_case`, so overrides of those are commonly seen in the codebase.
 - Classes and attributes considered to be "[private](https://docs.python.org/3/tutorial/classes.html#private-variables)" should be prepended with a **single underscore** (e.g. `_internal_method()`).
