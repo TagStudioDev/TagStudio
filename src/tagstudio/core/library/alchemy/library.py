@@ -221,7 +221,6 @@ class Library:
         if self.engine:
             self.engine.dispose()
         self.library_dir = None
-        self.folder = None
         self.included_files = set()
 
         self.dupe_entries_count = -1
@@ -378,8 +377,7 @@ class Library:
 
         return self.open_sqlite_library(library_dir, in_memory)
 
-    @staticmethod
-    def __get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
+    def _get_engine(self, library_dir: Path, in_memory: bool, sql_filename: str):
         connection_string = URL.create(
             drivername="sqlite",
             database=(
@@ -407,7 +405,7 @@ class Library:
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
     ) -> LibraryStatus:
-        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
+        self.engine = self._get_engine(library_dir, in_memory, sql_filename)
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -505,21 +503,21 @@ class Library:
     ) -> LibraryStatus:
         logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
-        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
+        self.engine = self._get_engine(library_dir, in_memory, sql_filename)
+        self.library_dir = library_dir
 
         try:
-            migrations = DBMigrations(library_dir, self.engine)
+            migrations = DBMigrations(self)
 
             # save backup if patches will be applied
             if migrations.required:
-                Library.save_library_backup_to_disk(library_dir)
+                self.save_library_backup_to_disk()
 
             migrations.run()
         except MigrationError as e:
+            self.library_dir = None
             return LibraryStatus(success=False, message=e.args[0])
 
-        # everything is fine, set the library path
-        self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
     @property
@@ -669,37 +667,32 @@ class Library:
         with Session(self.engine) as session:
             return unwrap(session.scalar(select(func.count(Entry.id))))
 
-    @staticmethod
-    def _all_entries(session: Session, with_joins: bool = False) -> Iterator[Entry]:
-        """Load entries without joins."""
-        stmt = select(Entry)
-        if with_joins:
-            # load Entry with all joins and all tags
-            stmt = (
-                stmt.outerjoin(Entry.text_fields)
-                .outerjoin(Entry.datetime_fields)
-                .outerjoin(Entry.tags)
-            )
-            stmt = stmt.options(
-                contains_eager(Entry.text_fields),
-                contains_eager(Entry.datetime_fields),
-                contains_eager(Entry.tags),
-            )
-
-        stmt = stmt.distinct()
-
-        entries = session.execute(stmt).scalars()
-        if with_joins:
-            entries = entries.unique()
-
-        for entry in entries:
-            yield entry
-            session.expunge(entry)
-
     def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
-            return Library._all_entries(session, with_joins)
+            stmt = select(Entry)
+            if with_joins:
+                # load Entry with all joins and all tags
+                stmt = (
+                    stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.datetime_fields)
+                    .outerjoin(Entry.tags)
+                )
+                stmt = stmt.options(
+                    contains_eager(Entry.text_fields),
+                    contains_eager(Entry.datetime_fields),
+                    contains_eager(Entry.tags),
+                )
+
+            stmt = stmt.distinct()
+
+            entries = session.execute(stmt).scalars()
+            if with_joins:
+                entries = entries.unique()
+
+            for entry in entries:
+                yield entry
+                session.expunge(entry)
 
     @property
     def tags(self) -> list[Tag]:
@@ -1447,17 +1440,16 @@ class Library:
                 session.rollback()
                 return None
 
-    @staticmethod
-    def save_library_backup_to_disk(library_dir: Path) -> Path:
-        assert isinstance(library_dir, Path)
-        makedirs(str(library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
+    def save_library_backup_to_disk(self) -> Path:
+        assert isinstance(self.library_dir, Path)
+        makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
         filename = f"ts_library_backup_{datetime.now(UTC).strftime('%Y_%m_%d_%H%M%S')}.sqlite"
 
-        target_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
+        target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            library_dir / TS_FOLDER_NAME / SQL_FILENAME,
+            self.library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
 
@@ -1749,12 +1741,8 @@ class Library:
         Args:
             key(str): The key for the name of the version type to set.
         """
-        return Library._get_version(self.engine, key)
-
-    @staticmethod
-    def _get_version(engine, key: str) -> int:
-        with Session(engine) as session:
-            engine = sqlalchemy.inspect(engine)
+        with Session(self.engine) as session:
+            engine = sqlalchemy.inspect(self.engine)
             try:
                 # "Version" table added in DB_VERSION 101
                 if engine and engine.has_table("versions"):

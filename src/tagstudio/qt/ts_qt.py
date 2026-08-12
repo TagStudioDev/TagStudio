@@ -849,7 +849,7 @@ class QtDriver(DriverMixin, QObject):
         logger.info("Backing Up Library...")
         self.main_window.status_bar.showMessage(Translations["status.library_backup_in_progress"])
         start_time = time.time()
-        target_path = Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
+        target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.status_bar.showMessage(
             Translations.format(
@@ -1651,7 +1651,8 @@ class QtDriver(DriverMixin, QObject):
         else:
             self._init_library(path, open_status)
 
-    def _init_library(self, path: Path, open_status: LibraryStatus):
+    def _init_library(self, path: Path, open_status: LibraryStatus, is_test: bool = False):
+        # TODO: Don't have an is_test parameter, the frontend and backend tasks here can be split.
         if not open_status.success:
             self.show_error_message(
                 error_name=open_status.message
@@ -1661,7 +1662,8 @@ class QtDriver(DriverMixin, QObject):
             return open_status
 
         assert self.lib.library_dir
-        self.init_workers()
+        if not is_test:
+            self.init_workers()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
