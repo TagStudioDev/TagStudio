@@ -187,7 +187,7 @@ class SuggestBox[T](QWidget):
             self.layout().search_field.setStyleSheet(autofill_line_edit_style())
         else:
             self.layout().scroll_area.setHidden(False)
-            self.layout().content_layout.setContentsMargins(6, 6, 6, 6)
+            self.layout().content_layout.setContentsMargins(4, 6, 4, 6)
             self.layout().search_field.setStyleSheet(autofill_line_edit_top_style())
 
     def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]

@@ -26,10 +26,6 @@ class SuggestBoxView(QVBoxLayout):
         scroll_area_style = """
         QScrollArea{
             background: transparent;
-            border: solid;
-            border-color: transparent;
-            border-width: 0px 2px;
-            padding-left: -2px;
             }
         QScrollArea > QWidget > QWidget{
             background: transparent;
@@ -50,6 +46,7 @@ class SuggestBoxView(QVBoxLayout):
         scroll_area_container.setStyleSheet(autofill_scroll_top_style("container"))
         self.scroll_area = QScrollArea()
         self.scroll_area.setStyleSheet(scroll_area_style)
+        self.scroll_area.setViewportMargins(2, 0, 2, 0)
         scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
         search_bar_height = 28
