@@ -85,19 +85,17 @@ class SuggestBox[T](QWidget):
         self.layout().search_field.index_updated.connect(partial(self._on_index_updated))
 
     def _on_shift_held(self, held: bool) -> None:
-        if held:
-            self._is_shift_held = True
-            opacity_effect = QGraphicsOpacityEffect(self)
-            opacity_effect.setOpacity(0.3)
-            if self.layout().content_layout.count() > 0:
-                underlined_widget = self.layout().content_layout.itemAt(0).widget()
-                assert isinstance(underlined_widget, UnderlinedWidget)
+        for i in range(0, self.layout().content_layout.count()):
+            underlined_widget = self.layout().content_layout.itemAt(i).widget()
+            assert isinstance(underlined_widget, UnderlinedWidget)
+
+            if held and i == self._selection_index:
+                self._is_shift_held = True
+                opacity_effect = QGraphicsOpacityEffect(self)
+                opacity_effect.setOpacity(0.3)
                 underlined_widget.widget.setGraphicsEffect(opacity_effect)
-        else:
-            self._is_shift_held = False
-            if self.layout().content_layout.count() > 0:
-                underlined_widget = self.layout().content_layout.itemAt(0).widget()
-                assert isinstance(underlined_widget, UnderlinedWidget)
+            else:
+                self._is_shift_held = False
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     def _on_index_updated(self, delta: int) -> None:
@@ -118,7 +116,6 @@ class SuggestBox[T](QWidget):
             self._selection_index = max_idx
         else:
             self._selection_index = self._selection_index + delta
-        logger.info(self._selection_index)
 
         # Don't update the UI if there's no index change
         if old_idx == self._selection_index:
