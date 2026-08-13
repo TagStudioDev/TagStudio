@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+from functools import partial
 from typing import Any, override
 
 import structlog
@@ -50,9 +51,10 @@ class SuggestBox[T](QWidget):
         super().__init__()
         self._lib = library
         self._settings = settings
-        self._limit = 5
+        self._limit = 25
         self._is_shift_held = False
         self._search_results: list[T] = []
+        self._selection_index = 0
         self.added: list[int] = []
         self.excluded: list[int] = []
 
@@ -79,7 +81,8 @@ class SuggestBox[T](QWidget):
             )
         )
 
-        self.layout().search_field.shift_holding.connect(lambda held: self._on_shift_held(held))
+        self.layout().search_field.holding_shift.connect(partial(self._on_shift_held))
+        self.layout().search_field.index_updated.connect(partial(self._on_index_updated))
 
     def _on_shift_held(self, held: bool) -> None:
         if held:
@@ -96,6 +99,42 @@ class SuggestBox[T](QWidget):
                 underlined_widget = self.layout().content_layout.itemAt(0).widget()
                 assert isinstance(underlined_widget, UnderlinedWidget)
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+
+    def _on_index_updated(self, delta: int) -> None:
+        # Initialize the widget count (non-hidden)
+        widget_count = 0
+        for i in range(0, self.layout().content_layout.count()):
+            widget = self.layout().content_layout.itemAt(i).widget()
+            if not widget.isHidden():
+                widget_count += 1
+
+        # Update the index
+        old_idx = self._selection_index
+        max_idx = widget_count - 1
+        if self._selection_index + delta < 0:
+            # Can't move further left
+            self._selection_index = 0
+        elif self._selection_index + delta > max_idx:
+            self._selection_index = max_idx
+        else:
+            self._selection_index = self._selection_index + delta
+        logger.info(self._selection_index)
+
+        # Don't update the UI if there's no index change
+        if old_idx == self._selection_index:
+            return
+
+        # Draw the correct underline for the selected widget
+        for i in range(0, widget_count):
+            underlined_widget = self.layout().content_layout.itemAt(i).widget()
+            assert isinstance(underlined_widget, UnderlinedWidget)
+            if i == self._selection_index:
+                underlined_widget.toggle_underline(is_hidden=False)
+                self.layout().scroll_area.ensureWidgetVisible(
+                    underlined_widget, xmargin=6, ymargin=0
+                )
+            else:
+                underlined_widget.toggle_underline(is_hidden=True)
 
     def _clear_search_query(self) -> None:
         self.layout().search_field.setText("")
@@ -120,7 +159,7 @@ class SuggestBox[T](QWidget):
         if (len(self._search_results) <= 0) or always_create:
             self._on_item_create()
         else:
-            self._on_item_chosen(self._search_results[0])
+            self._on_item_chosen(self._search_results[self._selection_index])
 
         self._clear_search_query()
         self._update_items()
@@ -140,6 +179,11 @@ class SuggestBox[T](QWidget):
     def _update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items", limit=self._limit)
+        self._selection_index = 0
+        if self.layout().content_layout.count() > 0:
+            self.layout().scroll_area.ensureWidgetVisible(
+                self.layout().content_layout.itemAt(0).widget(), xmargin=6, ymargin=0
+            )
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
