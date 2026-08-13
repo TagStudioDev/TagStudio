@@ -143,7 +143,7 @@ class SuggestBox[T](QWidget):
         raise NotImplementedError()
 
     def _on_search_query_changed(self, query: str) -> None:
-        self._update_items(query)
+        self._update_items(query.strip())
 
     def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
