@@ -4,8 +4,9 @@
 from typing import Any, override
 
 import structlog
+from PIL import Image, ImageQt
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QShowEvent
+from PySide6.QtGui import QPixmap, QShowEvent
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -13,6 +14,8 @@ from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.global_settings import GlobalSettings
+from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
@@ -50,6 +53,7 @@ class SuggestBox[T](QWidget):
         super().__init__()
         self._lib = library
         self._settings = settings
+        self._rm = ResourceManager()
         self._limit = 5
         self._is_shift_held = False
         self._search_results: list[T] = []
@@ -81,6 +85,13 @@ class SuggestBox[T](QWidget):
 
         self.layout().search_field.shift_holding.connect(lambda held: self._on_shift_held(held))
 
+    def set_hint_icon(self, icon: Image.Image | None) -> None:
+        if icon:
+            pixmap = QPixmap.fromImage(ImageQt.ImageQt(auto_theme_overlay(icon)))
+            self.layout().hint_icon_action.setIcon(pixmap)
+        else:
+            self.layout().hint_icon_action.setIcon(QPixmap())
+
     def _on_shift_held(self, held: bool) -> None:
         if held:
             self._is_shift_held = True
@@ -105,6 +116,7 @@ class SuggestBox[T](QWidget):
 
     def _on_search_query_changed(self, query: str) -> None:
         self._update_items(query)
+        self._update_hint_icon()
 
     def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
@@ -136,6 +148,9 @@ class SuggestBox[T](QWidget):
 
     def _is_excluded(self, item: T) -> bool:
         return _item_id(item) in self.excluded
+
+    def _update_hint_icon(self) -> None:
+        raise NotImplementedError()
 
     def _update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""

@@ -45,6 +45,12 @@ SPDX-FileCopyrightText = "(c) 2026 Boxicons"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = ["src/tagstudio/resources/qt/images/dupe_file_stat.png"]
+path = [
+    "src/tagstudio/resources/qt/images/dupe_file_stat.png",
+    "src/tagstudio/resources/qt/images/hint_field_add.png",
+    "src/tagstudio/resources/qt/images/hint_field_create.png",
+    "src/tagstudio/resources/qt/images/hint_tag_add.png",
+    "src/tagstudio/resources/qt/images/hint_tag_create.png",
+]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
 SPDX-License-Identifier = "Apache-2.0"

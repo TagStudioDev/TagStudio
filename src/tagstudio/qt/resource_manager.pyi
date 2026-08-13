@@ -36,6 +36,10 @@ class ResourceManager:
     edit: Image.Image
     file_generic: Image.Image
     font: Image.Image
+    hint_field_add: Image.Image
+    hint_field_create: Image.Image
+    hint_tag_add: Image.Image
+    hint_tag_create: Image.Image
     icon: Image.Image
     ignored_stat: Image.Image
     ignored: Image.Image

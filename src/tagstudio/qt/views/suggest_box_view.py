@@ -4,6 +4,7 @@
 
 import structlog
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
@@ -18,6 +19,7 @@ logger = structlog.get_logger(__name__)
 class SuggestBoxView(QVBoxLayout):
     def __init__(self, placeholder_text: str = "") -> None:
         super().__init__()
+
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
@@ -70,6 +72,9 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field.setObjectName("search_field")
         self.search_field.setMinimumHeight(28)
         self.search_field.setPlaceholderText(placeholder_text)
+        self.hint_icon_action = self.search_field.addAction(
+            QPixmap(), AutofillLineEdit.ActionPosition.TrailingPosition
+        )
         self.scroll_area.setFocusProxy(self.search_field)
 
         # Finalize Layout
