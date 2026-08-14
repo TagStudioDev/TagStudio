@@ -4,9 +4,10 @@
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
+from tagstudio.qt.controllers.horizontal_scroll_area import HorizontalScrollArea
 from tagstudio.qt.views.stylesheets.stylesheets import (
     autofill_line_edit_style,
     autofill_scroll_top_style,
@@ -48,7 +49,7 @@ class SuggestBoxView(QVBoxLayout):
         scroll_area_container_layout.setContentsMargins(0, 0, 0, 0)
         scroll_area_container_layout.setSpacing(0)
         scroll_area_container.setStyleSheet(autofill_scroll_top_style("container"))
-        self.scroll_area = QScrollArea()
+        self.scroll_area = HorizontalScrollArea()
         self.scroll_area.setStyleSheet(scroll_area_style)
         scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
