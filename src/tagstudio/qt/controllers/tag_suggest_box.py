@@ -92,6 +92,24 @@ class TagSuggestBox(SuggestBox[Tag]):
         self.done.emit("*")  # The query does not matter
 
     @override
+    def _on_shift_held(self, held: bool) -> None:
+        if held:
+            self.set_hint_icon(self._rm.hint_tag_create)
+        else:
+            self._update_hint_icon()
+
+        return super()._on_shift_held(held)
+
+    @override
+    def _update_hint_icon(self) -> None:
+        if self.layout().search_field.text() and len(self._search_results) > 0:
+            self.set_hint_icon(self._rm.hint_tag_add)
+        elif self.layout().search_field.text():
+            self.set_hint_icon(self._rm.hint_tag_create)
+        else:
+            self.set_hint_icon(None)
+
+    @override
     def _search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
         if query != "":
             return self._lib.search_tags(name=query, limit=0)

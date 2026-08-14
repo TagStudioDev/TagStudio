@@ -26,7 +26,7 @@ TagStudio automatically scans for new or updated files when opening a library by
 
 With one or more file entries selected, you can **search for** or **create a new tag** by clicking the "Add Tag" button at the bottom of the preview panel or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>.
 
-This will open the the **"Tag Bar"**, a combination search/creation bar that is designed to allow you to quickly create and apply tags that don't exist yet, find and apply existing tags in your library, and verify if certain tags already exist and/or are applied to your selection.
+This will open the the **"Tag Bar"**, a combination search/creation bar that is designed to allow you to quickly create and apply tags that don't exist yet, find and apply existing tags from your library, and verify if certain tags already exist and/or are applied to your selection.
 
 Every step is keyboard-friendly, allowing for an efficient tagging "flow state" when it comes to creating and applying tags.
 
@@ -43,7 +43,7 @@ Every step is keyboard-friendly, allowing for an efficient tagging "flow state" 
 
 ### :material-tag-plus: Tag Bar: Creating Tags
 
-Type to search for an existing tag, or use that search term to quickly create and apply a new tag to your selection. Pressing <kbd>Enter</kbd> with **no results** will **create** a tag from your search query and apply it to the selected entries.
+Type to search for an existing tag, or use that search term to quickly create and apply a new tag to your selection. Pressing <kbd>Enter</kbd> with **no results** will **create** :material-tag-plus-outline: a tag from your search query and apply it to the selected entries.
 
 After applying a tag, the "Add Tag" button is now focused, allowing you to press <kbd>Enter</kbd> or <kbd>Space</kbd> to quickly reactivate the bar. Alternatively, you may edit your new tag by right-clicking the tag and selecting **"Edit"**.
 
@@ -62,7 +62,7 @@ Tags can be also viewed, created, edited, or deleted from the **Edit -> Manage T
 
 ### :material-tag-search: Tag Bar: Searching for Tags
 
-Pressing <kbd>Enter</kbd> with **one or more results** will **apply the first tag** to your selection (assuming it's not already on your selection).
+Pressing <kbd>Enter</kbd> with **one or more results** will **apply** :material-tag: the underlined tag to your selection (assuming it's not already on your selection).
 
 Tags that are already present on your entries will be greyed out and ignored when pressing <kbd>Enter</kbd>. This lets you visually confirm that a tag already exists and has been applied to the selection.
 
@@ -75,13 +75,17 @@ Tags that are already present on your entries will be greyed out and ignored whe
 
 #### :material-tag-arrow-up: Force Create Tag
 
-Holding <kbd>Shift</kbd> while pressing <kbd>Enter</kbd> will **force create** a tag from the search bar text, regardless of the results. This is indicated by the first tag in the results becoming greyed out. This is especially useful when you need to create a new tag with a name that partially overlaps with an existing tag's name.
+Holding <kbd>Shift</kbd> while pressing <kbd>Enter</kbd> will **force create** :material-tag-plus-outline: a tag from the search bar text, regardless of the search results. This is especially useful when you need to create a new tag with a name that partially overlaps with an existing tag's name.
 
 <figure markdown="span">
   ![Empty File Entry](assets/tag_field_bars/tag_bar_shift_off.png){ width=80% }
-  <figcaption>Pressing <kbd>Enter</kbd> will apply the underlined tag, "Cube".</figcaption>
+  <figcaption markdown="span">Pressing <kbd>Enter</kbd> will **apply** :material-tag: the underlined tag, "Cube".</figcaption>
   ![Empty File Entry](assets/tag_field_bars/tag_bar_shift_on.png){ width=80% }
-  <figcaption>With <kbd>Shift</kbd> held, pressing <kbd>Enter</kbd> will <b>create a new tag</b> called "Cub".</figcaption>
+  <figcaption markdown="span">
+  <kbd>Shift</kbd>+<kbd>Enter</kbd> will **create** :material-tag-plus-outline: a new tag called "Cub".
+  <br>
+  Note the the greyed-out tag, showing it will not be applied.
+  </figcaption>
 </figure>
 
 ---
@@ -90,7 +94,7 @@ Holding <kbd>Shift</kbd> while pressing <kbd>Enter</kbd> will **force create** a
 
 [Fields](./fields.md) are extra pieces of information you can add to file entries, such as titles, comments, notes, specific dates or times. Unlike tags, fields are based on [templates](./fields.md#field-templates) that contain pre-filled information such as the field type and title, and that information is _copied_ to fields when adding them to entries. Editing field information on entries **does not** modify the template it was created from.
 
-Creating and adding fields to entries is extremely similar to [how it works for tags](#tagging), with a few notable differences:
+Creating and adding fields to entries is extremely similar to how [tagging](#tagging) works, with a few notable differences:
 
 - Click "Add Field" or press <kbd>Ctrl</kbd>+<kbd>L</kbd> to open the field bar.
 - The same template can by applied to an entry any number of times.

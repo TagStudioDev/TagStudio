@@ -71,6 +71,22 @@
         "mode": "pil",
         "path": "qt/images/file_icons/font.png"
     },
+    "hint_field_add": {
+        "mode": "pil",
+        "path": "qt/images/hint_field_add.png"
+    },
+    "hint_field_create": {
+        "mode": "pil",
+        "path": "qt/images/hint_field_create.png"
+    },
+    "hint_tag_add": {
+        "mode": "pil",
+        "path": "qt/images/hint_tag_add.png"
+    },
+    "hint_tag_create": {
+        "mode": "pil",
+        "path": "qt/images/hint_tag_create.png"
+    },
     "icon": {
         "mode": "pil",
         "path": "icon.png"

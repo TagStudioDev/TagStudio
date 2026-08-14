@@ -87,6 +87,24 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             return ([], [])
 
     @override
+    def _on_shift_held(self, held: bool) -> None:
+        if held:
+            self.set_hint_icon(self._rm.hint_field_create)
+        else:
+            self._update_hint_icon()
+
+        return super()._on_shift_held(held)
+
+    @override
+    def _update_hint_icon(self) -> None:
+        if self.layout().search_field.text() and len(self._search_results) > 0:
+            self.set_hint_icon(self._rm.hint_field_add)
+        elif self.layout().search_field.text():
+            self.set_hint_icon(self._rm.hint_field_create)
+        else:
+            self.set_hint_icon(None)
+
+    @override
     def _set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
         """Set the field template of a field template widget at a specific index."""
         underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
