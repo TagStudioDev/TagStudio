@@ -26,6 +26,7 @@ from tagstudio.core.constants import (
     GITHUB_REPO_URL,
     VERSION,
 )
+from tagstudio.core.library.alchemy.constants import DB_VERSION
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
@@ -109,22 +110,28 @@ class AboutModal(QWidget):
         self.system_info_layout.setSpacing(4)
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        # Version
-        version_title = QLabel(Translations["about.version"])
-        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
-        version_content_style = form_content_style()
-        if not is_version_outdated(VERSION, latest_version):
-            version_content = QLabel(f"{VERSION}")
+        # TagStudio Version
+        ts_version_title = QLabel(Translations["about.version"])
+        latest_ts_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
+        ts_version_content_style = form_content_style()
+        if not is_version_outdated(VERSION, latest_ts_version):
+            ts_version_content = QLabel(f"{VERSION}")
         else:
-            version_content = QLabel(
+            ts_version_content = QLabel(
                 Translations.format(
-                    "about.version.latest", built_version=VERSION, latest_version=latest_version
+                    "about.version.latest", built_version=VERSION, latest_version=latest_ts_version
                 )
             )
-            version_content_style += f"color: {red};"
-        version_content.setStyleSheet(version_content_style)
-        self.system_info_layout.addRow(version_title, version_content)
-        version_content.setMaximumWidth(version_content.sizeHint().width())
+            ts_version_content_style += f"color: {red};"
+        ts_version_content.setStyleSheet(ts_version_content_style)
+        self.system_info_layout.addRow(ts_version_title, ts_version_content)
+        ts_version_content.setMaximumWidth(ts_version_content.sizeHint().width())
+
+        # Library DB Version
+        db_version_title = QLabel(Translations["about.library_version"])
+        db_version_content = QLabel(f"{DB_VERSION}")
+        db_version_content.setStyleSheet(form_content_style())
+        self.system_info_layout.addRow(db_version_title, db_version_content)
 
         # Config Path
         config_path_title = QLabel(f"{Translations['about.config_path']}")

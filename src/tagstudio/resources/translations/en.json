@@ -9,6 +9,7 @@
     "about.version": "Version",
     "about.version.latest": "{built_version} (Latest Release: {latest_version})",
     "about.website": "Website",
+    "about.library_version": "Library Format",
     "app.git": "Git Commit",
     "app.nightly": "Nightly",
     "app.pre_release": "Pre-Release",
