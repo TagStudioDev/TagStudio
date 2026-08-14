@@ -22,15 +22,9 @@ class SuggestBoxView(QVBoxLayout):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        # HACK: The transparent border allows for the focus border color to
-        # still show above the tags at the edges... sort of (overlaps on left when h-scrolling)
         scroll_area_style = """
         QScrollArea{
             background: transparent;
-            border: solid;
-            border-color: transparent;
-            border-width: 0px 2px;
-            padding-left: -2px;
             }
         QScrollArea > QWidget > QWidget{
             background: transparent;
@@ -51,6 +45,7 @@ class SuggestBoxView(QVBoxLayout):
         scroll_area_container.setStyleSheet(autofill_scroll_top_style("container"))
         self.scroll_area = HorizontalScrollArea()
         self.scroll_area.setStyleSheet(scroll_area_style)
+        self.scroll_area.setViewportMargins(2, 0, 2, 0)
         scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
         search_bar_height = 28
@@ -69,7 +64,7 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field = AutofillLineEdit(scroll_area_container)
         self.search_field.setStyleSheet(autofill_line_edit_style())
         self.search_field.setObjectName("search_field")
-        self.search_field.setMinimumHeight(28)
+        self.search_field.setMinimumHeight(search_bar_height)
         self.search_field.setPlaceholderText(placeholder_text)
         self.scroll_area.setFocusProxy(self.search_field)
         self.search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
