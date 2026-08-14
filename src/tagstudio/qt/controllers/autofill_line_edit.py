@@ -5,9 +5,10 @@ from typing import override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QPoint, Signal
 from PySide6.QtWidgets import (
     QLineEdit,
+    QMenu,
     QWidget,
 )
 
@@ -72,3 +73,12 @@ class AutofillLineEdit(QLineEdit):
         if arg__1.key() == QtCore.Qt.Key.Key_Shift:
             self.holding_shift.emit(False)  # noqa: FBT003
         return super().keyReleaseEvent(arg__1)
+
+    def show_action_menu(self, pos: QPoint) -> None:
+        """Show a context menu of actions."""
+        menu = QMenu(self)
+        for action in self.actions():
+            # Filter out icon action(s)
+            if action.text():
+                menu.addAction(action)
+        menu.exec(self.mapToGlobal(pos))  # pyright: ignore[reportArgumentType]

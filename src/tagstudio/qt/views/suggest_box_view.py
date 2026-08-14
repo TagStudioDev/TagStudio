@@ -72,7 +72,8 @@ class SuggestBoxView(QVBoxLayout):
             QPixmap(), AutofillLineEdit.ActionPosition.TrailingPosition
         )
         self.scroll_area.setFocusProxy(self.search_field)
-        self.search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.search_field.customContextMenuRequested.connect(self.search_field.show_action_menu)
 
         # Finalize Layout
         self.addWidget(scroll_area_container)
