@@ -119,7 +119,10 @@ class SuggestBox[T](QWidget):
                 opacity_effect = QGraphicsOpacityEffect(self)
                 opacity_effect.setOpacity(0.3)
                 underlined_widget.widget.setGraphicsEffect(opacity_effect)
-            else:
+            elif (
+                len(self._search_results) > i
+                and _item_id(self._search_results[i]) not in self.added
+            ):
                 self._is_shift_held = False
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 

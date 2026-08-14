@@ -98,26 +98,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         else:
             self._update_hint_icon()
 
-        # NOTE: This code is similar to the base method, but needs to reference the tag IDs for each
-        # widget and compare those against the self.added list.
-        for i in range(0, self.layout().content_layout.count()):
-            underlined_widget = self.layout().content_layout.itemAt(i).widget()
-            assert isinstance(underlined_widget, UnderlinedWidget)
-
-            if held and i == self._selection_index:
-                self._is_shift_held = True
-                opacity_effect = QGraphicsOpacityEffect(self)
-                opacity_effect.setOpacity(0.3)
-                underlined_widget.widget.setGraphicsEffect(opacity_effect)
-            else:
-                tag_widget = underlined_widget.widget
-                if not isinstance(tag_widget, TagWidget):
-                    return
-                if not tag_widget.tag:
-                    return
-                if tag_widget.tag.id not in self.added:
-                    self._is_shift_held = False
-                    underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+        return super()._on_shift_held(held)
 
     @override
     def _update_hint_icon(self) -> None:
