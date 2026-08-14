@@ -454,8 +454,7 @@ class BuildTagPanel(ModalContent):
 
         return tag_widget.bg_button, include_checkbox, container
 
-    @staticmethod
-    def _tag_colors(tag: Tag) -> tuple[QColor, QColor, QColor, QColor]:
+    def _tag_colors(self, tag: Tag) -> tuple[QColor, QColor, QColor, QColor]:
         primary_color = get_tag_primary_color(tag)
 
         border_color = (

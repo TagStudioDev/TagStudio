@@ -1344,7 +1344,7 @@ class Library:
                     session.flush()
 
                 if exclusion_ids is not None:
-                    self.update_category_exclusion(tag, exclusion_ids, session)
+                    self._update_category_exclusion(tag, exclusion_ids, session)
 
                 session.commit()
                 session.expunge(tag)
@@ -1752,8 +1752,9 @@ class Library:
             )
             session.add(parent_tag)
 
-    @staticmethod
-    def update_category_exclusion(tag: Tag, exclusion_ids: list[int] | set[int], session: Session):
+    def _update_category_exclusion(
+        self, tag: Tag, exclusion_ids: list[int] | set[int], session: Session
+    ):
         prev_exclusions = session.scalars(
             select(CategoryExclusion).where(CategoryExclusion.tag_id == tag.id)
         ).all()
