@@ -6,7 +6,7 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtGui import QAction, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
@@ -30,9 +30,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         # Context Menu Actions
         edit_field_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
         edit_field_on_add_action.setCheckable(True)
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.addAction(edit_field_on_add_action)
-        self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.layout().search_field.addAction(edit_field_on_add_action)
         edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
         edit_field_on_add_action.triggered.connect(
