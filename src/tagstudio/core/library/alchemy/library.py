@@ -1670,8 +1670,10 @@ class Library:
                 )
                 session.execute(update_tags_stmt)
                 session.commit()
-            else:
-                self.add_color(new_color_group)
+                return
+
+        # "if not existing_color", out of the session context
+        self.add_color(new_color_group)
 
     def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> bool:
         """Update TagAliases for a given Tag."""
