@@ -74,7 +74,8 @@ class DBMigrations:
             )
 
         logger.info(
-            f"[Library][Migration] Starting with library DB version: {self.loaded_db_version}"
+            f"[Library][Migration] "
+            f"Opening Library with DB Version {self.loaded_db_version}/{DB_VERSION}"
         )
 
     @property
@@ -100,6 +101,9 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
         ]
         with Session(self.engine) as session:
+            if self.loaded_db_version > DB_VERSION:
+                return
+
             for migration in migrations:
                 if self.loaded_db_version < migration.version and (
                     migration.initial_version is None
@@ -115,6 +119,9 @@ class DBMigrations:
                     self.loaded_db_version = migration.version
                     try:
                         self._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                        logger.info(
+                            f"[Library][Migration][{migration.version}] Completed DB Migration"
+                        )
                     except Exception as e:
                         logger.info(
                             f"[Library][Migration][{migration.version}] "
@@ -124,12 +131,10 @@ class DBMigrations:
                         session.flush()
                     else:
                         session.commit()
-                logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
 
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
-        logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
 
     def _set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
