@@ -231,6 +231,15 @@ class SettingsPanel(ModalContent):
             Translations["settings.edit_field_on_add"], self.edit_field_on_add_checkbox
         )
 
+        # Keep Tag/Field Suggest Boxes Open After Adding Items
+        self.keep_suggest_boxes_open_checkbox = QCheckBox()
+        self.keep_suggest_boxes_open_checkbox.setChecked(
+            self.driver.settings.keep_suggest_boxes_open
+        )
+        form_layout.addRow(
+            Translations["settings.keep_suggest_boxes_open"], self.keep_suggest_boxes_open_checkbox
+        )
+
     # TODO: Implement Library Settings
     def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
         form_layout = QFormLayout(self.library_settings_container)
@@ -383,6 +392,7 @@ class SettingsPanel(ModalContent):
             "tag_click_action": self.tag_click_action_combobox.currentData(),
             "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
             "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
+            "keep_suggest_boxes_open": self.keep_suggest_boxes_open_checkbox.isChecked(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
@@ -407,6 +417,7 @@ class SettingsPanel(ModalContent):
         driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
         driver.settings.edit_field_on_add = settings["edit_field_on_add"]
+        driver.settings.keep_suggest_boxes_open = settings["keep_suggest_boxes_open"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]

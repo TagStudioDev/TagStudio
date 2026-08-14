@@ -49,6 +49,7 @@ class PreviewPanel(QWidget):
         super().__init__()
         self._driver = driver
         self._lib = self._driver.lib
+        self._settings = self._driver.settings
         self._selected: list[int]
         self._current_stats: FileAttributeData | None = None
 
@@ -75,13 +76,13 @@ class PreviewPanel(QWidget):
         # Tag Search
         self.layout().add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
         self._open_tag_search_action.activated.connect(self._open_tag_search_callback)
-        self.layout().tag_search_box.done.connect(self._tag_added_callback)
+        self.layout().tag_search_box.done.connect(partial(self._tag_added_callback))
         self.layout().containers.on_tags_update.connect(self._update_added_callback)
 
         # Field Search
         self.layout().add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
         self._open_field_search_action.activated.connect(self._open_field_search_callback)
-        self.layout().field_search_box.done.connect(self._field_added_callback)
+        self.layout().field_search_box.done.connect(partial(self._field_added_callback))
 
         # Previews
         self.layout().preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
@@ -122,13 +123,20 @@ class PreviewPanel(QWidget):
         self.layout().add_field_button.setFocus()
         self.layout().add_field_button.click()
 
-    def _tag_added_callback(self):
-        self._set_item_mode(None)
-        self.layout().add_tag_button.setFocus()
+    def _tag_added_callback(self, query: str):
+        if not query or not self._settings.keep_suggest_boxes_open:
+            self._set_item_mode(None)
+            self.layout().add_tag_button.setFocus()
+        else:
+            self._update_added_callback()
+            self.layout().tag_search_box.layout().search_field.setFocus()
 
-    def _field_added_callback(self):
-        self._set_item_mode(None)
-        self.layout().add_field_button.setFocus()
+    def _field_added_callback(self, query: str):
+        if not query or not self._settings.keep_suggest_boxes_open:
+            self._set_item_mode(None)
+            self.layout().add_field_button.setFocus()
+        else:
+            self.layout().field_search_box.layout().search_field.setFocus()
 
     def _update_added_callback(self):
         self.layout().tag_search_box.added = self.layout().containers.tags

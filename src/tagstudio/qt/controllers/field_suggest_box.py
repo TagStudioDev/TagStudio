@@ -36,10 +36,10 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self.layout().search_field.addAction(edit_field_on_add_action)
         edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
         edit_field_on_add_action.triggered.connect(
-            lambda checked: self.toggle_edit_on_field_add(checked)
+            lambda checked: self._toggle_edit_on_field_add(checked)
         )
 
-    def toggle_edit_on_field_add(self, checked: bool) -> None:
+    def _toggle_edit_on_field_add(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after adding a field."""
         self._settings.edit_field_on_add = checked
         self._settings.save()
@@ -77,7 +77,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     @override
     def _on_item_chosen(self, item: BaseFieldTemplate) -> None:
         self.item_chosen.emit(item)
-        self.done.emit()
+        self.done.emit("*")
 
     @override
     def _search_items(self, query: str) -> tuple[list[BaseFieldTemplate], list[BaseFieldTemplate]]:
