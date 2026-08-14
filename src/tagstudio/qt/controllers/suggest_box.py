@@ -156,7 +156,7 @@ class SuggestBox[T](QWidget):
             if i == self._selection_index:
                 underlined_widget.toggle_underline(is_hidden=False)
                 self.layout().scroll_area.ensureWidgetVisible(
-                    underlined_widget, xmargin=6, ymargin=0
+                    underlined_widget, xmargin=24, ymargin=0
                 )
             else:
                 underlined_widget.toggle_underline(is_hidden=True)
@@ -209,7 +209,7 @@ class SuggestBox[T](QWidget):
         self._selection_index = 0
         if self.layout().content_layout.count() > 0:
             self.layout().scroll_area.ensureWidgetVisible(
-                self.layout().content_layout.itemAt(0).widget(), xmargin=6, ymargin=0
+                self.layout().content_layout.itemAt(0).widget(), xmargin=24, ymargin=0
             )
 
         # Get results for the search query
