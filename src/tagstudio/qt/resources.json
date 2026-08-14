@@ -83,6 +83,10 @@
         "mode": "pil",
         "path": "qt/images/hint_tag_add.png"
     },
+    "hint_tag_added": {
+        "mode": "pil",
+        "path": "qt/images/hint_tag_added.png"
+    },
     "hint_tag_create": {
         "mode": "pil",
         "path": "qt/images/hint_tag_create.png"

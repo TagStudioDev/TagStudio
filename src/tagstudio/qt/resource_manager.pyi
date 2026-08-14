@@ -39,6 +39,7 @@ class ResourceManager:
     hint_field_add: Image.Image
     hint_field_create: Image.Image
     hint_tag_add: Image.Image
+    hint_tag_added: Image.Image
     hint_tag_create: Image.Image
     icon: Image.Image
     ignored_stat: Image.Image

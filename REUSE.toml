@@ -50,6 +50,7 @@ path = [
     "src/tagstudio/resources/qt/images/hint_field_add.png",
     "src/tagstudio/resources/qt/images/hint_field_create.png",
     "src/tagstudio/resources/qt/images/hint_tag_add.png",
+    "src/tagstudio/resources/qt/images/hint_tag_added.png",
     "src/tagstudio/resources/qt/images/hint_tag_create.png",
 ]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"

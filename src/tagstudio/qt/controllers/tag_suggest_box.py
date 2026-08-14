@@ -93,7 +93,10 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _on_shift_held(self, held: bool) -> None:
-        if held:
+        # Bypass normal _update_hint_icon() behavior first
+        if not held and self._is_selected_item_added():
+            self.set_hint_icon(self._rm.hint_tag_added)
+        elif held:
             self.set_hint_icon(self._rm.hint_tag_create)
         else:
             self._update_hint_icon()
@@ -102,7 +105,11 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _update_hint_icon(self) -> None:
-        if self.layout().search_field.text() and len(self._search_results) > 0:
+        results = bool(len(self._search_results) > 0)
+
+        if results and self._is_selected_item_added():
+            self.set_hint_icon(self._rm.hint_tag_added)
+        elif results:
             self.set_hint_icon(self._rm.hint_tag_add)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_tag_create)
@@ -135,7 +142,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         if item is None:
             return
 
-        # TODO: Add tabbing to different items, and use underline to indicate which will be added
+        # Select first item
         underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks

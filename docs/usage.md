@@ -34,7 +34,11 @@ Every step is keyboard-friendly, allowing for an efficient tagging "flow state" 
   ![Empty File Entry](assets/tag_field_bars/add_buttons_normal.png){ width=80% }
   <br>
   ![Empty File Entry](assets/tag_field_bars/tag_bar_empty.png){ width=80% }
-  <figcaption>Clicking "Add Tag" or pressing <kbd>Ctrl</kbd>+<kbd>T</kbd> replaces the "Add" buttons with a tag search bar. Pressing <kbd>Esc</kbd> (or <kbd>Enter</kbd> with a blank search) will close the bar and return the "Add" buttons.</figcaption>
+  <figcaption>
+  Clicking "Add Tag" or pressing <kbd>Ctrl</kbd>+<kbd>T</kbd> replaces the "Add" buttons with a tag search bar.
+  <br>
+  You can close the search by pressing <kbd>Enter</kbd> or clicking away (with a blank search), or at any time by pressing <kbd>Esc</kbd>.
+  </figcaption>
 </figure>
 
 <!-- prettier-ignore -->
@@ -64,7 +68,9 @@ Tags can be also viewed, created, edited, or deleted from the **Edit -> Manage T
 
 Pressing <kbd>Enter</kbd> with **one or more results** will **apply** :material-tag: the underlined tag to your selection (assuming it's not already on your selection).
 
-Tags that are already present on your entries will be greyed out and ignored when pressing <kbd>Enter</kbd>. This lets you visually confirm that a tag already exists and has been applied to the selection.
+Matching tags that are **already applied** :material-tag-check: to your entries will be greyed out placed at the end of the autofill results. This lets you visually confirm that a tag already exists and has been applied to the selection. Applying them again with <kbd>Enter</kbd> has no effect other than closing the search.
+
+You can navigate the list of autofill suggestions using the scroll wheel, and change the selected tag by pressing <kbd>Tab</kbd> or <kbd>Shift</kbd>+<kbd>Tab</kbd> to navigate right and left, respectively.
 
 <figure markdown="span">
   ![Empty File Entry](assets/tag_field_bars/tag_bar_search_match.png){ width=80% }

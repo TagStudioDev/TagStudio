@@ -160,6 +160,7 @@ class SuggestBox[T](QWidget):
                 )
             else:
                 underlined_widget.toggle_underline(is_hidden=True)
+        self._update_hint_icon()
 
     def _clear_search_query(self) -> None:
         self.layout().search_field.setText("")
@@ -168,8 +169,8 @@ class SuggestBox[T](QWidget):
         raise NotImplementedError()
 
     def _on_search_query_changed(self, query: str) -> None:
-        self._update_hint_icon()
         self._update_items(query.strip())
+        self._update_hint_icon()
 
     def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
@@ -199,6 +200,12 @@ class SuggestBox[T](QWidget):
 
     def _is_excluded(self, item: T) -> bool:
         return _item_id(item) in self.excluded
+
+    def _is_selected_item_added(self) -> bool:
+        return bool(
+            len(self._search_results) > self._selection_index
+            and _item_id(self._search_results[self._selection_index]) in self.added
+        )
 
     def _update_hint_icon(self) -> None:
         raise NotImplementedError()
