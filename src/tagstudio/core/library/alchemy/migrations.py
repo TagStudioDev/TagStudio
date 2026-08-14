@@ -96,7 +96,7 @@ class DBMigrations:
             MigrationTo201,  # changes: field tables
             MigrationTo202,  # changes: tag_parents
             MigrationTo300,  # changes: deletes folders
-            MigrationTo301,  # changes: add category_exclusions
+            MigrationTo400,  # changes: add category_exclusions
         ]
         with Session(self.engine) as session:
             for migration in migrations:
@@ -572,8 +572,8 @@ class MigrationTo300(DBMigration):
         session.flush()
 
 
-class MigrationTo301(DBMigration):
-    version = 301
+class MigrationTo400(DBMigration):
+    version = 400
 
     @override
     @classmethod
