@@ -28,6 +28,8 @@ from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
+LoggingMethod = Callable[[str], str]
+
 
 class MigrationError(Exception):
     pass
@@ -38,12 +40,13 @@ class DBMigration:
     initial_version: int | None = None
 
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: Callable[[str], str]):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError
 
 
 class DBMigrations:
     def __init__(self, library_dir: Path, engine: Engine) -> None:
+        # TODO: Remove local import and don't make calls to private methods.
         from tagstudio.core.library.alchemy.library import Library
 
         self.library_dir = library_dir
@@ -72,7 +75,8 @@ class DBMigrations:
             )
 
         logger.info(
-            f"[Library][Migration] Starting with library DB version: {self.loaded_db_version}"
+            f"[Library][Migration] "
+            f"Opening Library with DB Version {self.loaded_db_version}/{DB_VERSION}"
         )
 
     @property
@@ -98,6 +102,9 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
         ]
         with Session(self.engine) as session:
+            if self.loaded_db_version > DB_VERSION:
+                return
+
             for migration in migrations:
                 if self.loaded_db_version < migration.version and (
                     migration.initial_version is None
@@ -113,6 +120,9 @@ class DBMigrations:
                     self.loaded_db_version = migration.version
                     try:
                         self._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                        logger.info(
+                            f"[Library][Migration][{migration.version}] Completed DB Migration"
+                        )
                     except Exception as e:
                         logger.info(
                             f"[Library][Migration][{migration.version}] "
@@ -122,12 +132,10 @@ class DBMigrations:
                         session.flush()
                     else:
                         session.commit()
-                logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
 
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
-        logger.info(f"[Library][Migration] Library migrated to DB version {DB_VERSION}")
 
     def _set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
@@ -146,7 +154,7 @@ class MigrationTo7(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info(fmt_log("Applying patches to DB_VERSION: 6 library..."))
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
@@ -166,7 +174,7 @@ class MigrationTo8(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
         session.execute(
@@ -219,7 +227,7 @@ class MigrationTo9(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 8 to 9."""
         # Apply database schema changes
         add_filename_column = text(
@@ -229,6 +237,7 @@ class MigrationTo9(DBMigration):
         session.flush()
         logger.info(fmt_log("Added filename column to entries table"))
 
+        # TODO: Remove local import and don't make calls to private methods.
         # Populate the new filename column.
         from tagstudio.core.library.alchemy.library import Library
 
@@ -244,7 +253,7 @@ class MigrationTo100(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 100."""
         # Repair parent-child tag relationships that are the wrong way around.
         stmt = update(TagParent).values(
@@ -261,7 +270,7 @@ class MigrationTo101(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 101."""
         # Create versions table
         session.execute(
@@ -284,7 +293,7 @@ class MigrationTo102(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 102."""
         # delete TagParents with a dangling parent reference
         stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
@@ -298,7 +307,7 @@ class MigrationTo103(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
         session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
@@ -316,7 +325,7 @@ class MigrationTo104(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
         cls.__migrate_sql_to_ts_ignore(session, library_dir)
@@ -349,7 +358,7 @@ class MigrationTo200(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 200."""
         # Drop unused 'boolean_fields' and 'value_type' tables
         logger.info(fmt_log("Dropping boolean_fields and value_type tables..."))
@@ -463,7 +472,7 @@ class MigrationTo201(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 201."""
         create_text_fields_table = text("""
         CREATE TABLE text_fields_new (
@@ -519,7 +528,7 @@ class MigrationTo202(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 202."""
         stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
         session.execute(stmt)
@@ -532,7 +541,7 @@ class MigrationTo300(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
         ## remove folder_id column from entries table
         # create new table in the desired scheme (without folder_id column)
         session.execute(
