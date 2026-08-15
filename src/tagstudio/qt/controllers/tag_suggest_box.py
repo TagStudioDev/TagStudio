@@ -92,22 +92,14 @@ class TagSuggestBox(SuggestBox[Tag]):
         self.done.emit("*")  # The query does not matter
 
     @override
-    def _on_shift_held(self, held: bool) -> None:
-        # Bypass normal _update_hint_icon() behavior first
-        if not held and self._is_selected_item_added():
-            self.set_hint_icon(self._rm.hint_tag_added)
-        elif held:
-            self.set_hint_icon(self._rm.hint_tag_create)
-        else:
-            self._update_hint_icon()
-
-        return super()._on_shift_held(held)
-
-    @override
     def _update_hint_icon(self) -> None:
         results = bool(len(self._search_results) > 0)
 
-        if results and self._is_selected_item_added():
+        if not self._is_shift_held and self._is_selected_item_added():
+            self.set_hint_icon(self._rm.hint_tag_added)
+        elif self._is_shift_held:
+            self.set_hint_icon(self._rm.hint_tag_create)
+        elif results and self._is_selected_item_added():
             self.set_hint_icon(self._rm.hint_tag_added)
         elif results:
             self.set_hint_icon(self._rm.hint_tag_add)

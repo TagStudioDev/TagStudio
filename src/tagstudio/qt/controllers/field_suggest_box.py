@@ -85,17 +85,10 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             return ([], [])
 
     @override
-    def _on_shift_held(self, held: bool) -> None:
-        if held:
-            self.set_hint_icon(self._rm.hint_field_create)
-        else:
-            self._update_hint_icon()
-
-        return super()._on_shift_held(held)
-
-    @override
     def _update_hint_icon(self) -> None:
-        if self.layout().search_field.text() and len(self._search_results) > 0:
+        if self._is_shift_held:
+            self.set_hint_icon(self._rm.hint_field_create)
+        elif self.layout().search_field.text() and len(self._search_results) > 0:
             self.set_hint_icon(self._rm.hint_field_add)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_field_create)

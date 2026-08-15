@@ -110,12 +110,12 @@ class SuggestBox[T](QWidget):
             self.layout().hint_icon_action.setIcon(QPixmap())
 
     def _on_shift_held(self, held: bool) -> None:
+        self._is_shift_held = held
         for i in range(0, self.layout().content_layout.count()):
             underlined_widget = self.layout().content_layout.itemAt(i).widget()
             assert isinstance(underlined_widget, UnderlinedWidget)
 
             if held and i == self._selection_index:
-                self._is_shift_held = True
                 opacity_effect = QGraphicsOpacityEffect(self)
                 opacity_effect.setOpacity(0.3)
                 underlined_widget.widget.setGraphicsEffect(opacity_effect)
@@ -123,8 +123,8 @@ class SuggestBox[T](QWidget):
                 len(self._search_results) > i
                 and _item_id(self._search_results[i]) not in self.added
             ):
-                self._is_shift_held = False
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+        self._update_hint_icon()
 
     def _on_index_updated(self, delta: int) -> None:
         # Initialize the widget count (non-hidden)
@@ -156,10 +156,12 @@ class SuggestBox[T](QWidget):
             if i == self._selection_index:
                 underlined_widget.toggle_underline(is_hidden=False)
                 self.layout().scroll_area.ensureWidgetVisible(
-                    underlined_widget, xmargin=24, ymargin=0
+                    underlined_widget, xmargin=16, ymargin=0
                 )
             else:
                 underlined_widget.toggle_underline(is_hidden=True)
+
+        self._on_shift_held(self._is_shift_held)
         self._update_hint_icon()
 
     def _clear_search_query(self) -> None:
@@ -216,7 +218,7 @@ class SuggestBox[T](QWidget):
         self._selection_index = 0
         if self.layout().content_layout.count() > 0:
             self.layout().scroll_area.ensureWidgetVisible(
-                self.layout().content_layout.itemAt(0).widget(), xmargin=24, ymargin=0
+                self.layout().content_layout.itemAt(0).widget(), xmargin=16, ymargin=0
             )
 
         # Get results for the search query
