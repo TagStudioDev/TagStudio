@@ -417,6 +417,28 @@ def test_build_tag_panel_remove_inherited_from_multiple_parents_during_tag_creat
     assert tag_widget is None
 
 
+def test_build_tag_panel_add_different_category_after_removing_other_category(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    category = unwrap(library.add_tag(generate_tag("category1", id=123, is_category=True)))
+    tag = unwrap(library.add_tag(generate_tag("other", id=124, parent_tags={category})))
+    other = unwrap(library.add_tag(generate_tag("other", id=125)))
+
+    panel: BuildTagPanel = BuildTagPanel(library, tag)
+    qtbot.addWidget(panel)
+
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is not None
+
+    panel._remove_parent_tag_callback(category.id)
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is None
+
+    panel._add_parent_tag_callback(other.id)
+    tag_widget = __find_category_tag_widget(panel)
+    assert tag_widget is None
+
+
 def __find_category_tag_widget(panel: BuildTagPanel, index: int = 0) -> TagWidget | None:
     item = panel.category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
     while item is not None:
