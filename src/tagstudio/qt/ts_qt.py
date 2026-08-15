@@ -639,8 +639,8 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.setFocus()
 
-        self.app.exec()
         self.check_for_update()
+        self.app.exec()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
