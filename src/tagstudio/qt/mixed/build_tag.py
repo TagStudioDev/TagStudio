@@ -358,8 +358,7 @@ class BuildTagPanel(ModalContent):
 
         if removed_parent_id is not None:
             tags_by_category: dict[Tag, set[Tag]] = {}
-            hierarchy = set(self._lib.get_tag_hierarchy([self.tag.id]).values())
-            hierarchy.remove(self.tag)
+            hierarchy = set(self._lib.get_tag_hierarchy(self.parent_ids).values())
             for tag in hierarchy:
                 if self._is_removed_parent(tag):
                     continue
