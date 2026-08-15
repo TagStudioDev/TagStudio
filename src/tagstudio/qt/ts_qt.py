@@ -321,6 +321,13 @@ class QtDriver(DriverMixin, QObject):
             pal.setColor(
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
+        # BUG: PySide isn't properly setting the link colors on Windows, so this is a fallback.
+        if platform.system() == "Windows":
+            pal.setColor(
+                QPalette.ColorGroup.Normal,
+                QPalette.ColorRole.Link,
+                QColor.fromString(get_ui_color(ColorType.PRIMARY, UiColor.BLUE)),
+            )
         Palette.set_palette(pal)
         self.app.setPalette(pal)
 
