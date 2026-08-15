@@ -166,9 +166,9 @@ def colored_checkbox_style(
 
 def colored_radio_button_style(
     primary_color: QColor,
-    text_color: QColor,
     border_color: QColor,
     highlight_color: QColor,
+    text_color: QColor,
 ) -> str:
     return f"""
     QRadioButton{{
