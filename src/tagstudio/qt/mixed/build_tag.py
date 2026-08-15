@@ -381,8 +381,7 @@ class BuildTagPanel(ModalContent):
                 layout.addWidget(container)
                 self.setTabOrder(last_tab, next_tab)
         else:
-            tag_ids = {self.tag.id}
-            tag_ids.update(self.parent_ids)
+            tag_ids = set(self.parent_ids)
             if added_parent_id is not None:
                 tag_ids.add(added_parent_id)
 
