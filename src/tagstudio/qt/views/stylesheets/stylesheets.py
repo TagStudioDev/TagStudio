@@ -74,7 +74,7 @@ def button_style() -> str:
         outline: none;
         border: solid;
         border-width: 2px;
-        border-color: {Palette.accent()};
+        border-color: rgba{Palette.accent().toTuple()};
         padding: 0px 8px;
     }}
     QPushButton::disabled{{
@@ -108,7 +108,7 @@ def line_edit_style_main() -> str:
     QLineEdit::focus{{
         border-style: solid;
         border-width: 2px;
-        border-color: {Palette.accent()};
+        border-color: rgba{Palette.accent().toTuple()};
         padding: 0px 2px;
     }}
     QLineEdit::disabled{{
@@ -412,7 +412,7 @@ def tag_remove_button_style(
 
 def widget_underline_style() -> str:
     return f"""
-        background: {Palette.accent()};
+        background: rgba{Palette.accent().toTuple()};
         border-radius: 2px;
     """
 
@@ -475,7 +475,7 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
         border-top-right-radius: 6px;
         border: solid;
         border-width: 2px 2px 0px 2px;
-        border-color: {Palette.accent()};
+        border-color: rgba{Palette.accent().toTuple()};
         }}
     """
 
@@ -498,7 +498,7 @@ def autofill_line_edit_style() -> str:
         padding: 4px 4px;
         border: solid;
         border-width: 2px;
-        border-color: {Palette.accent()};
+        border-color: rgba{Palette.accent().toTuple()};
         }}
     """
 
@@ -524,7 +524,7 @@ def autofill_line_edit_top_style() -> str:
         padding: 4px 4px;
         border: solid;
         border-width: 0px 2px 2px 2px;
-        border-color: {Palette.accent()};
+        border-color: rgba{Palette.accent().toTuple()};
         }}
     """
 
