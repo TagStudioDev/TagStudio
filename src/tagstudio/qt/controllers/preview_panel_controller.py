@@ -183,6 +183,8 @@ class PreviewPanel(QWidget):
                     self._edit_field(entry.id, entry_field)
 
             self.layout().containers.update_from_entry(self._selected[0])
+        elif len(self._selected) > 1:
+            self.layout().containers.update_from_entries(self._selected)
 
     def _edit_field(self, entry_id: int, field: BaseField) -> None:
         # TODO: A lot of this code is similar to or straight up shared with FieldContainers.
@@ -216,6 +218,8 @@ class PreviewPanel(QWidget):
         self.layout().containers.add_tags_to_selected(tag_id)
         if len(self._selected) == 1:
             self.layout().containers.update_from_entry(self._selected[0])
+        elif len(self._selected) > 1:
+            self.layout().containers.update_from_entries(self._selected)
 
     def _toggle_ffmpeg_warning(self, enable_warning: bool = True) -> None:
         if enable_warning and (not FfmpegStatus.which() or not FfprobeStatus.which()):
@@ -269,7 +273,7 @@ class PreviewPanel(QWidget):
                 self._current_stats = None
                 self.layout().file_attrs.update_multi_selection(len(selected))
                 self.layout().file_attrs.update_date_label()
-                self.layout().containers.hide_containers()  # TODO: Allow for mixed editing
+                self.layout().containers.update_from_entries(selected)
                 self._set_selection_callback()
 
         except Exception as e:

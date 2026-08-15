@@ -3,9 +3,11 @@
 
 # pyright: reportPrivateUsage=false
 
+from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -35,8 +37,6 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
 
 
 def test_update_selection_multiple(qt_driver: QtDriver):
-    # TODO: Implement mixed field editing. Currently these containers will be hidden,
-    # same as the empty selection behavior.
     panel = PreviewPanel(qt_driver)
 
     # Select the multiple entries
@@ -44,9 +44,10 @@ def test_update_selection_multiple(qt_driver: QtDriver):
     qt_driver.toggle_item_selection(2, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show mixed field editing
-    for container in panel.containers._containers:
-        assert container.isHidden()
+    # Panel should enable UI that allows for entry modification and cache all selected entries
+    assert panel.layout().add_tag_button.isEnabled()
+    assert panel.layout().add_field_button.isEnabled()
+    assert len(panel.containers.cached_entries) == 2
 
 
 def test_add_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry):
@@ -182,3 +183,32 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
                 assert container.title != "<h4>Tags</h4>"
             case _:
                 pass
+
+
+def test_multi_selection_mixed_section_resets_on_single_selection(
+    qt_driver: QtDriver, library: Library
+):
+    panel = PreviewPanel(qt_driver)
+    field_containers = panel.containers
+
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.toggle_item_selection(2, append=True, bridge=False)
+    panel.set_selection(qt_driver.selected)
+
+    container_titles = [c.title for c in field_containers._containers]
+    assert f"<h4>{Translations['preview.partial_section']}</h4>" in container_titles
+    assert "<h4>Tags</h4>" in container_titles
+    assert "<h4>Title</h4>" in container_titles
+    assert [entry.id for entry in field_containers.cached_entries] == [1, 2]
+
+    # Switch back to single selection — the partial section should disappear
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    panel.set_selection(qt_driver.selected)
+
+    entry = unwrap(library.get_entry_full(1))
+    active_container_count = len(field_containers.get_tag_categories(entry.tags)) + len(
+        entry.fields
+    )
+    active_titles = [field_containers._containers[i].title for i in range(active_container_count)]
+    assert f"<h4>{Translations['preview.partial_section']}</h4>" not in active_titles
+    assert [cached_entry.id for cached_entry in field_containers.cached_entries] == [1]

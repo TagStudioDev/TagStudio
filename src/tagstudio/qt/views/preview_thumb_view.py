@@ -42,6 +42,7 @@ class PreviewThumbView(QWidget):
     _current_file: Path | None
     __should_render_on_resize: bool
     __rendered_res: tuple[int, int]
+    __render_cutoff: float
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
@@ -49,6 +50,7 @@ class PreviewThumbView(QWidget):
 
         self.__img_button_size = (266, 266)
         self.__image_ratio = 1.0
+        self.__render_cutoff = 0.0
 
         self.__should_render_on_resize = False
 
@@ -148,8 +150,11 @@ class PreviewThumbView(QWidget):
         )
 
     def __thumb_renderer_updated_callback(
-        self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
+        self, timestamp: float, img: QPixmap, _size: QSize, _path: Path
     ) -> None:
+        # Ignore outdated renders if a newer selection has been requested.
+        if timestamp < self.__render_cutoff:
+            return
         self.__button_wrapper.setIcon(img)
 
     def __thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
@@ -234,10 +239,13 @@ class PreviewThumbView(QWidget):
             math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
         )
 
+        timestamp = time.time()
+        self.__render_cutoff = timestamp
+
         # TODO: Make driver update the cache manager reference here instead of passing the driver.
         self.__thumb_renderer.render(
             self._driver.cache_manager,
-            time.time(),
+            timestamp,
             filepath,
             self.__rendered_res,
             self.devicePixelRatio(),
