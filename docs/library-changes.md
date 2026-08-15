@@ -211,7 +211,7 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 - Drops `folder` columns from the `entries` table.
 - Drops the unused `folders` table.
 
-#### Version 301
+#### Version 400
 
 | Added in Commit | Introduced in Release | Format |
 |-----------------|-----------------------| ------ |
