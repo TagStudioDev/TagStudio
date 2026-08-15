@@ -1792,4 +1792,4 @@ class QtDriver(DriverMixin, QObject):
             if sc.which():
                 logger.info(f"[QtDriver] {name} found", which=sc.which(), version=sc.version())
             else:
-                logger.warning(f"[QtDriver] {sc} not found")
+                logger.warning(f"[QtDriver] {name} not found")
