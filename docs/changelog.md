@@ -9,6 +9,42 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+### 9.6.3 <small>August 15th, 2026</small>
+
+This update includes some critical library bugfixes along with a handful QoL tweaks and additions to the tag/field search bars. The [documentation](https://docs.tagstud.io/usage/#tagging) on this feature has been updated to include the new improvements.
+
+### Added
+
+- feat(ui): show library format version in "About" window by @CyanVoxel in 102cfdf4a2e12635f4b6e47259aa23ea95787421
+
+### Changed
+
+#### Tag and Field Bars
+
+- feat(ui): keep tag/field search bars open by default by @CyanVoxel in #1472
+- feat(ui): translate vertical scrolling to horizontal in tag/field search bars by @CyanVoxel in #1473
+- feat(ui): use tab and shift+tab to navigate tag/field search bars by @CyanVoxel in #1474
+- feat(ui): add hint icons to tag/field search bars by @CyanVoxel in #1475
+
+#### Internal Changes
+
+- refactor: almost final migrations cleanup by @Computerdores in #1456
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hebrew** updated by @Tatrask
+- **Hungarian** updated by @smileyhead
+- **Japanese** updated by @coolzdaddy55-art
+
+#### Fixed
+
+- fix: fix being unable to create new colors by @CyanVoxel in dd00f4d4a02fd74b24d40c51b55ae3cc7db09203
+- fix(ui): increase spacing between color palettes by @CyanVoxel in 354c0a0afcdaae2e490dd6c1eca5a556e7724aea
+- fix: fix infinite loading in various refresh operations by @CyanVoxel in 3ce65552f7d459a2edebadb29cf1c17de6a1c742
+
+---
+
 ## 9.6.2 <small>August 6th, 2026</small>
 
 ### Added
