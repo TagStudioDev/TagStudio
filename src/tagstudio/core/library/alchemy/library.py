@@ -699,7 +699,7 @@ class Library:
     def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
-            return Library._all_entries(session, with_joins)
+            yield from Library._all_entries(session, with_joins)
 
     @property
     def tags(self) -> list[Tag]:
