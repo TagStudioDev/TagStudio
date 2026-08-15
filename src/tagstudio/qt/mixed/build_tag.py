@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -90,7 +91,7 @@ class BuildTagPanel(ModalContent):
         self.exclusion_ids: set[int] = set()
         self.aliases: list[TagAlias] = []
 
-        self.setMinimumSize(300, 460)
+        self.setMinimumSize(300, 640)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -98,7 +99,6 @@ class BuildTagPanel(ModalContent):
         # Name -----------------------------------------------------------------
         self.name_widget = QWidget()
         self.name_layout = QVBoxLayout(self.name_widget)
-        self.name_layout.setStretch(1, 1)
         self.name_layout.setContentsMargins(0, 0, 0, 0)
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -113,7 +113,6 @@ class BuildTagPanel(ModalContent):
         # Shorthand ------------------------------------------------------------
         self.shorthand_widget = QWidget()
         self.shorthand_layout = QVBoxLayout(self.shorthand_widget)
-        self.shorthand_layout.setStretch(1, 1)
         self.shorthand_layout.setContentsMargins(0, 0, 0, 0)
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -125,7 +124,6 @@ class BuildTagPanel(ModalContent):
         # Aliases --------------------------------------------------------------
         self.aliases_widget = QWidget()
         self.aliases_layout = QVBoxLayout(self.aliases_widget)
-        self.aliases_layout.setStretch(1, 1)
         self.aliases_layout.setContentsMargins(0, 0, 0, 0)
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -146,16 +144,14 @@ class BuildTagPanel(ModalContent):
 
         # Parent Tags ----------------------------------------------------------
         self.parent_tags_widget = QWidget()
-        self.parent_tags_widget.setMinimumHeight(128)
         self.parent_tags_layout = QVBoxLayout(self.parent_tags_widget)
-        self.parent_tags_layout.setStretch(1, 1)
         self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
         self.parent_tags_layout.setSpacing(0)
         self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.disam_button_group = QButtonGroup(self)
         self.disam_button_group.setExclusive(False)
 
-        self.parent_tags_title = QLabel(Translations["tag.parent_tags"])
+        self.parent_tags_title = QLabel(header(Translations["tag.parent_tags"], 3))
         self.parent_tags_layout.addWidget(self.parent_tags_title)
         self.scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
@@ -188,17 +184,19 @@ class BuildTagPanel(ModalContent):
 
         # Categories -----------------------------------------------------------
         self.category_widget = QWidget()
-        self.category_widget.setMinimumHeight(128)
-
         self.category_layout = QVBoxLayout(self.category_widget)
-        self.category_layout.setStretch(1, 1)
         self.category_layout.setContentsMargins(0, 0, 0, 0)
         self.category_layout.setSpacing(0)
         self.category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.category_layout.addWidget(QLabel(Translations["tag.categories"]))
+        self.category_layout.addWidget(QLabel(header(Translations["tag.categories"], 3)))
+
+        category_subtitle = QLabel(Translations["tag.categories.subtitle"])
+        opacity_effect = QGraphicsOpacityEffect(self)
+        opacity_effect.setOpacity(0.5)
+        category_subtitle.setGraphicsEffect(opacity_effect)
+        self.category_layout.addWidget(category_subtitle)
 
         self.category_scroll_contents = QWidget()
-
         self.category_scroll_layout = QVBoxLayout(self.category_scroll_contents)
         self.category_scroll_layout.setContentsMargins(6, 6, 6, 0)
         self.category_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -214,11 +212,10 @@ class BuildTagPanel(ModalContent):
         # Color ----------------------------------------------------------------
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
-        self.color_layout.setStretch(1, 1)
         self.color_layout.setContentsMargins(0, 0, 0, 6)
         self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.color_title = QLabel(Translations["tag.color"])
+        self.color_title = QLabel(header(Translations["tag.color"], 3))
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
@@ -242,7 +239,6 @@ class BuildTagPanel(ModalContent):
         # Category -------------------------------------------------------------
         self.cat_widget = QWidget()
         self.cat_layout = QHBoxLayout(self.cat_widget)
-        self.cat_layout.setStretch(1, 1)
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -256,7 +252,6 @@ class BuildTagPanel(ModalContent):
         # Hidden ---------------------------------------------------------------
         self.hidden_widget = QWidget()
         self.hidden_layout = QHBoxLayout(self.hidden_widget)
-        self.hidden_layout.setStretch(1, 1)
         self.hidden_layout.setContentsMargins(0, 0, 0, 0)
         self.hidden_layout.setSpacing(6)
         self.hidden_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -271,16 +266,32 @@ class BuildTagPanel(ModalContent):
         self.root_layout.addWidget(self.name_widget)
         self.root_layout.addWidget(self.shorthand_widget)
         self.root_layout.addWidget(self.aliases_widget)
-        self.root_layout.addWidget(self.aliases_table)
+        self.root_layout.addWidget(self.aliases_table, stretch=1)
         self.root_layout.addWidget(self.aliases_add_button)
-        self.root_layout.addWidget(self.parent_tags_widget)
+        self._add_spaced_separator()
+        self.root_layout.addWidget(self.parent_tags_widget, stretch=1)
+        self._add_spaced_separator()
         self.root_layout.addWidget(self.category_widget)
+        self._add_spaced_separator()
         self.root_layout.addWidget(self.color_widget)
+        self._add_spaced_separator()
         self.root_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
         self.root_layout.addWidget(self.cat_widget)
         self.root_layout.addWidget(self.hidden_widget)
 
         self.set_tag(tag or Tag(name=Translations["tag.new"]))
+
+    def _add_spaced_separator(self) -> None:
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Plain)
+        opacity_effect = QGraphicsOpacityEffect(self)
+        opacity_effect.setOpacity(0.1)
+        sep.setGraphicsEffect(opacity_effect)
+
+        self.root_layout.addSpacing(6)
+        self.root_layout.addWidget(sep)
+        self.root_layout.addSpacing(6)
 
     def backspace(self):
         focused_widget = QApplication.focusWidget()
