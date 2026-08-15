@@ -37,11 +37,13 @@ This update includes some critical library bugfixes along with a handful QoL twe
 - **Hungarian** updated by @smileyhead
 - **Japanese** updated by @coolzdaddy55-art
 
-#### Fixed
+### Fixed
 
 - fix: fix being unable to create new colors by @CyanVoxel in dd00f4d4a02fd74b24d40c51b55ae3cc7db09203
 - fix(ui): increase spacing between color palettes by @CyanVoxel in 354c0a0afcdaae2e490dd6c1eca5a556e7724aea
 - fix: fix infinite loading in various refresh operations by @CyanVoxel in 3ce65552f7d459a2edebadb29cf1c17de6a1c742
+- fix(ui): fix update popup showing after closing main window by @CyanVoxel in 30c81257fa3882376111ec03637bd6f517500908
+- fix(ui): fix accent color issues on Windows by @CyanVoxel in #1477
 
 ---
 
