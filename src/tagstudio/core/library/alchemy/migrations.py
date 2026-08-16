@@ -84,6 +84,8 @@ class DBMigrations:
         return self.loaded_db_version < DB_VERSION
 
     def run(self):
+        if not self.required:
+            return
 
         # migrate DB step by step from one version to the next
         # (migration_method, db_version, initial_db_version)
@@ -102,9 +104,6 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
         ]
         with Session(self.engine) as session:
-            if self.loaded_db_version > DB_VERSION:
-                return
-
             for migration in migrations:
                 if self.loaded_db_version < migration.version and (
                     migration.initial_version is None
