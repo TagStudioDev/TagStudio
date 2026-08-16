@@ -21,7 +21,7 @@ from tagstudio.core.library.alchemy.constants import (
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import Tag, TagColorGroup, Version
+from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
@@ -236,11 +236,10 @@ class MigrationTo9(DBMigration):
         session.flush()
         logger.info(fmt_log("Added filename column to entries table"))
 
-        # TODO: Remove local import and don't make calls to private methods.
         # Populate the new filename column.
-        from tagstudio.core.library.alchemy.library import Library
-
-        for entry in Library._all_entries(session):
+        # TODO: this could still break in the future through changes to the definition of Entry
+        entries = session.execute(select(Entry).distinct()).scalars()
+        for entry in entries:
             entry.filename = entry.path.name
             session.merge(entry)
         session.flush()

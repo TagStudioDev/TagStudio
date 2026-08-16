@@ -669,37 +669,32 @@ class Library:
         with Session(self.engine) as session:
             return unwrap(session.scalar(select(func.count(Entry.id))))
 
-    @staticmethod
-    def _all_entries(session: Session, with_joins: bool = False) -> Iterator[Entry]:
-        """Load entries without joins."""
-        stmt = select(Entry)
-        if with_joins:
-            # load Entry with all joins and all tags
-            stmt = (
-                stmt.outerjoin(Entry.text_fields)
-                .outerjoin(Entry.datetime_fields)
-                .outerjoin(Entry.tags)
-            )
-            stmt = stmt.options(
-                contains_eager(Entry.text_fields),
-                contains_eager(Entry.datetime_fields),
-                contains_eager(Entry.tags),
-            )
-
-        stmt = stmt.distinct()
-
-        entries = session.execute(stmt).scalars()
-        if with_joins:
-            entries = entries.unique()
-
-        for entry in entries:
-            yield entry
-            session.expunge(entry)
-
-    def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
+    def _all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
-            yield from Library._all_entries(session, with_joins)
+            stmt = select(Entry)
+            if with_joins:
+                # load Entry with all joins and all tags
+                stmt = (
+                    stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.datetime_fields)
+                    .outerjoin(Entry.tags)
+                )
+                stmt = stmt.options(
+                    contains_eager(Entry.text_fields),
+                    contains_eager(Entry.datetime_fields),
+                    contains_eager(Entry.tags),
+                )
+
+            stmt = stmt.distinct()
+
+            entries = session.execute(stmt).scalars()
+            if with_joins:
+                entries = entries.unique()
+
+            for entry in entries:
+                yield entry
+                session.expunge(entry)
 
     @property
     def tags(self) -> list[Tag]:
