@@ -158,7 +158,10 @@ class TagSuggestBox(SuggestBox[Tag]):
         if isinstance(edit_item_panel, BuildTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
-                tag, parent_ids=edit_item_panel.parent_ids, aliases=edit_item_panel.aliases
+                tag,
+                parent_ids=edit_item_panel.parent_ids,
+                aliases=edit_item_panel.aliases,
+                exclusion_ids=edit_item_panel.exclusion_ids,
             )
             self._on_item_chosen(tag)
 
@@ -174,6 +177,7 @@ class TagSuggestBox(SuggestBox[Tag]):
             tag=edit_item_panel.build_tag(),
             parent_ids=edit_item_panel.parent_ids,
             aliases=edit_item_panel.aliases,
+            exclusion_ids=edit_item_panel.exclusion_ids,
         )
         self._update_items(self.layout().search_field.text())
 

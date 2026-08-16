@@ -118,44 +118,57 @@ def line_edit_style_main() -> str:
 
 
 def checkbox_style() -> str:
-    """Style used for QCheckBoxes."""
+    """Style used for common QCheckBoxes."""
     primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-    border_color = get_tag_border_color(primary_color)
     highlight_color = get_tag_highlight_color(primary_color)
-    text_color: QColor = get_tag_text_color(primary_color, highlight_color)
+    return colored_checkbox_style(
+        primary_color,
+        get_tag_border_color(primary_color),
+        highlight_color,
+        get_tag_text_color(primary_color, highlight_color),
+    )
+
+
+def colored_checkbox_style(
+    primary_color: QColor,
+    border_color: QColor,
+    highlight_color: QColor,
+    text_color: QColor,
+) -> str:
+    """Style used for QCheckBoxes."""
     return f"""
-    QCheckBox{{
-        background: rgba{primary_color.toTuple()};
-        color: rgba{text_color.toTuple()};
-        border-color: rgba{border_color.toTuple()};
-        border-radius: 6px;
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QCheckBox::indicator{{
-        width: 10px;
-        height: 10px;
-        border-radius: 2px;
-        margin: 4px;
-    }}
-    QCheckBox::indicator:checked{{
-        background: rgba{text_color.toTuple()};
-    }}
-    QCheckBox::hover{{
-        border-color: rgba{highlight_color.toTuple()};
-    }}
-    QCheckBox::focus{{
-        border-color: rgba{highlight_color.toTuple()};
-        outline: none;
-    }}
-    """
+        QCheckBox{{
+            background: rgba{primary_color.toTuple()};
+            color: rgba{text_color.toTuple()};
+            border-color: rgba{border_color.toTuple()};
+            border-radius: 6px;
+            border-style: solid;
+            border-width: 2px;
+        }}
+        QCheckBox::indicator{{
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin: 4px;
+        }}
+        QCheckBox::indicator:checked{{
+            background: rgba{text_color.toTuple()};
+        }}
+        QCheckBox::hover{{
+            border-color: rgba{highlight_color.toTuple()};
+        }}
+        QCheckBox::focus{{
+            border-color: rgba{highlight_color.toTuple()};
+            outline: none;
+        }}
+        """
 
 
 def colored_radio_button_style(
     primary_color: QColor,
-    text_color: QColor,
     border_color: QColor,
     highlight_color: QColor,
+    text_color: QColor,
 ) -> str:
     return f"""
     QRadioButton{{

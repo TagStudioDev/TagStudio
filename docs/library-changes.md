@@ -201,3 +201,20 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | 95e2fe7b4449951c385e35a2e13f0c1925f1f98e | [v9.6.1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.1) | SQLite |
 
 - Applies repairs to the `tag_parents` table, removing rows that reference child tags that have been deleted.
+
+#### Version 300
+
+| Added in Commit                          | Introduced in Release                                                   | Format |
+| ---------------------------------------- |-------------------------------------------------------------------------| ------ |
+| 51a9c16f50ca785d810911d2d0c83fa33eb1c0ae | [v9.6.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.2) | SQLite |
+
+- Drops `folder` columns from the `entries` table.
+- Drops the unused `folders` table.
+
+#### Version 400
+
+| Added in Commit | Introduced in Release | Format |
+|-----------------|-----------------------| ------ |
+| TBD             | TBD                   | SQLite |
+
+- Adds the `category_exclusion` table.
