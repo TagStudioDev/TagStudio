@@ -176,7 +176,8 @@ Observe the following key aspects of the example below:
         def _connect_callbacks(self):
             self.layout().button.clicked.connect(self._button_click_callback)
             self.layout().color_dropdown.currentIndexChanged.connect(
-            lambda idx: self._color_dropdown_callback(self.color_dropdown.itemData(idx)))
+                lambda idx: self._color_dropdown_callback(self.color_dropdown.itemData(idx))
+            )
 
         def _button_click_callback(self):
             print("Button was clicked!")
