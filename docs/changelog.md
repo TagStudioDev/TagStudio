@@ -17,14 +17,14 @@ This update includes some critical library bugfixes along with a handful QoL twe
 
 - feat(ui): show library format version in "About" window by @CyanVoxel in 102cfdf4a2e12635f4b6e47259aa23ea95787421
 
-### Changed
-
 #### Tag and Field Bars
 
 - feat(ui): keep tag/field search bars open by default by @CyanVoxel in #1472
 - feat(ui): translate vertical scrolling to horizontal in tag/field search bars by @CyanVoxel in #1473
 - feat(ui): use tab and shift+tab to navigate tag/field search bars by @CyanVoxel in #1474
 - feat(ui): add hint icons to tag/field search bars by @CyanVoxel in #1475
+
+### Changed
 
 #### Internal Changes
 
