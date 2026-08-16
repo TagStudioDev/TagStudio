@@ -1,53 +1,36 @@
-#!/usr/bin/env python3
+# SPDX-FileCopyrightText: (c) 2017 Blender Foundation
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
 
-# ##### BEGIN GPL LICENSE BLOCK #####
-#
-#  This program is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
-#  of the License, or (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software Foundation,
-#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-#
-# ##### END GPL LICENSE BLOCK #####
-
-# <pep8 compliant>
-
-
-## This file is a modified script that gets the thumbnail data stored in a blend file
-
+"""Extract an embedded thumbnail from a Blender file."""
 
 import gzip
-import logging
 import os
 import struct
+from io import BufferedReader
+from typing import BinaryIO
+from pathlib import Path
+
 from PIL import Image, ImageOps
 
 
-def blend_extract_thumb(path):
-    REND = b"REND"
-    TEST = b"TEST"
-    ENDB = b"ENDB"
+def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
+    REND: bytes = b"REND"
+    TEST: bytes = b"TEST"
+    ENDB: bytes = b"ENDB"
 
-    blendfile = None
-    raw_file = None
+    blendfile: BinaryIO | None = None
+    raw_file: BinaryIO | None = None
 
     try:
         # --------------------------------------------------------------
         # Open file.
         # --------------------------------------------------------------
-        raw_file = open(path, "rb")  # noqa: SIM115
+        raw_file: BufferedReader = open(path, "rb")
 
         # Legacy header = 12 bytes
         # Blender 5+   = 17 bytes
-        head = raw_file.read(17)
+        head: bytes = raw_file.read(17)
 
         # --------------------------------------------------------------
         # GZIP-compressed blend file.
@@ -86,7 +69,7 @@ def blend_extract_thumb(path):
         #   12    = 'v'
         #   13-16 = Blender version
         # --------------------------------------------------------------
-        is_blender_5 = (
+        is_blender_5: bool = (
             len(head) >= 17
             and head[7:9].isdigit()
             and head[9:13] == b"-01v" #format
@@ -94,8 +77,8 @@ def blend_extract_thumb(path):
 
         if is_blender_5:
             try:
-                header_size = int(head[7:9])
-                version = int(head[13:17])
+                header_size: int = int(head[7:9])
+                version: int = int(head[13:17])
             except ValueError:
                 logging.info("Invalid Blender 5 header")
                 return None, 0, 0
@@ -125,10 +108,10 @@ def blend_extract_thumb(path):
             #
             # Total = 32 bytes.
             # ----------------------------------------------------------
-            sizeof_bhead = 32
-            large_bhead = True
+            sizeof_bhead: int = 32
+            large_bhead: bool = True
 
-            int_endian_pair = "<ii"
+            int_endian_pair: str = "<ii"
 
         # --------------------------------------------------------------
         # Legacy Blender header
@@ -146,11 +129,11 @@ def blend_extract_thumb(path):
         #   9-11  Blender version
         # --------------------------------------------------------------
         else:
-            is_64_bit = head[7] == ord("-")
-            is_big_endian = head[8] == ord("V")
+            is_64_bit: bool = head[7] == ord("-")
+            is_big_endian: bool = head[8] == ord("V")
 
             try:
-                version = int(head[9:12])
+                version: int = int(head[9:12])
             except ValueError:
                 logging.info("Invalid legacy Blender version")
                 return None, 0, 0
@@ -167,10 +150,10 @@ def blend_extract_thumb(path):
                 logging.info("Blender version has no thumbnails")
                 return None, 0, 0
 
-            sizeof_bhead = 24 if is_64_bit else 20
+            sizeof_bhead: int = 24 if is_64_bit else 20
             large_bhead = False
 
-            int_endian = ">" if is_big_endian else "<"
+            int_endian: str = ">" if is_big_endian else "<"
             int_endian_pair = int_endian + "ii"
 
             # We read 17 bytes above, but the old header is only 12.
@@ -180,9 +163,9 @@ def blend_extract_thumb(path):
         # Walk the BHeads until we find TEST.
         # --------------------------------------------------------------
         while True:
-            block_offset = blendfile.tell()
+            block_offset: int = blendfile.tell()
 
-            bhead = blendfile.read(sizeof_bhead)
+            bhead: bytes = blendfile.read(sizeof_bhead)
 
             logging.debug(
                 "BHead at offset %d: read %d/%d bytes: %r",
@@ -206,7 +189,7 @@ def blend_extract_thumb(path):
                 )
                 return None, 0, 0
 
-            code = bhead[:4]
+            code: bytes = bhead[:4]
 
             # ----------------------------------------------------------
             # Blender 5+
@@ -214,19 +197,19 @@ def blend_extract_thumb(path):
             # The block size is at offset 16 and is uint64.
             # ----------------------------------------------------------
             if large_bhead:
-                length = struct.unpack_from(
+                length: int = struct.unpack_from(
                     "<Q",
                     bhead,
                     16,
                 )[0]
 
-                sdna = struct.unpack_from(
+                sdna: int = struct.unpack_from(
                     "<I",
                     bhead,
                     4,
                 )[0]
 
-                count = struct.unpack_from(
+                count: int = struct.unpack_from(
                     "<Q",
                     bhead,
                     24,
@@ -302,13 +285,15 @@ def blend_extract_thumb(path):
         #   int32 height
         #   RGBA pixel data
         # --------------------------------------------------------------
-        dimensions = blendfile.read(8)
+        dimensions: bytes = blendfile.read(8)
 
         if len(dimensions) != 8:
             logging.info("TEST block is missing dimensions")
             return None, 0, 0
 
         try:
+            x: int
+            y: int
             x, y = struct.unpack(
                 int_endian_pair,
                 dimensions,
@@ -324,7 +309,7 @@ def blend_extract_thumb(path):
         )
 
         # The TEST block length includes the two 32-bit dimensions.
-        image_length = length - 8
+        image_length: int = length - 8
 
         if x <= 0 or y <= 0:
             logging.info(
@@ -334,7 +319,7 @@ def blend_extract_thumb(path):
             )
             return None, 0, 0
 
-        expected_length = x * y * 4
+        expected_length: int = x * y * 4
 
         if image_length != expected_length:
             logging.info(
@@ -347,7 +332,7 @@ def blend_extract_thumb(path):
         # --------------------------------------------------------------
         # Read RGBA thumbnail.
         # --------------------------------------------------------------
-        image_buffer = blendfile.read(image_length)
+        image_buffer: bytes = blendfile.read(image_length)
 
         if len(image_buffer) != image_length:
             logging.info(
@@ -367,14 +352,17 @@ def blend_extract_thumb(path):
             raw_file.close()
 
 
-def blend_thumb(file_in):
+def blend_thumb(file_in: Path | str) -> Image.Image | None:
     buf, width, height = blend_extract_thumb(file_in)
+    if buf is None:
+        return None
     image = Image.frombuffer(
         "RGBA",
         (width, height),
         buf,
     )
     image = ImageOps.flip(image)
+    # Upscale Image so it looks better at higher resolutions.
     width, height = image.size
     ratio = height/width
     image = image.resize((512, round(512*ratio)),Image.BICUBIC)
