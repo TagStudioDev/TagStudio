@@ -668,7 +668,7 @@ class Library:
         with Session(self.engine) as session:
             return unwrap(session.scalar(select(func.count(Entry.id))))
 
-    def _all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
+    def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
             stmt = select(Entry)
