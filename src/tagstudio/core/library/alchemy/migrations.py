@@ -143,8 +143,7 @@ class DBMigrations:
                     version = session.scalar(select(Version).where(Version.key == key))
                     assert version
                     return version.value
-                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-                # and is set to be removed in a future release.
+                # "Preferences" table deprecated in TagStudio 9.5.4
                 else:
                     return int(
                         unwrap(
