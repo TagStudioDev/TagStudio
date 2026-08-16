@@ -11,18 +11,19 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class LandingWidget(QWidget):
     rm: ResourceManager = ResourceManager()
     mono_logo: Image.Image = rm.ts_logo_text_mono

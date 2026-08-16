@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout, QWi
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
 from tagstudio.qt.controllers.horizontal_scroll_area import HorizontalScrollArea
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.stylesheets import (
     autofill_line_edit_style,
     autofill_scroll_top_style,
 )

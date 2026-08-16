@@ -11,9 +11,9 @@ from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
+from tagstudio.qt.views.styles.stylesheets import (
     get_tag_border_color,
     get_tag_highlight_color,
     get_tag_text_color,
@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class TagColorPreview(QWidget):
     on_click = Signal()
 

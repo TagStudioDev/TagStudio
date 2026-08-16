@@ -16,8 +16,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import list_button_style
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.views.styles.stylesheets import list_button_style
 
 if TYPE_CHECKING:
     pass

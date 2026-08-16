@@ -10,19 +10,19 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
-from tagstudio.qt.mixed.merge_dupe_entries import MergeDuplicateEntries
-from tagstudio.qt.mixed.progress_bar import ProgressWidget
-from tagstudio.qt.mixed.relink_entries_modal import RelinkUnlinkedEntries
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDuplicateEntriesProgress
+from tagstudio.qt.controllers.progress_bar import ProgressWidget
+from tagstudio.qt.controllers.relink_entries_progress import RelinkUnlinkedEntriesProgress
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
-# TODO: Break up into MVC classes, similar to fix_ignored_modal
+# TODO: Split to use MVC guidelines.
 class FixUnlinkedEntriesModal(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
@@ -55,8 +55,8 @@ class FixUnlinkedEntriesModal(QWidget):
         self.refresh_unlinked_button = QPushButton(Translations["entries.generic.refresh_alt"])
         self.refresh_unlinked_button.clicked.connect(self.refresh_unlinked)
 
-        self.merge_class = MergeDuplicateEntries(self.lib, self.driver)
-        self.relink_class = RelinkUnlinkedEntries(self.tracker)
+        self.merge_class = MergeDuplicateEntriesProgress(self.lib, self.driver)
+        self.relink_class = RelinkUnlinkedEntriesProgress(self.tracker)
 
         self.search_button = QPushButton(Translations["entries.unlinked.search_and_relink"])
         self.relink_class.done.connect(

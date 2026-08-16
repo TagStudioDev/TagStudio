@@ -8,12 +8,12 @@ from tagstudio.core.library.alchemy.library import Library
 # pyright: reportPrivateUsage=false
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.controllers.inspector import Inspector
+from tagstudio.qt.qt_driver import QtDriver
 
 
 def test_update_selection_empty(qt_driver: QtDriver):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Clear the library selection (selecting 1 then unselecting 1)
     qt_driver.toggle_item_selection(1, append=False, bridge=False)
@@ -26,7 +26,7 @@ def test_update_selection_empty(qt_driver: QtDriver):
 
 
 def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Select the single entry
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
@@ -40,7 +40,7 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
 def test_update_selection_multiple(qt_driver: QtDriver):
     # TODO: Implement mixed field editing. Currently these containers will be hidden,
     # same as the empty selection behavior.
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Select the multiple entries
     qt_driver.toggle_item_selection(1, append=False, bridge=False)
@@ -53,7 +53,7 @@ def test_update_selection_multiple(qt_driver: QtDriver):
 
 
 def test_add_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     assert {t.id for t in entry_full.tags} == {1000}
 
@@ -70,7 +70,7 @@ def test_add_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry):
 
 
 def test_add_same_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     assert {t.id for t in entry_full.tags} == {1000}
 
@@ -87,7 +87,7 @@ def test_add_same_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry
 
 
 def test_add_tag_to_selection_multiple(qt_driver: QtDriver):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
     all_entries = qt_driver.lib.all_entries(with_joins=True)
 
     # We want to verify that tag 1000 is on some, but not all entries already.
@@ -127,7 +127,7 @@ def test_add_tag_to_selection_multiple(qt_driver: QtDriver):
 
 
 def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Ensure the Favorite tag is on entry_full
     qt_driver.lib.add_tags_to_entries(1, entry_full.id)
@@ -155,7 +155,7 @@ def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
 
 
 def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Set tag 1000 (foo) as a category
     tag: Tag = unwrap(qt_driver.lib.get_tag(1000))
@@ -190,7 +190,7 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
 def test_exclude_tag_category(
     qt_driver: QtDriver, library: Library, generate_tag: Callable[..., Tag]
 ):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     category_parent = unwrap(generate_tag("category_parent", id=123, is_category=True))
     library.add_tag(category_parent)

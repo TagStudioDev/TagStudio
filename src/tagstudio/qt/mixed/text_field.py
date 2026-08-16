@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel
 from tagstudio.qt.mixed.field_widget import FieldWidget
 
 
+# TODO: Split to use MVC guidelines.
 class TextContainerWidget(FieldWidget):
     def __init__(self, title: str, text: str) -> None:
         super().__init__(title)

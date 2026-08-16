@@ -14,10 +14,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import checkbox_style
+from tagstudio.qt.views.styles.stylesheets import checkbox_style
 
 logger = structlog.get_logger(__name__)
 

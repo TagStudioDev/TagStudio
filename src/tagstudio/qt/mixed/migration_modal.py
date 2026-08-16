@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     IGNORE_NAME,
@@ -42,17 +43,18 @@ from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glo
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.paged_panel_controller import PagedPanel
-from tagstudio.qt.controllers.paged_panel_state import PagedPanelState
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.mixed.paged_body_wrapper import PagedBodyWrapper
+from tagstudio.qt.mixed.paged_panel import PagedPanel
+from tagstudio.qt.mixed.paged_panel_state import PagedPanelState
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.function_iterator import FunctionIterator
-from tagstudio.qt.views.paged_body_wrapper import PagedBodyWrapper
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
 
+@deprecated("This modal will be removed when legacy JSON library support is dropped.")
 class JsonMigrationModal(QObject):
     """A modal for data migration from v9.4 JSON to v9.5+ SQLite."""
 

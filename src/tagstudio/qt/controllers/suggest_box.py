@@ -11,14 +11,14 @@ from PySide6.QtGui import QAction, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.global_settings import GlobalSettings
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
 )
@@ -49,9 +49,7 @@ class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal(str)  # Query
 
-    def __init__(
-        self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
-    ) -> None:
+    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
         super().__init__()
         self._lib = library
         self._settings = settings

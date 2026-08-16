@@ -6,19 +6,13 @@ from typing import override
 
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
-from PySide6.QtGui import (
-    QColor,
-    QEnterEvent,
-    QPainter,
-    QPainterPath,
-    QPaintEvent,
-    QPen,
-)
+from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPainterPath, QPaintEvent, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from tagstudio.qt.models.palette import Palette
+from tagstudio.qt.views.styles.palette import Palette
 
 
+# TODO: Use newer MVC style guidelines
 class ThumbButton(QPushButton):
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)

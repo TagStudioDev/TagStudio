@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-"""A pagination widget created for TagStudio."""
-
 from typing import cast, override
 from warnings import catch_warnings
 
@@ -12,10 +10,11 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QWidget
 
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
 
 
+# TODO: Split to use MVC guidelines.
 class Pagination(QWidget):
     """Widget containing controls for navigating between pages of items."""
 

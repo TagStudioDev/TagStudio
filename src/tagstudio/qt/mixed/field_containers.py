@@ -29,21 +29,22 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
+from tagstudio.qt.controllers.tag_box import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextContainerWidget
-from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
-from tagstudio.qt.views.stylesheets.stylesheets import inset_container_style
+from tagstudio.qt.views.styles.stylesheets import inset_container_style
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class FieldContainers(QWidget):
     """Widget for the tag and field containers displayed inside the Preview Panel."""
 

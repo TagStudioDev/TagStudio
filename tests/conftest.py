@@ -20,8 +20,8 @@ sys.path.insert(0, str(CWD.parent))
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
-from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.qt_driver import QtDriver
+from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 
 
 @pytest.fixture
@@ -154,7 +154,8 @@ def qt_driver(library: Library, library_dir: Path):
         open = library_dir
         ci = True
 
-    with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
+    # NOTE: What the heck is this
+    with patch("tagstudio.qt.qt_driver.Consumer"), patch("tagstudio.qt.qt_driver.CustomRunnable"):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
 
         driver.app = Mock()

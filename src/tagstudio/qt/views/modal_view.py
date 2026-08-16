@@ -6,9 +6,9 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 

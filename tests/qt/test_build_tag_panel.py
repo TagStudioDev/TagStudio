@@ -12,9 +12,9 @@ from pytestqt.qtbot import QtBot
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.build_tag import BuildTagPanel, CustomTableItem
 from tagstudio.qt.mixed.tag_widget import TagWidget
-from tagstudio.qt.translations import Translations
 
 
 def test_build_tag_panel_add_sub_tag_callback(

@@ -11,21 +11,14 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QListView,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.mixed.progress_bar import ProgressWidget
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.progress_bar import ProgressWidget
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -37,6 +30,7 @@ class DuplicateChoice(enum.StrEnum):
     CANCEL = "Cancelled"
 
 
+# TODO: Split to use MVC guidelines.
 class DropImportModal(QWidget):
     DUPE_NAME_LIMT: int = 5
 

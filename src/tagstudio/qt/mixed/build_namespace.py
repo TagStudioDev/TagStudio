@@ -13,13 +13,14 @@ from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceError, slugify
 from tagstudio.core.library.alchemy.models import Namespace
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import line_edit_style
+from tagstudio.qt.views.styles.stylesheets import line_edit_style
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class BuildNamespacePanel(ModalContent):
     on_edit = Signal(Namespace)
 

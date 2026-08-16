@@ -14,11 +14,12 @@ from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Use newer MVC style guidelines
 class TagBoxWidgetView(FieldWidget):
     __lib: Library
 

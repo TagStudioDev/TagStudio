@@ -6,8 +6,8 @@ from PySide6.QtGui import QColor, Qt
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
+from tagstudio.qt.views.styles.stylesheets import (
     get_tag_border_color,
     get_tag_highlight_color,
     get_tag_text_color,
@@ -22,6 +22,7 @@ highlight_color: QColor = get_tag_highlight_color(primary_color)
 text_color: QColor = get_tag_text_color(primary_color, highlight_color)
 
 
+# TODO: Use newer MVC style guidelines
 class FieldTemplateWidgetView(QWidget):
     on_click = Signal()
     on_edit = Signal()

@@ -14,15 +14,15 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, 
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaType
+from tagstudio.i18n.platform_strings import open_file_str, trash_term
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
-from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.rounded_pixmap_style import RoundedPixmapStyle
+from tagstudio.qt.views.styles.rounded_pixmap_style import RoundedPixmapStyle
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -30,6 +30,7 @@ logger = structlog.get_logger(__name__)
 THUMB_SIZE_FACTOR = 2
 
 
+# TODO: Use newer MVC style guidelines
 class PreviewThumbView(QWidget):
     """The Preview Panel Widget."""
 

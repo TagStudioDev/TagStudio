@@ -25,7 +25,7 @@ from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
 
 logger = structlog.get_logger(__name__)
 

@@ -9,18 +9,18 @@ from PySide6.QtCore import QSettings
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems
 from tagstudio.core.library.alchemy.library import LibraryStatus
-from tagstudio.qt.global_settings import GlobalSettings
+from tagstudio.qt.app_settings import AppSettings
 
 
 class TestDriver(DriverMixin):
-    def __init__(self, settings: GlobalSettings, cache: QSettings):
+    def __init__(self, settings: AppSettings, cache: QSettings):
         self.settings = settings
         self.cached_values = cache
 
 
 def test_evaluate_path_empty():
     # Given
-    driver = TestDriver(GlobalSettings(), QSettings())
+    driver = TestDriver(AppSettings(), QSettings())
 
     # When
     result = driver.evaluate_path(None)
@@ -31,7 +31,7 @@ def test_evaluate_path_empty():
 
 def test_evaluate_path_missing():
     # Given
-    driver = TestDriver(GlobalSettings(), QSettings())
+    driver = TestDriver(AppSettings(), QSettings())
 
     # When
     result = driver.evaluate_path("/0/4/5/1/")
@@ -44,7 +44,7 @@ def test_evaluate_path_last_lib_not_exists():
     # Given
     cache = QSettings()
     cache.setValue(AppCacheItems.LAST_LIBRARY, "/0/4/5/1/")
-    driver = TestDriver(GlobalSettings(), cache)
+    driver = TestDriver(AppSettings(), cache)
 
     # When
     result = driver.evaluate_path(None)
@@ -60,7 +60,7 @@ def test_evaluate_path_last_lib_present(library_dir: Path):
     cache.setValue(AppCacheItems.LAST_LIBRARY, library_dir)
     cache.sync()
 
-    settings = GlobalSettings()
+    settings = AppSettings()
     settings.open_last_loaded_on_startup = True
 
     driver = TestDriver(settings, cache)

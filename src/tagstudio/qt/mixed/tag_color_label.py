@@ -10,9 +10,9 @@ from PySide6.QtGui import QAction, QColor, QEnterEvent
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.stylesheets import (
     get_tag_border_color,
     get_tag_highlight_color,
     get_tag_text_color,
@@ -22,11 +22,11 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
 
 
+# TODO: Split to use MVC guidelines.
 class TagColorLabel(QWidget):
     """A widget for displaying a tag color's name.
 

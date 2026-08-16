@@ -23,20 +23,20 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Split to use MVC guidelines.
 class TagColorManager(QWidget):
     create_namespace_modal: Modal | None = None
 

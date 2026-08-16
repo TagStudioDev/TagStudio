@@ -4,7 +4,7 @@
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.qt_driver import QtDriver
 
 
 def test_browsing_state_update(qt_driver: QtDriver):
