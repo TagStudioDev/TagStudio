@@ -14,7 +14,6 @@ from os import makedirs
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import sqlalchemy
 import structlog
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
@@ -1746,30 +1745,12 @@ class Library:
         Args:
             key(str): The key for the name of the version type to set.
         """
-        return Library._get_version(self.engine, key)
-
-    @staticmethod
-    def _get_version(engine, key: str) -> int:
-        with Session(engine) as session:
-            engine = sqlalchemy.inspect(engine)
-            try:
-                # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("versions"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-                # and is set to be removed in a future release.
-                else:
-                    return int(
-                        unwrap(
-                            session.scalar(
-                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
-                            )
-                        )
-                    )
-            except Exception:
+        with Session(self.engine) as session:
+            version = session.scalar(select(Version).where(Version.key == key))
+            if version is None:
+                logger.info(f"[Library] Couldn't get version of type '{key}'")
                 return 0
+            return version.value
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""

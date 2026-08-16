@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import override
 
+import sqlalchemy
 import structlog
 import ujson
 from sqlalchemy import Engine, and_, delete, select, text, update
@@ -46,15 +47,12 @@ class DBMigration:
 
 class DBMigrations:
     def __init__(self, library_dir: Path, engine: Engine) -> None:
-        # TODO: Remove local import and don't make calls to private methods.
-        from tagstudio.core.library.alchemy.library import Library
-
         self.library_dir = library_dir
         self.engine = engine
 
         # Don't check DB version when creating new library
-        self.loaded_db_version = Library._get_version(engine, DB_VERSION_CURRENT_KEY)
-        self.initial_db_version = Library._get_version(engine, DB_VERSION_INITIAL_KEY)
+        self.loaded_db_version = self._get_version(DB_VERSION_CURRENT_KEY)
+        self.initial_db_version = self._get_version(DB_VERSION_INITIAL_KEY)
 
         # ======================== Library Database Version Checking =======================
         # DB_VERSION 6 is the first supported SQLite DB version.
@@ -135,6 +133,28 @@ class DBMigrations:
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
+
+    def _get_version(self, key: str) -> int:
+        with Session(self.engine) as session:
+            inspector = sqlalchemy.inspect(self.engine)
+            try:
+                # "Version" table added in DB_VERSION 101
+                if inspector and inspector.has_table("versions"):
+                    version = session.scalar(select(Version).where(Version.key == key))
+                    assert version
+                    return version.value
+                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+                # and is set to be removed in a future release.
+                else:
+                    return int(
+                        unwrap(
+                            session.scalar(
+                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
+                            )
+                        )
+                    )
+            except Exception:
+                return 0
 
     def _set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
