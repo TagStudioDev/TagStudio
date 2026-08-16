@@ -329,7 +329,7 @@ class BuildTagPanel(ModalContent):
     def _remove_parent_tag_callback(self, tag_id: int):
         self.parent_ids.remove(tag_id)
         self.set_parent_tags()
-        self.set_categories(removed_parent_id=tag_id)
+        self.set_categories(removed_parent=True)
 
     def _create_alias_callback(self):
         alias = TagAlias("", tag_id=self.tag.id)
@@ -356,9 +356,7 @@ class BuildTagPanel(ModalContent):
             self.tag_color_slug = None
         self.color_button.set_tag_color_group(tag_color_group)
 
-    def set_categories(
-        self, added_parent_id: int | None = None, removed_parent_id: int | None = None
-    ):
+    def set_categories(self, added_parent_id: int | None = None, removed_parent: bool = False):
         while self.category_scroll_layout.itemAt(0):
             self.category_scroll_layout.takeAt(0).widget().deleteLater()
 
@@ -367,17 +365,13 @@ class BuildTagPanel(ModalContent):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
 
-        if removed_parent_id is not None:
+        if removed_parent:
             tags_by_category: dict[Tag, set[Tag]] = {}
             hierarchy = set(self._lib.get_tag_hierarchy(self.parent_ids).values())
             for tag in hierarchy:
-                if self._is_removed_parent(tag):
-                    continue
                 if tag.is_category:
                     tags_by_category[tag] = set()
             for tag in hierarchy:
-                if self._is_removed_parent(tag):
-                    continue
                 for parent in self._lib.get_tag_hierarchy([tag.id]).values():
                     if parent in tags_by_category:
                         if tag == parent and parent.id not in self.parent_ids:
@@ -403,9 +397,6 @@ class BuildTagPanel(ModalContent):
                 layout.addWidget(container)
                 self.setTabOrder(last_tab, next_tab)
         self.category_scroll_layout.addWidget(c)
-
-    def _is_removed_parent(self, tag: Tag) -> bool:
-        return tag in self.tag.parent_tags and tag.id not in self.parent_ids
 
     def _build_category_row_widget(self, category: Tag) -> tuple[QPushButton, QCheckBox, QWidget]:
         container = QWidget()
