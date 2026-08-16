@@ -9,7 +9,7 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
-### 9.6.3 <small>August 15th, 2026</small>
+## 9.6.3 <small>August 15th, 2026</small>
 
 This update includes some critical library bugfixes along with a handful QoL tweaks and additions to the tag/field search bars. The [documentation](https://docs.tagstud.io/usage/#tagging) on this feature has been updated to include the new improvements.
 
