@@ -3,9 +3,6 @@
 
 
 from pathlib import Path
-from time import time
-
-from PySide6.QtWidgets import QApplication
 
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 
@@ -16,9 +13,8 @@ def test_json_migration():
     modal = JsonMigrationModal(CWD.parent / "fixtures" / "json_library")
     modal.migrate(skip_ui=True)
 
-    start = time()
-    while not modal.done and (time() - start < 60):
-        QApplication.processEvents()
+    for _ in modal.migration_iterator():
+        pass
 
     # Entries ==================================================================
     # Count
