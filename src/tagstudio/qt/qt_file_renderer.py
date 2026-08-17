@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap, Qt
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.previews.renderer import FileRenderer
+from tagstudio.previews.file_renderer import FileRenderer
 from tagstudio.qt.app_settings import AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
 
