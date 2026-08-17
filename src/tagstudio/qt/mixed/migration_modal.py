@@ -361,6 +361,11 @@ class JsonMigrationModal(QObject):
 
         try:
             iterator = FunctionIterator(self.migration_iterator)
+
+            if skip_ui:
+                iterator.run()
+                return
+
             iterator.value.connect(lambda x: pb.setLabelText(header(x, 4)))
             r = CustomRunnable(iterator.run)
             r.done.connect(
