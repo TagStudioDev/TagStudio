@@ -3,7 +3,6 @@
 
 
 from pathlib import Path
-from time import time
 
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 
@@ -13,10 +12,6 @@ CWD = Path(__file__)
 def test_json_migration():
     modal = JsonMigrationModal(CWD.parent / "fixtures" / "json_library")
     modal.migrate(skip_ui=True)
-
-    start = time()
-    while not modal.done and (time() - start < 60):
-        pass
 
     # Entries ==================================================================
     # Count
