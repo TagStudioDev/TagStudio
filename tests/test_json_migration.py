@@ -13,9 +13,6 @@ def test_json_migration():
     modal = JsonMigrationModal(CWD.parent / "fixtures" / "json_library")
     modal.migrate(skip_ui=True)
 
-    for _ in modal.migration_iterator():
-        pass
-
     # Entries ==================================================================
     # Count
     assert len(modal.json_lib.entries) == modal.sql_lib.entries_count
