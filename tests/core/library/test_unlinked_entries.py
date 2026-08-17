@@ -17,7 +17,7 @@ CWD = Path(__file__).parent
 
 # NOTE: Does this test actually work?
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_refresh_missing_files(library: Library):
+def test_refresh_unlinked_entries(library: Library):
     registry = UnlinkedRegistry(lib=library)
 
     # touch the file `one/two/bar.md` but in wrong location to simulate a moved file

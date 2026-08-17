@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from PySide6.QtWidgets import QScrollArea
+from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.fields import TextField
 
@@ -144,6 +145,12 @@ def entry_min(library: Library):
 @pytest.fixture
 def entry_full(library: Library):
     yield next(library.all_entries(with_joins=True))
+
+
+@pytest.fixture(autouse=True)
+def _init_qtbot(qtbot: QtBot):  # pyright: ignore[reportUnusedFunction]
+    """Ensures that a QtBot is initialized for all subsequent tests, regardless of order."""
+    return qtbot
 
 
 @pytest.fixture

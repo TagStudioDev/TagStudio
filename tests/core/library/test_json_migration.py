@@ -10,7 +10,7 @@ CWD = Path(__file__)
 
 
 def test_json_migration():
-    modal = JsonMigrationModal(CWD.parent / "fixtures" / "json_library")
+    modal = JsonMigrationModal(CWD.parents[2] / "fixtures" / "json_library")
     modal.migrate(skip_ui=True)
 
     # Entries ==================================================================

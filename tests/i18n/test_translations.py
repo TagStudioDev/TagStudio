@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import ujson as json
 
-CWD = Path(__file__).parent
+CWD = Path(__file__).parents[1]
 TRANSLATION_DIR = CWD / ".." / "src" / "tagstudio" / "resources" / "translations"
 
 

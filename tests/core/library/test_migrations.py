@@ -21,16 +21,16 @@ EMPTY_LIBRARIES = "empty_libraries"
 @pytest.mark.parametrize(
     "path",
     [
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_6")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_7")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_8")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_9")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_100")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_101")),
-        # str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_102")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_103")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_200")),
-        str(Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_201")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_6")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_7")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_8")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_9")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_100")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_101")),
+        # str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_102")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_103")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_200")),
+        str(Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_201")),
     ],
 )
 def test_library_migrations(path: str):
@@ -38,7 +38,7 @@ def test_library_migrations(path: str):
 
     # Copy libraries to temp dir so modifications don't show up in version control
     original_path = Path(path)
-    temp_path = Path(CWD.parent / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_TEMP")
+    temp_path = Path(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_TEMP")
     temp_path.mkdir(exist_ok=True)
     temp_path_ts = temp_path / TS_FOLDER_NAME
     temp_path_ts.mkdir(exist_ok=True)
