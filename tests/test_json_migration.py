@@ -5,6 +5,8 @@
 from pathlib import Path
 from time import time
 
+from PySide6.QtWidgets import QApplication
+
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 
 CWD = Path(__file__)
@@ -16,7 +18,7 @@ def test_json_migration():
 
     start = time()
     while not modal.done and (time() - start < 60):
-        pass
+        QApplication.processEvents()
 
     # Entries ==================================================================
     # Count

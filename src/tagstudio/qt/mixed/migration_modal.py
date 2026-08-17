@@ -361,20 +361,11 @@ class JsonMigrationModal(QObject):
 
         try:
             iterator = FunctionIterator(self.migration_iterator)
-            iterator.value.connect(
-                lambda x: (
-                    pb.setLabelText(header(x, 4)),
-                    self.update_sql_value_ui(show_msg_box=False)
-                    if x == Translations["json_migration.checking_for_parity"]
-                    else (),
-                    self.update_parity_ui()
-                    if x == Translations["json_migration.checking_for_parity"]
-                    else (),
-                )
-            )
+            iterator.value.connect(lambda x: pb.setLabelText(header(x, 4)))
             r = CustomRunnable(iterator.run)
             r.done.connect(
                 lambda: (
+                    self.update_parity_ui(),
                     self.update_sql_value_ui(show_msg_box=not skip_ui),
                     pb.setMinimum(1),
                     pb.setValue(1),
@@ -423,7 +414,6 @@ class JsonMigrationModal(QObject):
                 yield Translations["json_migration.migration_complete"]
             else:
                 yield Translations["json_migration.migration_complete_with_discrepancies"]
-            self.update_parity_ui()
             QApplication.beep()
             QApplication.alert(self.paged_panel)
             self.done = True
