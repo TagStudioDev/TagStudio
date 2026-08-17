@@ -7,9 +7,8 @@
 import gzip
 import os
 import struct
-from io import BufferedReader
-from typing import BinaryIO
 from pathlib import Path
+from typing import BinaryIO
 
 from PIL import Image, ImageOps
 
@@ -19,14 +18,14 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
     TEST: bytes = b"TEST"
     ENDB: bytes = b"ENDB"
 
-    blendfile: BinaryIO | None = None
+    blendfile: BinaryIO | gzip.GzipFile | None = None
     raw_file: BinaryIO | None = None
 
     try:
         # --------------------------------------------------------------
         # Open file.
         # --------------------------------------------------------------
-        raw_file: BufferedReader = open(path, "rb")
+        raw_file = open(path, "rb")
 
         # Legacy header = 12 bytes
         # Blender 5+   = 17 bytes
@@ -95,6 +94,7 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             sizeof_bhead: int = 32
             large_bhead: bool = True
 
+            int_endian: str = "<"
             int_endian_pair: str = "<ii"
 
         # --------------------------------------------------------------
