@@ -138,8 +138,6 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
         # Walk the BHeads until we find TEST.
         # --------------------------------------------------------------
         while True:
-            block_offset: int = blendfile.tell()
-
             bhead: bytes = blendfile.read(sizeof_bhead)
 
             # ENDB is a special partial BHead.
@@ -161,18 +159,6 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
                     "<Q",
                     bhead,
                     16,
-                )[0]
-
-                sdna: int = struct.unpack_from(
-                    "<I",
-                    bhead,
-                    4,
-                )[0]
-
-                count: int = struct.unpack_from(
-                    "<Q",
-                    bhead,
-                    24,
                 )[0]
 
             # ----------------------------------------------------------
@@ -275,5 +261,5 @@ def blend_thumb(file_in: Path | str) -> Image.Image | None:
     # Upscale Image so it looks better at higher resolutions.
     width, height = image.size
     ratio = height / width
-    image = image.resize((512, round(512 * ratio)), Image.BICUBIC)
+    image = image.resize((512, round(512 * ratio)), Image.Resampling.BICUBIC)
     return image
