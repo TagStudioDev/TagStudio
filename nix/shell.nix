@@ -118,7 +118,7 @@ pkgs.mkShellNoCC {
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          uv pip install --quiet --editable . --group docs --group extra --group test
+          uv pip install --quiet --editable . --group docs --group extra --group reuse --group test
           cp pyproject.toml "''${venv}"/pyproject.toml
       fi
 

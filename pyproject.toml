@@ -57,7 +57,11 @@ check = [{ include-group = "lint" }, { include-group = "test" }]
 build = [{ include-group = "pyinstaller" }]
 docs = [{ include-group = "mkdocs" }]
 extra = [{ include-group = "pre-commit" }]
-lint = [{ include-group = "pyright" }, { include-group = "ruff" }]
+lint = [
+    { include-group = "pyright" },
+    { include-group = "reuse" },
+    { include-group = "ruff" },
+]
 test = [{ include-group = "pytest" }]
 
 mkdocs = [
@@ -75,6 +79,7 @@ pytest = [
     "pytest-qt==4.4.0",
     "syrupy==5.1.0",
 ]
+reuse = ["reuse==6.*"]
 ruff = ["ruff==0.15.17"]
 
 [tool.hatch.build.targets.wheel]
