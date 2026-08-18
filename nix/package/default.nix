@@ -96,7 +96,6 @@ python3Packages.buildPythonApplication {
   dependencies =
     with python3Packages;
     [
-      audioop-lts
       chardet_5
       ffmpeg-python
       humanfriendly
@@ -121,6 +120,7 @@ python3Packages.buildPythonApplication {
       ujson
       wcmatch
     ]
+    ++ lib.optional (pythonAtLeast "3.13") audioop-lts
     ++ lib.optional withJXLSupport pillow-jxl-plugin;
 
   # These tests require modifications to a library, which does not work

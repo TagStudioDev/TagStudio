@@ -29,35 +29,54 @@
       systems = import inputs.systems;
 
       perSystem =
-        { pkgs, ... }:
+        { pkgs, self', ... }:
         let
-          python3 = pkgs.python313;
+          python3 = builtins.head python3Versions;
+          python3Versions = with pkgs; [
+            python313
+            python312
+          ];
         in
         {
           packages =
             let
-              python3Packages = python3.pkgs;
+              pythonDerivations = lib.genAttrs' python3Versions (
+                python3:
+                lib.nameValuePair python3.pythonAttr (
+                  let
+                    python3Packages = python3.pkgs;
 
-              pillow-jxl-plugin = python3Packages.callPackage ./nix/package/pillow-jxl-plugin.nix {
-                inherit (pkgs) cmake;
-                inherit pyexiv2;
-              };
-              pyexiv2 = python3Packages.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
+                    tagstudio = pkgs.callPackage ./nix/package {
+                      inherit python3Packages;
+
+                      inherit pillow-jxl-plugin;
+                    };
+
+                    pillow-jxl-plugin = python3Packages.callPackage ./nix/package/pillow-jxl-plugin.nix {
+                      inherit (pkgs) cmake;
+                      inherit pyexiv2;
+                    };
+                    pyexiv2 = python3Packages.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
+                  in
+                  {
+                    inherit tagstudio;
+                    tagstudio-jxl = tagstudio.override { withJXLSupport = true; };
+
+                    inherit pillow-jxl-plugin pyexiv2;
+                  }
+                )
+              );
             in
-            rec {
-              default = tagstudio;
-              tagstudio = pkgs.callPackage ./nix/package {
-                inherit python3Packages;
-
-                inherit pillow-jxl-plugin;
-              };
-              tagstudio-jxl = tagstudio.override { withJXLSupport = true; };
-
-              inherit pillow-jxl-plugin pyexiv2;
+            (lib.concatMapAttrs (
+              pythonAttr: lib.mapAttrs' (name: lib.nameValuePair "${pythonAttr}Packages_${name}")
+            ) pythonDerivations)
+            // pythonDerivations.${python3.pythonAttr}
+            // {
+              default = self'.packages.tagstudio;
             };
 
-          devShells = rec {
-            default = tagstudio;
+          devShells = {
+            default = self'.devShells.tagstudio;
             tagstudio = import ./nix/shell.nix {
               inherit
                 inputs
