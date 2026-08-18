@@ -14,7 +14,7 @@ license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.14,<=3.15"
 dependencies = [
-    "audioop-lts; python_version >= '3.13'",
+    "audioop-lts~=0.2.2",
     "chardet~=5.2",
     "ffmpeg-python~=0.2",
     "humanfriendly==10.*",
