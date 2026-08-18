@@ -17,15 +17,15 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.platform_strings import open_file_str, trash_term
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.platform_strings import open_file_str, trash_term
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
 from tagstudio.qt.views.layouts.flow_layout import FlowWidget
 from tagstudio.qt.views.thumb_button import ThumbButton
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.models import Entry
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -60,6 +60,7 @@ def badge_update_lock(func):
     return wrapper
 
 
+# TODO: Split to use MVC guidelines.
 class ItemThumb(FlowWidget):
     """The thumbnail widget for a library item (Entry, Entry Group, etc.)."""
 

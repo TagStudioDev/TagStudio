@@ -9,13 +9,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Use newer MVC style guidelines
 class FixIgnoredEntriesModalView(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()

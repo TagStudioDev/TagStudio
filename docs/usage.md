@@ -24,7 +24,7 @@ TagStudio automatically scans for new or updated files when opening a library by
 
 ## :material-tag-text: Tagging
 
-With one or more file entries selected, you can **search for** or **create a new tag** by clicking the "Add Tag" button at the bottom of the preview panel or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>.
+With one or more file entries selected, you can **search for** or **create a new tag** by clicking the "Add Tag" button at the bottom of the inspector or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>.
 
 This will open the the **"Tag Bar"**, a combination search/creation bar that is designed to allow you to quickly create and apply tags that don't exist yet, find and apply existing tags from your library, and verify if certain tags already exist and/or are applied to your selection.
 

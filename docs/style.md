@@ -50,7 +50,7 @@ TagStudio provides an [EditorConfig](https://editorconfig.org/#example-file) fil
 ### :material-tag: TagStudio Systems
 
 - Translation keys can be accessed via bracket notation (e.g. `Translations["translation_key"]`) or with the `Translations.format()` method when a value needs to be passed to a placeholder in the translation.
-- Avoid passing around the `QtDriver` class where possible. Instead, pass only the necessary components such as the `Library` and `GlobalSettings` instances.
+- Avoid passing around the `QtDriver` class where possible. Instead, pass only the necessary components such as the `Library` and `AppSettings` instances.
 - Use HTML-like tags inside strings over explicit stylesheets where possible. The `Style` class provides several handy methods for formatting text with these.
 - Use the `format` method in the stylesheets class to format text headers.
 
@@ -138,7 +138,7 @@ qt/
 │   # Frontend classes that aren't related to widgets, like managers
 ├── resource_manager.py
 ├── cache_manager.py
-├── ts_qt.py # Qt Driver
+├── qt_driver.py
 └── ...
 ```
 

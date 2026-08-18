@@ -10,6 +10,8 @@ from tagstudio.qt.views.underlined_widget_view import UnderlinedWidgetView
 
 
 class UnderlinedWidget(QWidget):
+    """A container for a widget and an underline indicator."""
+
     def __init__(self, widget: QWidget) -> None:
         super().__init__()
         self.setLayout(UnderlinedWidgetView(widget))

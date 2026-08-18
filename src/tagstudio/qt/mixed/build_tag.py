@@ -29,15 +29,15 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
+from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_widget import TagWidget
-from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.search_panel_view import SearchPanelView
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.stylesheets import (
     checkbox_style,
     colored_checkbox_style,
     colored_radio_button_style,
@@ -77,6 +77,7 @@ class CustomTableItem(QLineEdit):
             super().keyPressEvent(arg__1)
 
 
+# TODO: Split to use MVC guidelines.
 class BuildTagPanel(ModalContent):
     on_edit = Signal(Tag)
 

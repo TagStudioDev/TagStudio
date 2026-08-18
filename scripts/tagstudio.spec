@@ -41,7 +41,7 @@ datafiles = [
 ]
 
 a = Analysis(
-    [Path(project_root, "main.py")],
+    [Path(project_root, "__main__.py")],
     pathex=[],
     binaries=[],
     datas=datafiles,

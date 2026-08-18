@@ -11,20 +11,20 @@ from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
-from tagstudio.qt.controllers.field_template_widget_controller import FieldTemplateWidget
+from tagstudio.qt.controllers.field_template_widget import FieldTemplateWidget
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.global_settings import GlobalSettings
-from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
 
 class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
-    def __init__(self, library: Library, settings: GlobalSettings, placeholder_text: str = ""):
+    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = ""):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions

@@ -7,25 +7,18 @@ from typing import TYPE_CHECKING, override
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QListView,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
-from tagstudio.qt.mixed.progress_bar import ProgressWidget
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.progress_bar import ProgressWidget
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Split to use MVC guidelines.
 class RemoveUnlinkedEntriesModal(QWidget):
     done = Signal()
 

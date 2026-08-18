@@ -9,13 +9,14 @@ from tagstudio.core.library.alchemy.fields import (
     DatetimeFieldTemplate,
     TextFieldTemplate,
 )
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.views.edit_field_template_modal_view import EditFieldTemplateModalView
-from tagstudio.qt.views.stylesheets.stylesheets import line_edit_style
+from tagstudio.qt.views.styles.stylesheets import line_edit_style
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Use newer MVC style guidelines
 class EditFieldTemplateModal(EditFieldTemplateModalView):
     field_type_map: dict[str, str] = {
         "TextFieldTemplate": Translations["field_type.text"],

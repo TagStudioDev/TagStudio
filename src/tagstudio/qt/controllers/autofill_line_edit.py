@@ -6,13 +6,9 @@ from typing import override
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QPoint, Signal
-from PySide6.QtWidgets import (
-    QLineEdit,
-    QMenu,
-    QWidget,
-)
+from PySide6.QtWidgets import QLineEdit, QMenu, QWidget
 
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.stylesheets import (
     autofill_scroll_top_focus_style,
     autofill_scroll_top_style,
 )

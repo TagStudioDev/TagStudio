@@ -5,7 +5,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.qt.views.stylesheets.stylesheets import widget_underline_style
+from tagstudio.qt.views.styles.stylesheets import widget_underline_style
 
 
 class UnderlinedWidgetView(QVBoxLayout):

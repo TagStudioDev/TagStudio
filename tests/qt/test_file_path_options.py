@@ -17,9 +17,9 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.qt_driver import QtDriver
 
 
 # Tests to see if the file path setting is applied correctly
@@ -62,7 +62,7 @@ def test_file_path_display(
     filepath_option: ShowFilepathOption,
     expected_path: Callable[[Library], Path],
 ):
-    panel = PreviewPanel(qt_driver)
+    panel = Inspector(qt_driver)
 
     # Select 2
     qt_driver.toggle_item_selection(2, append=False, bridge=False)

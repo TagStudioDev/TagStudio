@@ -21,13 +21,14 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.utils.file_opener import FileOpenerHelper, FileOpenerLabel
-from tagstudio.qt.views.stylesheets.stylesheets import properties_style
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.file_opener_label import FileOpenerLabel
+from tagstudio.qt.utils.file_opener import FileOpenerHelper
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.stylesheets import properties_style
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -39,9 +40,8 @@ class FileAttributeData:
     duration: int | None = None
 
 
+# TODO: Split to use MVC guidelines.
 class FileAttributes(QWidget):
-    """The Preview Panel Widget."""
-
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
         root_layout = QVBoxLayout(self)

@@ -12,13 +12,14 @@ from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.stylesheets.stylesheets import container_style, header
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import container_style, header
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class FieldContainer(QWidget):
     rm: ResourceManager = ResourceManager()
     copy_icon = auto_theme_overlay(rm.copy, inverse=True)

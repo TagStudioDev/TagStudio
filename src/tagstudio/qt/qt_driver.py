@@ -1,0 +1,1805 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
+# SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
+# https://github.com/arsenetar/dupeguru/blob/master/run.py#L71
+
+
+"""A Qt driver for TagStudio."""
+
+import ctypes
+import math
+import os
+import platform
+import re
+import sys
+import time
+from argparse import Namespace
+from collections import OrderedDict
+from functools import partial
+from pathlib import Path
+from queue import Queue
+from typing import TypeVar
+from warnings import catch_warnings
+
+import structlog
+from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtGui import (
+    QColor,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QFontDatabase,
+    QGuiApplication,
+    QIcon,
+    QMouseEvent,
+    QPalette,
+)
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
+
+import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
+from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VERSION
+from tagstudio.core.driver import DriverMixin
+from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
+from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
+from tagstudio.core.library.alchemy.library import Library, LibraryStatus
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.library.refresh import RefreshTracker
+from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.query_lang.util import ParsingError
+from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.module_status import ModuleStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
+from tagstudio.core.utils.str_formatting import is_version_outdated
+from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.platform_strings import trash_term
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
+from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
+from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
+from tagstudio.qt.controllers.ignore_modal import IgnoreModal
+from tagstudio.qt.controllers.library_info_window import LibraryInfoWindow
+from tagstudio.qt.controllers.main_window import MainWindow
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.progress_bar import ProgressWidget
+from tagstudio.qt.controllers.splash import SplashScreen
+from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
+from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
+from tagstudio.qt.mixed.about_modal import AboutModal
+from tagstudio.qt.mixed.build_tag import BuildTagPanel
+from tagstudio.qt.mixed.drop_import_modal import DropImportModal
+from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
+from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
+from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
+from tagstudio.qt.mixed.item_thumb import BadgeType
+from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.settings_panel import SettingsPanel
+from tagstudio.qt.mixed.tag_color_manager import TagColorManager
+from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.file_deleter import delete_file
+from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.views.search_panel_view import SearchPanelView
+from tagstudio.qt.views.styles.palette import ColorType, Palette, UiColor, get_ui_color
+from tagstudio.qt.views.styles.stylesheets import header
+
+BADGE_TAGS = {
+    BadgeType.FAVORITE: TAG_FAVORITE,
+    BadgeType.ARCHIVED: TAG_ARCHIVED,
+}
+
+
+# SIGQUIT is not defined on Windows
+if sys.platform == "win32":
+    from signal import SIGINT, SIGTERM, signal
+
+    SIGQUIT = SIGTERM  # pyright: ignore
+else:
+    from signal import SIGINT, SIGQUIT, SIGTERM, signal  # pyright: ignore
+
+logger = structlog.get_logger(__name__)
+
+
+def clamp(value, lower_bound, upper_bound):
+    return max(lower_bound, min(upper_bound, value))
+
+
+class Consumer(QThread):
+    MARKER_QUIT = "MARKER_QUIT"
+
+    def __init__(self, queue) -> None:
+        self.queue = queue
+        QThread.__init__(self)
+
+    def run(self):
+        while True:
+            try:
+                job = self.queue.get()
+                if job == self.MARKER_QUIT:
+                    break
+                job[0](*job[1])
+            except RuntimeError:
+                pass
+
+
+T = TypeVar("T")
+
+
+# Ex. User visits | A ->[B]     |
+#                 | A    B ->[C]|
+#                 | A   [B]<- C |
+#                 |[A]<- B    C |  Previous routes still exist
+#                 | A ->[D]     |  Stack is cut from [:A] on new route
+class History[T]:
+    __history: list[T]
+    __index: int = 0
+
+    def __init__(self, initial_value: T):
+        self.__history = [initial_value]
+        super().__init__()
+
+    def erase_future(self) -> None:
+        self.__history = self.__history[: self.__index + 1]
+
+    def push(self, value: T) -> None:
+        self.erase_future()
+        self.__history.append(value)
+        self.__index = len(self.__history) - 1
+
+    def move(self, delta: int):
+        self.__index = clamp(self.__index + delta, 0, len(self.__history) - 1)
+
+    @property
+    def current(self) -> T:
+        return self.__history[self.__index]
+
+
+class QtDriver(DriverMixin, QObject):
+    """A Qt GUI frontend driver for TagStudio."""
+
+    SIGTERM = Signal()
+
+    # TODO: If these signals are removed from the base QtDriver, we can probably get rid of the
+    # QObject multiple inheritance and make DriverMixin a proper BaseDriver class.
+    favorite_updated = Signal(bool)
+    archived_updated = Signal(bool)
+
+    tag_manager: Modal | None = None
+    color_manager_panel: TagColorManager | None = None
+    field_template_manager: Modal | None = None
+    ignore_modal: Modal | None = None
+    add_tag_modal: Modal | None = None
+    add_field_modal: Modal | None = None
+    folders_modal: FoldersToTagsModal
+    about_modal: AboutModal
+    unlinked_modal: FixUnlinkedEntriesModal
+    ignored_modal: FixIgnoredEntriesModal
+    dupe_modal: FixDupeFilesModal
+    library_info_window: LibraryInfoWindow
+
+    applied_theme: Theme
+
+    lib: Library
+    cache_manager: CacheManager | None = None
+
+    browsing_history: History[BrowsingState]
+
+    def __init__(self, args: Namespace):
+        super().__init__()
+        # prevent recursive badges update when multiple items selected
+        self.badge_update_lock = False
+        self.lib = Library()
+        self.rm: ResourceManager = ResourceManager()
+        self.args = args
+        self.frame_content: list[int] = []  # List of Entry IDs for the current query
+        self._selected: OrderedDict[int, None] = OrderedDict()
+        self.pages_count = 0
+
+        self.scrollbar_pos = 0
+        self.spacing = None
+
+        self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
+        self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
+        # self.title_text: str = self.base_title
+        # self.buffer = {}
+        self.thumb_job_queue: Queue = Queue()
+        self.thumb_threads: list[Consumer] = []
+
+        self.SIGTERM.connect(self.handle_sigterm)
+
+        self.global_settings_path = DEFAULT_GLOBAL_SETTINGS_PATH
+        if self.args.settings_file:
+            self.global_settings_path = Path(self.args.settings_file)
+        else:
+            logger.info("[Settings] Global Settings File Path not specified, using default")
+        self.settings = AppSettings.read_settings(self.global_settings_path)
+        if not self.global_settings_path.exists():
+            logger.warning(
+                "[Settings] Global Settings File does not exist creating",
+                path=self.global_settings_path,
+            )
+        self.applied_theme = self.settings.theme
+
+        self.__reset_navigation()
+
+        if self.args.cache_file:
+            path = Path(self.args.cache_file)
+            if not path.exists():
+                logger.warning("[Cache] Cache File does not exist creating", path=path)
+            logger.info("[Cache] Using Cache File", path=path)
+            self.cached_values = QSettings(str(path), QSettings.Format.IniFormat)
+        else:
+            self.cached_values = QSettings(
+                QSettings.Format.IniFormat,
+                QSettings.Scope.UserScope,
+                "TagStudio",
+                "TagStudio",
+            )
+            logger.info(
+                "[Cache] Cache File not specified, using default one",
+                filename=self.cached_values.fileName(),
+            )
+
+        Translations.change_language(self.settings.language)
+
+    @property
+    def selected(self) -> list[int]:
+        return list(self._selected.keys())
+
+    @property
+    def last_selected(self) -> int | None:
+        if len(self._selected) == 0:
+            return None
+        return reversed(self._selected).__next__()
+
+    def __reset_navigation(self) -> None:
+        self.browsing_history = History(BrowsingState.show_all())
+
+    def init_workers(self):
+        """Init workers for rendering thumbnails."""
+        if not self.thumb_threads:
+            max_threads = os.cpu_count() or 1
+            for i in range(max_threads):
+                thread = Consumer(self.thumb_job_queue)
+                thread.setObjectName(f"ThumbRenderer_{i}")
+                self.thumb_threads.append(thread)
+                thread.start()
+
+    def open_library_from_dialog(self):
+        dir = QFileDialog.getExistingDirectory(
+            parent=None,
+            caption=Translations["window.title.open_create_library"],
+            dir=str(Path.home()),
+            options=QFileDialog.Option.ShowDirsOnly,
+        )
+        if dir not in (None, ""):
+            self.open_library(Path(dir))
+
+    def signal_handler(self, sig, frame):
+        if sig in (SIGINT, SIGTERM, SIGQUIT):
+            self.SIGTERM.emit()
+
+    def setup_signals(self):
+        signal(SIGINT, self.signal_handler)
+        signal(SIGTERM, self.signal_handler)
+        signal(SIGQUIT, self.signal_handler)
+
+    def start(self) -> None:
+        """Launch the main Qt window."""
+        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
+            sys.argv += ["-platform", "windows:darkmode=2"]
+        self.app = QApplication(sys.argv)
+        self.app.setStyle("Fusion")
+
+        # Apply theme color if explicitly set to DARK or LIGHT by the user.
+        # For SYSTEM, we let Qt decide based on OS theme.
+        if self.settings.theme == Theme.DARK:
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        elif self.settings.theme == Theme.LIGHT:
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+        pal: QPalette = self.app.palette()
+        # BUG: Changing the palette in any way here seems to affect the accent colors of certain
+        # widgets, like QLineEdit focused borders and QComboBox highlighted items and borders.
+        # Need to figure out the cause of this.
+        if (
+            platform.system() == "Darwin" or platform.system() == "Windows"
+        ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipBase, QColor("#1e1e1e")
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ToolTipText, QColor("#FFFFFF")
+            )
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
+            )
+        # BUG: PySide isn't properly setting the link colors on Windows, so this is a fallback.
+        if platform.system() == "Windows":
+            pal.setColor(
+                QPalette.ColorGroup.Normal,
+                QPalette.ColorRole.Link,
+                QColor.fromString(get_ui_color(ColorType.PRIMARY, UiColor.BLUE)),
+            )
+        Palette.set_palette(pal)
+        self.app.setPalette(pal)
+
+        # Handle OS signals
+        self.setup_signals()
+        # allow to process input from console, eg. SIGTERM
+        timer = QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)
+
+        # Detect optional modules and versions for logging
+        self.log_optional_modules()
+
+        # self.main_window = loader.load(home_path)
+        self.main_window = MainWindow(self)
+        self.main_window.setWindowTitle(self.base_title)
+        self.main_window.mousePressEvent = self.mouse_navigation
+        self.main_window.dragEnterEvent = self.drag_enter_event
+        self.main_window.dragMoveEvent = self.drag_move_event
+        self.main_window.dropEvent = self.drop_event
+
+        self.splash: SplashScreen = SplashScreen(
+            resource_manager=self.rm,
+            screen_width=QGuiApplication.primaryScreen().geometry().width(),
+            splash_name=self.settings.splash,
+            device_ratio=self.main_window.devicePixelRatio(),
+        )
+        self.splash.show()
+
+        if os.name == "nt":
+            appid = "cyanvoxel.tagstudio.9"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+
+        self.app.setApplicationName("tagstudio")
+        self.app.setApplicationDisplayName("TagStudio")
+        if platform.system() != "Darwin":
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            self.app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
+
+            if platform.system() != "Windows":
+                self.app.setDesktopFileName("tagstudio")
+
+        tsp_view = SearchPanelView(
+            placeholder_text=Translations["home.search_tags"],
+            create_text=Translations["tag.create"],
+            is_chooser=False,
+        )
+        tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
+        tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
+        self.tag_manager.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
+            )
+        )
+
+        # Initialize the Color Group Manager panel
+        self.color_manager_panel = TagColorManager(self)
+
+        # Initialize the Field Template Manager panel
+        self.field_template_manager = Modal(
+            content_widget=FieldTemplateSearchPanel(
+                self.lib,
+                is_chooser=False,
+                view=SearchPanelView(Translations["home.search_field_templates"], is_chooser=False),
+            ),
+            title=Translations["field_template_manager.title"],
+            is_savable=False,
+        )
+        self.field_template_manager.done.connect(
+            lambda checked=False: self.main_window.preview_panel.set_selection(
+                self.selected, update_preview=False
+            )
+        )
+
+        # TODO: Remove/replace this with a suite of persistently visible tagging panels, including
+        # tag search. These will be docked on the left-hand side of the main window.
+
+        # Initialize the "Add Tag" panel
+        add_tag_tsp_view = SearchPanelView(placeholder_text=Translations["home.search_tags"])
+        add_tag_tsp = TagSearchPanel(self.lib, view=add_tag_tsp_view)
+        add_tag_tsp.search_for_tag.connect(self.search_for_tag_callback)
+        self.add_tag_modal = Modal(add_tag_tsp, Translations["tag.add.plural"])
+        add_tag_tsp.item_chosen.connect(
+            lambda chosen_tag: (
+                self.add_tags_to_selected_callback([chosen_tag]),
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False),
+            )
+        )
+
+        # region Menu Bar
+
+        # region File Menu ============================================================
+        # Open/Create Library
+        self.main_window.menu_bar.open_library_action.triggered.connect(
+            self.open_library_from_dialog
+        )
+
+        # Open Recent
+        self.update_recent_lib_menu()
+
+        # Save Library Backup
+        self.main_window.menu_bar.save_library_backup_action.triggered.connect(
+            lambda: self.call_if_library_open(self.backup_library)
+        )
+
+        # Settings
+        self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
+
+        # Open Library on Start
+        self.main_window.menu_bar.open_on_start_action.setChecked(
+            self.settings.open_last_loaded_on_startup
+        )
+
+        def set_open_last_loaded_on_startup(checked: bool):
+            self.settings.open_last_loaded_on_startup = checked
+            self.settings.save()
+
+        self.main_window.menu_bar.open_on_start_action.triggered.connect(
+            set_open_last_loaded_on_startup
+        )
+
+        # Refresh Directories
+        self.main_window.menu_bar.refresh_dir_action.triggered.connect(
+            lambda: self.call_if_library_open(self.add_new_files_callback)
+        )
+
+        # Close Library
+        self.main_window.menu_bar.close_library_action.triggered.connect(self.close_library)
+
+        # endregion
+
+        # region Edit Menu ============================================================
+        self.main_window.menu_bar.new_tag_action.triggered.connect(
+            lambda: self.add_tag_action_callback()
+        )
+
+        self.main_window.menu_bar.select_all_action.triggered.connect(
+            self.select_all_action_callback
+        )
+
+        self.main_window.menu_bar.select_inverse_action.triggered.connect(
+            self.select_inverse_action_callback
+        )
+
+        self.main_window.menu_bar.clear_select_action.triggered.connect(
+            self.clear_select_action_callback
+        )
+
+        self.copy_buffer: dict = {"fields": [], "tags": []}
+
+        self.main_window.menu_bar.copy_fields_action.triggered.connect(
+            self.copy_fields_action_callback
+        )
+
+        self.main_window.menu_bar.paste_fields_action.triggered.connect(
+            self.paste_fields_action_callback
+        )
+
+        self.main_window.menu_bar.add_tag_to_selected_action.triggered.connect(
+            self.add_tag_modal.show
+        )
+
+        self.main_window.menu_bar.delete_file_action.triggered.connect(
+            lambda f="": self.delete_files_callback(f)
+        )
+
+        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager.show)
+
+        self.main_window.menu_bar.color_manager_action.triggered.connect(
+            self.color_manager_panel.show
+        )
+
+        self.main_window.menu_bar.field_template_manager_action.triggered.connect(
+            self.field_template_manager.show
+        )
+
+        # endregion
+
+        # region View Menu ============================================================
+
+        def create_library_info_window():
+            if not hasattr(self, "library_info_window"):
+                self.library_info_window = LibraryInfoWindow(self.lib, self)
+            self.library_info_window.show()
+
+        self.main_window.menu_bar.library_info_action.triggered.connect(create_library_info_window)
+
+        def on_show_filenames_action(checked: bool):
+            self.settings.show_filenames_in_grid = checked
+            self.settings.save()
+            self.show_grid_filenames(checked)
+
+        self.main_window.menu_bar.show_filenames_action.triggered.connect(on_show_filenames_action)
+        self.main_window.menu_bar.show_filenames_action.setChecked(
+            self.settings.show_filenames_in_grid
+        )
+
+        def on_decrease_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
+            on_decrease_thumbnail_size_action
+        )
+
+        def on_increase_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
+            if not new_val < 0:
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
+            on_increase_thumbnail_size_action
+        )
+
+        # endregion
+
+        # region Tools Menu ===========================================================
+
+        def create_fix_unlinked_entries_modal():
+            if not hasattr(self, "unlinked_modal"):
+                self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
+            self.unlinked_modal.show()
+
+        self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
+            create_fix_unlinked_entries_modal
+        )
+
+        def create_ignored_entries_modal():
+            if not hasattr(self, "ignored_modal"):
+                self.ignored_modal = FixIgnoredEntriesModal(self.lib, self)
+            self.ignored_modal.show()
+
+        self.main_window.menu_bar.fix_ignored_entries_action.triggered.connect(
+            create_ignored_entries_modal
+        )
+
+        def create_dupe_files_modal():
+            if not hasattr(self, "dupe_modal"):
+                self.dupe_modal = FixDupeFilesModal(self.lib, self)
+            self.dupe_modal.show()
+
+        self.main_window.menu_bar.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
+
+        # TODO: Move this to a settings screen.
+        self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
+            lambda: unwrap(self.cache_manager).clear_cache()
+        )
+
+        # endregion
+
+        # region Macros Menu ==========================================================
+        def create_folders_tags_modal():
+            if not hasattr(self, "folders_modal"):
+                self.folders_modal = FoldersToTagsModal(self.lib, self)
+            self.folders_modal.show()
+
+        self.main_window.menu_bar.folders_to_tags_action.triggered.connect(
+            create_folders_tags_modal
+        )
+
+        # endregion
+
+        # region Help Menu ============================================================
+        def create_about_modal():
+            if not hasattr(self, "about_modal"):
+                self.about_modal = AboutModal(self.global_settings_path)
+            self.about_modal.show()
+
+        self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
+
+        # endregion
+
+        # endregion
+
+        self.main_window.search_field.textChanged.connect(self.update_completions_list)
+
+        def on_visible_changed(entry_id: int | None):
+            current = self.browsing_history.current
+            page_index = current.page_index
+            if entry_id is None:
+                current.page_positions.pop(page_index)
+            else:
+                current.page_positions[page_index] = entry_id
+
+        self.main_window.thumb_layout.visible_changed.connect(on_visible_changed)
+
+        self.archived_updated.connect(
+            lambda hidden: self.update_badges(
+                {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
+            )
+        )
+        self.favorite_updated.connect(
+            lambda hidden: self.update_badges(
+                {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
+            )
+        )
+
+        QFontDatabase.addApplicationFont(
+            str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
+        )
+
+        self.init_library_window()
+        self.migration_modal: JsonMigrationModal | None = None
+
+        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
+        if path_result.success and path_result.library_path:
+            self.open_library(path_result.library_path)
+        elif self.settings.open_last_loaded_on_startup:
+            # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
+            path_result = self.evaluate_path(None)
+            if path_result.success and path_result.library_path:
+                self.open_library(path_result.library_path)
+
+        self.main_window.search_field.setFocus()
+
+        self.check_for_update()
+        self.app.exec()
+        self.shutdown()
+
+    def show_error_message(self, error_name: str, error_desc: str | None = None):
+        self.main_window.status_bar.showMessage(error_name, Qt.AlignmentFlag.AlignLeft)
+        self.main_window.landing_widget.set_status_label(error_name)
+        self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Critical)
+        msg_box.setText(error_name)
+        if error_desc:
+            msg_box.setInformativeText(error_desc)
+        msg_box.setWindowTitle(Translations["window.title.error"])
+        msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
+
+        # Show the message box
+        msg_box.exec()
+
+    def init_library_window(self):
+        # self._init_landing_page() # Taken care of inside the widget now
+
+        # TODO: Put this into its own method that copies the font file(s) into memory
+        # so the resource isn't being used, then store the specific size variations
+        # in a global dict for methods to access for different DPIs.
+        # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
+
+        def _update_browsing_state():
+            try:
+                self.update_browsing_state(
+                    BrowsingState.from_search_query(self.main_window.search_field.text())
+                    .with_sorting_mode(self.main_window.sorting_mode)
+                    .with_sorting_direction(self.main_window.sorting_direction)
+                    .with_show_hidden_entries(self.main_window.show_hidden_entries)
+                )
+            except ParsingError as e:
+                self.main_window.status_bar.showMessage(
+                    f"{Translations['status.results.invalid_syntax']} "
+                    f'"{self.main_window.search_field.text()}"'
+                )
+                logger.error("[QtDriver] Could not update BrowsingState", error=e)
+
+        # Search Button
+        self.main_window.search_button.clicked.connect(_update_browsing_state)
+
+        # Search Field
+        self.main_window.search_field.returnPressed.connect(_update_browsing_state)
+
+        # Sorting Dropdowns
+        self.main_window.sorting_mode_combobox.setCurrentIndex(
+            list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
+        )
+        self.main_window.sorting_mode_combobox.currentIndexChanged.connect(
+            self.sorting_mode_callback
+        )
+
+        self.main_window.sorting_direction_combobox.currentIndexChanged.connect(
+            self.sorting_direction_callback
+        )
+
+        # Thumbnail Size ComboBox
+        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        self.main_window.thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
+        )
+
+        # Exclude hidden entries checkbox
+        self.main_window.show_hidden_entries_checkbox.setChecked(False)  # Default: No
+        self.main_window.show_hidden_entries_checkbox.stateChanged.connect(
+            self.show_hidden_entries_callback
+        )
+
+        self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
+        self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
+
+        # NOTE: Putting this early will result in a white non-responsive
+        # window until everything is loaded. Consider adding a splash screen
+        # or implementing some clever loading tricks.
+        self.main_window.show()
+        self.main_window.activateWindow()
+        self.main_window.toggle_landing_page(enabled=True)
+
+        self.main_window.pagination.index.connect(lambda i: self.page_move(i, absolute=True))
+
+        self.splash.finish(self.main_window)
+
+    def init_ignore_modal(self):
+        """Initialize the Ignore Files panel."""
+        if self.ignore_modal:
+            with catch_warnings(record=True):
+                self.main_window.menu_bar.ignore_modal_action.triggered.disconnect()
+                self.ignore_modal.saved.disconnect()
+            self.ignore_modal.deleteLater()
+            self.ignore_modal = None
+
+        panel = IgnoreModal(self.lib)
+        self.ignore_modal = Modal(
+            panel,
+            Translations["menu.edit.ignore_files"],
+            is_savable=True,
+        )
+        self.ignore_modal.saved.connect(panel.save)
+        self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
+
+    def show_grid_filenames(self, value: bool):
+        for thumb in self.main_window.thumb_layout._item_thumbs:
+            thumb.set_filename_visibility(value)
+
+    def call_if_library_open(self, func):
+        """Check if loaded library has valid path before executing the button function."""
+        if self.lib.library_dir:
+            func()
+
+    def handle_sigterm(self):
+        self.shutdown()
+
+    def shutdown(self):
+        """Save Library on Application Exit."""
+        self.close_library(is_shutdown=True)
+        logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
+        for _ in self.thumb_threads:
+            self.thumb_job_queue.put(Consumer.MARKER_QUIT)
+
+        # wait for threads to quit
+        for thread in self.thumb_threads:
+            thread.quit()
+            thread.wait()
+
+        QApplication.quit()
+
+    def close_library(self, is_shutdown: bool = False):
+        if not self.lib.library_dir:
+            logger.info("No Library to Close")
+            return
+
+        logger.info("Closing Library...")
+        self.main_window.status_bar.showMessage(Translations["status.library_closing"])
+        start_time = time.time()
+
+        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.sync()
+
+        # Reset library state
+        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.search_field.setText("")
+        scrollbar: QScrollArea = self.main_window.entry_scroll_area
+        scrollbar.verticalScrollBar().setValue(0)
+        self.__reset_navigation()
+
+        self.lib.close()
+        self.cache_manager = None
+
+        self.thumb_job_queue.queue.clear()
+        if is_shutdown:
+            # no need to do other things on shutdown
+            return
+
+        self.main_window.setWindowTitle(self.base_title)
+
+        self.frame_content.clear()
+        self._selected.clear()
+        if self.color_manager_panel:
+            self.color_manager_panel.reset()
+
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+
+        if hasattr(self, "library_info_window"):
+            self.library_info_window.close()
+
+        self.main_window.thumb_layout.set_entries([])
+        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.pagination.setHidden(True)
+        try:
+            self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
+            self.main_window.menu_bar.close_library_action.setEnabled(False)
+            self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
+            self.main_window.menu_bar.tag_manager_action.setEnabled(False)
+            self.main_window.menu_bar.color_manager_action.setEnabled(False)
+            self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
+            self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
+            self.main_window.menu_bar.new_tag_action.setEnabled(False)
+            self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
+            self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(False)
+            self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
+            self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
+            self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
+            self.main_window.menu_bar.library_info_action.setEnabled(False)
+        except AttributeError:
+            logger.warning(
+                "[Library] Could not disable library management menu actions. Is this in a test?"
+            )
+
+        # NOTE: Doesn't try to disable during tests
+        if self.main_window.menu_bar.add_tag_to_selected_action:
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
+
+        end_time = time.time()
+        self.main_window.status_bar.showMessage(
+            Translations.format(
+                "status.library_closed", time_span=format_timespan(end_time - start_time)
+            )
+        )
+
+    def backup_library(self):
+        logger.info("Backing Up Library...")
+        self.main_window.status_bar.showMessage(Translations["status.library_backup_in_progress"])
+        start_time = time.time()
+        target_path = Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
+        end_time = time.time()
+        self.main_window.status_bar.showMessage(
+            Translations.format(
+                "status.library_backup_success",
+                path=target_path,
+                time_span=format_timespan(end_time - start_time),
+            )
+        )
+
+    def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
+        """Emit any connected signals for updating badge icons."""
+        logger.info("[emit_badge_signals] Emitting", tag_ids=tag_ids, emit_on_absent=emit_on_absent)
+        if TAG_ARCHIVED in tag_ids:
+            self.archived_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.archived_updated.emit(False)  # noqa: FBT003
+
+        if TAG_FAVORITE in tag_ids:
+            self.favorite_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.favorite_updated.emit(False)  # noqa: FBT003
+
+    def add_tag_action_callback(self):
+        panel = BuildTagPanel(self.lib)
+        self.modal = Modal(
+            panel,
+            Translations["tag.new"],
+            Translations["tag.create"],
+            is_savable=True,
+        )
+
+        self.modal.saved.connect(
+            lambda: (
+                self.lib.add_tag(
+                    panel.build_tag(),
+                    set(panel.parent_ids),
+                    set(panel.aliases),
+                    set(panel.exclusion_ids),
+                ),
+                self.modal.hide(),
+            )
+        )
+        self.modal.show()
+
+    def search_for_tag_callback(self, tag_id: int) -> None:
+        """Callback to search for a given Tag ID."""
+        self.main_window.search_field.setText(f"tag_id:{tag_id}")
+        self.update_browsing_state(BrowsingState.from_tag_id(tag_id, self.browsing_history.current))
+
+    def select_all_action_callback(self):
+        """Set the selection to all visible items."""
+        self.select_all()
+
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+
+    def select_inverse_action_callback(self):
+        """Invert the selection of all visible items."""
+        self.select_inverse()
+
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+
+    def clear_select_action_callback(self):
+        self.clear_selected()
+
+        self.set_select_actions_visibility()
+        self.set_clipboard_menu_viability()
+        self.main_window.preview_panel.set_selection(self.selected)
+
+    def add_tags_to_selected_callback(self, tag_ids: list[int]):
+        selected: list[int] = self.selected
+        self.main_window.thumb_layout.add_tags(selected, tag_ids)
+        self.lib.add_tags_to_entries(selected, tag_ids)
+        self.emit_badge_signals(tag_ids, emit_on_absent=False)
+
+    def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
+        """Callback to send on or more files to the system trash.
+
+        If 0-1 items are currently selected, the origin_path is used to delete the file
+        from the originating context menu item.
+        If there are currently multiple items selected,
+        then the selection buffer is used to determine the files to be deleted.
+
+        Args:
+            origin_path(str): The file path associated with the widget making the call.
+                May or may not be the file targeted, depending on the selection rules.
+            origin_id(id): The entry ID associated with the widget making the call.
+        """
+        entry: Entry | None = None
+        pending: list[tuple[int | None, Path]] = []
+        deleted_count: int = 0
+
+        selected = self.selected
+        library_dir = unwrap(self.lib.library_dir)
+
+        if len(selected) <= 1 and origin_path:
+            origin_id_ = origin_id
+            if origin_id_ is None:
+                origin_id_ = selected[0] if len(selected) > 0 else None
+
+            pending.append((origin_id_, Path(origin_path)))
+        else:
+            for item in selected:
+                entry = unwrap(self.lib.get_entry(item))
+                filepath: Path = entry.path
+                pending.append((item, filepath))
+
+        if pending:
+            return_code = self.delete_file_confirmation(len(pending), pending[0][1])
+            # If there was a confirmation and not a cancellation
+            if (
+                return_code == QMessageBox.ButtonRole.DestructiveRole.value
+                and return_code != QMessageBox.ButtonRole.ActionRole.value
+            ):
+                for i, tup in enumerate(pending):
+                    e_id, f = tup
+                    if (origin_path == f) or (not origin_path):
+                        self.main_window.preview_panel.stop_media_playback()
+
+                    msg = Translations.format(
+                        "status.deleting_file", i=i, count=len(pending), path=f
+                    )
+                    self.main_window.status_bar.showMessage(msg)
+                    self.main_window.status_bar.repaint()
+
+                    if e_id is not None:
+                        self.lib.remove_entries([e_id])
+                    if delete_file(library_dir / f):
+                        deleted_count += 1
+
+        self.clear_select_action_callback()
+        self.update_browsing_state()
+
+        if deleted_count > 0 and deleted_count != len(pending):
+            msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
+        else:
+            index = min(deleted_count, 2)
+            msg = (
+                Translations["status.deleted_none"],
+                Translations["status.deleted_file_singular"],
+                Translations.format("status.deleted_file_plural", count=deleted_count),
+            )[index]
+        self.main_window.status_bar.showMessage(msg)
+        self.main_window.status_bar.repaint()
+
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        """A confirmation dialogue box for deleting files.
+
+        Args:
+            count(int): The number of files to be deleted.
+            filename(Path | None): The filename to show if only one file is to be deleted.
+        """
+        # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the
+        # Recycle Bin. This is done without any warning, so this message is currently the
+        # best way I've got to inform the user.
+        # https://github.com/arsenetar/send2trash/issues/28
+        # This warning is applied to all platforms until at least macOS and Linux can be verified
+        # to not exhibit this same behavior.
+        perm_warning_msg = Translations.format(
+            "trash.dialog.permanent_delete_warning", trash_term=trash_term()
+        )
+        perm_warning: str = header(
+            perm_warning_msg, 4, get_ui_color(ColorType.PRIMARY, UiColor.RED)
+        )
+
+        msg = QMessageBox()
+        msg.setStyleSheet("font-weight:normal;")
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setWindowTitle(
+            Translations["trash.title.singular"]
+            if count == 1
+            else Translations["trash.title.plural"]
+        )
+        msg.setIcon(QMessageBox.Icon.Warning)
+        if count <= 1:
+            msg_text = Translations.format(
+                "trash.dialog.move.confirmation.singular", trash_term=trash_term()
+            )
+            msg.setText(
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.singular'], 4)}"
+                f"{filename if filename else ''}"
+                f"{perm_warning}<br>"
+            )
+        elif count > 1:
+            msg_text = Translations.format(
+                "trash.dialog.move.confirmation.plural",
+                count=count,
+                trash_term=trash_term(),
+            )
+            msg.setText(
+                f"{header(msg_text, 3)}"
+                f"{header(Translations['trash.dialog.disambiguation_warning.plural'], 4)}"
+                f"{perm_warning}<br>"
+            )
+
+        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg.setDefaultButton(yes_button)
+
+        return msg.exec()
+
+    def add_new_files_callback(self):
+        """Run when user initiates adding new files to the Library."""
+        tracker = RefreshTracker(self.lib)
+
+        pw = ProgressWidget(
+            cancel_button_text=None,
+            minimum=0,
+            maximum=0,
+        )
+        pw.setWindowTitle(Translations["library.refresh.title"])
+        pw.update_label(Translations["library.refresh.scanning_preparing"])
+        pw.show()
+
+        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
+        iterator.value.connect(
+            lambda x: (
+                pw.update_progress(x + 1),
+                pw.update_label(
+                    Translations.format(
+                        "library.refresh.scanning.plural"
+                        if x + 1 != 1
+                        else "library.refresh.scanning.singular",
+                        searched_count=f"{x + 1:n}",
+                        found_count=f"{tracker.files_count:n}",
+                    )
+                ),
+            )
+        )
+        r = CustomRunnable(iterator.run)
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.add_new_files_runnable(tracker),
+            )
+        )
+        QThreadPool.globalInstance().start(r)
+
+    def add_new_files_runnable(self, tracker: RefreshTracker):
+        """Adds any known new files to the library and run default macros on them.
+
+        Threaded method.
+        """
+        files_count = tracker.files_count
+
+        iterator = FunctionIterator(tracker.save_new_files)
+        pw = ProgressWidget(
+            cancel_button_text=None,
+            minimum=0,
+            maximum=0,
+        )
+        pw.setWindowTitle(Translations["entries.running.dialog.title"])
+        pw.update_label(
+            Translations.format("entries.running.dialog.new_entries", total=f"{files_count:n}")
+        )
+        pw.show()
+
+        iterator.value.connect(
+            lambda _count: (
+                pw.update_label(
+                    Translations.format(
+                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
+                    )
+                ),
+            )
+        )
+        r = CustomRunnable(iterator.run)
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                # refresh the library only when new items are added
+                files_count and self.update_browsing_state(),
+            )
+        )
+        QThreadPool.globalInstance().start(r)
+
+    def new_file_macros_runnable(self, new_ids):
+        """Threaded method that runs macros on a set of Entry IDs."""
+        # for i, id in enumerate(new_ids):
+        # 	# pb.setValue(i)
+        # 	# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
+        # 	# self.run_macro('autofill', id)
+        yield 0
+
+    def run_macros(self, name: MacroID, entry_ids: list[int]):
+        """Run a specific Macro on a group of given entry_ids."""
+        for entry_id in entry_ids:
+            self.run_macro(name, entry_id)
+
+    def run_macro(self, name: MacroID, entry_id: int):
+        """Run a specific Macro on an Entry given a Macro name."""
+        entry: Entry = unwrap(self.lib.get_entry(entry_id))
+        source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
+
+        logger.info(
+            "running macro",
+            source=source,
+            macro=name,
+            entry_id=entry.id,
+            grid_idx=entry_id,
+        )
+
+        if name == MacroID.AUTOFILL:
+            for macro_id in MacroID:
+                if macro_id == MacroID.AUTOFILL:
+                    continue
+                self.run_macro(macro_id, entry_id)
+
+    def sorting_direction_callback(self):
+        logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
+        self.update_browsing_state(
+            self.browsing_history.current.with_sorting_direction(self.main_window.sorting_direction)
+        )
+
+    def sorting_mode_callback(self):
+        logger.info("Sorting Mode Changed", mode=self.main_window.sorting_mode)
+        self.update_browsing_state(
+            self.browsing_history.current.with_sorting_mode(self.main_window.sorting_mode)
+        )
+
+    def thumb_size_callback(self, size: int):
+        """Perform actions needed when the thumbnail size selection is changed."""
+        spacing_divisor: int = 10
+        min_spacing: int = 12
+
+        self.update_thumbs()
+        blank_icon: QIcon = QIcon()
+        for it in self.main_window.thumb_layout._item_thumbs:
+            it.thumb_button.setIcon(blank_icon)
+            it.resize(self.main_window.thumb_size, self.main_window.thumb_size)
+            it.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
+            it.setFixedSize(self.main_window.thumb_size, self.main_window.thumb_size)
+            it.thumb_button.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
+            it.set_filename_visibility(it.show_filename_label)
+        self.main_window.thumb_layout.setSpacing(
+            min(self.main_window.thumb_size // spacing_divisor, min_spacing)
+        )
+
+    def show_hidden_entries_callback(self):
+        logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
+        self.update_browsing_state(
+            self.browsing_history.current.with_show_hidden_entries(
+                self.main_window.show_hidden_entries
+            )
+        )
+
+    def mouse_navigation(self, event: QMouseEvent):
+        # print(event.button())
+        if event.button() == Qt.MouseButton.ForwardButton:
+            self.navigation_callback(1)
+        elif event.button() == Qt.MouseButton.BackButton:
+            self.navigation_callback(-1)
+
+    def page_move(self, value: int, absolute=False) -> None:
+        logger.info("page_move", value=value, absolute=absolute)
+
+        current = self.browsing_history.current
+        if not absolute:
+            current.page_index += value
+        else:
+            current.page_index = value
+        current.page_index = clamp(current.page_index, 0, self.pages_count - 1)
+
+        # TODO: The back mouse button will no longer move to the previous page and
+        # instead goto the previous query passing a new state to update_browsing_state
+        # will get this behaviour back but would mess with persisting page scroll positions
+        self.update_browsing_state()
+
+    def navigation_callback(self, delta: int) -> None:
+        """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
+        logger.info(
+            "navigation_callback",
+            delta=delta,
+        )
+
+        self.browsing_history.move(delta)
+
+        self.update_browsing_state()
+
+    def copy_fields_action_callback(self):
+        if len(self.selected) > 0:
+            entry = self.lib.get_entry_full(self.selected[0])
+            if entry:
+                self.copy_buffer["fields"] = entry.fields
+                self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
+        self.set_clipboard_menu_viability()
+
+    def paste_fields_action_callback(self):
+        for id in self.selected:
+            entry = self.lib.get_entry_full(id, with_fields=True, with_tags=False)
+            if not entry:
+                continue
+            existing_fields = entry.fields
+            for field in self.copy_buffer["fields"]:
+                exists = False
+                for e in existing_fields:
+                    if field == e:
+                        exists = True
+                if not exists:
+                    self.lib.add_field_to_entries(id, field=field)
+            self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
+        if len(self.selected) > 1:
+            if TAG_ARCHIVED in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.ARCHIVED: True}, origin_id=0, add_tags=False)
+            if TAG_FAVORITE in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
+        else:
+            self.main_window.preview_panel.set_selection(self.selected)
+
+    def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
+        """Toggle the selection of an item in the Thumbnail Grid.
+
+        If an item is not selected, this selects it. If an item is already selected, this will
+        deselect it as long as append and bridge are False.
+
+        Args:
+            item_id(int): The ID of the item/entry to select.
+            append(bool): Whether or not to add this item to the previous selection
+                or to restart the selection with this item.
+                Setting to True acts like "Ctrl + Click" selecting.
+            bridge(bool): Whether or not to select items in the visual range of the last item
+                selected and this current item.
+                Setting to True acts like "Shift + Click" selecting.
+        """
+        logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
+        if append:
+            self.select_entry(item_id)
+        elif bridge:
+            self.select_to_entry(item_id)
+        else:
+            self.clear_selected()
+            self.select_entry(item_id)
+
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+
+        self.main_window.preview_panel.set_selection(self.selected)
+
+    def set_clipboard_menu_viability(self):
+        if len(self.selected) == 1:
+            self.main_window.menu_bar.copy_fields_action.setEnabled(True)
+        else:
+            self.main_window.menu_bar.copy_fields_action.setEnabled(False)
+        if self.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
+            self.main_window.menu_bar.paste_fields_action.setEnabled(True)
+        else:
+            self.main_window.menu_bar.paste_fields_action.setEnabled(False)
+
+    def set_select_actions_visibility(self):
+        if not self.main_window.menu_bar.add_tag_to_selected_action:
+            return
+
+        if self.frame_content:
+            self.main_window.menu_bar.select_all_action.setEnabled(True)
+            self.main_window.menu_bar.select_inverse_action.setEnabled(True)
+        else:
+            self.main_window.menu_bar.select_all_action.setEnabled(False)
+            self.main_window.menu_bar.select_inverse_action.setEnabled(False)
+
+        if self.selected:
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(True)
+            self.main_window.menu_bar.clear_select_action.setEnabled(True)
+            self.main_window.menu_bar.delete_file_action.setEnabled(True)
+        else:
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
+            self.main_window.menu_bar.clear_select_action.setEnabled(False)
+            self.main_window.menu_bar.delete_file_action.setEnabled(False)
+
+    def update_completions_list(self, text: str) -> None:
+        matches = re.search(
+            r"((?:.* )?)(mediatype|filetype|path|tag|tag_id):(\"?[A-Za-z0-9\ \t]+\"?)?", text
+        )
+
+        completion_list: list[str] = []
+        if len(text) < 3:
+            completion_list = [
+                "mediatype:",
+                "filetype:",
+                "path:",
+                "tag:",
+                "tag_id:",
+                "special:untagged",
+            ]
+            self.main_window.search_field_completion_list.setStringList(completion_list)
+
+        if not matches:
+            return
+
+        query_type: str
+        query_value: str | None
+        prefix, query_type, query_value = matches.groups()
+
+        if not query_value:
+            return
+
+        if query_type == "tag":
+            completion_list = list(map(lambda x: prefix + "tag:" + x.name, self.lib.tags))
+        elif query_type == "tag_id":
+            completion_list = list(map(lambda x: prefix + "tag_id:" + str(x.id), self.lib.tags))
+        elif query_type == "path":
+            completion_list = list(
+                map(lambda x: prefix + "path:" + x, self.lib.get_paths(limit=100))
+            )
+        elif query_type == "mediatype":
+            single_word_completions = map(
+                lambda x: prefix + "mediatype:" + x.name,
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            single_word_completions_quoted = map(
+                lambda x: prefix + 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            multi_word_completions = map(
+                lambda x: prefix + 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+
+            all_completions = [
+                single_word_completions,
+                single_word_completions_quoted,
+                multi_word_completions,
+            ]
+            completion_list = [j for i in all_completions for j in i]
+        elif query_type == "filetype":
+            extensions_list: set[str] = set()
+            for media_cat in MediaCategories.ALL_CATEGORIES:
+                extensions_list = extensions_list | media_cat.extensions
+            completion_list = list(
+                map(lambda x: prefix + "filetype:" + x.replace(".", ""), extensions_list)
+            )
+
+        update_completion_list: bool = (
+            completion_list != self.main_window.search_field_completion_list.stringList()
+            or self.main_window.search_field_completion_list == []
+        )
+        if update_completion_list:
+            self.main_window.search_field_completion_list.setStringList(completion_list)
+
+    def update_thumbs(self):
+        """Update search thumbnails."""
+        with self.thumb_job_queue.mutex:
+            # Cancels all thumb jobs waiting to be started
+            self.thumb_job_queue.queue.clear()
+            self.thumb_job_queue.all_tasks_done.notify_all()
+            self.thumb_job_queue.not_full.notify_all()
+
+        page_size = (
+            len(self.frame_content) if self.settings.infinite_scroll else self.settings.page_size
+        )
+        page = self.browsing_history.current.page_index
+        start = page * page_size
+        end = min(start + page_size, len(self.frame_content))
+
+        self.main_window.thumb_layout.set_entries(self.frame_content[start:end])
+        self.main_window.thumb_layout.update()
+        self.main_window.update()
+
+    def update_badges(self, badge_values: dict[BadgeType, bool], origin_id: int, add_tags=True):
+        """Update the tag badges for item_thumbs.
+
+        Args:
+            badge_values(dict[BadgeType, bool]): The BadgeType and associated viability state.
+            origin_id(int): The ID of the item_thumb calling this method. If the ID is found as a
+                part of the current selection, or if the ID is 0, the the entire current selection
+                will be updated. Otherwise, only item_thumbs with that ID will be updated.
+            add_tags(bool): Flag determining if tags associated with the badges need to be added to
+                the items. Defaults to True.
+        """
+        entry_ids = (
+            set(self._selected.keys())
+            if (origin_id == 0 or origin_id in self._selected)
+            else {origin_id}
+        )
+
+        logger.info(
+            "[QtDriver][update_badges] Updating ItemThumb badges",
+            badge_values=badge_values,
+            origin_id=origin_id,
+            add_tags=add_tags,
+        )
+        for it in self.main_window.thumb_layout._item_thumbs:
+            if it.item_id in entry_ids:
+                for badge_type, value in badge_values.items():
+                    if add_tags:
+                        it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
+                    it.assign_badge(badge_type, value)
+
+        if not add_tags:
+            return
+
+        logger.info(
+            "[QtDriver][update_badges] Adding tags to updated entries",
+            pending_entries=entry_ids,
+        )
+        for badge_type, value in badge_values.items():
+            tag_ids = [BADGE_TAGS[badge_type]]
+
+            if value:
+                self.main_window.thumb_layout.add_tags(entry_ids, tag_ids)
+                self.lib.add_tags_to_entries(entry_ids, tag_ids)
+            else:
+                self.main_window.thumb_layout.remove_tags(entry_ids, tag_ids)
+                self.lib.remove_tags_from_entries(entry_ids, tag_ids)
+
+    def update_browsing_state(self, state: BrowsingState | None = None) -> None:
+        """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
+        if not self.lib.library_dir:
+            logger.info("Library not loaded")
+            return
+
+        if state:
+            self.browsing_history.push(state)
+
+        self.main_window.search_field.setText(self.browsing_history.current.query or "")
+
+        # inform user about running search
+        self.main_window.status_bar.showMessage(Translations["status.library_search_query"])
+        self.main_window.status_bar.repaint()
+
+        # search the library
+        start_time = time.time()
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
+        results = self.lib.search_library(self.browsing_history.current, page_size=0)
+        logger.info("items to render", count=len(results))
+        end_time = time.time()
+
+        # inform user about completed search
+        self.main_window.status_bar.showMessage(
+            Translations.format(
+                "status.results_found",
+                count=results.total_count,
+                time_span=format_timespan(end_time - start_time),
+            )
+        )
+
+        # update page content
+        self.frame_content = results.ids
+        page_index = self.browsing_history.current.page_index
+        if state is None:
+            entry_id = self.browsing_history.current.page_positions.get(page_index)
+        else:
+            entry_id = self.last_selected
+        if entry_id is not None:
+            self.main_window.thumb_layout.scroll_to(entry_id)
+        self.update_thumbs()
+
+        # update pagination
+        page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
+        if page_size > 0:
+            self.pages_count = math.ceil(results.total_count / page_size)
+        else:
+            self.pages_count = 1
+        self.main_window.pagination.update_buttons(
+            self.pages_count, self.browsing_history.current.page_index, emit=False
+        )
+
+    def remove_recent_library(self, item_key: str):
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
+        self.cached_values.remove(item_key)
+        self.cached_values.endGroup()
+        self.cached_values.sync()
+
+    def update_libs_list(self, path: Path | str):
+        """Add library to list in SettingItems.LIBS_LIST."""
+        item_limit: int = 10
+        path = Path(path)
+
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
+
+        all_libs = {str(time.time()): str(path)}
+
+        for item_key in self.cached_values.allKeys():
+            item_path = str(self.cached_values.value(item_key, type=str))
+            if Path(item_path) != path:
+                all_libs[item_key] = item_path
+
+        # sort items, most recent first
+        all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
+
+        # remove previously saved items
+        self.cached_values.remove("")
+
+        for item_key, item_value in all_libs_list[:item_limit]:
+            self.cached_values.setValue(item_key, item_value)
+
+        self.cached_values.endGroup()
+        self.cached_values.sync()
+        self.update_recent_lib_menu()
+
+    def update_recent_lib_menu(self):
+        """Updates the recent library menu from the latest values from the settings file."""
+        lib_items: dict[str, tuple[str, str]] = {}
+
+        # get recent libraries sorted by timestamp
+        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
+        for item_tstamp in self.cached_values.allKeys():
+            val = str(self.cached_values.value(item_tstamp, type=str))
+            cut_val = val
+            if len(val) > 45:
+                cut_val = f"{val[0:10]} ... {val[-10:]}"
+            lib_items[item_tstamp] = (val, cut_val)
+
+        # Sort lib_items by the key
+        libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
+        self.cached_values.endGroup()
+
+        self.main_window.menu_bar.rebuild_open_recent_library_menu(
+            [Path(key[1][0]) for key in libs_sorted],
+            self.settings.show_filepath,  # TODO: once QtDriver is a Singleton remove this parameter
+            self.open_library,
+            self.clear_recent_libs,
+        )
+
+    def clear_recent_libs(self):
+        """Clear the list of recent libraries from the settings file."""
+        cache = self.cached_values
+        cache.beginGroup(AppCacheItems.LIBS_LIST)
+        self.cached_values.remove("")
+        self.cached_values.endGroup()
+        self.cached_values.sync()
+        self.update_recent_lib_menu()
+
+    def open_settings_modal(self):
+        SettingsPanel.build_modal(self).show()
+
+    def check_for_update(self):
+        """Check for an update to TagStudio and display a message box if there is one."""
+        latest_version = TagStudioCore.get_most_recent_release_version()
+        if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
+            return
+
+        if latest_version and is_version_outdated(VERSION, latest_version):
+            update_box = UpdateAvailableMessageBox()
+            update_box.button(QMessageBox.StandardButton.Ignore).clicked.connect(
+                partial(self.dismiss_update, str(latest_version))
+            )
+            update_box.exec()
+
+    def dismiss_update(self, version: str):
+        """Dismiss an update notification for a specific new version of TagStudio."""
+        self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
+
+    def open_library(self, path: Path) -> None:
+        """Open a TagStudio library."""
+        library_dir_display = (
+            path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+        )
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
+        self.main_window.landing_widget.set_status_label(message)
+        self.main_window.status_bar.showMessage(message, 3)
+        self.main_window.repaint()
+
+        if self.lib.library_dir:
+            self.close_library()
+
+        open_status: LibraryStatus | None = None
+        try:
+            open_status = self.lib.open_library(path)
+        except ValueError as e:
+            logger.warning(e)
+            open_status = LibraryStatus(
+                success=False,
+                library_path=path,
+                message=Translations["menu.file.missing_library.title"],
+                msg_description=Translations.format(
+                    "menu.file.missing_library.message", library=library_dir_display
+                ),
+            )
+        except Exception as e:
+            logger.error(e)
+            open_status = LibraryStatus(
+                success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
+            )
+        self.cache_manager = CacheManager(
+            path,
+            max_size=self.settings.thumb_cache_size,
+            img_quality=self.settings.cached_thumb_quality,
+        )
+        cache_size = self.settings.thumb_cache_size * self.cache_manager.STAT_MULTIPLIER
+        logger.info(
+            f"[Config] Thumbnail Cache Size: {format_size(cache_size)}",
+        )
+
+        # Migration is required
+        if open_status.json_migration_req:
+            self.migration_modal = JsonMigrationModal(path)
+            self.migration_modal.migration_finished.connect(
+                lambda: self._init_library(path, self.lib.open_library(path))
+            )
+            self.main_window.landing_widget.set_status_label("")
+            self.migration_modal.paged_panel.show()
+        else:
+            self._init_library(path, open_status)
+
+    def _init_library(self, path: Path, open_status: LibraryStatus):
+        if not open_status.success:
+            self.show_error_message(
+                error_name=open_status.message
+                or Translations["window.message.error_opening_library"],
+                error_desc=open_status.msg_description,
+            )
+            return open_status
+
+        assert self.lib.library_dir
+        self.init_workers()
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
+        self.__reset_navigation()
+
+        if self.settings.scan_files_on_open:
+            self.add_new_files_callback()
+
+        if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+            library_dir_display = self.lib.library_dir
+        else:
+            library_dir_display = self.lib.library_dir.name
+
+        self.update_libs_list(path)
+        self.main_window.setWindowTitle(
+            Translations.format(
+                "app.title",
+                base_title=self.base_title,
+                library_dir=library_dir_display,
+            )
+        )
+        self.main_window.setAcceptDrops(True)
+
+        self.init_ignore_modal()
+
+        self.set_select_actions_visibility()
+        self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
+        self.main_window.menu_bar.close_library_action.setEnabled(True)
+        self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
+        self.main_window.menu_bar.tag_manager_action.setEnabled(True)
+        self.main_window.menu_bar.color_manager_action.setEnabled(True)
+        self.main_window.menu_bar.field_template_manager_action.setEnabled(True)
+        self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
+        self.main_window.menu_bar.new_tag_action.setEnabled(True)
+        self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
+        self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(True)
+        self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
+        self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
+        self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
+        self.main_window.menu_bar.library_info_action.setEnabled(True)
+
+        self.main_window.preview_panel.set_selection(self.selected)
+
+        # page (re)rendering, extract eventually
+        initial_state = BrowsingState(
+            page_index=0,
+            sorting_mode=self.main_window.sorting_mode,
+            ascending=self.main_window.sorting_direction,
+        )
+        self.update_browsing_state(initial_state)
+
+        self.main_window.toggle_landing_page(enabled=False)
+        return open_status
+
+    def drop_event(self, event: QDropEvent):
+        if event.source() is self:
+            return
+
+        if not event.mimeData().hasUrls():
+            return
+
+        urls = event.mimeData().urls()
+        logger.info("New items dragged in", urls=urls)
+        drop_import = DropImportModal(self)
+        drop_import.import_urls(urls)
+
+    def drag_enter_event(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def drag_move_event(self, event: QDragMoveEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def select_all(self):
+        self._selected = OrderedDict.fromkeys(self.frame_content)
+        self.main_window.thumb_layout.update_selected()
+
+    def select_inverse(self):
+        selected = OrderedDict()
+        for id in self.frame_content:
+            if id not in self._selected:
+                selected[id] = None
+
+        self._selected = selected
+        self.main_window.thumb_layout.update_selected()
+
+    def select_entry(self, entry_id: int):
+        if entry_id in self._selected:
+            self._selected.pop(entry_id)
+        else:
+            self._selected[entry_id] = None
+        self.main_window.thumb_layout.update_selected()
+
+    def select_to_entry(self, entry_id: int):
+        if len(self._selected) == 0:
+            self.select_entry(entry_id)
+            return
+        last_selected = reversed(self._selected).__next__()
+        start = self.frame_content.index(last_selected)
+        end = self.frame_content.index(entry_id)
+
+        if start > end:
+            end, start = start, end
+        else:
+            end += 1
+
+        for i in range(start, end):
+            entry_id = self.frame_content[i]
+            self._selected[entry_id] = None
+        self.main_window.thumb_layout.update_selected()
+
+    def clear_selected(self):
+        self._selected.clear()
+        self.main_window.thumb_layout.update_selected()
+
+    def log_optional_modules(self) -> None:
+        """Logs the status of optional modules."""
+        status_classes: list[tuple[str, type[ModuleStatus]]] = [
+            ("FFmpeg", FfmpegStatus),
+            ("FFprobe", FfprobeStatus),
+            ("ripgrep", RipgrepStatus),
+        ]
+
+        for name, sc in status_classes:
+            if sc.which():
+                logger.info(f"[QtDriver] {name} found", which=sc.which(), version=sc.version())
+            else:
+                logger.warning(f"[QtDriver] {name} not found")

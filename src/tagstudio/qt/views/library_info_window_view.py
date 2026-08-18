@@ -21,17 +21,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
-from tagstudio.qt.platform_strings import open_file_str
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.i18n.platform_strings import open_file_str
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Use newer MVC style guidelines
 class LibraryInfoWindowView(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()

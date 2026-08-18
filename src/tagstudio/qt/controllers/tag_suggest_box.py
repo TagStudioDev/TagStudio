@@ -12,14 +12,14 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.global_settings import GlobalSettings
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
-from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -27,9 +27,7 @@ logger = structlog.get_logger(__name__)
 class TagSuggestBox(SuggestBox[Tag]):
     search_for_tag = Signal(int)
 
-    def __init__(
-        self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
-    ) -> None:
+    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions

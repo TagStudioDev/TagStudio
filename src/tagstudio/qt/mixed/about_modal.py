@@ -32,14 +32,15 @@ from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.stylesheets.stylesheets import form_content_style, header
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.stylesheets import form_content_style, header
 
 
+# TODO: Split to use MVC guidelines.
 class AboutModal(QWidget):
     """Modal window showing information about the TagStudio application."""
 

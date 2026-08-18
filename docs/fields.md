@@ -12,7 +12,7 @@ Fields are extra pieces of information you can add to [file entries](./entries.m
 
 Unlike tags, fields are based on [templates](#templates) that contain pre-filled information such as the field type and title, and that information is _copied_ to fields when adding them to entries. Editing field information on entries **does not** modify the template it was created from.
 
-To add a field to an entry, click the "Add Field" button in the preview panel. From there you can search and/or select a [field template](#field-templates) to choose from, or create a new one from the search bar. Alternatively you can create new field templates from **Edit -> Manage Field Templates**.
+To add a field to an entry, click the "Add Field" button at the bottom of the inspector. From there you can search and/or select a [field template](#field-templates) to choose from, or create a new one from the search bar. Alternatively you can create new field templates from **Edit -> Manage Field Templates**.
 
 <figure markdown="span">
   ![Fields Example](assets/fields_example.png)

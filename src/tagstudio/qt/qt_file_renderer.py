@@ -8,9 +8,9 @@ from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap, Qt
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.previews.file_renderer import FileRenderer
+from tagstudio.qt.app_settings import AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
-from tagstudio.qt.global_settings import GlobalSettings, Theme
-from tagstudio.qt.previews.renderer import FileRenderer
 
 
 class QtFileRenderer(QObject):
@@ -19,7 +19,7 @@ class QtFileRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
 
-    def __init__(self, library: Library, settings: GlobalSettings) -> None:
+    def __init__(self, library: Library, settings: AppSettings) -> None:
         super().__init__()
         self.renderer = FileRenderer(library, settings)
         self.theme = (

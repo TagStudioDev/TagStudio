@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import pytest
 from PySide6.QtCore import Qt
 
-from tagstudio.qt.global_settings import Theme
+from tagstudio.qt.app_settings import Theme
 
 
 @pytest.mark.parametrize(

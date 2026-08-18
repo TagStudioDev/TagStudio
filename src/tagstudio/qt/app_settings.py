@@ -1,0 +1,131 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
+import platform
+from datetime import datetime
+from enum import Enum, IntEnum, StrEnum
+from pathlib import Path
+from typing import override
+
+import structlog
+import toml
+from pydantic import BaseModel, Field
+
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+
+logger = structlog.get_logger(__name__)
+
+DEFAULT_GLOBAL_SETTINGS_PATH = (
+    Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
+    if platform.system() == "Windows"
+    else Path.home() / ".config" / "TagStudio" / "settings.toml"
+)
+
+DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
+MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
+
+# See: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp-saving
+DEFAULT_CACHED_THUMB_QUALITY = 80  # WebP Compression Quality
+MIN_CACHED_THUMB_RES = 32  # Pixels
+MAX_CACHED_THUMB_RES = 1024  # Pixels
+DEFAULT_CACHED_THUMB_RES = 256  # Pixels
+
+
+class Theme(IntEnum):
+    DARK = 0
+    LIGHT = 1
+    SYSTEM = 2
+    DEFAULT = SYSTEM
+
+
+class Splash(StrEnum):
+    DEFAULT = "default"
+    RANDOM = "random"
+    CLASSIC = "classic"
+    GOO_GEARS = "goo_gears"
+    NINETY_FIVE = "95"
+    AURORA = "aurora"
+
+
+class TomlEnumEncoder(toml.TomlEncoder):
+    @override
+    def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
+        if isinstance(v, Enum):
+            return super().dump_value(v.value)
+        return super().dump_value(v)
+
+
+# NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
+# properties to be overwritten with environment variables. As TagStudio is not currently using
+# environment variables, this was not based on that, but that may be useful in the future.
+class AppSettings(BaseModel):
+    language: str = Field(default="en")
+    open_last_loaded_on_startup: bool = Field(default=True)
+    generate_thumbs: bool = Field(default=True)
+    thumb_cache_size: float = Field(default=DEFAULT_THUMB_CACHE_SIZE)
+    cached_thumb_quality: int = Field(default=DEFAULT_CACHED_THUMB_QUALITY)
+    cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_THUMB_RES)
+    autoplay: bool = Field(default=True)
+    scan_files_on_open: bool = Field(default=True)
+    loop: bool = Field(default=True)
+    show_filenames_in_grid: bool = Field(default=True)
+    page_size: int = Field(default=100)
+    infinite_scroll: bool = Field(default=True)
+    show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
+    tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
+    edit_tag_on_create: bool = Field(default=False)
+    edit_field_on_add: bool = Field(default=True)
+    keep_suggest_boxes_open: bool = Field(default=True)
+    theme: Theme = Field(default=Theme.SYSTEM)
+    splash: Splash = Field(default=Splash.DEFAULT)
+    windows_start_command: bool = Field(default=False)
+
+    date_format: str = Field(default="%x")
+    hour_format: bool = Field(default=True)
+    zero_padding: bool = Field(default=True)
+
+    loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
+
+    @staticmethod
+    def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "AppSettings":
+        if path.exists():
+            with open(path) as file:
+                filecontents = file.read()
+                if len(filecontents.strip()) != 0:
+                    logger.info("[Settings] Reading Global Settings File", path=path)
+                    settings_data = toml.loads(filecontents)
+                    settings = AppSettings(**settings_data, loaded_from=path)
+                    return settings
+
+        return AppSettings(loaded_from=path)
+
+    def save(self, path: Path | None = None) -> None:
+        if path is None:
+            path = self.loaded_from
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(path, "w") as f:
+            toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
+
+    @property
+    def datetime_format(self) -> str:
+        date_format = self.date_format
+        is_24h = self.hour_format
+        hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
+        zero_padding = self.zero_padding
+        zero_padding_symbol = ""
+
+        if not zero_padding:
+            zero_padding_symbol = "#" if platform.system() == "Windows" else "-"
+            date_format = date_format.replace("%d", f"%{zero_padding_symbol}d").replace(
+                "%m", f"%{zero_padding_symbol}m"
+            )
+            hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
+                "%I", f"%{zero_padding_symbol}I"
+            )
+        return f"{date_format}, {hour_format}"
+
+    def format_datetime(self, dt: datetime) -> str:
+        return datetime.strftime(dt, self.datetime_format)

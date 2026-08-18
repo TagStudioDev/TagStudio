@@ -20,9 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.global_settings import (
+from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
+from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
     MAX_CACHED_THUMB_RES,
@@ -31,14 +30,16 @@ from tagstudio.qt.global_settings import (
     Splash,
     Theme,
 )
-from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class SettingsPanel(ModalContent):
     driver: "QtDriver"
 

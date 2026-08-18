@@ -10,10 +10,10 @@ from PySide6.QtCore import QDateTime
 from PySide6.QtWidgets import QDateTimeEdit, QLineEdit, QVBoxLayout
 
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.stylesheets.stylesheets import title_line_edit_style
+from tagstudio.qt.views.styles.stylesheets import title_line_edit_style
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -39,6 +39,7 @@ def qdtf2dtf(dtf: str) -> str:
     return out
 
 
+# TODO: Split to use MVC guidelines.
 class DatetimePicker(ModalContent):
     def __init__(self, driver: "QtDriver", name: str, datetime: dt | str):
         super().__init__()

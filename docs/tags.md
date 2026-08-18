@@ -100,7 +100,7 @@ Properties are special attributes of tags that change their behavior in some way
 
 #### Is Category
 
-The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. Tags inheriting from multiple "category tags" will still show up under any applicable category.
+The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the inspector. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. Tags inheriting from multiple "category tags" will still show up under any applicable category.
 
 This means that duplicates of tags can appear on entries if the tag inherits from multiple parent categories, however this is by design and reflects the nature of multiple inheritance. Any tags not inheriting from a category tag will simply show under a default "Tag" section.
 

@@ -10,16 +10,16 @@ from PySide6.QtCore import QSettings
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.enums import AppCacheItems
 from tagstudio.core.library.alchemy.library import LibraryStatus
-from tagstudio.qt.global_settings import GlobalSettings
+from tagstudio.qt.app_settings import AppSettings
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Turn into a BaseDriver class instead of a "Mixin".
 class DriverMixin:
     cached_values: QSettings
-    # TODO: GlobalSettings has become closely tied to Qt.
-    # Should there be a base Settings class?
-    settings: GlobalSettings
+    # TODO: AppSettings is Qt-specific and should not be in a base driver class.
+    settings: AppSettings
 
     def evaluate_path(self, open_path: str | None) -> LibraryStatus:
         """Check if the path of library is valid."""

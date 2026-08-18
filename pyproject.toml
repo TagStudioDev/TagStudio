@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [project.gui-scripts]
-tagstudio = "tagstudio.main:main"
+tagstudio = "tagstudio.__main__:main"
 
 [dependency-groups]
 all = [
@@ -97,7 +97,7 @@ filterwarnings = [
 ignore = [
     ".venv/**",
     "src/tagstudio/core/library/json/",
-    "src/tagstudio/renderers/vendored/pydub/",
+    "src/tagstudio/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
 # Reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
@@ -126,7 +126,7 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "E402"]
-"src/tagstudio/renderers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
+"src/tagstudio/previews/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
