@@ -12,7 +12,7 @@ description = "A User-Focused Photo & File Management System."
 version = "9.6.4"
 license = "GPL-3.0-only"
 readme = "README.md"
-requires-python = ">=3.14,<=3.15"
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "audioop-lts~=0.2.2",
     "chardet~=5.2",
