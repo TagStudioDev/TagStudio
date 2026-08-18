@@ -111,7 +111,7 @@ class TagWidget(QWidget):
     tag: Tag | None
 
     def __init__(
-        self, tag: Tag | None, has_edit: bool, has_remove: bool, library: "Library | None" = None
+        self, tag: Tag | None, has_edit: bool, has_remove: bool, library: Library | None = None
     ) -> None:
         super().__init__()
         self.tag = tag

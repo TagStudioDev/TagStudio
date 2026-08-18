@@ -42,7 +42,7 @@ class TagColorManager(QWidget):
 
     def __init__(
         self,
-        driver: "QtDriver",
+        driver: QtDriver,
     ):
         super().__init__()
         self.driver = driver

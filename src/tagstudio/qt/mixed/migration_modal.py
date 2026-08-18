@@ -5,6 +5,7 @@
 import traceback
 from pathlib import Path
 from typing import cast
+from warnings import deprecated
 
 import structlog
 import wcmatch.fnmatch as fnmatch
@@ -23,7 +24,6 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     IGNORE_NAME,

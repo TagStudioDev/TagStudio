@@ -6,6 +6,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
+from warnings import deprecated
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -19,7 +20,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import TagColorEnum
@@ -39,7 +39,7 @@ logger = structlog.get_logger(__name__)
 
 @dataclass
 class BranchData:
-    dirs: dict[str, "BranchData"] = field(default_factory=dict)
+    dirs: dict[str, BranchData] = field(default_factory=dict)
     files: list[str] = field(default_factory=list)
     tag: Tag | None = None
 
@@ -165,7 +165,7 @@ def generate_preview_data(library: Library) -> BranchData:
 
 
 class FoldersToTagsModal(QWidget):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.library = library
         self.driver = driver

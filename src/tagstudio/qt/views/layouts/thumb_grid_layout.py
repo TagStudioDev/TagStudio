@@ -27,7 +27,7 @@ class ThumbGridLayout(QLayout):
     # Id of first visible entry
     visible_changed = Signal(int)
 
-    def __init__(self, driver: "QtDriver", scroll_area: QScrollArea) -> None:
+    def __init__(self, driver: QtDriver, scroll_area: QScrollArea) -> None:
         super().__init__(None)
         self.driver: QtDriver = driver
         self.scroll_area: QScrollArea = scroll_area

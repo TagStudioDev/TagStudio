@@ -41,7 +41,7 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Split to use MVC guidelines.
 class SettingsPanel(ModalContent):
-    driver: "QtDriver"
+    driver: QtDriver
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
         ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
@@ -88,7 +88,7 @@ class SettingsPanel(ModalContent):
         "%Y.%m.%d": "2024.08.21",
     }
 
-    def __init__(self, driver: "QtDriver"):
+    def __init__(self, driver: QtDriver):
         super().__init__()
         # set these "constants" because language will be loaded from config shortly after startup
         # and we want to use the current language for the dropdowns
@@ -400,7 +400,7 @@ class SettingsPanel(ModalContent):
             "splash": self.splash_combobox.currentData(),
         }
 
-    def update_settings(self, driver: "QtDriver"):
+    def update_settings(self, driver: QtDriver):
         settings = self.get_settings()
 
         driver.settings.language = settings["language"]
@@ -440,7 +440,7 @@ class SettingsPanel(ModalContent):
         )
 
     @classmethod
-    def build_modal(cls, driver: "QtDriver") -> Modal:
+    def build_modal(cls, driver: QtDriver) -> Modal:
         settings_panel = cls(driver)
 
         modal = Modal(

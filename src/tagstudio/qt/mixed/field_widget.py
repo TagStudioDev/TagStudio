@@ -136,7 +136,7 @@ class FieldContainer(QWidget):
         if callback:
             self.remove_button.clicked.connect(callback)
 
-    def set_inner_widget(self, widget: "FieldWidget") -> None:
+    def set_inner_widget(self, widget: FieldWidget) -> None:
         if self.field_layout.itemAt(0):
             old: QWidget = self.field_layout.itemAt(0).widget()
             self.field_layout.removeWidget(old)

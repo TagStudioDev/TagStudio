@@ -78,7 +78,7 @@ class SearchPanel[T](ModalContent):
         self.setMinimumSize(300, 400)
         self.connect_callbacks(self)
 
-    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:  # pyright: ignore[reportExplicitAny]
+    def connect_callbacks(self, controller: SearchPanel[Any]) -> None:  # pyright: ignore[reportExplicitAny]
         self.layout().limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
         self.layout().search_field.textChanged.connect(controller.on_search_query_changed)
         self.layout().search_field.returnPressed.connect(

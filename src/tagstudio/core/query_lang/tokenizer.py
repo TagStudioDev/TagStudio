@@ -39,11 +39,11 @@ class Token:
         self.end = end
 
     @staticmethod
-    def from_type(type: TokenType, pos: int) -> "Token":
+    def from_type(type: TokenType, pos: int) -> Token:
         return Token(type, None, pos, pos)
 
     @staticmethod
-    def EOF(pos: int) -> "Token":  # noqa: N802
+    def EOF(pos: int) -> Token:  # noqa: N802
         return Token.from_type(TokenType.EOF, pos)
 
     @override

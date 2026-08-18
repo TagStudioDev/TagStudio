@@ -28,7 +28,7 @@ class TagBoxWidget(TagBoxWidgetView):
 
     __entries: list[int] = []
 
-    def __init__(self, title: str, driver: "QtDriver"):
+    def __init__(self, title: str, driver: QtDriver):
         super().__init__(title, driver)
         self.__driver = driver
 

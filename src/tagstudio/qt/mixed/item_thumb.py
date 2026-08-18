@@ -96,7 +96,7 @@ class ItemThumb(FlowWidget):
         self,
         mode: ItemType | None,
         library: Library,
-        driver: "QtDriver",
+        driver: QtDriver,
         thumb_size: tuple[int, int],
         show_filename_label: bool = False,
     ):
@@ -440,7 +440,7 @@ class ItemThumb(FlowWidget):
         self.thumb_button.setMinimumSize(size)
         self.thumb_button.setMaximumSize(size)
 
-    def set_item(self, entry: "Entry"):
+    def set_item(self, entry: Entry):
         self.set_item_id(entry.id)
         path = unwrap(self.lib.library_dir) / entry.path
         self.set_item_path(path)

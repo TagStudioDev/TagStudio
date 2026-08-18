@@ -32,7 +32,7 @@ class TagColorPreview(QWidget):
 
     def __init__(
         self,
-        library: "Library",
+        library: Library,
         tag_color_group: TagColorGroup | None,
     ) -> None:
         super().__init__()

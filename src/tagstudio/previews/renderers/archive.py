@@ -52,7 +52,7 @@ class TarFile:
     def read(self, name: str) -> bytes:
         return unwrap(self.tar.extractfile(name)).read()
 
-    def __enter__(self) -> "TarFile":
+    def __enter__(self) -> TarFile:
         self.tar = tarfile.open(name=self.filepath, mode=self.mode).__enter__()
         return self
 

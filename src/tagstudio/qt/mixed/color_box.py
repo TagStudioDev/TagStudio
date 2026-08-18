@@ -33,8 +33,8 @@ class ColorBoxWidget(FieldWidget):
     def __init__(
         self,
         group: str,
-        colors: list["TagColorGroup"],
-        library: "Library",
+        colors: list[TagColorGroup],
+        library: Library,
     ) -> None:
         self.namespace = group
         self.colors: list[TagColorGroup] = colors

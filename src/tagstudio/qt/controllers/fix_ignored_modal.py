@@ -24,7 +24,7 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Use newer MVC style guidelines
 class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__(library, driver)
         self.tracker = IgnoredRegistry(self.lib)
 

@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
 class MirrorEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: DupeFilesRegistry):
+    def __init__(self, driver: QtDriver, tracker: DupeFilesRegistry):
         super().__init__()
         self.driver = driver
         self.setWindowTitle(Translations["entries.mirror.window_title"])

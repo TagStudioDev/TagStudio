@@ -458,7 +458,7 @@ class MainWindow(QMainWindow):
         (Translations["home.thumbnail_size.mini"], 76),
     ]
 
-    def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
+    def __init__(self, driver: QtDriver, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.rm = ResourceManager()
 
@@ -529,7 +529,7 @@ class MainWindow(QMainWindow):
 
     # endregion
 
-    def setup_central_widget(self, driver: "QtDriver"):
+    def setup_central_widget(self, driver: QtDriver):
         self.central_widget = QWidget(self)
         self.central_widget.setObjectName("central_widget")
         self.central_layout = QGridLayout(self.central_widget)
@@ -651,7 +651,7 @@ class MainWindow(QMainWindow):
 
         self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
 
-    def setup_content(self, driver: "QtDriver"):
+    def setup_content(self, driver: QtDriver):
         self.content_layout = QHBoxLayout()
         self.content_layout.setObjectName("content_layout")
 
@@ -667,7 +667,7 @@ class MainWindow(QMainWindow):
 
         self.central_layout.addLayout(self.content_layout, 10, 0, 1, 1)
 
-    def setup_entry_list(self, driver: "QtDriver"):
+    def setup_entry_list(self, driver: QtDriver):
         self.entry_list_container = QWidget()
         self.entry_list_layout = QVBoxLayout(self.entry_list_container)
         self.entry_list_layout.setSpacing(0)
@@ -700,7 +700,7 @@ class MainWindow(QMainWindow):
         self.entry_list_layout.addWidget(self.pagination)
         self.content_splitter.addWidget(self.entry_list_container)
 
-    def setup_preview_panel(self, driver: "QtDriver"):
+    def setup_preview_panel(self, driver: QtDriver):
         self.preview_panel = Inspector(driver)
         self.content_splitter.addWidget(self.preview_panel)
 

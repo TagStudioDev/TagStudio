@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 # TODO: Use newer MVC style guidelines
 class FixIgnoredEntriesModalView(QWidget):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.lib = library
         self.driver = driver

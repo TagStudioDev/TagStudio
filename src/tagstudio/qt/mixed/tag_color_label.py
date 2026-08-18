@@ -41,7 +41,7 @@ class TagColorLabel(QWidget):
         color: TagColorGroup | None,
         has_edit: bool,
         has_remove: bool,
-        library: "Library | None" = None,
+        library: Library | None = None,
     ) -> None:
         super().__init__()
         self.color = color

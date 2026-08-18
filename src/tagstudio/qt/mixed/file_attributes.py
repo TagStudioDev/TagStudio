@@ -42,7 +42,7 @@ class FileAttributeData:
 
 # TODO: Split to use MVC guidelines.
 class FileAttributes(QWidget):
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)

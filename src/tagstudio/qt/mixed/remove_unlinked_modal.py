@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class RemoveUnlinkedEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: UnlinkedRegistry):
+    def __init__(self, driver: QtDriver, tracker: UnlinkedRegistry):
         super().__init__()
         self.driver = driver
         self.tracker = tracker

@@ -29,7 +29,7 @@ class LandingWidget(QWidget):
     mono_logo: Image.Image = rm.ts_logo_text_mono
     color_logo: Image.Image = rm.ts_logo_text_color
 
-    def __init__(self, driver: "QtDriver", pixel_ratio: float):
+    def __init__(self, driver: QtDriver, pixel_ratio: float):
         super().__init__()
         self.driver = driver
         self.logo_label: ClickableLabel = ClickableLabel()

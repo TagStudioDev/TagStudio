@@ -28,7 +28,7 @@ logger = structlog.get_logger(__name__)
 
 
 class InspectorView(QVBoxLayout):
-    def __init__(self, driver: "QtDriver", pixel_ratio: float) -> None:
+    def __init__(self, driver: QtDriver, pixel_ratio: float) -> None:
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(6)

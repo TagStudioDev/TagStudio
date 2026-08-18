@@ -53,9 +53,9 @@ class MediaPlayer(QGraphicsView):
     Gives a basic control set to manage media playback.
     """
 
-    video_preview: "VideoPreview | None" = None
+    video_preview: VideoPreview | None = None
 
-    def __init__(self, driver: "QtDriver") -> None:
+    def __init__(self, driver: QtDriver) -> None:
         super().__init__()
         self.driver = driver
         self.play_icon = QPixmap.fromImage(

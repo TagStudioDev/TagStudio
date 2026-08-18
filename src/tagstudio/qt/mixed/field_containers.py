@@ -50,7 +50,7 @@ class FieldContainers(QWidget):
 
     on_tags_update = Signal()
 
-    def __init__(self, library: Library, driver: "QtDriver") -> None:
+    def __init__(self, library: Library, driver: QtDriver) -> None:
         super().__init__()
 
         self.lib = library
@@ -321,7 +321,7 @@ class FieldContainers(QWidget):
                     text = self.driver.settings.format_datetime(
                         DatetimePicker.string2dt(field.value)
                     )
-                except (ValueError, AssertionError):
+                except ValueError, AssertionError:
                     text = str(field.value)
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"
