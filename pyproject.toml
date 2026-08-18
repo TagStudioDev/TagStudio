@@ -27,7 +27,7 @@ dependencies = [
     "py7zr~=1.1.3",
     "pydantic~=2.10",
     "pydub~=0.25",
-    "PySide6==6.8.0.*",
+    "PySide6==6.11.2",
     "rarfile==4.2",
     "rawpy~=0.27",
     "Send2Trash>=1.8,<3",

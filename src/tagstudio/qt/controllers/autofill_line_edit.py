@@ -77,4 +77,4 @@ class AutofillLineEdit(QLineEdit):
             # Filter out icon action(s)
             if action.text():
                 menu.addAction(action)
-        menu.exec(self.mapToGlobal(pos))  # pyright: ignore[reportArgumentType]
+        menu.exec(self.mapToGlobal(pos))

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-
+# pyright: reportOptionalMemberAccess=false
 from typing import override
 
 import structlog
@@ -9,6 +9,7 @@ from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.paged_panel_state import PagedPanelState
 from tagstudio.qt.views.styles.stylesheets import header
 
@@ -96,7 +97,7 @@ class PagedPanel(QWidget):
         # Update Body Widget
         if self.body_layout.itemAt(0):
             self.body_layout.itemAt(0).widget().setHidden(True)
-            self.body_layout.removeWidget(self.body_layout.itemAt(0).widget())
+            self.body_layout.removeWidget(unwrap(self.body_layout.itemAt(0).widget()))
         self.body_layout.addWidget(frame.body_wrapper)
         self.body_layout.itemAt(0).widget().setHidden(False)
 

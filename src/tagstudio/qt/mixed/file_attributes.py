@@ -130,7 +130,7 @@ class FileAttributes(QWidget):
             stats = FileAttributeData()
 
         if not filepath:
-            self.layout().setSpacing(0)
+            self.layout().setSpacing(0)  # pyright: ignore[reportOptionalMemberAccess]
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.file_label.setText(f"<i>{Translations['preview.no_selection']}</i>")
             self.file_label.set_file_path(Path())
@@ -147,7 +147,7 @@ class FileAttributes(QWidget):
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
 
-            self.layout().setSpacing(6)
+            self.layout().setSpacing(6)  # pyright: ignore[reportOptionalMemberAccess]
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.file_label.set_file_path(filepath)
             self.dimensions_label.setHidden(False)
@@ -234,7 +234,7 @@ class FileAttributes(QWidget):
 
     def update_multi_selection(self, count: int):
         """Format attributes for multiple selected items."""
-        self.layout().setSpacing(0)
+        self.layout().setSpacing(0)  # pyright: ignore[reportOptionalMemberAccess]
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.file_label.setText(Translations.format("preview.multiple_selection", count=count))
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)

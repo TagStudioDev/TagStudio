@@ -198,7 +198,7 @@ class ThumbGridLayout(QLayout):
             return
 
         per_row, width_offset, height_offset = self._size(rect.right())
-        view_height = self.parentWidget().parentWidget().height()
+        view_height = self.parentWidget().parentWidget().height()  # pyright: ignore[reportOptionalMemberAccess]
         offset = self.scroll_area.verticalScrollBar().value()
         if self._scroll_to is not None:
             try:

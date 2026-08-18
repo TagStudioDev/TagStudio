@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportOptionalMemberAccess=false
 
 from typing import cast, override
 from warnings import catch_warnings

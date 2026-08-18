@@ -3,6 +3,8 @@
 # SPDX-FileCopyrightText: (C) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportOptionalMemberAccess=false
+
 
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
@@ -44,14 +46,14 @@ class FlowLayout(QLayout):
         return len(self._item_list)
 
     @override
-    def itemAt(self, index: int) -> QLayoutItem | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def itemAt(self, index: int) -> QLayoutItem | None:
         if 0 <= index < len(self._item_list):
             return self._item_list[index]
 
         return None
 
     @override
-    def takeAt(self, index: int) -> QLayoutItem | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def takeAt(self, index: int) -> QLayoutItem | None:
         if 0 <= index < len(self._item_list):
             return self._item_list.pop(index)
 

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
 from tagstudio.qt.controllers.field_template_widget import FieldTemplateWidget
@@ -173,6 +174,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
                 pad_field_template_widget.setHidden(True)
                 self.layout().scroll_layout.addWidget(pad_field_template_widget)
 
-        field_template_widget: QWidget = self.layout().scroll_layout.itemAt(index).widget()
+        item = unwrap(self.layout().scroll_layout.itemAt(index))
+        field_template_widget: QWidget = unwrap(item.widget())
         assert isinstance(field_template_widget, FieldTemplateWidget)
         return field_template_widget

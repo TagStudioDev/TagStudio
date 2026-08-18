@@ -166,7 +166,7 @@ class SearchPanel[T](ModalContent):
         if not query:
             self.layout().search_field.setFocus()
             parent: QWidget | None = self.parentWidget()
-            if parent is not None:  # pyright: ignore[reportUnnecessaryComparison]
+            if parent is not None:
                 parent.hide()
             return
 

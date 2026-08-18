@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
@@ -207,6 +208,7 @@ class TagSearchPanel(SearchPanel[Tag]):
                 pad_tag_widget.setHidden(True)
                 self.layout().scroll_layout.addWidget(pad_tag_widget)
 
-        tag_widget: QWidget = self.layout().scroll_layout.itemAt(index).widget()
+        item = unwrap(self.layout().scroll_layout.itemAt(index))
+        tag_widget: QWidget = unwrap(item.widget())
         assert isinstance(tag_widget, TagWidget)
         return tag_widget

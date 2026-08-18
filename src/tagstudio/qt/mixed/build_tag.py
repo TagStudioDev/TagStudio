@@ -359,7 +359,7 @@ class BuildTagPanel(ModalContent):
 
     def set_categories(self, added_parent_id: int | None = None, removed_parent: bool = False):
         while self.category_scroll_layout.itemAt(0):
-            self.category_scroll_layout.takeAt(0).widget().deleteLater()
+            self.category_scroll_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         c = QWidget()
         layout = QVBoxLayout(c)
@@ -480,7 +480,7 @@ class BuildTagPanel(ModalContent):
 
     def set_parent_tags(self):
         while self.parent_tags_scroll_layout.itemAt(0):
-            self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
+            self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         c = QWidget()
         layout = QVBoxLayout(c)

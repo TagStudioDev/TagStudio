@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.modal import Modal
@@ -191,6 +192,7 @@ class TagSuggestBox(SuggestBox[Tag]):
                 widget.setHidden(True)
                 self.layout().content_layout.addWidget(widget)
 
-        widget_: QWidget = self.layout().content_layout.itemAt(index).widget()
+        item = unwrap(self.layout().content_layout.itemAt(index))
+        widget_: QWidget = unwrap(item.widget())
         assert isinstance(widget_, UnderlinedWidget)
         return widget_

@@ -60,7 +60,7 @@ class ColorBoxWidget(FieldWidget):
         color_widgets: list[TagColorLabel] = []
 
         while self.base_layout.itemAt(0):
-            unwrap(self.base_layout.takeAt(0)).widget().deleteLater()
+            unwrap(self.base_layout.takeAt(0)).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         for color in colors_:
             color_widget = TagColorLabel(
