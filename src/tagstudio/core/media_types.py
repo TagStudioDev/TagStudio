@@ -5,17 +5,183 @@
 import enum
 import mimetypes
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 
 import structlog
 
 logger = structlog.get_logger(__name__)
 
+
+class _Contexts(Enum):
+    """An enum representing the use for a media type."""
+
+    SEARCH = auto()
+    RENDER = auto()
+
+
+class _Type:
+    """A complete description of a media type and its uses."""
+
+    def __init__(self, exts: str | list[str], contexts: _Contexts | list[_Contexts]) -> None:
+        if isinstance(exts, str):
+            self.exts = [exts]
+        else:
+            self.exts = exts
+
+        if isinstance(contexts, _Contexts):
+            self.contexts = [contexts]
+        else:
+            self.contexts = contexts
+
+
+class MediaTypeGroup:
+    def __init__(self, name_key: str, types: list[_Type]) -> None:
+        self.searchable: frozenset[str]
+        self.renderable: frozenset[str]
+        self.name_key = name_key
+        self.types = types
+        # NOTE: Does self.types need to exist?
+        # TODO: Handle equivalencies
+
+        searchable_set: set[str] = set()
+        renderable_set: set[str] = set()
+        for type_ in self.types:
+            if _Contexts.SEARCH in type_.contexts:
+                for ext in type_.exts:
+                    searchable_set.add(ext)
+
+            if _Contexts.RENDER in type_.contexts:
+                for ext in type_.exts:
+                    renderable_set.add(ext)
+
+        self.searchable = frozenset(searchable_set)
+        self.renderable = frozenset(renderable_set)
+
+
+class MediaTypes:
+    SEARCH, RENDER = _Contexts.SEARCH, _Contexts.RENDER
+
+    # Adobe ----------------------------------------------------------------------------------------
+    adobe_photoshop_types = MediaTypeGroup(
+        "adobe.photoshop",
+        [
+            _Type(".pdd", SEARCH),
+            _Type(".psb", SEARCH),
+            _Type(".psd", SEARCH),
+        ],
+    )
+
+    adobe_illustrator_types = MediaTypeGroup("adobe.illustrator", [_Type(".ai", SEARCH)])
+
+    pdf_types = MediaTypeGroup(
+        "pdf",
+        [
+            _Type(".pdf", [SEARCH, RENDER]),
+        ],
+    )
+
+    adobe_types = MediaTypeGroup(
+        "type.adobe", adobe_photoshop_types.types + adobe_illustrator_types.types + pdf_types.types
+    )
+
+    # Raster Images --------------------------------------------------------------------------------
+    raster_image_types = MediaTypeGroup(
+        "image.raster",
+        [
+            _Type(
+                [".jfif", ".jpeg_large", ".jpeg", ".jpg_large", ".jpg"],
+                [SEARCH, RENDER],
+            ),
+            _Type(".psd", RENDER),
+        ],
+    )
+
+    # FIXME: Should the file renderer fallback to the search context if no render context is found,
+    # to use as a default preview?
+    # Because some files like .eps ot .pyc are never going to be rendered, but still should have
+    # default icons for the categories that they're in.
+    # OR should there be a new context?
+
+    vector_image_types = MediaTypeGroup(
+        "image.vector",
+        [
+            _Type(".ai", RENDER),
+            _Type(".eps", SEARCH),
+            _Type(".epsf", SEARCH),
+            _Type(".epsi", SEARCH),
+            _Type(".svg", [SEARCH, RENDER]),
+            _Type(".svgz", SEARCH),
+        ],
+    )
+
+    binary_types = MediaTypeGroup(
+        "binary",
+        [
+            _Type(".pyc", [RENDER, SEARCH]),
+            _Type(".pyd", [RENDER, SEARCH]),
+            _Type(".pyo", [RENDER, SEARCH]),
+            _Type(".dll", [RENDER, SEARCH]),
+            _Type(".o", [RENDER, SEARCH]),
+            _Type(".dylib", [RENDER, SEARCH]),
+            _Type(".exe", [RENDER, SEARCH]),
+        ],
+    )
+
+    python_types = MediaTypeGroup(
+        "python",
+        [
+            _Type(".ipynb", [RENDER, SEARCH]),
+            _Type(".py", [RENDER, SEARCH]),
+            _Type(".pyc", [SEARCH]),
+            _Type(".pyd", [SEARCH]),
+            _Type(".pyi", [RENDER, SEARCH]),
+            _Type(".pyo", [SEARCH]),
+        ],
+    )
+
+    javascript_types = MediaTypeGroup(
+        "javascript",
+        [
+            _Type(".cjs", [SEARCH]),
+            _Type(".js", [SEARCH]),
+            _Type(".jsx", [SEARCH]),
+            _Type(".mjs", [SEARCH]),
+        ],
+    )
+
+    typescript_types = MediaTypeGroup(
+        "typescript",
+        [
+            _Type(".cts", [SEARCH]),
+            _Type(".mts", [SEARCH]),
+            _Type(".ts", [SEARCH]),
+            _Type(".tsx", [SEARCH]),
+        ],
+    )
+
+    # TODO: Move to FileRenderer
+    unrenderable_types = binary_types.types  # Eventually exclude .exe and stuff
+
+    # NOTE: This is a subjective group used for grouping files together for searches
+    # and for creating color-on-black syntax highlighted previews.
+    code_types = MediaTypeGroup(
+        "type.code", python_types.types + javascript_types.types + typescript_types.types
+    )
+
+    @staticmethod
+    def all_media_types():
+        static_methods = [
+            name for name, attr in MediaTypes.__dict__.items() if isinstance(attr, MediaTypeGroup)
+        ]
+        return static_methods
+
+
 FILETYPE_EQUIVALENTS = [
     {"aif", "aiff", "aifc"},
     {"html", "htm", "xhtml", "shtml", "dhtml"},
     {"jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"},
-    {"json", "jsonc", "json5"},
+    {"json", "jsonc", "json5", "jsonl"},
     {"md", "markdown", "mkd", "rmd"},
     {"tar.gz", "tgz"},
     {"xml", "xul"},
@@ -23,7 +189,7 @@ FILETYPE_EQUIVALENTS = [
 ]
 
 
-class MediaType(enum.StrEnum):
+class MediaTypeOld(enum.StrEnum):
     """Names of media types."""
 
     ADOBE_PHOTOSHOP = "adobe_photoshop"
@@ -78,7 +244,7 @@ class MediaCategory:
         is_iana (bool): Represents whether this is an IANA registered category.
     """
 
-    media_type: MediaType
+    media_type: MediaTypeOld
     extensions: set[str]
     name: str
     is_iana: bool = False
@@ -425,223 +591,223 @@ class MediaCategories:
     }
 
     ADOBE_PHOTOSHOP_TYPES = MediaCategory(
-        media_type=MediaType.ADOBE_PHOTOSHOP,
+        media_type=MediaTypeOld.ADOBE_PHOTOSHOP,
         extensions=_ADOBE_PHOTOSHOP_SET,
         is_iana=False,
         name="photoshop",
     )
     AFFINITY_PHOTO_TYPES = MediaCategory(
-        media_type=MediaType.AFFINITY_PHOTO,
+        media_type=MediaTypeOld.AFFINITY_PHOTO,
         extensions=_AFFINITY_PHOTO_SET,
         is_iana=False,
         name="affinity photo",
     )
     ARCHIVE_TYPES = MediaCategory(
-        media_type=MediaType.ARCHIVE,
+        media_type=MediaTypeOld.ARCHIVE,
         extensions=_ARCHIVE_SET,
         is_iana=False,
         name="archive",
     )
     AUDIO_MIDI_TYPES = MediaCategory(
-        media_type=MediaType.AUDIO_MIDI,
+        media_type=MediaTypeOld.AUDIO_MIDI,
         extensions=_AUDIO_MIDI_SET,
         is_iana=False,
         name="audio midi",
     )
     AUDIO_TYPES = MediaCategory(
-        media_type=MediaType.AUDIO,
+        media_type=MediaTypeOld.AUDIO,
         extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
         is_iana=True,
         name="audio",
     )
     BLENDER_TYPES = MediaCategory(
-        media_type=MediaType.BLENDER,
+        media_type=MediaTypeOld.BLENDER,
         extensions=_BLENDER_SET,
         is_iana=False,
         name="blender",
     )
     CLIP_STUDIO_PAINT_TYPES = MediaCategory(
-        media_type=MediaType.CLIP_STUDIO_PAINT,
+        media_type=MediaTypeOld.CLIP_STUDIO_PAINT,
         extensions=_CLIP_STUDIO_PAINT_SET,
         is_iana=False,
         name="clip studio paint",
     )
     CODE_TYPES = MediaCategory(
-        media_type=MediaType.CODE,
+        media_type=MediaTypeOld.CODE,
         extensions=_CODE_SET,
         is_iana=False,
         name="code",
     )
     DATABASE_TYPES = MediaCategory(
-        media_type=MediaType.DATABASE,
+        media_type=MediaTypeOld.DATABASE,
         extensions=_DATABASE_SET,
         is_iana=False,
         name="database",
     )
     DISK_IMAGE_TYPES = MediaCategory(
-        media_type=MediaType.DISK_IMAGE,
+        media_type=MediaTypeOld.DISK_IMAGE,
         extensions=_DISK_IMAGE_SET,
         is_iana=False,
         name="disk image",
     )
     DOCUMENT_TYPES = MediaCategory(
-        media_type=MediaType.DOCUMENT,
+        media_type=MediaTypeOld.DOCUMENT,
         extensions=_DOCUMENT_SET,
         is_iana=False,
         name="document",
     )
     EBOOK_TYPES = MediaCategory(
-        media_type=MediaType.EBOOK,
+        media_type=MediaTypeOld.EBOOK,
         extensions=_EBOOK_SET,
         is_iana=False,
         name="ebook",
     )
     FONT_TYPES = MediaCategory(
-        media_type=MediaType.FONT,
+        media_type=MediaTypeOld.FONT,
         extensions=_FONT_SET,
         is_iana=True,
         name="font",
     )
     IMAGE_ANIMATED_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_ANIMATED,
+        media_type=MediaTypeOld.IMAGE_ANIMATED,
         extensions=_IMAGE_ANIMATED_SET,
         is_iana=False,
         name="animated image",
     )
     IMAGE_RAW_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_RAW,
+        media_type=MediaTypeOld.IMAGE_RAW,
         extensions=_IMAGE_RAW_SET,
         is_iana=False,
         name="raw image",
     )
     IMAGE_VECTOR_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_VECTOR,
+        media_type=MediaTypeOld.IMAGE_VECTOR,
         extensions=_IMAGE_VECTOR_SET,
         is_iana=False,
         name="vector image",
     )
     IMAGE_RASTER_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
+        media_type=MediaTypeOld.IMAGE,
         extensions=_IMAGE_RASTER_SET,
         is_iana=False,
         name="raster image",
     )
     IMAGE_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
+        media_type=MediaTypeOld.IMAGE,
         extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
         is_iana=True,
         name="image",
     )
     INSTALLER_TYPES = MediaCategory(
-        media_type=MediaType.INSTALLER,
+        media_type=MediaTypeOld.INSTALLER,
         extensions=_INSTALLER_SET,
         is_iana=False,
         name="installer",
     )
     IWORK_TYPES = MediaCategory(
-        media_type=MediaType.IWORK,
+        media_type=MediaTypeOld.IWORK,
         extensions=_IWORK_SET,
         is_iana=False,
         name="iwork",
     )
     MATERIAL_TYPES = MediaCategory(
-        media_type=MediaType.MATERIAL,
+        media_type=MediaTypeOld.MATERIAL,
         extensions=_MATERIAL_SET,
         is_iana=False,
         name="material",
     )
     MDIPACK_TYPES = MediaCategory(
-        media_type=MediaType.MDIPACK,
+        media_type=MediaTypeOld.MDIPACK,
         extensions=_MDIPACK_SET,
         is_iana=False,
         name="mdipack",
     )
     MODEL_TYPES = MediaCategory(
-        media_type=MediaType.MODEL,
+        media_type=MediaTypeOld.MODEL,
         extensions=_MODEL_SET,
         is_iana=True,
         name="model",
     )
     OPEN_DOCUMENT_TYPES = MediaCategory(
-        media_type=MediaType.OPEN_DOCUMENT,
+        media_type=MediaTypeOld.OPEN_DOCUMENT,
         extensions=_OPEN_DOCUMENT_SET,
         is_iana=False,
         name="open document",
     )
     PACKAGE_TYPES = MediaCategory(
-        media_type=MediaType.PACKAGE,
+        media_type=MediaTypeOld.PACKAGE,
         extensions=_PACKAGE_SET,
         is_iana=False,
         name="package",
     )
     PAINT_DOT_NET_TYPES = MediaCategory(
-        media_type=MediaType.PAINT_DOT_NET,
+        media_type=MediaTypeOld.PAINT_DOT_NET,
         extensions=_PAINT_DOT_NET_SET,
         is_iana=False,
         name="paint.net",
     )
     PDF_TYPES = MediaCategory(
-        media_type=MediaType.PDF,
+        media_type=MediaTypeOld.PDF,
         extensions=_PDF_SET | _ADOBE_ILLUSTRATOR_SET,
         is_iana=False,
         name="pdf",
     )
     PLAINTEXT_TYPES = MediaCategory(
-        media_type=MediaType.PLAINTEXT,
+        media_type=MediaTypeOld.PLAINTEXT,
         extensions=_PLAINTEXT_SET | _CODE_SET,
         is_iana=False,
         name="plaintext",
     )
     PRESENTATION_TYPES = MediaCategory(
-        media_type=MediaType.PRESENTATION,
+        media_type=MediaTypeOld.PRESENTATION,
         extensions=_PRESENTATION_SET,
         is_iana=False,
         name="presentation",
     )
     PROGRAM_TYPES = MediaCategory(
-        media_type=MediaType.PROGRAM,
+        media_type=MediaTypeOld.PROGRAM,
         extensions=_PROGRAM_SET,
         is_iana=False,
         name="program",
     )
     SHADER_TYPES = MediaCategory(
-        media_type=MediaType.SHADER,
+        media_type=MediaTypeOld.SHADER,
         extensions=_SHADER_SET,
         is_iana=False,
         name="shader",
     )
     SHORTCUT_TYPES = MediaCategory(
-        media_type=MediaType.SHORTCUT,
+        media_type=MediaTypeOld.SHORTCUT,
         extensions=_SHORTCUT_SET,
         is_iana=False,
         name="shortcut",
     )
     SOURCE_ENGINE_TYPES = MediaCategory(
-        media_type=MediaType.SOURCE_ENGINE,
+        media_type=MediaTypeOld.SOURCE_ENGINE,
         extensions=_SOURCE_ENGINE_SET,
         is_iana=False,
         name="source engine",
     )
     SPREADSHEET_TYPES = MediaCategory(
-        media_type=MediaType.SPREADSHEET,
+        media_type=MediaTypeOld.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
         is_iana=False,
         name="spreadsheet",
     )
     TEXT_TYPES = MediaCategory(
-        media_type=MediaType.TEXT,
+        media_type=MediaTypeOld.TEXT,
         extensions=_DOCUMENT_SET | _PLAINTEXT_SET,
         is_iana=True,
         name="text",
     )
     VIDEO_TYPES = MediaCategory(
-        media_type=MediaType.VIDEO,
+        media_type=MediaTypeOld.VIDEO,
         extensions=_VIDEO_SET,
         is_iana=True,
         name="video",
     )
     KRITA_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
+        media_type=MediaTypeOld.IMAGE,
         extensions=_KRITA_SET,
         is_iana=False,
         name="krita",
@@ -687,14 +853,14 @@ class MediaCategories:
     ]
 
     @staticmethod
-    def get_types(ext: str, mime_fallback: bool = False) -> set[MediaType]:
+    def get_types(ext: str, mime_fallback: bool = False) -> set[MediaTypeOld]:
         """Return a set of MediaTypes given a file extension.
 
         Args:
             ext (str): File extension with a leading "." and in all lowercase.
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
-        media_types: set[MediaType] = set()
+        media_types: set[MediaTypeOld] = set()
 
         for cat in MediaCategories.ALL_CATEGORIES:
             if cat.contains(ext, mime_fallback):

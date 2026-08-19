@@ -19,7 +19,7 @@ from tagstudio.qt.views.styles.image_effects import replace_transparent_pixels
 logger = structlog.get_logger(__name__)
 
 
-def pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
+def pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
     """Render a thumbnail for a PDF or Adobe Illustrator file.
 
     filepath (Path): The path of the file.
@@ -44,7 +44,7 @@ def pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
     else:
         page_size *= size / page_size.width()
     # Enlarge image for anti-aliasing
-    scale_factor = 2.5 if ext in {".pdf"} else 1
+    scale_factor = 2.5
     page_size *= scale_factor
     # Render image with no anti-aliasing for speed
     render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()

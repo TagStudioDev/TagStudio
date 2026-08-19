@@ -5,7 +5,9 @@
 import contextlib
 import hashlib
 import math
+from collections.abc import Callable
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 
 import structlog
@@ -15,7 +17,7 @@ from PIL.Image import DecompressionBombError
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.media_types import MediaCategories, MediaTypeGroup, MediaTypeOld, MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.gradients import four_corner_gradient
 from tagstudio.previews.renderers.archive import (
@@ -89,15 +91,15 @@ class FileRenderer:
             url (Path): The file url to assess. "$LOADING" will return the loading graphic.
         """
         ext = url.suffix.lower()
-        types: set[MediaType] = MediaCategories.get_types(ext, mime_fallback=True)
+        types: set[MediaTypeOld] = MediaCategories.get_types(ext, mime_fallback=True)
 
         # Manual icon overrides.
         if ext in {".gif", ".vtf"}:
-            return MediaType.IMAGE
+            return MediaTypeOld.IMAGE
         elif ext in {".dll", ".pyc", ".o", ".dylib"}:
-            return MediaType.PROGRAM
+            return MediaTypeOld.PROGRAM
         elif ext in {".mscz"}:  # noqa: SIM114
-            return MediaType.TEXT
+            return MediaTypeOld.TEXT
 
         # Loop though the specific (non-IANA) categories and return the string
         # name of the first matching category found.
@@ -751,34 +753,79 @@ class FileRenderer:
             cache_filename (Path | None): An optional filename to use to save to the cache.
 
         """
+        filepath = Path(filepath) if isinstance(filepath, str) else filepath
         scaled_size = math.ceil(max(size[0], size[1]) * dpi_scale)
         image: Image.Image | None = None
-        filepath_: Path = Path(filepath)
         is_savable_type: bool = True
 
-        if filepath_ and filepath_.is_file():
+        # Ordered groups of file renderers.
+        # A file extension is rendered with the first group it's found in.
+        render_groups: list[tuple[MediaTypeGroup, Callable[..., Image.Image | None]]] = [
+            (MediaTypes.raster_image_types, partial(raster_image_thumb, filepath)),
+            (MediaTypes.vector_image_types, partial(vector_image_thumb, filepath, scaled_size)),
+            (MediaTypes.binary_types, partial(raster_image_thumb, filepath)),
+            (MediaTypes.python_types, partial(text_thumb, filepath)),
+            (MediaTypes.pdf_types, partial(pdf_thumb, filepath, scaled_size)),
+        ]
+        if filepath and filepath.is_file():
             try:
-                ext: str = filepath_.suffix.lower() if filepath_.suffix else filepath_.stem.lower()
+                ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
+                for media_type, renderer in render_groups:
+                    if ext in media_type.renderable:
+                        logger.warning(f"{ext}: {media_type.renderable}")
+                        image = renderer()
+                        continue
+
+                if not image:
+                    logger.warning(f"No match for {ext}")
+                    raise NoRendererError
+
+                if image:
+                    image = self._resize_image(image, (scaled_size, scaled_size))
+
+                if cache_filename and is_savable_type and image and cache:
+                    cache.save_image(image, cache_filename, mode="RGBA")
+            except (
+                AssertionError,
+                ChildProcessError,
+                DecompressionBombError,
+                UnidentifiedImageError,
+                ValueError,
+            ) as e:
+                logger.error(
+                    "[FileRenderer] Couldn't render thumbnail",
+                    filepath=filepath,
+                    error=type(e).__name__,
+                )
+                image = None
+            except NoRendererError:
+                image = None
+
+        return image
+
+        if filepath and filepath.is_file():
+            try:
+                ext: str = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
                 # eBooks ===========================================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = epub_thumb(filepath_, ext)
+                    image = epub_thumb(filepath, ext)
                 # Krita ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
                 ):
-                    image = krita_thumb(filepath_)
+                    image = krita_thumb(filepath)
                 # Clip Studio Paint ================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
                 ):
-                    image = clip_studio_thumb(filepath_)
+                    image = clip_studio_thumb(filepath)
                 # VTF ==============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
-                    image = vtf_thumb(filepath_)
+                    image = vtf_thumb(filepath)
                 # Images ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
@@ -787,61 +834,59 @@ class FileRenderer:
                     if MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
-                        image = raw_image_thumb(filepath_)
+                        image = raw_image_thumb(filepath)
                     # Vector Images ----------------------------------------------------------------
-                    elif MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
-                    ):
-                        image = vector_image_thumb(filepath_, scaled_size)
+                    elif ext in MediaTypes.vector_image_types.renderable:
+                        image = vector_image_thumb(filepath, scaled_size)
                     # EXR Images -------------------------------------------------------------------
                     elif ext in [".exr"]:
-                        image = exr_image_thumb(filepath_)
+                        image = exr_image_thumb(filepath)
                     # Normal Images ----------------------------------------------------------------
                     else:
-                        image = raster_image_thumb(filepath_)
+                        image = raster_image_thumb(filepath)
                 # Videos ===========================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
-                    image = video_thumb(filepath_)
+                    image = video_thumb(filepath)
                 # PowerPoint =======================================================================
                 elif ext in {".pptx"}:
-                    image = powerpoint_thumb(filepath_)
+                    image = powerpoint_thumb(filepath)
                 # OpenDocument/OpenOffice ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
                 ):
-                    image = open_doc_thumb(filepath_)
+                    image = open_doc_thumb(filepath)
                 # Apple iWork + Creator Studio =====================================================
                 elif (
                     MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES)
                     or ext == ".pxd"
                 ):
-                    image = apple_embedded_thumb(filepath_)
+                    image = apple_embedded_thumb(filepath)
                 # Plain Text =======================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
                 ):
-                    image = text_thumb(filepath_)
+                    image = text_thumb(filepath)
                 # Fonts ============================================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
                     if is_thumb:
                         # Short (Aa) Preview
-                        image = font_small_thumb(filepath_, scaled_size)
+                        image = font_small_thumb(filepath, scaled_size)
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.BLUE, theme)
                     else:
                         # Large (Full Alphabet) Preview
-                        image = font_full_preview(filepath_, scaled_size)
+                        image = font_full_preview(filepath, scaled_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
                 ):
-                    image = audio_album_thumb(filepath_, ext)
+                    image = audio_album_thumb(filepath, ext)
                     if image is None:
-                        image = audio_waveform_thumb(filepath_, ext, scaled_size, dpi_scale)
+                        image = audio_waveform_thumb(filepath, ext, scaled_size, dpi_scale)
                         is_savable_type = False
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN, theme)
@@ -849,21 +894,21 @@ class FileRenderer:
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
-                    image = blender_thumb(filepath_)
+                    image = blender_thumb(filepath)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
-                    image = pdf_thumb(filepath_, scaled_size, ext)
+                    image = pdf_thumb(filepath, scaled_size, ext)
                 # Archives =====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
-                    image = archive_thumb(filepath_, ext=ext)
+                    image = archive_thumb(filepath, ext=ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
-                    image = medibang_paint_thumb(filepath_)
+                    image = medibang_paint_thumb(filepath)
                 # Paint.NET ====================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
-                    image = paint_dot_net_thumb(filepath_)
+                    image = paint_dot_net_thumb(filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
