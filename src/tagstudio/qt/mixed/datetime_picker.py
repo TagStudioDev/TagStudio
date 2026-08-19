@@ -41,7 +41,7 @@ def qdtf2dtf(dtf: str) -> str:
 
 # TODO: Split to use MVC guidelines.
 class DatetimePicker(ModalContent):
-    def __init__(self, driver: "QtDriver", name: str, datetime: dt | str):
+    def __init__(self, driver: QtDriver, name: str, datetime: dt | str):
         super().__init__()
         self.setMinimumSize(300, 60)
         self.root_layout = QVBoxLayout(self)

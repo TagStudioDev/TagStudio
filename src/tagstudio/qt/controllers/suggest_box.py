@@ -11,6 +11,7 @@ from PySide6.QtGui import QAction, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
@@ -110,7 +111,7 @@ class SuggestBox[T](QWidget):
     def _on_shift_held(self, held: bool) -> None:
         self._is_shift_held = held
         for i in range(0, self.layout().content_layout.count()):
-            underlined_widget = self.layout().content_layout.itemAt(i).widget()
+            underlined_widget = self.layout().content_layout.itemAt(i).widget()  # pyright: ignore
             assert isinstance(underlined_widget, UnderlinedWidget)
 
             if held and i == self._selection_index:
@@ -128,7 +129,7 @@ class SuggestBox[T](QWidget):
         # Initialize the widget count (non-hidden)
         widget_count = 0
         for i in range(0, self.layout().content_layout.count()):
-            widget = self.layout().content_layout.itemAt(i).widget()
+            widget = unwrap(self.layout().content_layout.itemAt(i).widget())  # pyright: ignore
             if not widget.isHidden():
                 widget_count += 1
 
@@ -149,7 +150,7 @@ class SuggestBox[T](QWidget):
 
         # Draw the correct underline for the selected widget
         for i in range(0, widget_count):
-            underlined_widget = self.layout().content_layout.itemAt(i).widget()
+            underlined_widget = self.layout().content_layout.itemAt(i).widget()  # pyright: ignore
             assert isinstance(underlined_widget, UnderlinedWidget)
             if i == self._selection_index:
                 underlined_widget.toggle_underline(is_hidden=False)
@@ -216,7 +217,9 @@ class SuggestBox[T](QWidget):
         self._selection_index = 0
         if self.layout().content_layout.count() > 0:
             self.layout().scroll_area.ensureWidgetVisible(
-                self.layout().content_layout.itemAt(0).widget(), xmargin=16, ymargin=0
+                self.layout().content_layout.itemAt(0).widget(),  # pyright: ignore
+                xmargin=16,
+                ymargin=0,
             )
 
         # Get results for the search query

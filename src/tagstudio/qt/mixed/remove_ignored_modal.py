@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class RemoveIgnoredModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: IgnoredRegistry):
+    def __init__(self, driver: QtDriver, tracker: IgnoredRegistry):
         super().__init__()
         self.driver = driver
         self.tracker = tracker

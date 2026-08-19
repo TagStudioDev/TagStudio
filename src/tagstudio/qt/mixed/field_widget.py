@@ -12,6 +12,7 @@ from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
 from tagstudio.qt.views.styles.stylesheets import container_style, header
@@ -136,17 +137,19 @@ class FieldContainer(QWidget):
         if callback:
             self.remove_button.clicked.connect(callback)
 
-    def set_inner_widget(self, widget: "FieldWidget") -> None:
-        if self.field_layout.itemAt(0):
-            old: QWidget = self.field_layout.itemAt(0).widget()
+    def set_inner_widget(self, widget: FieldWidget) -> None:
+        item = self.field_layout.itemAt(0)
+        if item:
+            old: QWidget = unwrap(item.widget())
             self.field_layout.removeWidget(old)
             old.deleteLater()
 
         self.field_layout.addWidget(widget)
 
     def get_inner_widget(self) -> QWidget | None:
-        if self.field_layout.itemAt(0):
-            return self.field_layout.itemAt(0).widget()
+        item = self.field_layout.itemAt(0)
+        if item:
+            return item.widget()
         return None
 
     def set_title(self, title: str) -> None:

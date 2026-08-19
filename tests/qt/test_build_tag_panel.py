@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 # pyright: reportPrivateUsage = false
+# pyright: reportOptionalMemberAccess=false
 
 from collections.abc import Callable
 from typing import cast

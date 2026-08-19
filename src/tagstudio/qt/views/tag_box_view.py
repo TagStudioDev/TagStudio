@@ -23,7 +23,7 @@ logger = structlog.get_logger(__name__)
 class TagBoxWidgetView(FieldWidget):
     __lib: Library
 
-    def __init__(self, title: str, driver: "QtDriver") -> None:
+    def __init__(self, title: str, driver: QtDriver) -> None:
         super().__init__(title)
         self.__lib = driver.lib
 

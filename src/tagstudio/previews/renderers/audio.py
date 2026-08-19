@@ -52,7 +52,7 @@ def audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
             image = artwork
     except (
         FileNotFoundError,
-        id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
+        id3.ID3NoHeaderError,
         mp4.MP4MetadataError,
         mp4.MP4StreamInfoError,
         MutagenError,

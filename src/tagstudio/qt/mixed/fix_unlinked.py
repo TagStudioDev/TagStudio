@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 # TODO: Split to use MVC guidelines.
 class FixUnlinkedEntriesModal(QWidget):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.lib = library
         self.driver = driver

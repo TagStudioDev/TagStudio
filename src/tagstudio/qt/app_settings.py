@@ -88,7 +88,7 @@ class AppSettings(BaseModel):
     loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
 
     @staticmethod
-    def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "AppSettings":
+    def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> AppSettings:
         if path.exists():
             with open(path) as file:
                 filecontents = file.read()

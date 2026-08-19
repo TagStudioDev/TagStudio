@@ -861,7 +861,7 @@ class Library:
                     self.files_not_in_library,
                     key=lambda t: -(self.library_dir / t).stat().st_ctime,
                 )
-            except (FileExistsError, FileNotFoundError):
+            except FileExistsError, FileNotFoundError:
                 print(
                     "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
                 )

@@ -16,7 +16,7 @@ If you wish to develop for TagStudio, you'll need to create a development enviro
 
 ## Installing Python
 
-Python [3.12](https://www.python.org/downloads) is required to develop for TagStudio. Any version matching "Python 3.12.x" should work, with "x" being any number. Alternatively you can use a tool such as [pyenv](https://github.com/pyenv/pyenv) to install this version of Python without affecting any existing Python installations on your system. Tools such as [uv](#installing-with-uv) can also install Python versions.
+Python [3.14](https://www.python.org/downloads) is required to develop for TagStudio. Any version matching "Python 3.14.x" should work, with "x" being any number. Alternatively you can use a tool such as [pyenv](https://github.com/pyenv/pyenv) to install this version of Python without affecting any existing Python installations on your system. Tools such as [uv](#installing-with-uv) can also install Python versions.
 
 <!-- prettier-ignore -->
 !!! info "Python Aliases"
@@ -35,8 +35,8 @@ python --version
 If you choose to install Python using pyenv, please refer to the following instructions:
 
 1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
-2. Install the appropriate Python version with pyenv by running `pyenv install 3.12` (This will **not** mess with your existing Python installation).
-3. Navigate to the repository root folder in your terminal and run `pyenv local 3.12`. You could alternatively use `pyenv shell 3.12` or `pyenv global 3.12` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
+2. Install the appropriate Python version with pyenv by running `pyenv install 3.14` (This will **not** mess with your existing Python installation).
+3. Navigate to the repository root folder in your terminal and run `pyenv local 3.14`. You could alternatively use `pyenv shell 3.14` or `pyenv global 3.14` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
 
 ---
 

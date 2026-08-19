@@ -58,5 +58,5 @@ def format_duration(duration: int | float) -> str:
         hours, seconds = divmod(seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
         return f"{hours}:{minutes:02}:{seconds:02}" if hours else f"{minutes}:{seconds:02}"
-    except (OverflowError, ValueError):
+    except OverflowError, ValueError:
         return "-:--"

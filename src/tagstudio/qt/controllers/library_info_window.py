@@ -33,7 +33,7 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Use newer MVC style guidelines
 class LibraryInfoWindow(LibraryInfoWindowView):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__(library, driver)
 
         # Statistics Buttons

@@ -45,7 +45,7 @@ class _ItemMode(IntEnum):
 
 
 class Inspector(QWidget):
-    def __init__(self, driver: "QtDriver") -> None:
+    def __init__(self, driver: QtDriver) -> None:
         super().__init__()
         self._driver = driver
         self._lib = self._driver.lib

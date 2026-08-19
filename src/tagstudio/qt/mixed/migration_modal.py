@@ -5,6 +5,7 @@
 import traceback
 from pathlib import Path
 from typing import cast
+from warnings import deprecated
 
 import structlog
 import wcmatch.fnmatch as fnmatch
@@ -23,7 +24,6 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     IGNORE_NAME,
@@ -98,8 +98,8 @@ class JsonMigrationModal(QObject):
         body_label = QLabel(Translations["json_migration.info.description"])
         body_label.setWordWrap(True)
         body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        body_wrapper.layout().addWidget(body_label)
-        body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
+        body_wrapper.layout().addWidget(body_label)  # pyright: ignore[reportOptionalMemberAccess]
+        body_wrapper.layout().setContentsMargins(0, 36, 0, 0)  # pyright: ignore[reportOptionalMemberAccess]
 
         cancel_button = QPushButton(Translations["generic.cancel"])
         next_button = QPushButton(Translations["generic.continue"])
@@ -287,9 +287,9 @@ class JsonMigrationModal(QObject):
         body_container_layout.addStretch(1)
         body_container_layout.addWidget(new_lib_container)
         body_container_layout.addStretch(2)
-        self.body_wrapper_01.layout().addWidget(body_container)
-        self.body_wrapper_01.layout().addWidget(desc_label)
-        self.body_wrapper_01.layout().setSpacing(12)
+        self.body_wrapper_01.layout().addWidget(body_container)  # pyright: ignore[reportOptionalMemberAccess]
+        self.body_wrapper_01.layout().addWidget(desc_label)  # pyright: ignore[reportOptionalMemberAccess]
+        self.body_wrapper_01.layout().setSpacing(12)  # pyright: ignore[reportOptionalMemberAccess]
 
         back_button = QPushButton(Translations["generic.navigation.back"])
         start_button = QPushButton(Translations["json_migration.start_and_preview"])
@@ -352,14 +352,9 @@ class JsonMigrationModal(QObject):
 
     def migration_progress(self, skip_ui: bool = False):
         """Initialize the progress bar and iterator for the library migration."""
-        pb = QProgressDialog(
-            labelText="",
-            cancelButtonText="",
-            minimum=0,
-            maximum=0,
-        )
-        pb.setCancelButton(None)  # pyright: ignore[reportArgumentType]
-        self.body_wrapper_01.layout().addWidget(pb)
+        pb = QProgressDialog("", "", 0, 0)
+        pb.setCancelButton(None)
+        self.body_wrapper_01.layout().addWidget(pb)  # pyright: ignore[reportOptionalMemberAccess]
 
         try:
             iterator = FunctionIterator(self.migration_iterator)
@@ -480,26 +475,26 @@ class JsonMigrationModal(QObject):
 
     def update_json_entry_count(self, value: int):
         self.old_entry_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        label: QLabel = self.old_content_layout.itemAtPosition(self.entries_row, 1).widget()  # pyright: ignore
         label.setText(self.color_value_default(value))
 
     def update_json_tag_count(self, value: int):
         self.old_tag_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # pyright: ignore[reportAssignmentType]
+        label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # pyright: ignore
         label.setText(self.color_value_default(value))
 
     def update_sql_value(self, row: int, value: int | bool, old_value: int | bool):
-        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
+        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore
         label.setText(self.color_value_conditional(old_value, value))
         warning_icon.setText("" if old_value == value else self.warning)
 
     def update_parity_value(self, row: int, value: bool):
         result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
-        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore[reportAssignmentType]
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore[reportAssignmentType]
+        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore
+        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # pyright: ignore
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # pyright: ignore
         old_label.setText(self.color_value_conditional(self.match_text, result))
         new_label.setText(self.color_value_conditional(self.match_text, result))
         old_warning_icon.setText("" if value else self.warning)

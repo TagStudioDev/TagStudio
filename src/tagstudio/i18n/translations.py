@@ -86,7 +86,7 @@ class Translator:
     def __format(self, text: str, **kwargs: ...) -> str:
         try:
             return text.format(**kwargs)
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             logger.error(
                 "[Translations] Error while formatting translation.",
                 text=text,

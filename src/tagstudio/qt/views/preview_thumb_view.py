@@ -44,7 +44,7 @@ class PreviewThumbView(QWidget):
     __should_render_on_resize: bool
     __rendered_res: tuple[int, int]
 
-    def __init__(self, library: Library, driver: "QtDriver") -> None:
+    def __init__(self, library: Library, driver: QtDriver) -> None:
         super().__init__()
         self._driver = driver
 

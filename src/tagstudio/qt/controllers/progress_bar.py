@@ -27,10 +27,10 @@ class ProgressWidget(QWidget):
         super().__init__()
         self.root = QVBoxLayout(self)
         self.pb = QProgressDialog(
-            labelText=label_text,
-            minimum=minimum,
-            cancelButtonText=cancel_button_text,  # pyright: ignore[reportArgumentType]
-            maximum=maximum,
+            label_text,
+            cancel_button_text,  # pyright: ignore[reportArgumentType]
+            minimum,
+            maximum,
         )
         self.root.addWidget(self.pb)
         self.setFixedSize(432, 112)

@@ -33,7 +33,7 @@ Image.MAX_IMAGE_PIXELS = None
 
 # TODO: Use newer MVC style guidelines
 class PreviewThumb(PreviewThumbView):
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__(library, driver)
 
         self.__driver: QtDriver = driver

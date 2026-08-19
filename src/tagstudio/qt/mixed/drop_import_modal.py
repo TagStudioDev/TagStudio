@@ -34,7 +34,7 @@ class DuplicateChoice(enum.StrEnum):
 class DropImportModal(QWidget):
     DUPE_NAME_LIMT: int = 5
 
-    def __init__(self, driver: "QtDriver"):
+    def __init__(self, driver: QtDriver):
         super().__init__()
 
         self.driver: QtDriver = driver

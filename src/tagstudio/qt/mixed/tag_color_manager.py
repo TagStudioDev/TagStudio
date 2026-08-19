@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
@@ -42,7 +43,7 @@ class TagColorManager(QWidget):
 
     def __init__(
         self,
-        driver: "QtDriver",
+        driver: QtDriver,
     ):
         super().__init__()
         self.driver = driver
@@ -166,7 +167,8 @@ class TagColorManager(QWidget):
 
     def reset(self):
         while self.scroll_layout.count():
-            widget = self.scroll_layout.itemAt(0).widget()
+            item = unwrap(self.scroll_layout.itemAt(0))
+            widget = unwrap(item.widget())
             self.scroll_layout.removeWidget(widget)
             widget.deleteLater()
         self.is_initialized = False

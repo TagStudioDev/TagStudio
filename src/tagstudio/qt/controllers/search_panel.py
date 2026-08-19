@@ -78,7 +78,7 @@ class SearchPanel[T](ModalContent):
         self.setMinimumSize(300, 400)
         self.connect_callbacks(self)
 
-    def connect_callbacks(self, controller: "SearchPanel[Any]") -> None:  # pyright: ignore[reportExplicitAny]
+    def connect_callbacks(self, controller: SearchPanel[Any]) -> None:  # pyright: ignore[reportExplicitAny]
         self.layout().limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
         self.layout().search_field.textChanged.connect(controller.on_search_query_changed)
         self.layout().search_field.returnPressed.connect(
@@ -166,7 +166,7 @@ class SearchPanel[T](ModalContent):
         if not query:
             self.layout().search_field.setFocus()
             parent: QWidget | None = self.parentWidget()
-            if parent is not None:  # pyright: ignore[reportUnnecessaryComparison]
+            if parent is not None:
                 parent.hide()
             return
 

@@ -20,7 +20,7 @@ class ResourceManager:
 
     _map: dict[str, dict[str, str]] = {}
     _cache: dict[str, bytes | str | Image.Image | QPixmap] = {}
-    _instance: "ResourceManager | None" = None
+    _instance: ResourceManager | None = None
 
     def __new__(cls):
         if ResourceManager._instance is None:
