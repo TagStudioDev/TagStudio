@@ -28,7 +28,7 @@ class ProgressWidget(QWidget):
         self.root = QVBoxLayout(self)
         self.pb = QProgressDialog(
             label_text,
-            cancel_button_text or "",
+            cancel_button_text,  # pyright: ignore[reportArgumentType]
             minimum,
             maximum,
         )
