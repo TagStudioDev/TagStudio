@@ -311,17 +311,6 @@ class ItemThumb(FlowWidget):
                 else None
             )
         )
-
-        self.thumb_button.clicked.connect(
-            lambda: (
-                self.toggle_item_selection()
-                if (
-                    QGuiApplication.keyboardModifiers() != Qt.KeyboardModifier.ControlModifier
-                    and self.thumb_button.selected
-                )
-                else None
-            )
-        )
         self.set_mode(mode)
 
     @property
