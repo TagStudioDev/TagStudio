@@ -13,7 +13,7 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 
-class _Contexts(Enum):
+class Context(Enum):
     """An enum representing the use for a media type."""
 
     SEARCH = auto()
@@ -23,13 +23,13 @@ class _Contexts(Enum):
 class _Type:
     """A complete description of a media type and its uses."""
 
-    def __init__(self, exts: str | list[str], contexts: _Contexts | list[_Contexts]) -> None:
+    def __init__(self, exts: str | list[str], contexts: Context | list[Context]) -> None:
         if isinstance(exts, str):
             self.exts = [exts]
         else:
             self.exts = exts
 
-        if isinstance(contexts, _Contexts):
+        if isinstance(contexts, Context):
             self.contexts = [contexts]
         else:
             self.contexts = contexts
@@ -47,23 +47,41 @@ class MediaTypeGroup:
         searchable_set: set[str] = set()
         renderable_set: set[str] = set()
         for type_ in self.types:
-            if _Contexts.SEARCH in type_.contexts:
+            if Context.SEARCH in type_.contexts:
                 for ext in type_.exts:
                     searchable_set.add(ext)
 
-            if _Contexts.RENDER in type_.contexts:
+            if Context.RENDER in type_.contexts:
                 for ext in type_.exts:
                     renderable_set.add(ext)
 
         self.searchable = frozenset(searchable_set)
         self.renderable = frozenset(renderable_set)
 
+    def contains(self, ext: str, context: Context) -> bool:
+        # logger.info(f"MIME Guess: {mimetypes.guess_type(Path(f'x{ext}'), strict=False)}")
+        return (
+            context == Context.SEARCH
+            and ext in self.searchable
+            or context == Context.RENDER
+            and ext in self.renderable
+        )
+        # return True
+
+        # if self.is_iana:
+        #     mime_type: str | None = mimetypes.guess_type(Path(f"x{ext}"), strict=False)[0]
+        #     if mime_type is not None and mime_type.startswith(self.name_key):
+        #         logger.info(f"MIME type found for {ext}: {mime_type}")
+        #         return True
+
+        # return False
+
 
 class MediaTypes:
-    SEARCH, RENDER = _Contexts.SEARCH, _Contexts.RENDER
+    SEARCH, RENDER = Context.SEARCH, Context.RENDER
 
     # Adobe ----------------------------------------------------------------------------------------
-    adobe_photoshop_types = MediaTypeGroup(
+    adobe_photoshop = MediaTypeGroup(
         "adobe.photoshop",
         [
             _Type(".pdd", SEARCH),
@@ -71,39 +89,120 @@ class MediaTypes:
             _Type(".psd", SEARCH),
         ],
     )
-
-    adobe_illustrator_types = MediaTypeGroup("adobe.illustrator", [_Type(".ai", SEARCH)])
-
-    pdf_types = MediaTypeGroup(
+    adobe_illustrator = MediaTypeGroup(
+        "adobe.illustrator",
+        [
+            _Type(".ai", SEARCH),
+        ],
+    )
+    pdf = MediaTypeGroup(
         "pdf",
         [
             _Type(".pdf", [SEARCH, RENDER]),
         ],
     )
 
-    adobe_types = MediaTypeGroup(
-        "type.adobe", adobe_photoshop_types.types + adobe_illustrator_types.types + pdf_types.types
+    adobe = MediaTypeGroup("adobe", adobe_photoshop.types + adobe_illustrator.types + pdf.types)
+
+    # Affinity -------------------------------------------------------------------------------------
+    affinity_photo = MediaTypeGroup(
+        "affinity.photo",
+        [_Type(".afphoto", [SEARCH, RENDER])],
+    )
+    affinity_designer = MediaTypeGroup(
+        "affinity.designer",
+        [_Type(".afdesign", [SEARCH, RENDER])],
+    )
+    affinity_publisher = MediaTypeGroup(
+        "affinity.publisher",
+        [_Type([".afpublisher", ".afpub"], [SEARCH, RENDER])],
     )
 
-    # Raster Images --------------------------------------------------------------------------------
-    raster_image_types = MediaTypeGroup(
-        "image.raster",
+    affinity = MediaTypeGroup(
+        "affinity",
+        affinity_photo.types
+        + affinity_designer.types
+        + affinity_publisher.types
+        + [_Type(".af", [SEARCH, RENDER])],
+    )
+
+    # MIDI -----------------------------------------------------------------------------------------
+    midi = MediaTypeGroup("midi", [_Type([".mid", ".midi"], SEARCH)])
+
+    # Audio ----------------------------------------------------------------------------------------
+    audio = MediaTypeGroup(
+        "audio",
         [
+            _Type(".aac", [RENDER, SEARCH]),
             _Type(
-                [".jfif", ".jpeg_large", ".jpeg", ".jpg_large", ".jpg"],
-                [SEARCH, RENDER],
+                [".aif", ".aiff", ".aifc"],
+                [RENDER, SEARCH],
             ),
-            _Type(".psd", RENDER),
+            _Type(".caf", [RENDER, SEARCH]),
+            _Type(".flac", [RENDER, SEARCH]),
+            _Type(".m4a", [RENDER, SEARCH]),
+            _Type(".m4p", [RENDER, SEARCH]),
+            _Type(".mp3", [RENDER, SEARCH]),
+            _Type(".ogg", [RENDER, SEARCH]),
+            _Type(".wav", [RENDER, SEARCH]),
+            _Type(".wma", [RENDER, SEARCH]),
+        ]
+        + midi.types,
+    )
+
+    # RAW Images -----------------------------------------------------------------------------------
+    raw_image = MediaTypeGroup(
+        "image.raw",
+        [
+            _Type(".arw", [SEARCH, RENDER]),
+            _Type(".cr2", [SEARCH, RENDER]),
+            _Type(".cr3", [SEARCH, RENDER]),
+            _Type(".crw", [SEARCH, RENDER]),
+            _Type(".dng", [SEARCH, RENDER]),
+            _Type(".nef", [SEARCH, RENDER]),
+            _Type(".nrw", [SEARCH, RENDER]),
+            _Type(".orf", [SEARCH, RENDER]),
+            _Type(".r3d", [SEARCH, RENDER]),
+            _Type(".raf", [SEARCH, RENDER]),
+            _Type(".raw", [SEARCH, RENDER]),
+            _Type(".rw2", [SEARCH, RENDER]),
+            _Type(".srf", [SEARCH, RENDER]),
+            _Type(".srf2", [SEARCH, RENDER]),
         ],
     )
 
-    # FIXME: Should the file renderer fallback to the search context if no render context is found,
-    # to use as a default preview?
-    # Because some files like .eps ot .pyc are never going to be rendered, but still should have
-    # default icons for the categories that they're in.
-    # OR should there be a new context?
+    # Raster Images --------------------------------------------------------------------------------
+    raster_image = MediaTypeGroup(
+        "image.raster",
+        [
+            _Type(".apng", [SEARCH, RENDER]),
+            _Type(".avif", [SEARCH, RENDER]),
+            _Type(".bmp", [SEARCH, RENDER]),
+            _Type(".exr", [SEARCH, RENDER]),
+            _Type(".gif", [SEARCH, RENDER]),
+            _Type(
+                [
+                    ".jfif",
+                    ".jpeg_large",
+                    ".jpeg",
+                    ".jpg_large",
+                    ".jpg",
+                ],
+                [SEARCH, RENDER],
+            ),
+            _Type(".jxl", [SEARCH, RENDER]),
+            _Type(".png", [SEARCH, RENDER]),
+            _Type(".psb", RENDER),
+            _Type(".psd", RENDER),
+            _Type(".webp", [SEARCH, RENDER]),
+            _Type([".heic", ".heif"], [SEARCH, RENDER]),
+            _Type([".j2k", ".jp2", ".jpg2"], [SEARCH, RENDER]),
+            _Type([".tif", ".tiff"], [SEARCH, RENDER]),
+        ],
+    )
 
-    vector_image_types = MediaTypeGroup(
+    # Vector Images --------------------------------------------------------------------------------
+    vector = MediaTypeGroup(
         "image.vector",
         [
             _Type(".ai", RENDER),
@@ -115,59 +214,111 @@ class MediaTypes:
         ],
     )
 
-    binary_types = MediaTypeGroup(
+    binary = MediaTypeGroup(
         "binary",
         [
+            _Type(".dll", [RENDER, SEARCH]),
+            _Type(".dylib", [RENDER, SEARCH]),
+            _Type(".exe", [RENDER, SEARCH]),
+            _Type(".o", [RENDER, SEARCH]),
             _Type(".pyc", [RENDER, SEARCH]),
             _Type(".pyd", [RENDER, SEARCH]),
             _Type(".pyo", [RENDER, SEARCH]),
-            _Type(".dll", [RENDER, SEARCH]),
-            _Type(".o", [RENDER, SEARCH]),
-            _Type(".dylib", [RENDER, SEARCH]),
-            _Type(".exe", [RENDER, SEARCH]),
         ],
     )
 
-    python_types = MediaTypeGroup(
+    python = MediaTypeGroup(
         "python",
         [
             _Type(".ipynb", [RENDER, SEARCH]),
             _Type(".py", [RENDER, SEARCH]),
-            _Type(".pyc", [SEARCH]),
-            _Type(".pyd", [SEARCH]),
+            _Type(".pyc", SEARCH),
+            _Type(".pyd", SEARCH),
             _Type(".pyi", [RENDER, SEARCH]),
-            _Type(".pyo", [SEARCH]),
+            _Type(".pyo", SEARCH),
         ],
     )
 
-    javascript_types = MediaTypeGroup(
+    javascript = MediaTypeGroup(
         "javascript",
         [
-            _Type(".cjs", [SEARCH]),
-            _Type(".js", [SEARCH]),
-            _Type(".jsx", [SEARCH]),
-            _Type(".mjs", [SEARCH]),
+            _Type(".cjs", [SEARCH, RENDER]),
+            _Type(".js", [SEARCH, RENDER]),
+            _Type(".jsx", [SEARCH, RENDER]),
+            _Type(".mjs", [SEARCH, RENDER]),
         ],
     )
 
-    typescript_types = MediaTypeGroup(
+    typescript = MediaTypeGroup(
         "typescript",
         [
-            _Type(".cts", [SEARCH]),
-            _Type(".mts", [SEARCH]),
-            _Type(".ts", [SEARCH]),
-            _Type(".tsx", [SEARCH]),
+            _Type(".cts", [SEARCH, RENDER]),
+            _Type(".mts", [SEARCH, RENDER]),
+            # _Type(".ts", [SEARCH, RENDER]),
+            _Type(".tsx", [SEARCH, RENDER]),
         ],
     )
 
-    # TODO: Move to FileRenderer
-    unrenderable_types = binary_types.types  # Eventually exclude .exe and stuff
-
-    # NOTE: This is a subjective group used for grouping files together for searches
-    # and for creating color-on-black syntax highlighted previews.
-    code_types = MediaTypeGroup(
-        "type.code", python_types.types + javascript_types.types + typescript_types.types
+    # Shell Script ---------------------------------------------------------------------------------
+    shell = MediaTypeGroup(
+        "shell",
+        [
+            _Type(".bat", [SEARCH, RENDER]),
+            _Type(".csh", [SEARCH, RENDER]),
+            _Type(".fish", [SEARCH, RENDER]),
+            _Type(".ps1", [SEARCH, RENDER]),
+            _Type(".sh", [SEARCH, RENDER]),
+        ],
     )
+
+    # Markdown -------------------------------------------------------------------------------------
+    markdown = MediaTypeGroup(
+        "markdown",
+        [
+            _Type(
+                [
+                    ".markdown",
+                    ".md",
+                    ".mkd",
+                    ".rmd",
+                ],
+                [SEARCH, RENDER],
+            ),
+        ],
+    )
+
+    # Plaintext ------------------------------------------------------------------------------------
+    plaintext = MediaTypeGroup(
+        "plaintext",
+        [_Type([".txt", ".text"], [SEARCH, RENDER])] + markdown.types,
+    )
+
+    # Code -----------------------------------------------------------------------------------------
+    code_types = MediaTypeGroup(
+        "type.code",
+        python.types + javascript.types + typescript.types + shell.types,
+    )
+
+    # Video ----------------------------------------------------------------------------------------
+    video = MediaTypeGroup(
+        "video",
+        [
+            _Type(".3gp", [SEARCH, RENDER]),
+            _Type(".avi", [SEARCH, RENDER]),
+            _Type(".flv", [SEARCH, RENDER]),
+            _Type(".gifv", [SEARCH, RENDER]),
+            _Type(".hevc", [SEARCH, RENDER]),
+            _Type(".m4p", [SEARCH, RENDER]),
+            _Type(".m4v", [SEARCH, RENDER]),
+            _Type(".mkv", [SEARCH, RENDER]),
+            _Type(".mov", [SEARCH, RENDER]),
+            _Type(".mp4", [SEARCH, RENDER]),
+            _Type(".webm", [SEARCH, RENDER]),
+            _Type(".wmv", [SEARCH, RENDER]),
+        ],
+    )
+
+    # ------------------
 
     @staticmethod
     def all_media_types():

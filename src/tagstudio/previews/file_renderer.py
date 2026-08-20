@@ -17,7 +17,13 @@ from PIL.Image import DecompressionBombError
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.media_types import MediaCategories, MediaTypeGroup, MediaTypeOld, MediaTypes
+from tagstudio.core.media_types import (
+    Context,
+    MediaCategories,
+    MediaTypeGroup,
+    MediaTypeOld,
+    MediaTypes,
+)
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.gradients import four_corner_gradient
 from tagstudio.previews.renderers.archive import (
@@ -27,7 +33,7 @@ from tagstudio.previews.renderers.archive import (
     open_doc_thumb,
     powerpoint_thumb,
 )
-from tagstudio.previews.renderers.audio import audio_album_thumb, audio_waveform_thumb
+from tagstudio.previews.renderers.audio import audio_album_thumb, audio_thumb, audio_waveform_thumb
 from tagstudio.previews.renderers.blender import blender_thumb
 from tagstudio.previews.renderers.clip_studio import clip_studio_thumb
 from tagstudio.previews.renderers.ebook import epub_thumb
@@ -41,7 +47,7 @@ from tagstudio.previews.renderers.raster_image import (
     raw_image_thumb,
 )
 from tagstudio.previews.renderers.source_engine import vtf_thumb
-from tagstudio.previews.renderers.text import text_thumb
+from tagstudio.previews.renderers.text import code_thumb, text_thumb
 from tagstudio.previews.renderers.vector_image import vector_image_thumb
 from tagstudio.previews.renderers.video import video_thumb
 from tagstudio.qt.app_settings import (
@@ -761,23 +767,35 @@ class FileRenderer:
         # Ordered groups of file renderers.
         # A file extension is rendered with the first group it's found in.
         render_groups: list[tuple[MediaTypeGroup, Callable[..., Image.Image | None]]] = [
-            (MediaTypes.raster_image_types, partial(raster_image_thumb, filepath)),
-            (MediaTypes.vector_image_types, partial(vector_image_thumb, filepath, scaled_size)),
-            (MediaTypes.binary_types, partial(raster_image_thumb, filepath)),
-            (MediaTypes.python_types, partial(text_thumb, filepath)),
-            (MediaTypes.pdf_types, partial(pdf_thumb, filepath, scaled_size)),
+            (MediaTypes.raw_image, partial(raw_image_thumb, filepath)),
+            (MediaTypes.binary, partial(raster_image_thumb, filepath)),
+            (MediaTypes.python, partial(text_thumb, filepath)),
+            (MediaTypes.pdf, partial(pdf_thumb, filepath, scaled_size)),
+            (MediaTypes.raster_image, partial(raster_image_thumb, filepath)),
+            (MediaTypes.vector, partial(vector_image_thumb, filepath, scaled_size)),
+            (MediaTypes.code_types, partial(code_thumb, filepath)),
+            (MediaTypes.plaintext, partial(text_thumb, filepath)),
+            (MediaTypes.audio, partial(audio_thumb, filepath, scaled_size, dpi_scale)),
+            (MediaTypes.video, partial(video_thumb, filepath)),
         ]
         if filepath and filepath.is_file():
             try:
                 ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
                 for media_type, renderer in render_groups:
-                    if ext in media_type.renderable:
-                        logger.warning(f"{ext}: {media_type.renderable}")
+                    if media_type.contains(ext, Context.RENDER):
+                        logger.info(f"{ext} in: {media_type.renderable}")
                         image = renderer()
-                        continue
+
+                        # TODO: Remove the need for these extra steps
+                        if image and ext in MediaTypes.audio.renderable:
+                            # TODO: Differentiate between album art and waveform
+                            image = self._apply_overlay_color(image, UiColor.GREEN, theme)
+                            is_savable_type = False
+
+                        break
 
                 if not image:
-                    logger.warning(f"No match for {ext}")
+                    logger.warning(f"Could not render {ext}")
                     raise NoRendererError
 
                 if image:
@@ -836,7 +854,7 @@ class FileRenderer:
                     ):
                         image = raw_image_thumb(filepath)
                     # Vector Images ----------------------------------------------------------------
-                    elif ext in MediaTypes.vector_image_types.renderable:
+                    elif ext in MediaTypes.vector.renderable:
                         image = vector_image_thumb(filepath, scaled_size)
                     # EXR Images -------------------------------------------------------------------
                     elif ext in [".exr"]:

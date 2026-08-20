@@ -39,13 +39,17 @@ def raster_image_thumb(filepath: Path) -> Image.Image | None:
     """
     im: Image.Image | None = None
     try:
+        if filepath.suffix.lower() == ".exr":
+            return exr_image_thumb(filepath)
+
         with filepath.open("rb") as file:
             im = image_from_bytes(BytesIO(file.read()))
     except (
-        FileNotFoundError,
-        UnidentifiedImageError,
         DecompressionBombError,
+        FileNotFoundError,
         NotImplementedError,
+        OSError,
+        UnidentifiedImageError,
     ) as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im
@@ -100,8 +104,8 @@ def raw_image_thumb(filepath: Path) -> Image.Image | None:
             )
     except (
         DecompressionBombError,
-        LibRawIOError,
         LibRawFileUnsupportedError,
+        LibRawIOError,
     ) as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im

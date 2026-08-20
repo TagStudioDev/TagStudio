@@ -20,30 +20,45 @@ from tagstudio.previews.vendored.pydub.audio_segment import (
 logger = structlog.get_logger(__name__)
 
 
-def audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
+def audio_thumb(filepath: Path, size: int, dpi_scale: float) -> Image.Image | None:
+    """Return an album cover preview, or a waveform if cover art does not exist.
+
+    Args:
+        filepath (Path): The path of the file.
+        size (int): The size of the thumbnail.
+        dpi_scale (float): The screen pixel ratio.
+    """
+    image = audio_album_thumb(filepath)
+    if not image:
+        image = audio_waveform_thumb(filepath, size, dpi_scale)
+
+    return image
+
+
+def audio_album_thumb(filepath: Path) -> Image.Image | None:
     """Return an album cover thumb from an audio file if a cover is present.
 
     Args:
         filepath (Path): The path of the file.
-        ext (str): The file extension (with leading ".").
     """
     image: Image.Image | None = None
+    ext = filepath.suffix.lower()
     try:
         if not filepath.is_file():
             raise FileNotFoundError
 
         artwork = None
-        if ext in [".mp3"]:
+        if ext in {".mp3", ".aif", ".aiff"}:
             id3_tags: id3.ID3 = id3.ID3(filepath)
             id3_covers: list = id3_tags.getall("APIC")  # pyright: ignore[reportUnknownVariableType]
             if id3_covers:
                 artwork = Image.open(BytesIO(id3_covers[0].data))
-        elif ext in [".flac"]:
+        elif ext in {".flac"}:
             flac_tags: flac.FLAC = flac.FLAC(filepath)
             flac_covers: list = flac_tags.pictures  # pyright: ignore[reportUnknownVariableType]
             if flac_covers:
                 artwork = Image.open(BytesIO(flac_covers[0].data))
-        elif ext in [".mp4", ".m4a", ".aac"]:
+        elif ext in {".mp4", ".m4a", ".aac", ".alac"}:
             mp4_tags: mp4.MP4 = mp4.MP4(filepath)
             mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportUnknownVariableType]
             if mp4_covers:
@@ -61,16 +76,13 @@ def audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
     return image
 
 
-def audio_waveform_thumb(
-    filepath: Path, ext: str, size: int, pixel_ratio: float
-) -> Image.Image | None:
+def audio_waveform_thumb(filepath: Path, size: int, dpi_scale: float) -> Image.Image | None:
     """Render a waveform image from an audio file.
 
     Args:
         filepath (Path): The path of the file.
-        ext (str): The file extension (with leading ".").
-        size (tuple[int,int]): The size of the thumbnail.
-        pixel_ratio (float): The screen pixel ratio.
+        size (int): The size of the thumbnail.
+        dpi_scale (float): The screen pixel ratio.
     """
     # BASE_SCALE used for drawing on a larger image and resampling down
     # to provide an antialiased effect.
@@ -81,8 +93,8 @@ def audio_waveform_thumb(
     im: Image.Image | None = None
 
     try:
-        bar_count: int = min(math.floor((size // pixel_ratio) / 5), 64)
-        audio = AudioSegment.from_file(filepath, ext[1:])  # pyright: ignore[reportUnknownVariableType]
+        bar_count: int = min(math.floor((size // dpi_scale) / 5), 64)
+        audio = AudioSegment.from_file(filepath, filepath.suffix.lower()[1:])  # pyright: ignore[reportUnknownVariableType]
         data = np.frombuffer(buffer=audio._data, dtype=np.int16)
         data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
         bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2

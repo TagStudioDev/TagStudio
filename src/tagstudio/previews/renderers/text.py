@@ -53,3 +53,34 @@ def text_thumb(filepath: Path) -> Image.Image | None:
     ) as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im
+
+
+def code_thumb(filepath: Path) -> Image.Image | None:
+    """Render a thumbnail for a plaintext file.
+
+    Args:
+        filepath (Path): The path of the file.
+    """
+    im: Image.Image | None = None
+
+    bg_color: str = "#000000"
+    fg_color: str = "#00FF00"
+
+    try:
+        encoding = detect_char_encoding(filepath)
+        with open(filepath, encoding=encoding) as text_file:
+            text = text_file.read(256)
+        bg = Image.new("RGB", (256, 256), color=bg_color)
+        draw = ImageDraw.Draw(bg)
+        draw.text((16, 16), text, fill=fg_color)
+        im = bg
+    except (
+        UnidentifiedImageError,
+        cv2.error,
+        DecompressionBombError,
+        UnicodeDecodeError,
+        OSError,
+        FileNotFoundError,
+    ) as e:
+        logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+    return im
