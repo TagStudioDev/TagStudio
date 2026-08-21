@@ -140,10 +140,8 @@ python3Packages.buildPythonApplication {
     "tests/qt/test_build_tag_panel.py"
     "tests/qt/test_field_containers.py"
     "tests/qt/test_file_path_options.py"
-    "tests/qt/test_preview_panel.py"
     "tests/qt/test_tag_panel.py"
     "tests/qt/test_tag_search_panel.py"
-    "tests/test_library.py"
   ];
 
   meta = {

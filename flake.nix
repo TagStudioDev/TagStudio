@@ -32,10 +32,7 @@
         { pkgs, self', ... }:
         let
           python3 = builtins.head python3Versions;
-          python3Versions = with pkgs; [
-            python313
-            python312
-          ];
+          python3Versions = with pkgs; [ python314 ];
         in
         {
           packages =
