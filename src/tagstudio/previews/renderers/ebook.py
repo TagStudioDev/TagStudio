@@ -18,7 +18,7 @@ from tagstudio.previews.renderers.raster_image import image_from_bytes
 logger = structlog.get_logger(__name__)
 
 
-def epub_thumb(filepath: Path, ext: str) -> Image.Image | None:
+def epub_thumb(filepath: Path) -> Image.Image | None:
     """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
     Args:
@@ -31,7 +31,7 @@ def epub_thumb(filepath: Path, ext: str) -> Image.Image | None:
     """
     im: Image.Image | None = None
     try:
-        with open_archive(filepath, ext) as archive:
+        with open_archive(filepath) as archive:
             if "ComicInfo.xml" in archive.namelist():
                 comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
                 im = _cover_from_comic_info(archive, comic_info, "FrontCover")

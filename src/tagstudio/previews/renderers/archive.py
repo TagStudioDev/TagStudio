@@ -60,7 +60,7 @@ class TarFile:
         self.tar.__exit__(*args)
 
 
-def open_archive(filepath: Path, ext: str = "") -> Archive:
+def open_archive(filepath: Path) -> Archive:
     """Open an archive with its corresponding archiver.
 
     Args:
@@ -70,6 +70,7 @@ def open_archive(filepath: Path, ext: str = "") -> Archive:
     Returns:
         Archive: The opened archive.
     """
+    ext = filepath.suffix.lower()
     archiver: type[Archive] = zipfile.ZipFile
     if ext in {".7z", ".cb7", ".s7z"}:
         archiver = SevenZipFile
@@ -101,7 +102,6 @@ def first_image_in_archive(archive: Archive) -> Image.Image | None:
 def archive_thumb(
     filepath: Path,
     image_names: list[Path] | list[str] | None = None,
-    ext: str = "",
 ) -> Image.Image | None:
     """Extract an embedded preview image from an archive.
 
@@ -114,7 +114,7 @@ def archive_thumb(
         Image: The first image found in the archive.
     """
     try:
-        with open_archive(filepath, ext) as archive:
+        with open_archive(filepath) as archive:
             # If no list of image names to search for was provided, default to the first image.
             if not image_names:
                 return first_image_in_archive(archive)

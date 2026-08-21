@@ -37,8 +37,8 @@ class _Type:
 
 class MediaTypeGroup:
     def __init__(self, name_key: str, types: list[_Type]) -> None:
-        self.searchable: frozenset[str]
-        self.renderable: frozenset[str]
+        self.searchable: frozenset[str]  # TODO: Make these dynamic
+        self.renderable: frozenset[str]  # TODO: Make these dynamic
         self.name_key = name_key
         self.types = types
         # NOTE: Does self.types need to exist?
@@ -78,254 +78,597 @@ class MediaTypeGroup:
 
 
 class MediaTypes:
-    SEARCH, RENDER = Context.SEARCH, Context.RENDER
-
-    # Adobe ----------------------------------------------------------------------------------------
-    adobe_photoshop = MediaTypeGroup(
-        "adobe.photoshop",
-        [
-            _Type(".pdd", SEARCH),
-            _Type(".psb", SEARCH),
-            _Type(".psd", SEARCH),
-        ],
-    )
-    adobe_illustrator = MediaTypeGroup(
-        "adobe.illustrator",
-        [
-            _Type(".ai", SEARCH),
-        ],
-    )
-    pdf = MediaTypeGroup(
-        "pdf",
-        [
-            _Type(".pdf", [SEARCH, RENDER]),
-        ],
-    )
-
-    adobe = MediaTypeGroup("adobe", adobe_photoshop.types + adobe_illustrator.types + pdf.types)
-
-    # Affinity -------------------------------------------------------------------------------------
-    affinity_photo = MediaTypeGroup(
-        "affinity.photo",
-        [_Type(".afphoto", [SEARCH, RENDER])],
-    )
-    affinity_designer = MediaTypeGroup(
-        "affinity.designer",
-        [_Type(".afdesign", [SEARCH, RENDER])],
-    )
-    affinity_publisher = MediaTypeGroup(
-        "affinity.publisher",
-        [_Type([".afpublisher", ".afpub"], [SEARCH, RENDER])],
-    )
-
-    affinity = MediaTypeGroup(
-        "affinity",
-        affinity_photo.types
-        + affinity_designer.types
-        + affinity_publisher.types
-        + [_Type(".af", [SEARCH, RENDER])],
-    )
-
-    # MIDI -----------------------------------------------------------------------------------------
-    midi = MediaTypeGroup("midi", [_Type([".mid", ".midi"], SEARCH)])
-
-    # Audio ----------------------------------------------------------------------------------------
-    audio = MediaTypeGroup(
-        "audio",
-        [
-            _Type(".aac", [RENDER, SEARCH]),
-            _Type(
-                [".aif", ".aiff", ".aifc"],
-                [RENDER, SEARCH],
-            ),
-            _Type(".caf", [RENDER, SEARCH]),
-            _Type(".flac", [RENDER, SEARCH]),
-            _Type(".m4a", [RENDER, SEARCH]),
-            _Type(".m4p", [RENDER, SEARCH]),
-            _Type(".mp3", [RENDER, SEARCH]),
-            _Type(".ogg", [RENDER, SEARCH]),
-            _Type(".wav", [RENDER, SEARCH]),
-            _Type(".wma", [RENDER, SEARCH]),
-        ]
-        + midi.types,
-    )
-
-    # RAW Images -----------------------------------------------------------------------------------
-    raw_image = MediaTypeGroup(
-        "image.raw",
-        [
-            _Type(".arw", [SEARCH, RENDER]),
-            _Type(".cr2", [SEARCH, RENDER]),
-            _Type(".cr3", [SEARCH, RENDER]),
-            _Type(".crw", [SEARCH, RENDER]),
-            _Type(".dng", [SEARCH, RENDER]),
-            _Type(".nef", [SEARCH, RENDER]),
-            _Type(".nrw", [SEARCH, RENDER]),
-            _Type(".orf", [SEARCH, RENDER]),
-            _Type(".r3d", [SEARCH, RENDER]),
-            _Type(".raf", [SEARCH, RENDER]),
-            _Type(".raw", [SEARCH, RENDER]),
-            _Type(".rw2", [SEARCH, RENDER]),
-            _Type(".srf", [SEARCH, RENDER]),
-            _Type(".srf2", [SEARCH, RENDER]),
-        ],
-    )
-
-    # Raster Images --------------------------------------------------------------------------------
-    raster_image = MediaTypeGroup(
-        "image.raster",
-        [
-            _Type(".apng", [SEARCH, RENDER]),
-            _Type(".avif", [SEARCH, RENDER]),
-            _Type(".bmp", [SEARCH, RENDER]),
-            _Type(".exr", [SEARCH, RENDER]),
-            _Type(".gif", [SEARCH, RENDER]),
-            _Type(
-                [
-                    ".jfif",
-                    ".jpeg_large",
-                    ".jpeg",
-                    ".jpg_large",
-                    ".jpg",
-                ],
-                [SEARCH, RENDER],
-            ),
-            _Type(".jxl", [SEARCH, RENDER]),
-            _Type(".png", [SEARCH, RENDER]),
-            _Type(".psb", RENDER),
-            _Type(".psd", RENDER),
-            _Type(".webp", [SEARCH, RENDER]),
-            _Type([".heic", ".heif"], [SEARCH, RENDER]),
-            _Type([".j2k", ".jp2", ".jpg2"], [SEARCH, RENDER]),
-            _Type([".tif", ".tiff"], [SEARCH, RENDER]),
-        ],
-    )
-
-    # Vector Images --------------------------------------------------------------------------------
-    vector = MediaTypeGroup(
-        "image.vector",
-        [
-            _Type(".ai", RENDER),
-            _Type(".eps", SEARCH),
-            _Type(".epsf", SEARCH),
-            _Type(".epsi", SEARCH),
-            _Type(".svg", [SEARCH, RENDER]),
-            _Type(".svgz", SEARCH),
-        ],
-    )
-
-    binary = MediaTypeGroup(
-        "binary",
-        [
-            _Type(".dll", [RENDER, SEARCH]),
-            _Type(".dylib", [RENDER, SEARCH]),
-            _Type(".exe", [RENDER, SEARCH]),
-            _Type(".o", [RENDER, SEARCH]),
-            _Type(".pyc", [RENDER, SEARCH]),
-            _Type(".pyd", [RENDER, SEARCH]),
-            _Type(".pyo", [RENDER, SEARCH]),
-        ],
-    )
-
-    python = MediaTypeGroup(
-        "python",
-        [
-            _Type(".ipynb", [RENDER, SEARCH]),
-            _Type(".py", [RENDER, SEARCH]),
-            _Type(".pyc", SEARCH),
-            _Type(".pyd", SEARCH),
-            _Type(".pyi", [RENDER, SEARCH]),
-            _Type(".pyo", SEARCH),
-        ],
-    )
-
-    javascript = MediaTypeGroup(
-        "javascript",
-        [
-            _Type(".cjs", [SEARCH, RENDER]),
-            _Type(".js", [SEARCH, RENDER]),
-            _Type(".jsx", [SEARCH, RENDER]),
-            _Type(".mjs", [SEARCH, RENDER]),
-        ],
-    )
-
-    typescript = MediaTypeGroup(
-        "typescript",
-        [
-            _Type(".cts", [SEARCH, RENDER]),
-            _Type(".mts", [SEARCH, RENDER]),
-            # _Type(".ts", [SEARCH, RENDER]),
-            _Type(".tsx", [SEARCH, RENDER]),
-        ],
-    )
-
-    # Shell Script ---------------------------------------------------------------------------------
-    shell = MediaTypeGroup(
-        "shell",
-        [
-            _Type(".bat", [SEARCH, RENDER]),
-            _Type(".csh", [SEARCH, RENDER]),
-            _Type(".fish", [SEARCH, RENDER]),
-            _Type(".ps1", [SEARCH, RENDER]),
-            _Type(".sh", [SEARCH, RENDER]),
-        ],
-    )
-
-    # Markdown -------------------------------------------------------------------------------------
-    markdown = MediaTypeGroup(
-        "markdown",
-        [
-            _Type(
-                [
-                    ".markdown",
-                    ".md",
-                    ".mkd",
-                    ".rmd",
-                ],
-                [SEARCH, RENDER],
-            ),
-        ],
-    )
-
-    # Plaintext ------------------------------------------------------------------------------------
-    plaintext = MediaTypeGroup(
-        "plaintext",
-        [_Type([".txt", ".text"], [SEARCH, RENDER])] + markdown.types,
-    )
-
-    # Code -----------------------------------------------------------------------------------------
-    code_types = MediaTypeGroup(
-        "type.code",
-        python.types + javascript.types + typescript.types + shell.types,
-    )
-
-    # Video ----------------------------------------------------------------------------------------
-    video = MediaTypeGroup(
-        "video",
-        [
-            _Type(".3gp", [SEARCH, RENDER]),
-            _Type(".avi", [SEARCH, RENDER]),
-            _Type(".flv", [SEARCH, RENDER]),
-            _Type(".gifv", [SEARCH, RENDER]),
-            _Type(".hevc", [SEARCH, RENDER]),
-            _Type(".m4p", [SEARCH, RENDER]),
-            _Type(".m4v", [SEARCH, RENDER]),
-            _Type(".mkv", [SEARCH, RENDER]),
-            _Type(".mov", [SEARCH, RENDER]),
-            _Type(".mp4", [SEARCH, RENDER]),
-            _Type(".webm", [SEARCH, RENDER]),
-            _Type(".wmv", [SEARCH, RENDER]),
-        ],
-    )
-
-    # ------------------
+    # TODO: Implement filename equivalencies
+    # TODO: Implement in_all_groups or something, if needed
+    # TODO: Implement collision detection (e.g. ".ts")
 
     @staticmethod
-    def all_media_types():
-        static_methods = [
-            name for name, attr in MediaTypes.__dict__.items() if isinstance(attr, MediaTypeGroup)
-        ]
-        return static_methods
+    def register(group: MediaTypeGroup) -> None:
+        setattr(MediaTypes, group.name_key.replace(".", "_"), group)
+
+
+SEARCH, RENDER = Context.SEARCH, Context.RENDER
+
+# Adobe ----------------------------------------------------------------------------------------
+
+# TODO: Don't have these floating in the global space
+_adobe_photoshop = MediaTypeGroup(
+    "adobe.photoshop",
+    [
+        _Type(".pdd", SEARCH),
+        _Type(".psb", SEARCH),
+        _Type(".psd", SEARCH),
+    ],
+)
+MediaTypes.register(_adobe_photoshop)
+
+_adobe_illustrator = MediaTypeGroup(
+    "adobe.illustrator",
+    [
+        _Type(".ai", SEARCH),
+    ],
+)
+MediaTypes.register(_adobe_illustrator)
+
+_pdf = MediaTypeGroup(
+    "pdf",
+    [
+        _Type(".pdf", [SEARCH, RENDER]),
+        _Type(".ai", RENDER),
+    ],
+)
+MediaTypes.register(_pdf)
+
+adobe = MediaTypeGroup("adobe", _adobe_photoshop.types + _adobe_illustrator.types + _pdf.types)
+MediaTypes.register(adobe)
+
+# Affinity -------------------------------------------------------------------------------------
+affinity_photo = MediaTypeGroup(
+    "affinity.photo",
+    [_Type(".afphoto", [SEARCH, RENDER])],
+)
+affinity_designer = MediaTypeGroup(
+    "affinity.designer",
+    [_Type(".afdesign", [SEARCH, RENDER])],
+)
+affinity_publisher = MediaTypeGroup(
+    "affinity.publisher",
+    [_Type([".afpublisher", ".afpub"], [SEARCH, RENDER])],
+)
+
+affinity = MediaTypeGroup(
+    "affinity",
+    affinity_photo.types
+    + affinity_designer.types
+    + affinity_publisher.types
+    + [_Type(".af", [SEARCH, RENDER])],
+)
+
+# Blender --------------------------------------------------------------------------------------
+_blender = MediaTypeGroup(
+    "blender",
+    [
+        _Type(".blen_tc", [SEARCH, RENDER]),
+        _Type(".blend", [SEARCH, RENDER]),
+        # Numbered Blender auto-backup files (.blend1 - .blend32)
+        _Type([f".blend{i}" for i in range(1, 33)], [SEARCH, RENDER]),
+    ],
+)
+MediaTypes.register(_blender)
+
+# Clip Studio Paint ----------------------------------------------------------------------------
+clip_studio_paint = MediaTypeGroup(
+    "clip_studio_paint",
+    [
+        _Type(".lip", [SEARCH, RENDER]),
+        _Type(".clip", [SEARCH, RENDER]),
+        _Type(".cmc", [SEARCH, RENDER]),
+    ],
+)
+
+# Krita ----------------------------------------------------------------------------------------
+krita = MediaTypeGroup(
+    "krita",
+    [
+        _Type(".kra", [SEARCH, RENDER]),
+        _Type(".krz", [SEARCH, RENDER]),
+    ],
+)
+
+# MediBang Paint / FireAlpaca ------------------------------------------------------------------
+medibang_paint = MediaTypeGroup("medibang_paint", [_Type(".mdp", [SEARCH, RENDER])])
+
+# Paint.NET ------------------------------------------------------------------------------------
+paint_dot_net = MediaTypeGroup("paint_dot_net", [_Type(".pdn", [SEARCH, RENDER])])
+
+# Archives -------------------------------------------------------------------------------------
+archive = MediaTypeGroup(
+    "archive",
+    [
+        _Type(".7z", [SEARCH, RENDER]),
+        _Type(".gz", SEARCH),
+        _Type(".rar", [SEARCH, RENDER]),
+        _Type(".s7z", [SEARCH, RENDER]),
+        _Type(".tar", [SEARCH, RENDER]),
+        _Type(".tgz", [SEARCH, RENDER]),
+        _Type(".zip", [SEARCH, RENDER]),
+    ],
+)
+
+# eBooks -------------------------------------------------------------------------------------
+ebook = MediaTypeGroup(
+    "ebook",
+    [
+        _Type(".azw", [SEARCH, RENDER]),
+        _Type(".azw3", [SEARCH, RENDER]),
+        _Type(".cb7", [SEARCH, RENDER]),
+        _Type(".cba", [SEARCH, RENDER]),
+        _Type(".cbr", [SEARCH, RENDER]),
+        _Type(".cbt", [SEARCH, RENDER]),
+        _Type(".cbz", [SEARCH, RENDER]),
+        _Type(".djvu", [SEARCH, RENDER]),
+        _Type(".epub", [SEARCH, RENDER]),
+        _Type(".fb2", [SEARCH, RENDER]),
+        _Type(".ibook", [SEARCH, RENDER]),
+        _Type(".inf", [SEARCH, RENDER]),
+        _Type(".kfx", [SEARCH, RENDER]),
+        _Type(".lit", [SEARCH, RENDER]),
+        _Type(".mobi", [SEARCH, RENDER]),
+        _Type(".pdb", [SEARCH, RENDER]),
+        _Type(".prc", [SEARCH, RENDER]),
+        _Type(".mscz", RENDER),
+    ],
+)
+
+# Fonts --------------------------------------------------------------------------------------
+font = MediaTypeGroup(
+    "font",
+    [
+        _Type(".fon", SEARCH),
+        _Type(".otf", [SEARCH, RENDER]),
+        _Type(".ttc", [SEARCH, RENDER]),
+        _Type(".ttf", [SEARCH, RENDER]),
+        _Type(".woff", [SEARCH, RENDER]),
+        _Type(".woff2", [SEARCH, RENDER]),
+    ],
+)
+
+# Office & Documents ---------------------------------------------------------------------------
+document = MediaTypeGroup(
+    "document",
+    [
+        _Type(".doc", SEARCH),
+        _Type(".docm", SEARCH),
+        _Type(".docx", SEARCH),
+        _Type(".dot", SEARCH),
+        _Type(".dotm", SEARCH),
+        _Type(".dotx", SEARCH),
+        _Type(".odt", SEARCH),
+        _Type(".pages", SEARCH),
+        _Type(".pdf", SEARCH),
+        _Type(".pxd", SEARCH),
+        _Type(".rtf", SEARCH),
+        _Type(".tex", SEARCH),
+        _Type(".wpd", SEARCH),
+        _Type(".wps", SEARCH),
+    ],
+)
+open_document = MediaTypeGroup(
+    "open_document",
+    [
+        _Type(".fodg", [SEARCH, RENDER]),
+        _Type(".fodp", [SEARCH, RENDER]),
+        _Type(".fods", [SEARCH, RENDER]),
+        _Type(".fodt", [SEARCH, RENDER]),
+        _Type(".mscz", SEARCH),
+        _Type(".odf", [SEARCH, RENDER]),
+        _Type(".odg", [SEARCH, RENDER]),
+        _Type(".odp", [SEARCH, RENDER]),
+        _Type(".ods", [SEARCH, RENDER]),
+        _Type(".odt", [SEARCH, RENDER]),
+        _Type(".ora", [SEARCH, RENDER]),
+    ],
+)
+
+iwork = MediaTypeGroup(
+    "iwork",
+    [
+        _Type(".key", [SEARCH, RENDER]),
+        _Type(".numbers", [SEARCH, RENDER]),
+        _Type(".pages", [SEARCH, RENDER]),
+        _Type(".pxd", RENDER),
+    ],
+)
+
+presentation = MediaTypeGroup(
+    "presentation",
+    [
+        _Type(".key", SEARCH),
+        _Type(".odp", SEARCH),
+        _Type(".ppt", SEARCH),
+        _Type(".pptx", [SEARCH, RENDER]),
+    ],
+)
+
+spreadsheet = MediaTypeGroup(
+    "spreadsheet",
+    [
+        _Type(".csv", SEARCH),
+        _Type(".numbers", SEARCH),
+        _Type(".ods", SEARCH),
+        _Type(".xls", SEARCH),
+        _Type(".xlsx", SEARCH),
+    ],
+)
+
+# 3D -------------------------------------------------------------------------------------------
+model = MediaTypeGroup(
+    "model",
+    [
+        _Type(".3ds", SEARCH),
+        _Type(".fbx", SEARCH),
+        _Type(".obj", SEARCH),
+        _Type(".stl", SEARCH),
+    ],
+)
+material = MediaTypeGroup(
+    "material",
+    [
+        _Type(".mtl", SEARCH),
+    ],
+)
+shader = MediaTypeGroup(
+    "shader",
+    [
+        _Type(".effect", SEARCH),
+        _Type(".frag", SEARCH),
+        _Type(".fsh", SEARCH),
+        _Type(".glsl", SEARCH),
+        _Type(".shader", SEARCH),
+        _Type(".vert", SEARCH),
+        _Type(".vsh", SEARCH),
+    ],
+)
+
+# System & Misc ------------------------------------------------------------------------------
+database = MediaTypeGroup(
+    "database",
+    [
+        _Type(".accdb", SEARCH),
+        _Type(".mdb", SEARCH),
+        _Type(".pdb", SEARCH),
+        _Type(".db", SEARCH),
+        _Type(".sqlite", SEARCH),
+        _Type(".sqlite3", SEARCH),
+    ],
+)
+disk_image = MediaTypeGroup(
+    "disk_image",
+    [
+        _Type(".bios", SEARCH),
+        _Type(".dmg", SEARCH),
+        _Type(".fhdx", SEARCH),
+        _Type(".iso", SEARCH),
+    ],
+)
+installer = MediaTypeGroup(
+    "installer",
+    [
+        _Type(".appx", SEARCH),
+        _Type(".msi", SEARCH),
+        _Type(".msix", SEARCH),
+    ],
+)
+package = MediaTypeGroup(
+    "package",
+    [
+        _Type(".aab", SEARCH),
+        _Type(".akp", SEARCH),
+        _Type(".apk", SEARCH),
+        _Type(".apkm", SEARCH),
+        _Type(".apks", SEARCH),
+        _Type(".pkg", SEARCH),
+        _Type(".xapk", SEARCH),
+    ],
+)
+program = MediaTypeGroup(
+    "program",
+    [
+        _Type(".app", SEARCH),
+        _Type(".bin", SEARCH),
+        _Type(".exe", SEARCH),
+    ],
+)
+shortcut = MediaTypeGroup(
+    "shortcut",
+    [
+        _Type(".desktop", SEARCH),
+        _Type(".lnk", SEARCH),
+        _Type(".url", SEARCH),
+    ],
+)
+
+# Valve Source Engine --------------------------------------------------------------------------
+source_engine = MediaTypeGroup(
+    "source_engine",
+    [_Type(".vtf", [SEARCH, RENDER])],
+)
+
+# MIDI -----------------------------------------------------------------------------------------
+midi = MediaTypeGroup("midi", [_Type([".mid", ".midi"], SEARCH)])
+
+# Audio ----------------------------------------------------------------------------------------
+audio = MediaTypeGroup(
+    "audio",
+    [
+        _Type(".aac", [RENDER, SEARCH]),
+        _Type(
+            [".aif", ".aiff", ".aifc"],
+            [RENDER, SEARCH],
+        ),
+        _Type(".caf", [RENDER, SEARCH]),
+        _Type(".flac", [RENDER, SEARCH]),
+        _Type(".m4a", [RENDER, SEARCH]),
+        _Type(".m4p", [RENDER, SEARCH]),
+        _Type(".mp3", [RENDER, SEARCH]),
+        _Type(".ogg", [RENDER, SEARCH]),
+        _Type(".wav", [RENDER, SEARCH]),
+        _Type(".wma", [RENDER, SEARCH]),
+    ]
+    + midi.types,
+)
+
+# RAW Images -----------------------------------------------------------------------------------
+raw_image = MediaTypeGroup(
+    "image.raw",
+    [
+        _Type(".arw", [SEARCH, RENDER]),
+        _Type(".cr2", [SEARCH, RENDER]),
+        _Type(".cr3", [SEARCH, RENDER]),
+        _Type(".crw", [SEARCH, RENDER]),
+        _Type(".dng", [SEARCH, RENDER]),
+        _Type(".nef", [SEARCH, RENDER]),
+        _Type(".nrw", [SEARCH, RENDER]),
+        _Type(".orf", [SEARCH, RENDER]),
+        _Type(".r3d", [SEARCH, RENDER]),
+        _Type(".raf", [SEARCH, RENDER]),
+        _Type(".raw", [SEARCH, RENDER]),
+        _Type(".rw2", [SEARCH, RENDER]),
+        _Type(".srf", [SEARCH, RENDER]),
+        _Type(".srf2", [SEARCH, RENDER]),
+    ],
+)
+
+# Raster Images --------------------------------------------------------------------------------
+raster_image = MediaTypeGroup(
+    "image.raster",
+    [
+        _Type(".apng", [SEARCH, RENDER]),
+        _Type(".avif", [SEARCH, RENDER]),
+        _Type(".bmp", [SEARCH, RENDER]),
+        _Type(".exr", [SEARCH, RENDER]),
+        _Type(".gif", [SEARCH, RENDER]),
+        _Type(
+            [
+                ".jfif",
+                ".jpeg_large",
+                ".jpeg",
+                ".jpg_large",
+                ".jpg",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(".jxl", [SEARCH, RENDER]),
+        _Type(".png", [SEARCH, RENDER]),
+        _Type(".psb", RENDER),
+        _Type(".psd", RENDER),
+        _Type(".webp", [SEARCH, RENDER]),
+        _Type([".heic", ".heif"], [SEARCH, RENDER]),
+        _Type([".j2k", ".jp2", ".jpg2"], [SEARCH, RENDER]),
+        _Type([".tif", ".tiff"], [SEARCH, RENDER]),
+    ],
+)
+
+# Vector Images --------------------------------------------------------------------------------
+vector_image = MediaTypeGroup(
+    "image.vector",
+    [
+        _Type(".eps", SEARCH),
+        _Type(".epsf", SEARCH),
+        _Type(".epsi", SEARCH),
+        _Type(".svg", [SEARCH, RENDER]),
+        _Type(".svgz", SEARCH),
+    ],
+)
+
+# Animated Images ------------------------------------------------------------------------------
+animated_image = MediaTypeGroup(
+    "image.animated",
+    [
+        _Type(".gif", [SEARCH, RENDER]),
+        _Type(".apng", [SEARCH, RENDER]),
+        _Type(".webp", [SEARCH, RENDER]),
+        _Type(".jxl", SEARCH),
+    ],
+)
+
+# Binary ---------------------------------------------------------------------------------------
+binary = MediaTypeGroup(
+    "binary",
+    [
+        _Type(".dll", [RENDER, SEARCH]),
+        _Type(".dylib", [RENDER, SEARCH]),
+        _Type(".exe", [RENDER, SEARCH]),
+        _Type(".o", [RENDER, SEARCH]),
+        _Type(".pyc", [RENDER, SEARCH]),
+        _Type(".pyd", [RENDER, SEARCH]),
+        _Type(".pyo", [RENDER, SEARCH]),
+    ],
+)
+
+# Python ---------------------------------------------------------------------------------------
+python = MediaTypeGroup(
+    "python",
+    [
+        _Type(".ipynb", [RENDER, SEARCH]),
+        _Type(".py", [RENDER, SEARCH]),
+        _Type(".pyc", SEARCH),
+        _Type(".pyd", SEARCH),
+        _Type(".pyi", [RENDER, SEARCH]),
+        _Type(".pyo", SEARCH),
+    ],
+)
+
+# JavaScript -----------------------------------------------------------------------------------
+javascript = MediaTypeGroup(
+    "javascript",
+    [
+        _Type(".cjs", [SEARCH, RENDER]),
+        _Type(".js", [SEARCH, RENDER]),
+        _Type(".jsx", [SEARCH, RENDER]),
+        _Type(".mjs", [SEARCH, RENDER]),
+    ],
+)
+
+# TypeScript -----------------------------------------------------------------------------------
+typescript = MediaTypeGroup(
+    "typescript",
+    [
+        _Type(".cts", [SEARCH, RENDER]),
+        _Type(".mts", [SEARCH, RENDER]),
+        # _Type(".ts", [SEARCH, RENDER]),
+        _Type(".tsx", [SEARCH, RENDER]),
+    ],
+)
+
+# Shell Script ---------------------------------------------------------------------------------
+shell = MediaTypeGroup(
+    "shell",
+    [
+        _Type(".bat", [SEARCH, RENDER]),
+        _Type(".csh", [SEARCH, RENDER]),
+        _Type(".fish", [SEARCH, RENDER]),
+        _Type(".nu", [SEARCH, RENDER]),
+        _Type(".ps1", [SEARCH, RENDER]),
+        _Type(".sh", [SEARCH, RENDER]),
+        _Type("activate", [SEARCH, RENDER]),
+    ],
+)
+
+# Markdown -------------------------------------------------------------------------------------
+markdown = MediaTypeGroup(
+    "markdown",
+    [
+        _Type(
+            [
+                ".markdown",
+                ".md",
+                ".mkd",
+                ".rmd",
+            ],
+            [SEARCH, RENDER],
+        ),
+    ],
+)
+
+# Markup ---------------------------------------------------------------------------------------
+markup = MediaTypeGroup(
+    "markup",
+    [
+        _Type(
+            [
+                ".yml",
+                ".yaml",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(
+            [
+                ".json",
+                ".jsonc",
+                ".json5",
+                ".jsonl",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(
+            [
+                ".xml",
+                ".xul",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(
+            [
+                ".html",
+                ".htm",
+                ".xhtml",
+                ".shtml",
+                ".dhtml",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(".toml", [SEARCH, RENDER]),
+    ],
+)
+
+# Code -----------------------------------------------------------------------------------------
+code = MediaTypeGroup(
+    "code",
+    [
+        _Type(".lock", [SEARCH, RENDER]),
+        _Type(".log", [SEARCH, RENDER]),
+    ]
+    + python.types
+    + javascript.types
+    + typescript.types
+    + shell.types
+    + markdown.types
+    + markup.types,
+)
+MediaTypes.register(code)
+
+# Plaintext ------------------------------------------------------------------------------------
+plaintext = MediaTypeGroup(
+    "plaintext",
+    [
+        _Type(".i3u", [SEARCH, RENDER]),
+        _Type(".lang", [SEARCH, RENDER]),
+        _Type("contributing", [SEARCH, RENDER]),
+        _Type("license", [SEARCH, RENDER]),
+        _Type("readme", [SEARCH, RENDER]),
+        _Type([".txt", ".text"], [SEARCH, RENDER]),
+    ],
+)
+MediaTypes.register(plaintext)
+
+# Video ----------------------------------------------------------------------------------------
+video = MediaTypeGroup(
+    "video",
+    [
+        _Type(".3gp", [SEARCH, RENDER]),
+        _Type(".avi", [SEARCH, RENDER]),
+        _Type(".flv", [SEARCH, RENDER]),
+        _Type(".gifv", [SEARCH, RENDER]),
+        _Type(".hevc", [SEARCH, RENDER]),
+        _Type(".m4p", [SEARCH, RENDER]),
+        _Type(".m4v", [SEARCH, RENDER]),
+        _Type(".mkv", [SEARCH, RENDER]),
+        _Type(".mov", [SEARCH, RENDER]),
+        _Type(".mp4", [SEARCH, RENDER]),
+        _Type(".webm", [SEARCH, RENDER]),
+        _Type(".wmv", [SEARCH, RENDER]),
+    ],
+)
+
+# ------------------
+
+# @staticmethod
+# def all_media_types():
+#     static_methods = [
+#         name for name, attr in MediaTypes.__dict__.items() if isinstance(attr, MediaTypeGroup)
+#     ]
+#     return static_methods
 
 
 FILETYPE_EQUIVALENTS = [
