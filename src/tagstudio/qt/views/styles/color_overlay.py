@@ -6,7 +6,9 @@ from PIL import Image
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 
+from tagstudio.core.enums import Theme
 from tagstudio.previews.gradients import linear_gradient
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 
 # TODO: Consolidate the built-in QT theme values with the values
 # here, in enums.py, and in palette.py.

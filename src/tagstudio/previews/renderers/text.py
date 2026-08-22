@@ -10,17 +10,9 @@ from typing import override
 
 import structlog
 from PIL import ImageFont, UnidentifiedImageError
-from PIL.Image import (
-    DecompressionBombError,
-    Image,
-    Resampling,
-)
-from PIL.Image import (
-    new as new_image,
-)
-from PIL.Image import (
-    open as open_image,
-)
+from PIL.Image import DecompressionBombError, Image, Resampling
+from PIL.Image import new as new_image
+from PIL.Image import open as open_image
 from pygments import highlight
 from pygments.formatters import ImageFormatter
 from pygments.lexers import PythonLexer
@@ -49,19 +41,19 @@ logger = structlog.get_logger(__name__)
 
 class TextLightStyle(Style):
     background = "#FFFFFF"
-    foreground = "#111111"
+    foreground = "#000000"
 
     background_color = background
     styles = {
-        Generic: foreground,
-        Text: foreground,
-        Literal: foreground,
-        String: foreground,
+        Generic: foreground + " bold",
+        Text: foreground + " bold",
+        Literal: foreground + " bold",
+        String: foreground + " bold",
     }
 
 
 class TextDarkStyle(Style):
-    background = "#1e1e1e"
+    background = "#111111"
     foreground = "#FFFFFF"
 
     background_color = background
@@ -79,10 +71,6 @@ class TextDarkStyle(Style):
         Other: foreground,
         Punctuation: foreground,
     }
-
-
-# text_light_style = TextLightStyle()
-# text_dark_style = TextDarkStyle()
 
 
 class TextPreview(BasePreview):
@@ -105,7 +93,6 @@ class TextPreview(BasePreview):
         )
 
 
-@staticmethod
 def text_thumb(
     filepath: Path,
     size: tuple[int, int],

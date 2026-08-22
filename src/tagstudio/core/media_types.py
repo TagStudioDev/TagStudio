@@ -417,6 +417,7 @@ audio = MediaTypeGroup(
     ]
     + midi.types,
 )
+MediaTypes.register(audio)
 
 # RAW Images -----------------------------------------------------------------------------------
 raw_image = MediaTypeGroup(
@@ -605,6 +606,12 @@ markup = MediaTypeGroup(
                 ".xhtml",
                 ".shtml",
                 ".dhtml",
+            ],
+            [SEARCH, RENDER],
+        ),
+        _Type(
+            [
+                ".plist",
             ],
             [SEARCH, RENDER],
         ),
@@ -936,7 +943,6 @@ class MediaCategories:
         ".epub",
         ".fb2",
         ".ibook",
-        ".inf",
         ".kfx",
         ".lit",
         ".mobi",
