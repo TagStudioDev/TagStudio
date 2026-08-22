@@ -6,21 +6,39 @@ import tarfile
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Literal
+from typing import Literal, override
 
 import py7zr
 import py7zr.io
 import rarfile
 import structlog
-from PIL import Image
+from PIL.Image import Image
 
+from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
+from tagstudio.previews.base_preview import BasePreview
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
 type Archive = zipfile.ZipFile | rarfile.RarFile | SevenZipFile | TarFile
+
+
+class ArchivePreview(BasePreview):
+    media_type_name = "archive"
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return archive_thumb(filepath)
 
 
 class SevenZipFile(py7zr.SevenZipFile):
@@ -81,7 +99,7 @@ def open_archive(filepath: Path) -> Archive:
     return archiver(filepath, "r")
 
 
-def first_image_in_archive(archive: Archive) -> Image.Image | None:
+def first_image_in_archive(archive: Archive) -> Image | None:
     """Find and extract the first renderable image in the archive.
 
     Args:
@@ -102,7 +120,7 @@ def first_image_in_archive(archive: Archive) -> Image.Image | None:
 def archive_thumb(
     filepath: Path,
     image_names: list[Path] | list[str] | None = None,
-) -> Image.Image | None:
+) -> Image | None:
     """Extract an embedded preview image from an archive.
 
     Args:
@@ -131,34 +149,3 @@ def archive_thumb(
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return None
-
-
-def apple_embedded_thumb(filepath: Path) -> Image.Image | None:
-    """Extract and render an apple embedded thumbnail (iWork, Apple Creative Studio)."""
-    image_names: list[str] = [
-        "preview.jpg",
-        "QuickLook/Preview.heic",
-        "QuickLook/Thumbnail.jpg",
-        "QuickLook/Thumbnail.heic",
-        "QuickLook/Thumbnail.webp",
-        "QuickLook/Icon.webp",
-    ]
-    return archive_thumb(filepath, image_names)
-
-
-def krita_thumb(filepath: Path) -> Image.Image | None:
-    """Extract and render a thumbnail for a Krita file."""
-    image_names = ["preview.png"]
-    return archive_thumb(filepath, image_names)
-
-
-def open_doc_thumb(filepath: Path) -> Image.Image | None:
-    """Extract and render a thumbnail for an OpenDocument file."""
-    image_names = ["Thumbnails/thumbnail.png"]
-    return archive_thumb(filepath, image_names)
-
-
-def powerpoint_thumb(filepath: Path) -> Image.Image | None:
-    """Extract and render a thumbnail for a Microsoft PowerPoint file."""
-    image_names = ["docProps/thumbnail.jpeg"]
-    return archive_thumb(filepath, image_names)

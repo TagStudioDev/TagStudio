@@ -12,8 +12,8 @@ import numpy as np
 import structlog
 from mutagen import flac, id3, mp4
 from mutagen._util import MutagenError
-from PIL import ImageDraw, ImageFont, UnidentifiedImageError
-from PIL.Image import DecompressionBombError, Image, Resampling
+from PIL import ImageDraw
+from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
 from PIL.Image import open as open_image
 
@@ -36,6 +36,7 @@ class AudioPreview(BasePreview):
     def render(
         cls,
         filepath: Path,
+        is_small: bool,
         theme: Theme,
         size: tuple[int, int],
         dpi_scale: float,
@@ -93,6 +94,7 @@ class AudioPreview(BasePreview):
 
         Args:
             filepath (Path): The path of the file.
+            theme (Theme): The system color theme.
             size (int): The size of the thumbnail.
             dpi_scale (float): The screen pixel ratio.
         """

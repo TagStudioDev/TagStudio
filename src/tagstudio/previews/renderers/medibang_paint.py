@@ -7,16 +7,35 @@ import struct
 import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
+from typing import override
 
 import structlog
-from PIL import Image
+from PIL.Image import Image, frombytes
 
+from tagstudio.core.enums import Theme
 from tagstudio.core.utils.types import unwrap
+from tagstudio.previews.base_preview import BasePreview
 
 logger = structlog.get_logger(__name__)
 
 
-def medibang_paint_thumb(filepath: Path) -> Image.Image | None:
+class MediBangPaintPreview(BasePreview):
+    media_type_name = "medibang_paint"
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return medibang_paint_thumb(filepath)
+
+
+def medibang_paint_thumb(filepath: Path) -> Image | None:
     """Extract the thumbnail from a .mdp file.
 
     Args:
@@ -25,7 +44,7 @@ def medibang_paint_thumb(filepath: Path) -> Image.Image | None:
     Returns:
         Image: The embedded thumbnail.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
     try:
         with open(filepath, "rb") as f:
             magic = struct.unpack("<7sx", f.read(8))[0]
@@ -50,7 +69,7 @@ def medibang_paint_thumb(filepath: Path) -> Image.Image | None:
                 if pac_header[2] == 1:
                     thumb_blob = zlib.decompress(thumb_blob, bufsize=pac_header[4])
 
-                im = Image.frombytes("RGBA", dimensions, thumb_blob, "raw", "BGRA")
+                im = frombytes("RGBA", dimensions, thumb_blob, "raw", "BGRA")
                 break
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)

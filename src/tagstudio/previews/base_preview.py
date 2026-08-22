@@ -24,6 +24,7 @@ class BasePreview:
     def render(
         cls,
         filepath: Path,
+        is_small: bool,
         theme: Theme,
         size: tuple[int, int],
         dpi_scale: float,

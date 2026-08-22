@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import override
 
 import structlog
-from PIL.Image import Image, new
+from PIL.Image import Image
+from PIL.Image import new as new_image
 
 from tagstudio.core.enums import Theme
 from tagstudio.previews.base_preview import BasePreview
@@ -23,6 +24,7 @@ class BlenderPreview(BasePreview):
     def render(
         cls,
         filepath: Path,
+        is_small: bool,
         theme: Theme,
         size: tuple[int, int],
         dpi_scale: float,
@@ -41,7 +43,7 @@ def _blender_thumb(filepath: Path, theme: Theme) -> Image | None:
     im: Image | None = None
     try:
         if (blend_image := blend_thumb(str(filepath))) is not None:
-            bg = new("RGB", blend_image.size, color=bg_color)
+            bg = new_image("RGB", blend_image.size, color=bg_color)
             bg.paste(blend_image, mask=blend_image.getchannel(3))
             im = bg
         else:

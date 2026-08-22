@@ -1,9 +1,11 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: MIT
+
+from PIL.Image import Image
+from PIL.Image import new as new_image
+
 from tagstudio.core.enums import Theme
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
-from PIL import ImageDraw, ImageFont, UnidentifiedImageError
-from PIL.Image import DecompressionBombError, Image, Resampling
-from PIL.Image import new as new_image
-from PIL.Image import open as open_image
 
 
 # TODO: Split out Qt color palette stuff from anything needed by the core.

@@ -10,6 +10,8 @@ from pathlib import Path
 
 import structlog
 
+from tagstudio.core.utils.sanitized_attr import SanitizedAttr
+
 logger = structlog.get_logger(__name__)
 
 
@@ -77,7 +79,7 @@ class MediaTypeGroup:
         # return False
 
 
-class MediaTypes:
+class MediaTypes(metaclass=SanitizedAttr):
     # TODO: Implement filename equivalencies
     # TODO: Implement in_all_groups or something, if needed
     # TODO: Implement collision detection (e.g. ".ts")
@@ -165,6 +167,7 @@ clip_studio_paint = MediaTypeGroup(
         _Type(".cmc", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(clip_studio_paint)
 
 # Krita ----------------------------------------------------------------------------------------
 krita = MediaTypeGroup(
@@ -174,12 +177,15 @@ krita = MediaTypeGroup(
         _Type(".krz", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(krita)
 
 # MediBang Paint / FireAlpaca ------------------------------------------------------------------
 medibang_paint = MediaTypeGroup("medibang_paint", [_Type(".mdp", [SEARCH, RENDER])])
+MediaTypes.register(medibang_paint)
 
 # Paint.NET ------------------------------------------------------------------------------------
 paint_dot_net = MediaTypeGroup("paint_dot_net", [_Type(".pdn", [SEARCH, RENDER])])
+MediaTypes.register(paint_dot_net)
 
 # Archives -------------------------------------------------------------------------------------
 archive = MediaTypeGroup(
@@ -194,6 +200,7 @@ archive = MediaTypeGroup(
         _Type(".zip", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(archive)
 
 # eBooks -------------------------------------------------------------------------------------
 ebook = MediaTypeGroup(
@@ -219,6 +226,7 @@ ebook = MediaTypeGroup(
         _Type(".mscz", RENDER),
     ],
 )
+MediaTypes.register(ebook)
 
 # Fonts --------------------------------------------------------------------------------------
 font = MediaTypeGroup(
@@ -232,6 +240,7 @@ font = MediaTypeGroup(
         _Type(".woff2", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(font)
 
 # Office & Documents ---------------------------------------------------------------------------
 document = MediaTypeGroup(
@@ -269,6 +278,7 @@ open_document = MediaTypeGroup(
         _Type(".ora", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(open_document)
 
 iwork = MediaTypeGroup(
     "iwork",
@@ -279,16 +289,26 @@ iwork = MediaTypeGroup(
         _Type(".pxd", RENDER),
     ],
 )
+MediaTypes.register(iwork)
+
+powerpoint = MediaTypeGroup(
+    "office.powerpoint",
+    [
+        _Type(".ppt", SEARCH),
+        _Type(".pptx", [SEARCH, RENDER]),
+    ],
+)
+MediaTypes.register(powerpoint)
 
 presentation = MediaTypeGroup(
     "presentation",
     [
         _Type(".key", SEARCH),
         _Type(".odp", SEARCH),
-        _Type(".ppt", SEARCH),
-        _Type(".pptx", [SEARCH, RENDER]),
-    ],
+    ]
+    + powerpoint.types,
 )
+MediaTypes.register(presentation)
 
 spreadsheet = MediaTypeGroup(
     "spreadsheet",
@@ -300,6 +320,7 @@ spreadsheet = MediaTypeGroup(
         _Type(".xlsx", SEARCH),
     ],
 )
+MediaTypes.register(spreadsheet)
 
 # 3D -------------------------------------------------------------------------------------------
 model = MediaTypeGroup(
@@ -311,12 +332,16 @@ model = MediaTypeGroup(
         _Type(".stl", SEARCH),
     ],
 )
+MediaTypes.register(model)
+
 material = MediaTypeGroup(
     "material",
     [
         _Type(".mtl", SEARCH),
     ],
 )
+MediaTypes.register(material)
+
 shader = MediaTypeGroup(
     "shader",
     [
@@ -329,6 +354,7 @@ shader = MediaTypeGroup(
         _Type(".vsh", SEARCH),
     ],
 )
+MediaTypes.register(shader)
 
 # System & Misc ------------------------------------------------------------------------------
 database = MediaTypeGroup(
@@ -342,6 +368,8 @@ database = MediaTypeGroup(
         _Type(".sqlite3", SEARCH),
     ],
 )
+MediaTypes.register(database)
+
 disk_image = MediaTypeGroup(
     "disk_image",
     [
@@ -351,6 +379,8 @@ disk_image = MediaTypeGroup(
         _Type(".iso", SEARCH),
     ],
 )
+MediaTypes.register(disk_image)
+
 installer = MediaTypeGroup(
     "installer",
     [
@@ -359,6 +389,8 @@ installer = MediaTypeGroup(
         _Type(".msix", SEARCH),
     ],
 )
+MediaTypes.register(installer)
+
 package = MediaTypeGroup(
     "package",
     [
@@ -371,6 +403,8 @@ package = MediaTypeGroup(
         _Type(".xapk", SEARCH),
     ],
 )
+MediaTypes.register(package)
+
 program = MediaTypeGroup(
     "program",
     [
@@ -379,6 +413,8 @@ program = MediaTypeGroup(
         _Type(".exe", SEARCH),
     ],
 )
+MediaTypes.register(program)
+
 shortcut = MediaTypeGroup(
     "shortcut",
     [
@@ -387,15 +423,18 @@ shortcut = MediaTypeGroup(
         _Type(".url", SEARCH),
     ],
 )
+MediaTypes.register(shortcut)
 
 # Valve Source Engine --------------------------------------------------------------------------
 source_engine = MediaTypeGroup(
     "source_engine",
     [_Type(".vtf", [SEARCH, RENDER])],
 )
+MediaTypes.register(source_engine)
 
 # MIDI -----------------------------------------------------------------------------------------
 midi = MediaTypeGroup("midi", [_Type([".mid", ".midi"], SEARCH)])
+MediaTypes.register(midi)
 
 # Audio ----------------------------------------------------------------------------------------
 audio = MediaTypeGroup(
@@ -439,6 +478,7 @@ raw_image = MediaTypeGroup(
         _Type(".srf2", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(raw_image)
 
 # Raster Images --------------------------------------------------------------------------------
 raster_image = MediaTypeGroup(
@@ -469,6 +509,7 @@ raster_image = MediaTypeGroup(
         _Type([".tif", ".tiff"], [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(raster_image)
 
 # Vector Images --------------------------------------------------------------------------------
 vector_image = MediaTypeGroup(
@@ -481,6 +522,7 @@ vector_image = MediaTypeGroup(
         _Type(".svgz", SEARCH),
     ],
 )
+MediaTypes.register(vector_image)
 
 # Animated Images ------------------------------------------------------------------------------
 animated_image = MediaTypeGroup(
@@ -667,6 +709,7 @@ video = MediaTypeGroup(
         _Type(".wmv", [SEARCH, RENDER]),
     ],
 )
+MediaTypes.register(video)
 
 # ------------------
 

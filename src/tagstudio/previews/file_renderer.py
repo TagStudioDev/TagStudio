@@ -5,17 +5,13 @@
 import contextlib
 import hashlib
 import math
-from collections.abc import Callable
 from copy import deepcopy
-from functools import partial
 from pathlib import Path
 
 import structlog
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFile, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import (
@@ -29,34 +25,27 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import BasePreview
 from tagstudio.previews.effects import apply_overlay_color
 from tagstudio.previews.gradients import four_corner_gradient
-from tagstudio.previews.renderers.archive import (
-    apple_embedded_thumb,
-    archive_thumb,
-    krita_thumb,
-    open_doc_thumb,
-    powerpoint_thumb,
-)
+from tagstudio.previews.renderers.apple_embedded_preview import AppleEmbeddedPreview
+from tagstudio.previews.renderers.archive import ArchivePreview
 from tagstudio.previews.renderers.audio import AudioPreview
-from tagstudio.previews.renderers.blender import BlenderPreview, _blender_thumb
-from tagstudio.previews.renderers.clip_studio import clip_studio_thumb
+from tagstudio.previews.renderers.blender import BlenderPreview
+from tagstudio.previews.renderers.clip_studio import ClipStudioPaintPreview
 from tagstudio.previews.renderers.code import CodePreview
-from tagstudio.previews.renderers.ebook import epub_thumb
-from tagstudio.previews.renderers.font import font_full_preview, font_small_thumb
-from tagstudio.previews.renderers.medibang_paint import medibang_paint_thumb
-from tagstudio.previews.renderers.paint_dot_net import paint_dot_net_thumb
-from tagstudio.previews.renderers.pdf import pdf_thumb
-from tagstudio.previews.renderers.raster_image import (
-    exr_image_thumb,
-    raster_image_thumb,
-    raw_image_thumb,
-)
-from tagstudio.previews.renderers.source_engine import vtf_thumb
+from tagstudio.previews.renderers.ebook import EbookPreview
+from tagstudio.previews.renderers.font import FontPreview
+from tagstudio.previews.renderers.krita_preview import KritaPreview
+from tagstudio.previews.renderers.medibang_paint import MediBangPaintPreview
+from tagstudio.previews.renderers.open_document_preview import OpenDocumentPreview
+from tagstudio.previews.renderers.paint_dot_net import PaintDotNetPreview
+from tagstudio.previews.renderers.pdf import PdfPreview
+from tagstudio.previews.renderers.powerpoint_preview import PowerPointPreview
+from tagstudio.previews.renderers.raster_image import RasterImagePreview
+from tagstudio.previews.renderers.raw_image_preview import RawImagePreview
 from tagstudio.previews.renderers.text import (
     TextPreview,
-    text_thumb,
 )
-from tagstudio.previews.renderers.vector_image import vector_image_thumb
-from tagstudio.previews.renderers.video import video_thumb
+from tagstudio.previews.renderers.vector_image import VectorImagePreview
+from tagstudio.previews.renderers.video import VideoPreview
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
     MAX_CACHED_THUMB_RES,
@@ -65,7 +54,7 @@ from tagstudio.qt.app_settings import (
 )
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.palette import UI_COLORS, ColorType, UiColor
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
@@ -626,7 +615,7 @@ class FileRenderer:
                     size=(thumb_res, thumb_res),
                     dpi_scale=1,
                     theme=theme,
-                    is_thumb=is_thumb,
+                    is_small=is_thumb,
                     cache_filename=file_name,
                 )
 
@@ -707,7 +696,7 @@ class FileRenderer:
         size: tuple[int, int],
         dpi_scale: float,
         theme: Theme = Theme.DARK,
-        is_thumb: bool = False,
+        is_small: bool = False,
         cache_filename: Path | None = None,
     ) -> Image.Image | None:
         """Render a thumbnail or preview image.
@@ -719,7 +708,7 @@ class FileRenderer:
             size (tuple[int, int]): The unmodified base size of the thumbnail.
             dpi_scale (float): The screen pixel ratio.
             theme (Theme): A theme enum to determine the light/dark theme.
-            is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
+            is_small (bool): Is this specifically a thumbnail? Use for specifying small variants.
             cache_filename (Path | None): An optional filename to use to save to the cache.
 
         """
@@ -728,43 +717,51 @@ class FileRenderer:
         image: Image.Image | None = None
         is_savable_type: bool = True
 
-        # Ordered groups of file renderers.
-        # A file extension is rendered with the first group it's found in.
-
         # TODO: Dynamically import these from the renderers/ directory at runtime,
         # And allow user-created ones from an external directory.
         previews: list[type[BasePreview]] = [
-            # ArchivePreview,
+            RawImagePreview,
+            VectorImagePreview,
+            RasterImagePreview,
+            VideoPreview,
             AudioPreview,
-            BlenderPreview,
-            # ClipStudioPaintPreview,
             CodePreview,
-            # EbookPreview,
-            # FontPreview,
-            # IWorkPreview,
-            # KritaPreview,
-            # MediBangPaintPreview,
-            # PaintDotNetPreview,
-            # RasterImagePreview,
-            # RawImagePreview,
             TextPreview,
-            # VectorImagePreview,
+            PdfPreview,
+            ArchivePreview,
+            FontPreview,
+            BlenderPreview,
+            EbookPreview,
+            KritaPreview,
+            OpenDocumentPreview,
+            ClipStudioPaintPreview,
+            MediBangPaintPreview,
+            PaintDotNetPreview,
+            PowerPointPreview,
+            AppleEmbeddedPreview,
         ]
 
         if filepath and filepath.is_file():
             try:
                 ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
                 for preview in previews:
-                    media_type: MediaTypeGroup = getattr(MediaTypes, preview.media_type_name)
-                    if media_type.contains(ext, Context.RENDER):
-                        logger.info(f"{ext} in: {media_type.renderable}")
-                        image = preview.render(
-                            filepath=filepath,
-                            theme=theme,
-                            size=(scaled_size, scaled_size),
-                            dpi_scale=dpi_scale,
+                    try:
+                        media_type: MediaTypeGroup = getattr(MediaTypes, preview.media_type_name)
+                        if media_type.contains(ext, Context.RENDER):
+                            logger.info(f"{ext} in: {media_type.renderable}")
+                            image = preview.render(
+                                filepath=filepath,
+                                is_small=is_small,
+                                theme=theme,
+                                size=(scaled_size, scaled_size),
+                                dpi_scale=dpi_scale,
+                            )
+                            break
+                    except AttributeError:
+                        logger.error(
+                            f"[FileRenderer] "
+                            f"Attribute '{preview.media_type_name}' not registered with MediaTypes",
                         )
-                        break
 
                 if image:
                     image = self._resize_image(image, (scaled_size, scaled_size))
@@ -775,219 +772,6 @@ class FileRenderer:
                 image = None
 
         return image
-
-        # -------------------------------- new old
-
-        # render_groups: list[tuple[MediaTypeGroup, Callable[..., Image.Image | None]]] = [
-        #     (MediaTypes.raw_image, partial(raw_image_thumb, filepath)),
-        #     (MediaTypes.raster_image, partial(raster_image_thumb, filepath)),
-        #     (MediaTypes.vector_image, partial(vector_image_thumb, filepath, scaled_size)),
-        #     (
-        #         getattr(MediaTypes, CodePreview.media_type_name),
-        #         partial(CodePreview.render, filepath),
-        #     ),
-        #     (
-        #         getattr(MediaTypes, TextPreview.media_type_name),
-        #         partial(TextPreview.render, filepath),
-        #     ),
-        #     (MediaTypes.audio, partial(audio_thumb, filepath, scaled_size, dpi_scale)),
-        #     (MediaTypes.video, partial(video_thumb, filepath)),
-        #     (
-        #         MediaTypes.font,
-        #         partial(font_small_thumb if is_thumb else font_full_preview, filepath, scaled_size),
-        #     ),
-        #     (MediaTypes.archive, partial(archive_thumb, filepath)),
-        #     (MediaTypes.pdf, partial(pdf_thumb, filepath, scaled_size)),
-        #     (MediaTypes.ebook, partial(epub_thumb, filepath)),
-        #     (MediaTypes.iwork, partial(apple_embedded_thumb, filepath)),
-        #     (MediaTypes.blender, partial(_blender_thumb, filepath)),
-        #     (MediaTypes.krita, partial(krita_thumb, filepath)),
-        #     (MediaTypes.clip_studio_paint, partial(clip_studio_thumb, filepath)),
-        #     (MediaTypes.paint_dot_net, partial(paint_dot_net_thumb, filepath)),
-        #     (MediaTypes.medibang_paint, partial(medibang_paint_thumb, filepath)),
-        #     (MediaTypes.binary, partial(raster_image_thumb, filepath)),
-        # ]
-        # if filepath and filepath.is_file():
-        #     try:
-        #         ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
-        #         for media_type, renderer in render_groups:
-        #             if media_type.contains(ext, Context.RENDER):
-        #                 logger.info(f"{ext} in: {media_type.renderable}")
-        #                 image = renderer()
-
-        #                 # TODO: Remove the need for these extra steps
-        #                 if image and ext in MediaTypes.audio.renderable:
-        #                     # TODO: Differentiate between album art and waveform
-        #                     image = self._apply_overlay_color(image, UiColor.GREEN, theme)
-        #                     is_savable_type = False
-        #                 elif image and ext in MediaTypes.font.renderable:
-        #                     # TODO: Differentiate between ful preview and small preview
-        #                     image = self._apply_overlay_color(image, UiColor.BLUE, theme)
-
-        #                 break
-
-        #         if not image:
-        #             logger.warning(f"Could not render {ext}")
-        #             raise NoRendererError
-
-        #         if image:
-        #             image = self._resize_image(image, (scaled_size, scaled_size))
-
-        #         if cache_filename and is_savable_type and image and cache:
-        #             cache.save_image(image, cache_filename, mode="RGBA")
-        #     except (
-        #         AssertionError,
-        #         ChildProcessError,
-        #         DecompressionBombError,
-        #         UnidentifiedImageError,
-        #         ValueError,
-        #     ) as e:
-        #         logger.error(
-        #             "[FileRenderer] Couldn't render thumbnail",
-        #             filepath=filepath,
-        #             error=type(e).__name__,
-        #         )
-        #         image = None
-        #     except NoRendererError:
-        #         image = None
-
-        # return image
-
-        # # ---------- old old
-
-        # if filepath and filepath.is_file():
-        #     try:
-        #         ext: str = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
-        #         # eBooks ===========================================================================
-        #         if MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
-        #         ):
-        #             image = epub_thumb(filepath, ext)
-        #         # Krita ============================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.KRITA_TYPES, mime_fallback=True
-        #         ):
-        #             image = krita_thumb(filepath)
-        #         # Clip Studio Paint ================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
-        #         ):
-        #             image = clip_studio_thumb(filepath)
-        #         # VTF ==============================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
-        #         ):
-        #             image = vtf_thumb(filepath)
-        #         # Images ===========================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
-        #         ):
-        #             # Raw Images -------------------------------------------------------------------
-        #             if MediaCategories.is_ext_in_category(
-        #                 ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
-        #             ):
-        #                 image = raw_image_thumb(filepath)
-        #             # Vector Images ----------------------------------------------------------------
-        #             elif ext in MediaTypes.vector_image.renderable:
-        #                 image = vector_image_thumb(filepath, scaled_size)
-        #             # EXR Images -------------------------------------------------------------------
-        #             elif ext in [".exr"]:
-        #                 image = exr_image_thumb(filepath)
-        #             # Normal Images ----------------------------------------------------------------
-        #             else:
-        #                 image = raster_image_thumb(filepath)
-        #         # Videos ===========================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
-        #         ):
-        #             image = video_thumb(filepath)
-        #         # PowerPoint =======================================================================
-        #         elif ext in {".pptx"}:
-        #             image = powerpoint_thumb(filepath)
-        #         # OpenDocument/OpenOffice ==========================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
-        #         ):
-        #             image = open_doc_thumb(filepath)
-        #         # Apple iWork + Creator Studio =====================================================
-        #         elif (
-        #             MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES)
-        #             or ext == ".pxd"
-        #         ):
-        #             image = apple_embedded_thumb(filepath)
-        #         # Plain Text =======================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
-        #         ):
-        #             image = text_thumb(filepath)
-        #         # Fonts ============================================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.FONT_TYPES, mime_fallback=True
-        #         ):
-        #             if is_thumb:
-        #                 # Short (Aa) Preview
-        #                 image = font_small_thumb(filepath, scaled_size)
-        #                 if image is not None:
-        #                     image = self._apply_overlay_color(image, UiColor.BLUE, theme)
-        #             else:
-        #                 # Large (Full Alphabet) Preview
-        #                 image = font_full_preview(filepath, scaled_size)
-        #         # Audio ========================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
-        #         ):
-        #             image = audio_album_thumb(filepath, ext)
-        #             if image is None:
-        #                 image = audio_waveform_thumb(filepath, ext, scaled_size, dpi_scale)
-        #                 is_savable_type = False
-        #                 if image is not None:
-        #                     image = self._apply_overlay_color(image, UiColor.GREEN, theme)
-        #         # Blender ======================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
-        #         ):
-        #             image = _blender_thumb(filepath)
-        #         # PDF ==========================================================
-        #         elif MediaCategories.is_ext_in_category(
-        #             ext, MediaCategories.PDF_TYPES, mime_fallback=True
-        #         ):
-        #             image = pdf_thumb(filepath, scaled_size, ext)
-        #         # Archives =====================================================
-        #         elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
-        #             image = archive_thumb(filepath, ext=ext)
-        #         # MDIPACK ======================================================
-        #         elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
-        #             image = medibang_paint_thumb(filepath)
-        #         # Paint.NET ====================================================
-        #         elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
-        #             image = paint_dot_net_thumb(filepath)
-        #         # No Rendered Thumbnail ========================================
-        #         if not image:
-        #             raise NoRendererError
-
-        #         if image:
-        #             image = self._resize_image(image, (scaled_size, scaled_size))
-
-        #         if cache_filename and is_savable_type and image and cache:
-        #             cache.save_image(image, cache_filename, mode="RGBA")
-
-        #     except (
-        #         AssertionError,
-        #         ChildProcessError,
-        #         DecompressionBombError,
-        #         UnidentifiedImageError,
-        #         ValueError,
-        #     ) as e:
-        #         logger.error(
-        #             "[FileRenderer] Couldn't render thumbnail",
-        #             filepath=filepath,
-        #             error=type(e).__name__,
-        #         )
-        #         image = None
-        #     except NoRendererError:
-        #         image = None
-
-        # return image
 
     def _resize_image(self, image: Image.Image, size: tuple[int, int]) -> Image.Image:
         orig_x, orig_y = image.size

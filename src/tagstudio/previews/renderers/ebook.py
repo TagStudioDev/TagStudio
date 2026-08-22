@@ -5,20 +5,39 @@
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from pathlib import Path
+from typing import override
 from xml.etree.ElementTree import Element
 
 import structlog
-from PIL import Image
+from PIL.Image import Image
 
+from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
+from tagstudio.previews.base_preview import BasePreview
 from tagstudio.previews.renderers.archive import Archive, first_image_in_archive, open_archive
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
 
-def epub_thumb(filepath: Path) -> Image.Image | None:
+class EbookPreview(BasePreview):
+    media_type_name = "ebook"
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return epub_thumb(filepath)
+
+
+def epub_thumb(filepath: Path) -> Image | None:
     """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
     Args:
@@ -29,14 +48,14 @@ def epub_thumb(filepath: Path) -> Image.Image | None:
         Image: The cover specified in ComicInfo.xml,
         the first image found in the ePub file, or None by default.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
     try:
         with open_archive(filepath) as archive:
             if "ComicInfo.xml" in archive.namelist():
                 comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
-                im = _cover_from_comic_info(archive, comic_info, "FrontCover")
+                im = cover_from_comic_info(archive, comic_info, "FrontCover")
                 if not im:
-                    im = _cover_from_comic_info(archive, comic_info, "InnerCover")
+                    im = cover_from_comic_info(archive, comic_info, "InnerCover")
 
             if not im:
                 im = first_image_in_archive(archive)
@@ -46,9 +65,7 @@ def epub_thumb(filepath: Path) -> Image.Image | None:
     return im
 
 
-def _cover_from_comic_info(
-    archive: Archive, comic_info: Element, cover_type: str
-) -> Image.Image | None:
+def cover_from_comic_info(archive: Archive, comic_info: Element, cover_type: str) -> Image | None:
     """Extract the cover specified in ComicInfo.xml.
 
     Args:
@@ -59,7 +76,7 @@ def _cover_from_comic_info(
     Returns:
         Image: The cover specified in ComicInfo.xml.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
 
     cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
     if cover is not None:

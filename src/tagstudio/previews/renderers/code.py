@@ -6,9 +6,7 @@ from pathlib import Path
 from typing import override
 
 import structlog
-from PIL.Image import (
-    Image,
-)
+from PIL.Image import Image
 from pygments.style import Style
 from pygments.token import (
     Comment,
@@ -98,6 +96,7 @@ class CodePreview(BasePreview):
     def render(
         cls,
         filepath: Path,
+        is_small: bool,
         theme: Theme,
         size: tuple[int, int],
         dpi_scale: float,
