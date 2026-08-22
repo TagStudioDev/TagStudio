@@ -12,10 +12,15 @@ from tagstudio.core.enums import Theme
 
 
 class BasePreview:
-    """A base preview renderer class."""
+    """A base preview renderer class.
 
-    # The attribute name used for identifying the MediaType used with the preview renderer.
+    Attributes:
+        media_type_name (str):  Used for identifying the MediaType.
+        priority (int): Render priority over other Preview classes.
+    """
+
     media_type_name: str
+    priority: int = 50
 
     def __init__(self) -> None:
         pass

@@ -25,6 +25,7 @@ logger = structlog.get_logger(__name__)
 
 class VectorImagePreview(BasePreview):
     media_type_name = "image.vector"
+    priority = 70
 
     @override
     @classmethod

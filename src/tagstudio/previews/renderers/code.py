@@ -90,6 +90,7 @@ class CodeStyle(Style):
 
 class CodePreview(BasePreview):
     media_type_name = "code"
+    priority = 60
 
     @override
     @classmethod

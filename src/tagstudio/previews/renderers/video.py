@@ -21,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 class VideoPreview(BasePreview):
     media_type_name = "video"
+    priority = 70
 
     @override
     @classmethod

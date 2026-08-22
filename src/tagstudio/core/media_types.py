@@ -86,6 +86,7 @@ class MediaTypes(metaclass=SanitizedAttr):
 
     @staticmethod
     def register(group: MediaTypeGroup) -> None:
+        # TODO: Allow for updating existing attributes instead of always creating a new one.
         setattr(MediaTypes, group.name_key.replace(".", "_"), group)
 
 

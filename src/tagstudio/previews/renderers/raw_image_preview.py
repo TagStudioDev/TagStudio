@@ -21,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 class RawImagePreview(BasePreview):
     media_type_name = "image.raw"
+    priority = 60
 
     @override
     @classmethod

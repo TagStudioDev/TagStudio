@@ -30,6 +30,7 @@ logger = structlog.get_logger(__name__)
 
 class AudioPreview(BasePreview):
     media_type_name = "audio"
+    priority = 70
 
     @override
     @classmethod

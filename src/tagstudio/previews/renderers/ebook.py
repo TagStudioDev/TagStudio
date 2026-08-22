@@ -23,6 +23,7 @@ logger = structlog.get_logger(__name__)
 
 class EbookPreview(BasePreview):
     media_type_name = "ebook"
+    priority = 40
 
     @override
     @classmethod

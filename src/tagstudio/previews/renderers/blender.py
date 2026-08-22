@@ -18,6 +18,7 @@ logger = structlog.get_logger(__name__)
 
 class BlenderPreview(BasePreview):
     media_type_name = "blender"
+    priority = 40
 
     @override
     @classmethod

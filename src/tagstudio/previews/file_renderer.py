@@ -1,10 +1,13 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 import contextlib
 import hashlib
+import importlib
+import inspect
 import math
+import pkgutil
 from copy import deepcopy
 from pathlib import Path
 
@@ -25,27 +28,6 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import BasePreview
 from tagstudio.previews.effects import apply_overlay_color
 from tagstudio.previews.gradients import four_corner_gradient
-from tagstudio.previews.renderers.apple_embedded_preview import AppleEmbeddedPreview
-from tagstudio.previews.renderers.archive import ArchivePreview
-from tagstudio.previews.renderers.audio import AudioPreview
-from tagstudio.previews.renderers.blender import BlenderPreview
-from tagstudio.previews.renderers.clip_studio import ClipStudioPaintPreview
-from tagstudio.previews.renderers.code import CodePreview
-from tagstudio.previews.renderers.ebook import EbookPreview
-from tagstudio.previews.renderers.font import FontPreview
-from tagstudio.previews.renderers.krita_preview import KritaPreview
-from tagstudio.previews.renderers.medibang_paint import MediBangPaintPreview
-from tagstudio.previews.renderers.open_document_preview import OpenDocumentPreview
-from tagstudio.previews.renderers.paint_dot_net import PaintDotNetPreview
-from tagstudio.previews.renderers.pdf import PdfPreview
-from tagstudio.previews.renderers.powerpoint_preview import PowerPointPreview
-from tagstudio.previews.renderers.raster_image import RasterImagePreview
-from tagstudio.previews.renderers.raw_image_preview import RawImagePreview
-from tagstudio.previews.renderers.text import (
-    TextPreview,
-)
-from tagstudio.previews.renderers.vector_image import VectorImagePreview
-from tagstudio.previews.renderers.video import VideoPreview
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
     MAX_CACHED_THUMB_RES,
@@ -63,11 +45,45 @@ Image.MAX_IMAGE_PIXELS = None
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Allow user-created preview renderers from an external directory.
+def _get_preview_renderers() -> list[type[BasePreview]]:
+    """Discover all BasePreview subclasses in src/tagstudio/previews/renderers.
+
+    Classes are sorted by their priority (descending), falling back to alphabetical order.
+    """
+    found: list[type[BasePreview]] = []
+    from tagstudio.previews import renderers  # pyright: ignore
+
+    for module_info in sorted(pkgutil.iter_modules(renderers.__path__), key=lambda m: m.name):
+        module = importlib.import_module(f"{renderers.__name__}.{module_info.name}")
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if (
+                issubclass(obj, BasePreview)
+                and obj is not BasePreview
+                and obj.__module__ == module.__name__
+            ):
+                found.append(obj)
+                break
+            else:
+                logger.error("[FileRenderer] Could not load Preview Renderer", name=obj.__name__)
+
+    found.sort(key=lambda cls: cls.priority, reverse=True)
+    return found
+
+
 class FileRenderer:
     """A class for rendering image previews and thumbnails from files."""
 
     rm: ResourceManager = ResourceManager()
     cached_img_ext: str = ".webp"
+    preview_renderers: list[type[BasePreview]] = _get_preview_renderers()
+    for pr in preview_renderers:
+        logger.info(
+            "[FileRenderer] Loaded Preview Renderer",
+            name=pr.__name__,
+            media_type=pr.media_type_name,
+            priority=pr.priority,
+        )
 
     def __init__(self, library: Library, settings: AppSettings) -> None:
         super().__init__()
@@ -717,34 +733,10 @@ class FileRenderer:
         image: Image.Image | None = None
         is_savable_type: bool = True
 
-        # TODO: Dynamically import these from the renderers/ directory at runtime,
-        # And allow user-created ones from an external directory.
-        previews: list[type[BasePreview]] = [
-            RawImagePreview,
-            VectorImagePreview,
-            RasterImagePreview,
-            VideoPreview,
-            AudioPreview,
-            CodePreview,
-            TextPreview,
-            PdfPreview,
-            ArchivePreview,
-            FontPreview,
-            BlenderPreview,
-            EbookPreview,
-            KritaPreview,
-            OpenDocumentPreview,
-            ClipStudioPaintPreview,
-            MediBangPaintPreview,
-            PaintDotNetPreview,
-            PowerPointPreview,
-            AppleEmbeddedPreview,
-        ]
-
         if filepath and filepath.is_file():
             try:
                 ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
-                for preview in previews:
+                for preview in FileRenderer.preview_renderers:
                     try:
                         media_type: MediaTypeGroup = getattr(MediaTypes, preview.media_type_name)
                         if media_type.contains(ext, Context.RENDER):
