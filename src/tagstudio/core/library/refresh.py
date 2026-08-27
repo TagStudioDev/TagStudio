@@ -119,6 +119,8 @@ class RefreshTracker:
         start_time_total = time()
         start_time_loop = time()
         dir_file_count = 0
+
+        known_paths = {Path(path) for path in self.library.get_paths()}
         self.files_not_in_library = []
 
         for r in dir_list:
@@ -142,7 +144,7 @@ class RefreshTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_entry_with_path(f):
+            if f not in known_paths:
                 self.files_not_in_library.append(f)
 
         end_time_total = time()
@@ -159,6 +161,8 @@ class RefreshTracker:
         start_time_total = time()
         start_time_loop = time()
         dir_file_count = 0
+
+        known_paths = {Path(path) for path in self.library.get_paths()}
         self.files_not_in_library = []
 
         logger.info("[Refresh]: Falling back to wcmatch for scanning")
@@ -187,7 +191,7 @@ class RefreshTracker:
 
                 relative_path = f.relative_to(library_dir)
 
-                if not self.library.has_entry_with_path(relative_path):
+                if relative_path not in known_paths:
                     self.files_not_in_library.append(relative_path)
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
