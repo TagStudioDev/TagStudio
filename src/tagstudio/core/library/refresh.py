@@ -133,9 +133,10 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
             str(compiled_ignore_path),
         ],
         cwd=scan_dir,
+        text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
-        text=True,
     )
 
     assert process.stdout is not None
