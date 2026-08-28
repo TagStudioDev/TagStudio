@@ -9,7 +9,7 @@ from typing import override
 
 import structlog
 import ujson
-from sqlalchemy import Engine, and_, delete, select, text, update
+from sqlalchemy import and_, delete, select, text, update
 from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
@@ -47,9 +47,8 @@ class DBMigration:
 
 
 class DBMigrations:
-    def __init__(self, library_dir: Path, sql_filename: str, engine: Engine) -> None:
+    def __init__(self, library_dir: Path, sql_filename: str) -> None:
         self.library_dir = library_dir
-        self.engine = engine  # TODO: remove
         self._connection = sqlite3.connect(
             str(library_dir / TS_FOLDER_NAME / sql_filename), autocommit=False
         )
@@ -106,34 +105,30 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
             MigrationTo400,  # changes: add category_exclusions
         ]
-        with Session(self.engine) as session:
-            for migration in migrations:
-                if self.loaded_db_version < migration.version and (
-                    migration.initial_version is None
-                    or self.initial_db_version < migration.initial_version
-                ):
-                    logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
-                    # any error causes transaction to rollback
-                    migration.run(
-                        session,
-                        self.library_dir,
-                        lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
+        for migration in migrations:
+            if self.loaded_db_version < migration.version and (
+                migration.initial_version is None
+                or self.initial_db_version < migration.initial_version
+            ):
+                logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
+                # any error causes transaction to rollback
+                migration.run(
+                    None,  # TODO: remove session param once all Migrations have been updated
+                    self.library_dir,
+                    lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
+                )
+                self.loaded_db_version = migration.version
+                try:
+                    self._set_version(DB_VERSION_CURRENT_KEY, migration.version)
+                    logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
+                except Exception as e:
+                    logger.info(
+                        f"[Library][Migration][{migration.version}] "
+                        "Couldn't update version, continuing without commit",
+                        error=e,
                     )
-                    self.loaded_db_version = migration.version
-                    try:
-                        self._set_version(DB_VERSION_CURRENT_KEY, migration.version)
-                        logger.info(
-                            f"[Library][Migration][{migration.version}] Completed DB Migration"
-                        )
-                    except Exception as e:
-                        logger.info(
-                            f"[Library][Migration][{migration.version}] "
-                            "Couldn't update version, continuing without commit",
-                            error=e,
-                        )
-                        session.flush()
-                    else:
-                        session.commit()
+                else:
+                    self._connection.commit()
 
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"

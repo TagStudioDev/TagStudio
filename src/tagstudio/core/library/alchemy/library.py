@@ -504,10 +504,9 @@ class Library:
     ) -> LibraryStatus:
         logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
-        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
-
+        # migrate if necessary
         try:
-            migrations = DBMigrations(library_dir, sql_filename, self.engine)
+            migrations = DBMigrations(library_dir, sql_filename)
 
             # save backup if patches will be applied
             if migrations.required:
@@ -517,7 +516,8 @@ class Library:
         except MigrationError as e:
             return LibraryStatus(success=False, message=e.args[0])
 
-        # everything is fine, set the library path
+        # open up-to-date library
+        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
