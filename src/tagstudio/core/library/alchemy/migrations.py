@@ -19,7 +19,6 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
     DEFAULT_FIELD_TEMPLATES,
-    SQL_FILENAME,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
@@ -48,11 +47,11 @@ class DBMigration:
 
 
 class DBMigrations:
-    def __init__(self, library_dir: Path, engine: Engine) -> None:
+    def __init__(self, library_dir: Path, sql_filename: str, engine: Engine) -> None:
         self.library_dir = library_dir
         self.engine = engine  # TODO: remove
         self._connection = sqlite3.connect(
-            str(library_dir / TS_FOLDER_NAME / SQL_FILENAME), autocommit=False
+            str(library_dir / TS_FOLDER_NAME / sql_filename), autocommit=False
         )
 
         # Don't check DB version when creating new library
@@ -122,7 +121,7 @@ class DBMigrations:
                     )
                     self.loaded_db_version = migration.version
                     try:
-                        self._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
+                        self._set_version(DB_VERSION_CURRENT_KEY, migration.version)
                         logger.info(
                             f"[Library][Migration][{migration.version}] Completed DB Migration"
                         )
@@ -141,8 +140,11 @@ class DBMigrations:
         )
 
     def _get_version(self, key: str) -> int:
-        cur = self._connection.cursor()
+        """Get a version value from the DB.
 
+        Args:
+            key(str): The name of the version type to retrieve.
+        """
         # "Version" table added in DB_VERSION 101
         if "versions" in list_tables(self._connection):
             query = ("SELECT value FROM versions WHERE key == ?", [key])
@@ -150,18 +152,21 @@ class DBMigrations:
         else:
             query = ("SELECT value FROM preferences WHERE key == 'DB_VERSION'", [])
 
-        return int(unwrap(cur.execute(*query).fetchone())[0])
+        return int(unwrap(self._connection.execute(*query).fetchone())[0])
 
-    def _set_version(self, session: Session, key: str, value: int) -> None:
+    def _set_version(self, key: str, value: int) -> None:
         """Set a version value to the DB.
 
         Args:
-            session(Session): The SQLAlchemy DB Session to use.
-            key(str): The key for the name of the version type to set.
+            key(str): The the name of the version type to set.
             value(int): The version value to set.
         """
         # Insert if key has no value yet, otherwise update the value
-        session.merge(Version(key=key, value=value))
+        self._connection.execute(
+            "INSERT INTO versions (key, value) VALUES (?, ?)"
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [key, value],
+        )
 
 
 class MigrationTo7(DBMigration):

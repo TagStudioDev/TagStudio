@@ -507,7 +507,7 @@ class Library:
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
 
         try:
-            migrations = DBMigrations(library_dir, self.engine)
+            migrations = DBMigrations(library_dir, sql_filename, self.engine)
 
             # save backup if patches will be applied
             if migrations.required:
