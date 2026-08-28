@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 
+import sqlite3
 from collections.abc import Callable
 from pathlib import Path
 from typing import override
 
-import sqlalchemy
 import structlog
 import ujson
 from sqlalchemy import Engine, and_, delete, select, text, update
@@ -19,10 +19,12 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
     DEFAULT_FIELD_TEMPLATES,
+    SQL_FILENAME,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
+from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -48,7 +50,10 @@ class DBMigration:
 class DBMigrations:
     def __init__(self, library_dir: Path, engine: Engine) -> None:
         self.library_dir = library_dir
-        self.engine = engine
+        self.engine = engine  # TODO: remove
+        self._connection = sqlite3.connect(
+            str(library_dir / TS_FOLDER_NAME / SQL_FILENAME), autocommit=False
+        )
 
         # Don't check DB version when creating new library
         self.loaded_db_version = self._get_version(DB_VERSION_CURRENT_KEY)
@@ -136,25 +141,16 @@ class DBMigrations:
         )
 
     def _get_version(self, key: str) -> int:
-        with Session(self.engine) as session:
-            inspector = sqlalchemy.inspect(self.engine)
-            try:
-                # "Version" table added in DB_VERSION 101
-                if inspector and inspector.has_table("versions"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # "Preferences" table deprecated in TagStudio 9.5.4
-                else:
-                    return int(
-                        unwrap(
-                            session.scalar(
-                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
-                            )
-                        )
-                    )
-            except Exception:
-                return 0
+        cur = self._connection.cursor()
+
+        # "Version" table added in DB_VERSION 101
+        if "versions" in list_tables(self._connection):
+            query = ("SELECT value FROM versions WHERE key == ?", [key])
+        # "Preferences" table deprecated in TagStudio 9.5.4
+        else:
+            query = ("SELECT value FROM preferences WHERE key == 'DB_VERSION'", [])
+
+        return int(unwrap(cur.execute(*query).fetchone())[0])
 
     def _set_version(self, session: Session, key: str, value: int) -> None:
         """Set a version value to the DB.
