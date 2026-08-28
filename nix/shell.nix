@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 {
   lib,
@@ -21,7 +21,7 @@ let
         stdenv.cc.cc
         zstd
       ]
-      ++ lib.optionals (!stdenv.isDarwin) [
+      ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
         dbus
         libGL
         libdrm
@@ -35,7 +35,7 @@ let
       ]
     );
 
-  libraryPath = "${lib.optionalString pkgs.stdenv.isDarwin "DY"}LD_LIBRARY_PATH";
+  libraryPath = "${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin "DY"}LD_LIBRARY_PATH";
 
   python3Wrapped = pkgs.symlinkJoin {
     inherit (python3)

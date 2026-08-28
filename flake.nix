@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 {
   description = "TagStudio";
@@ -49,9 +49,10 @@
                       inherit pillow-jxl-plugin;
                     };
 
+                    openexr = python3Packages.callPackage ./nix/package/openexr.nix { inherit (pkgs) openexr; };
                     pillow-jxl-plugin = python3Packages.callPackage ./nix/package/pillow-jxl-plugin.nix {
                       inherit (pkgs) cmake;
-                      inherit pyexiv2;
+                      inherit openexr pyexiv2;
                     };
                     pyexiv2 = python3Packages.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
                   in
@@ -59,7 +60,7 @@
                     inherit tagstudio;
                     tagstudio-jxl = tagstudio.override { withJXLSupport = true; };
 
-                    inherit pillow-jxl-plugin pyexiv2;
+                    inherit openexr pillow-jxl-plugin pyexiv2;
                   }
                 )
               );
