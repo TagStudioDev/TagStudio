@@ -134,23 +134,29 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
         ],
         cwd=scan_dir,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
         text=True,
     )
 
     assert process.stdout is not None
 
+    completed = False
+    return_code: int | None = None
     try:
         for line in process.stdout:
             yield scan_dir / line.rstrip("\n")
+        completed = True
     finally:
-        stderr = process.stderr.read() if process.stderr else ""
         process.stdout.close()
+
+        if not completed and process.poll() is None:
+            process.terminate()
+
         return_code = process.wait()
         compiled_ignore_path.unlink(missing_ok=True)
 
     if return_code != 0:
-        raise RuntimeError(f"ripgrep scan failed with exit code {return_code}: {stderr}")
+        logger.error(f"[Refresh] ripgrep scan failed with exit code {return_code}")
 
 
 def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[Path]:
