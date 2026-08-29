@@ -15,14 +15,23 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaCategories, MediaTypes
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
 type Archive = zipfile.ZipFile | rarfile.RarFile | SevenZipFile | TarFile
+
+# NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
+MediaTypes.register("archive", ".7z", RENDER)
+MediaTypes.register("archive", ".gz", RENDER)
+MediaTypes.register("archive", ".rar", RENDER)
+MediaTypes.register("archive", ".s7z", RENDER)
+MediaTypes.register("archive", ".tar", RENDER)
+MediaTypes.register("archive", ".zip", RENDER)
+MediaTypes.register("archive", ".tar.gz", RENDER)
 
 
 class ArchivePreview(BasePreview):

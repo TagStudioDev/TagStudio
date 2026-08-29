@@ -17,10 +17,14 @@ from PySide6.QtGui import QImage
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.qt.views.styles.image_effects import replace_transparent_pixels
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("pdf", ".pdf", RENDER)
+MediaTypes.register("pdf", ".ai", RENDER)
 
 
 class PdfPreview(BasePreview):

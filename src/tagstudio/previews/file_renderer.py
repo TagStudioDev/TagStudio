@@ -18,14 +18,12 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import (
-    Context,
-    MediaCategories,
+    SEARCH,
     MediaTypeGroup,
-    MediaTypeOld,
     MediaTypes,
 )
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
 from tagstudio.previews.gradients import four_corner_gradient
 from tagstudio.qt.app_settings import (
@@ -64,8 +62,6 @@ def _get_preview_renderers() -> list[type[BasePreview]]:
             ):
                 found.append(obj)
                 break
-            else:
-                logger.error("[FileRenderer] Could not load Preview Renderer", name=obj.__name__)
 
     found.sort(key=lambda cls: cls.priority, reverse=True)
     return found
@@ -108,26 +104,14 @@ class FileRenderer:
             url (Path): The file url to assess. "$LOADING" will return the loading graphic.
         """
         ext = url.suffix.lower()
-        types: set[MediaTypeOld] = MediaCategories.get_types(ext, mime_fallback=True)
-
-        # # Manual icon overrides.
-        # if ext in {".gif", ".vtf"}:
-        #     return MediaTypeOld.IMAGE
-        # elif ext in {".dll", ".pyc", ".o", ".dylib"}:
-        #     return MediaTypeOld.PROGRAM
-        # elif ext in {".mscz"}:  # noqa: SIM114
-        #     return MediaTypeOld.TEXT
-
-        # Loop though the specific (non-IANA) categories and return the string
-        # name of the first matching category found.
-        for cat in MediaCategories.ALL_CATEGORIES:
-            if not cat.is_iana and cat.media_type in types:
-                return cat.media_type.value
-
-        # If the type is broader (IANA registered) then search those types.
-        for cat in MediaCategories.ALL_CATEGORIES:
-            if cat.is_iana and cat.media_type in types:
-                return cat.media_type.value
+        # types: set[MediaTypeOld] = MediaCategories.get_types(ext, mime_fallback=True)
+        groups = MediaTypes.find(ext, SEARCH)
+        for group in groups:
+            logger.warning([g.name_key for g in groups])
+            slug = group.name_key.replace(".", "_")
+            if self.rm.get(slug):
+                logger.warning(slug)
+                return slug
 
         return "file_generic"
 
@@ -719,7 +703,6 @@ class FileRenderer:
 
         Args:
             cache (CacheManager | None): A cache manager instance.
-            timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             size (tuple[int, int]): The unmodified base size of the thumbnail.
             dpi_scale (float): The screen pixel ratio.
@@ -737,23 +720,25 @@ class FileRenderer:
             try:
                 ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
                 for preview in FileRenderer.preview_renderers:
-                    try:
-                        media_type: MediaTypeGroup = getattr(MediaTypes, preview.media_type_name)
-                        if media_type.contains(ext, Context.RENDER):
-                            logger.info(f"{ext} in: {media_type.renderable}")
-                            image = preview.render(
-                                filepath=filepath,
-                                is_small=is_small,
-                                theme=theme,
-                                size=(scaled_size, scaled_size),
-                                dpi_scale=dpi_scale,
-                            )
-                            break
-                    except AttributeError:
+                    media_type: MediaTypeGroup | None = getattr(
+                        MediaTypes, preview.media_type_name, None
+                    )
+                    if media_type is None:
                         logger.error(
                             f"[FileRenderer] "
                             f"Attribute '{preview.media_type_name}' not registered with MediaTypes",
                         )
+                        break
+
+                    if media_type.contains(ext, RENDER):
+                        image = preview.render(
+                            filepath=filepath,
+                            is_small=is_small,
+                            theme=theme,
+                            size=(scaled_size, scaled_size),
+                            dpi_scale=dpi_scale,
+                        )
+                        break
 
                 if image:
                     image = self._resize_image(image, (scaled_size, scaled_size))

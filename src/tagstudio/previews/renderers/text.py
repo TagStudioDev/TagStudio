@@ -33,10 +33,17 @@ from pygments.token import (
 )
 
 from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.encoding import detect_char_encoding
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("plaintext", ".i3u", RENDER)
+MediaTypes.register("plaintext", "contributing", RENDER)
+MediaTypes.register("plaintext", "license", RENDER)
+MediaTypes.register("plaintext", "readme", RENDER)
+MediaTypes.register("plaintext", [".txt", ".text"], RENDER)
 
 
 class TextLightStyle(Style):

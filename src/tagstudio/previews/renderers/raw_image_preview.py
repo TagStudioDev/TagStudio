@@ -14,9 +14,25 @@ from rawpy import (
 )
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("image.raw", ".arw", RENDER)
+MediaTypes.register("image.raw", ".cr2", RENDER)
+MediaTypes.register("image.raw", ".cr3", RENDER)
+MediaTypes.register("image.raw", ".crw", RENDER)
+MediaTypes.register("image.raw", ".dng", RENDER)
+MediaTypes.register("image.raw", ".nef", RENDER)
+MediaTypes.register("image.raw", ".nrw", RENDER)
+MediaTypes.register("image.raw", ".orf", RENDER)
+MediaTypes.register("image.raw", ".r3d", RENDER)
+MediaTypes.register("image.raw", ".raf", RENDER)
+MediaTypes.register("image.raw", ".raw", RENDER)
+MediaTypes.register("image.raw", ".rw2", RENDER)
+MediaTypes.register("image.raw", ".srf", RENDER)
+MediaTypes.register("image.raw", ".srf2", RENDER)
 
 
 class RawImagePreview(BasePreview):

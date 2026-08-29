@@ -13,7 +13,11 @@ from sqlalchemy.sql.operators import ilike_op
 from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
-from tagstudio.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
+from tagstudio.core.media_types import (
+    FILETYPE_EQUIVALENTS,
+    MediaTypeGroup,
+    MediaTypes,
+)
 from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
@@ -95,12 +99,13 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 )
                 return Entry.path.regexp_match(re.escape(node.value))
         elif node.type == ConstraintType.MediaType:
-            extensions: set[str] = set[str]()
-            for media_cat in MediaCategories.ALL_CATEGORIES:
-                if node.value == media_cat.name:
-                    extensions = extensions | media_cat.extensions
-                    break
+            media_type: MediaTypeGroup | None = getattr(MediaTypes, node.value, None)
+            extensions: set[str] = set()
+            if media_type is not None:
+                for type_ in media_type.types:
+                    extensions = extensions | type_.exts
             return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
+
         elif node.type == ConstraintType.FileType:
             return or_(
                 *[Entry.suffix.ilike(ft) for ft in get_filetype_equivalency_list(node.value)]

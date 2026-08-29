@@ -25,10 +25,57 @@ from pygments.token import (
 )
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.text import text_thumb
 
 logger = structlog.get_logger(__name__)
+
+# TODO: Use different syntax highlighting for different filetypes.
+# NOTE: Filetype equivalents (i.e. ".ini" == ".inf") are already declared internally.
+
+# CSS
+MediaTypes.register("code", ".css", RENDER)
+MediaTypes.register("code", ".less", RENDER)
+MediaTypes.register("code", ".qss", RENDER)
+MediaTypes.register("code", ".sass", RENDER)
+MediaTypes.register("code", ".scss", RENDER)
+MediaTypes.register("code", ".styl", RENDER)
+
+# HTML
+MediaTypes.register("code", ".html", RENDER)
+
+# JavaScript
+MediaTypes.register("code", ".cjs", RENDER)
+MediaTypes.register("code", ".js", RENDER)
+MediaTypes.register("code", ".jsx", RENDER)
+MediaTypes.register("code", ".mjs", RENDER)
+
+# TOML
+MediaTypes.register("code", ".ini", RENDER)
+MediaTypes.register("code", ".toml", RENDER)
+
+# TypeScript
+MediaTypes.register("code", ".cts", RENDER)
+MediaTypes.register("code", ".ts", RENDER)
+MediaTypes.register("code", ".mts", RENDER)
+MediaTypes.register("code", ".tsx", RENDER)
+
+# XML
+MediaTypes.register("code", ".xml", RENDER)
+
+# YAML
+MediaTypes.register("code", [".yaml", ".yml"], RENDER)
+
+# Misc
+MediaTypes.register("code", ".cfg", RENDER)
+MediaTypes.register("code", ".conf", RENDER)
+MediaTypes.register("code", ".config", RENDER)
+MediaTypes.register("code", ".lock", RENDER)
+MediaTypes.register("code", ".log", RENDER)
+MediaTypes.register("code", ".plist", RENDER)
+MediaTypes.register("code", ".theme", RENDER)
+MediaTypes.register("code", ".pkginfo", RENDER)
 
 
 class CodeStyle(Style):

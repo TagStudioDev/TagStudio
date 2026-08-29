@@ -17,8 +17,9 @@ from PIL.Image import open as open_image
 from pillow_heif import register_heif_opener  # pyright: ignore[reportUnknownVariableType]
 
 from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +30,21 @@ except ImportError as e:
 
 register_heif_opener()
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+
+# NOTE: Filetype equivalents (i.e. ".jpg" == ".jpeg") are already declared internally.
+MediaTypes.register("image.raster", ".apng", RENDER)
+MediaTypes.register("image.raster", ".avif", RENDER)
+MediaTypes.register("image.raster", ".bmp", RENDER)
+MediaTypes.register("image.raster", ".png", RENDER)
+MediaTypes.register("image.raster", ".exr", RENDER)
+MediaTypes.register("image.raster", ".gif", RENDER)
+MediaTypes.register("image.raster", ".jxl", RENDER)
+MediaTypes.register("image.raster", ".psd", RENDER)
+MediaTypes.register("image.raster", ".webp", RENDER)
+MediaTypes.register("image.raster", ".heif", RENDER)
+MediaTypes.register("image.raster", ".jpg2", RENDER)
+MediaTypes.register("image.raster", ".jpeg", RENDER)
+MediaTypes.register("image.raster", ".tiff", RENDER)
 
 
 class RasterImagePreview(BasePreview):

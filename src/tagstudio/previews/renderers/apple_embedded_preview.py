@@ -9,14 +9,36 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaType, MediaTypeGroup, MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
 
+MediaTypes.register_group(
+    MediaTypeGroup(
+        "iwork",
+        [
+            MediaType(".key", RENDER),
+            MediaType(".numbers", RENDER),
+            MediaType(".pages", RENDER),
+            MediaType(".pxd", RENDER),
+        ],
+    )
+)
+
 
 class AppleEmbeddedPreview(BasePreview):
     media_type_name = "iwork"
+
+    image_names: list[str] = [
+        "preview.jpg",
+        "QuickLook/Preview.heic",
+        "QuickLook/Thumbnail.jpg",
+        "QuickLook/Thumbnail.heic",
+        "QuickLook/Thumbnail.webp",
+        "QuickLook/Icon.webp",
+    ]
 
     @override
     @classmethod
@@ -28,17 +50,9 @@ class AppleEmbeddedPreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
-        return apple_embedded_thumb(filepath)
+        return cls.apple_embedded_thumb(filepath)
 
-
-def apple_embedded_thumb(filepath: Path) -> Image | None:
-    """Extract and render an apple embedded thumbnail (iWork, Apple Creative Studio)."""
-    image_names: list[str] = [
-        "preview.jpg",
-        "QuickLook/Preview.heic",
-        "QuickLook/Thumbnail.jpg",
-        "QuickLook/Thumbnail.heic",
-        "QuickLook/Thumbnail.webp",
-        "QuickLook/Icon.webp",
-    ]
-    return archive_thumb(filepath, image_names)
+    @classmethod
+    def apple_embedded_thumb(cls, filepath: Path) -> Image | None:
+        """Extract and render an apple embedded thumbnail (iWork, Apple Creative Studio)."""
+        return archive_thumb(filepath, cls.image_names)

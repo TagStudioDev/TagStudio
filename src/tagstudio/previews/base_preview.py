@@ -10,6 +10,8 @@ from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
 
+RENDER = "RENDER"
+
 
 class BasePreview:
     """A base preview renderer class.
