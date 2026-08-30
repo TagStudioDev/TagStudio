@@ -11,23 +11,12 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import SEARCH, MediaTypes
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-# By individual type
-MediaTypes.register("code", ".fgd", [SEARCH, RENDER])
-MediaTypes.register("code", ".gi", [SEARCH, RENDER])
-MediaTypes.register("code", ".kv3", [SEARCH, RENDER])
-MediaTypes.register("code", ".nut", [SEARCH, RENDER])
-MediaTypes.register("code", ".vcfg", [SEARCH, RENDER])
-MediaTypes.register("code", ".vdf", [SEARCH, RENDER])
-MediaTypes.register("code", ".vqlayout", [SEARCH, RENDER])
-MediaTypes.register("code", ".vsc", [SEARCH, RENDER])
-MediaTypes.register("code", ".vsnd_template", [SEARCH, RENDER])
-MediaTypes.register("source_engine", ".vtf", [SEARCH, RENDER])
-MediaTypes.register("source_engine", ".vmt", SEARCH)
+MediaTypes.register("source_engine", ".vtf", RENDER)
 
 
 class SourceEnginePreview(BasePreview):

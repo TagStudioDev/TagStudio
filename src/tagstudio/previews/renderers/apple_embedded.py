@@ -9,27 +9,21 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import MediaType, MediaTypeGroup, MediaTypes
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register_group(
-    MediaTypeGroup(
-        "iwork",
-        [
-            MediaType(".key", RENDER),
-            MediaType(".numbers", RENDER),
-            MediaType(".pages", RENDER),
-            MediaType(".pxd", RENDER),
-        ],
-    )
-)
+
+MediaTypes.register("apple.iwork", ".pxd", RENDER)
+MediaTypes.register("apple.iwork", ".pages", RENDER)
+MediaTypes.register("apple.iwork", ".numbers", RENDER)
+MediaTypes.register("apple.iwork", ".key", RENDER)
 
 
 class AppleEmbeddedPreview(BasePreview):
-    media_type_name = "iwork"
+    media_type_name = "apple.iwork"
 
     image_names: list[str] = [
         "preview.jpg",

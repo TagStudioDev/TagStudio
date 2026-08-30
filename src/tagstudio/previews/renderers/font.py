@@ -14,13 +14,19 @@ from PIL.Image import new as new_image
 
 from tagstudio.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
 from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
+
+
+MediaTypes.register("font", ".otf", RENDER)
+MediaTypes.register("font", ".ttc", RENDER)
+MediaTypes.register("font", ".ttf", RENDER)
 
 
 class FontPreview(BasePreview):

@@ -12,13 +12,29 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaCategories, MediaTypes
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import Archive, first_image_in_archive, open_archive
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("ebook", ".azw", RENDER)
+MediaTypes.register("ebook", ".azw3", RENDER)
+MediaTypes.register("ebook", ".cb7", RENDER)
+MediaTypes.register("ebook", ".cba", RENDER)
+MediaTypes.register("ebook", ".cbr", RENDER)
+MediaTypes.register("ebook", ".cbt", RENDER)
+MediaTypes.register("ebook", ".cbz", RENDER)
+MediaTypes.register("ebook", ".djvu", RENDER)
+MediaTypes.register("ebook", ".epub", RENDER)
+MediaTypes.register("ebook", ".fb2", RENDER)
+MediaTypes.register("ebook", ".ibook", RENDER)
+MediaTypes.register("ebook", ".kfx", RENDER)
+MediaTypes.register("ebook", ".lit", RENDER)
+MediaTypes.register("ebook", ".mobi", RENDER)
+MediaTypes.register("ebook", ".prc", RENDER)
 
 
 class EbookPreview(BasePreview):

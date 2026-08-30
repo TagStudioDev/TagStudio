@@ -51,6 +51,40 @@ MediaTypes.register("code", ".js", RENDER)
 MediaTypes.register("code", ".jsx", RENDER)
 MediaTypes.register("code", ".mjs", RENDER)
 
+# JSON
+MediaTypes.register("code", ".json", RENDER)
+
+# Markdown
+MediaTypes.register("code", ".md", RENDER)
+
+# Python
+MediaTypes.register("code", ".ipynb", RENDER)
+MediaTypes.register("code", ".py", RENDER)
+MediaTypes.register("code", ".pyi", RENDER)
+
+# Shaders
+MediaTypes.register("code", ".effect", RENDER)
+MediaTypes.register("code", ".frag", RENDER)
+MediaTypes.register("code", ".fsh", RENDER)
+MediaTypes.register("code", ".glsl", RENDER)
+MediaTypes.register("code", ".shader", RENDER)
+MediaTypes.register("code", ".vert", RENDER)
+MediaTypes.register("code", ".vsh", RENDER)
+
+# Shell Script
+MediaTypes.register("code", ".bat", RENDER)
+MediaTypes.register("code", ".csh", RENDER)
+MediaTypes.register("code", ".fish", RENDER)
+MediaTypes.register("code", ".nu", RENDER)
+MediaTypes.register("code", ".ps1", RENDER)
+MediaTypes.register("code", ".sh", RENDER)
+MediaTypes.register("code", "activate", RENDER)
+
+# Shortcuts
+MediaTypes.register("code", ".desktop", RENDER)
+MediaTypes.register("code", ".lnk", RENDER)
+MediaTypes.register("code", ".url", RENDER)
+
 # TOML
 MediaTypes.register("code", ".ini", RENDER)
 MediaTypes.register("code", ".toml", RENDER)
@@ -61,11 +95,22 @@ MediaTypes.register("code", ".ts", RENDER)
 MediaTypes.register("code", ".mts", RENDER)
 MediaTypes.register("code", ".tsx", RENDER)
 
+# Valve Source Engine
+MediaTypes.register("code", ".fgd", RENDER)
+MediaTypes.register("code", ".gi", RENDER)
+MediaTypes.register("code", ".kv3", RENDER)
+MediaTypes.register("code", ".nut", RENDER)
+MediaTypes.register("code", ".vcfg", RENDER)
+MediaTypes.register("code", ".vdf", RENDER)
+MediaTypes.register("code", ".vqlayout", RENDER)
+MediaTypes.register("code", ".vsc", RENDER)
+MediaTypes.register("code", ".vsnd_template", RENDER)
+
 # XML
 MediaTypes.register("code", ".xml", RENDER)
 
 # YAML
-MediaTypes.register("code", [".yaml", ".yml"], RENDER)
+MediaTypes.register("code", ".yaml", RENDER)
 
 # Misc
 MediaTypes.register("code", ".cfg", RENDER)
@@ -76,6 +121,8 @@ MediaTypes.register("code", ".log", RENDER)
 MediaTypes.register("code", ".plist", RENDER)
 MediaTypes.register("code", ".theme", RENDER)
 MediaTypes.register("code", ".pkginfo", RENDER)
+MediaTypes.register("code", ".tex", RENDER)
+MediaTypes.register("code", ".csv", RENDER)
 
 
 class CodeStyle(Style):

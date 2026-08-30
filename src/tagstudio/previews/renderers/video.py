@@ -13,10 +13,24 @@ from PIL import UnidentifiedImageError
 from PIL.Image import DecompressionBombError, Image, fromarray
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.video_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("video", ".3gp", RENDER)
+MediaTypes.register("video", ".avi", RENDER)
+MediaTypes.register("video", ".flv", RENDER)
+MediaTypes.register("video", ".gifv", RENDER)
+MediaTypes.register("video", ".hevc", RENDER)
+MediaTypes.register("video", ".m4p", RENDER)
+MediaTypes.register("video", ".m4v", RENDER)
+MediaTypes.register("video", ".mkv", RENDER)
+MediaTypes.register("video", ".mov", RENDER)
+MediaTypes.register("video", ".mp4", RENDER)
+MediaTypes.register("video", ".webm", RENDER)
+MediaTypes.register("video", ".wmv", RENDER)
 
 
 class VideoPreview(BasePreview):

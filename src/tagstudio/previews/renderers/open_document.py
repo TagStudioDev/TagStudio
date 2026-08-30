@@ -9,10 +9,23 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("open_document", ".fodg", RENDER)
+MediaTypes.register("open_document", ".fodp", RENDER)
+MediaTypes.register("open_document", ".fods", RENDER)
+MediaTypes.register("open_document", ".fodt", RENDER)
+MediaTypes.register("open_document", ".mscz", RENDER)
+MediaTypes.register("open_document", ".odf", RENDER)
+MediaTypes.register("open_document", ".odg", RENDER)
+MediaTypes.register("open_document", ".odp", RENDER)
+MediaTypes.register("open_document", ".ods", RENDER)
+MediaTypes.register("open_document", ".odt", RENDER)
+MediaTypes.register("open_document", ".ora", RENDER)
 
 
 class OpenDocumentPreview(BasePreview):

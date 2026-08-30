@@ -11,7 +11,6 @@ from warnings import deprecated
 import structlog
 
 from tagstudio.core.utils.sanitized_attr import SanitizedAttr
-from tagstudio.previews.base_preview import RENDER
 
 logger = structlog.get_logger(__name__)
 
@@ -85,20 +84,18 @@ class MediaTypes(metaclass=SanitizedAttr):
             contexts = [contexts]
 
         # Check for existing group or create new one
-        existing_group = getattr(MediaTypes, attr_name, None)
-        assert isinstance(existing_group, MediaTypeGroup) or existing_group is None
+        group = getattr(MediaTypes, attr_name, None)
+        assert isinstance(group, MediaTypeGroup) or group is None
 
-        if existing_group is None:
+        if group is None:
+            logger.debug(f"[MediaTypes] Creating Group: '{attr_name}' with {ext}")
             group = MediaTypeGroup(name, [])
             group.add_types([MediaType(ext, contexts)])
             setattr(MediaTypes, attr_name, group)
             cls._all_groups.append(group)
-            logger.debug(f"[MediaTypes] Creating Group: '{attr_name}' with {ext}")
-            return
-
-        # If one already exists, just append new values
-        existing_group.add_types([MediaType(ext, contexts)])
-        logger.debug(f"[MediaTypes] Amending Group: '{attr_name}' with {ext}")
+        else:
+            logger.debug(f"[MediaTypes] Amending Group: '{attr_name}' with {ext}")
+            group.add_types([MediaType(ext, contexts)])
 
         # Store any file extention equivalents
         if len(ext) > 1:
@@ -109,8 +106,10 @@ class MediaTypes(metaclass=SanitizedAttr):
 
         # Create any chained groups from dot notations (e.g. "adobe.photoshop")
         name_parts = name.split(".")
-        if len(name_parts) > 1:
-            cls.chain_group(name_parts[0], name_parts[1:])
+        for i in range(1, len(name_parts)):
+            parent = ".".join(name_parts[:i])
+            child = ".".join(name_parts[: i + 1])
+            cls.chain_group(parent, [child])
 
         # Update any chained groups
         chained_groups: set[str] = set()
@@ -149,30 +148,6 @@ class MediaTypes(metaclass=SanitizedAttr):
             cls._chained_groups[parent_group].add(c_group)
 
     @classmethod
-    @deprecated("Use individual register().")
-    def register_group(cls, group: MediaTypeGroup) -> None:
-        attr_name = group.name_key.replace(".", "_")
-        existing_group = getattr(MediaTypes, attr_name, None)
-        assert isinstance(existing_group, MediaTypeGroup) or existing_group is None
-
-        # Register new attribute if one doesn't exist
-        if existing_group is None:
-            setattr(MediaTypes, attr_name, group)
-            cls._all_groups.append(group)
-            logger.debug(
-                f"[MediaTypes] Creating Group: {attr_name}",
-                group=[(x.contexts, x.exts) for x in group.types],
-            )
-            return
-
-        # If one already exists, just append new values
-        existing_group.add_types(group.types)
-        logger.debug(
-            f"[MediaTypes] Amending Group: {attr_name}",
-            group=[(x.contexts, x.exts) for x in existing_group.types],
-        )
-
-    @classmethod
     def find(cls, ext: str, context: str) -> list[MediaTypeGroup]:
         groups: list[MediaTypeGroup] = []
         for group in cls._all_groups:
@@ -186,105 +161,130 @@ class MediaTypes(metaclass=SanitizedAttr):
         return groups
 
 
-# Adobe --------------------------------------------------------------------------------------------
-MediaTypes.chain_group(
-    "adobe",
-    [
-        "adobe.acrobat",
-        "adobe.photoshop",
-        "adobe.illustrator",
-        "pdf",
-    ],
-)
+# Initial chaining
+MediaTypes.chain_group("documents", ["microsoft.office", "open_document", "apple.iwork"])
+MediaTypes.chain_group("model", ["autodesk", "blender"])
 
-# Acrobat
-MediaTypes.register("adobe.acrobat", ".pdf", SEARCH)
+# Vendor.Suite.Product =============================================================================
+# The groups are designed so that searching for either the vendor, suite, or product will return
+# file types under that group level.
+
+
+# Adobe ------------------------------------------------------------------------
+MediaTypes.chain_group("adobe", ["pdf"])  # Manually specify PDF as an Adobe file
+
 MediaTypes.register("adobe.acrobat", ".fdf", SEARCH)
-MediaTypes.register("adobe.acrobat", ".xfdf", SEARCH)
+MediaTypes.register("adobe.acrobat", ".pdf", SEARCH)  # Also in the PDF group
 MediaTypes.register("adobe.acrobat", ".pdx", SEARCH)
-
-# Photoshop
+MediaTypes.register("adobe.acrobat", ".xfdf", SEARCH)
+MediaTypes.register("adobe.illustrator", ".ai", SEARCH)
 MediaTypes.register("adobe.photoshop", ".pdd", SEARCH)
 MediaTypes.register("adobe.photoshop", ".psb", SEARCH)
 MediaTypes.register("adobe.photoshop", ".psd", SEARCH)
 
-# Illustrator
-MediaTypes.register("adobe.illustrator", ".ai", SEARCH)
+# Affinity ---------------------------------------------------------------------
+MediaTypes.register("affinity.designer", ".afdesign", SEARCH)
+MediaTypes.register("affinity.photo", ".afphoto", SEARCH)
+MediaTypes.register("affinity.publisher", [".afpublisher", ".afpub"], SEARCH)
+MediaTypes.register("affinity", ".af", SEARCH)
 
-# PDF
-MediaTypes.register("pdf", ".pdf", SEARCH)
-MediaTypes.register("pdf", ".xps", SEARCH)
-MediaTypes.register("pdf", ".ps", SEARCH)
+# Apple & iWork ----------------------------------------------------------------
+MediaTypes.register("apple.books", ".ibook", SEARCH)
+MediaTypes.register("apple.pixelmator", ".pxd", SEARCH)
+MediaTypes.register("apple.iwork.pages", ".pages", SEARCH)
+MediaTypes.register("apple.iwork.numbers", ".numbers", SEARCH)
+MediaTypes.register("apple.iwork.keynote", ".key", SEARCH)
 
+# Autodesk ---------------------------------------------------------------------
+MediaTypes.register("autodesk", ".3ds", SEARCH)
+MediaTypes.register("autodesk", ".fbx", SEARCH)
 
-# Affinity -------------------------------------------------------------------------------------
-affinity_photo = MediaTypeGroup(
-    "affinity.photo",
-    [MediaType(".afphoto", [SEARCH, RENDER])],
-)
-MediaTypes.register_group(affinity_photo)
-affinity_designer = MediaTypeGroup(
-    "affinity.designer",
-    [MediaType(".afdesign", [SEARCH, RENDER])],
-)
-MediaTypes.register_group(affinity_designer)
-affinity_publisher = MediaTypeGroup(
-    "affinity.publisher",
-    [MediaType([".afpublisher", ".afpub"], [SEARCH, RENDER])],
-)
-MediaTypes.register_group(affinity_publisher)
+# Blender ----------------------------------------------------------------------
+MediaTypes.register("blender", ".blen_tc", SEARCH)
+MediaTypes.register("blender", ".blend", SEARCH)
+# Numbered Blender auto-backup files (.blend1 - .blend32)
+MediaTypes.register("blender", [f".blend{i}" for i in range(1, 33)], SEARCH)
 
-affinity = MediaTypeGroup(
-    "affinity",
-    affinity_photo.types
-    + affinity_designer.types
-    + affinity_publisher.types
-    + [MediaType(".af", [SEARCH, RENDER])],
-)
-MediaTypes.register_group(affinity)
+# Clip Studio Paint ------------------------------------------------------------
+MediaTypes.register("clip_studio_paint", ".clip", SEARCH)
+MediaTypes.register("clip_studio_paint", ".cmc", SEARCH)
+MediaTypes.register("clip_studio_paint", ".lip", SEARCH)
 
-# Blender --------------------------------------------------------------------------------------
-_blender = MediaTypeGroup(
-    "blender",
-    [
-        MediaType(".blen_tc", [SEARCH, RENDER]),
-        MediaType(".blend", [SEARCH, RENDER]),
-        # Numbered Blender auto-backup files (.blend1 - .blend32)
-        MediaType([f".blend{i}" for i in range(1, 33)], [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(_blender)
+# Corel ------------------------------------------------------------------------
+MediaTypes.register("corel.wordperfect", ".wpd", SEARCH)
 
-# Clip Studio Paint ----------------------------------------------------------------------------
-clip_studio_paint = MediaTypeGroup(
-    "clip_studio_paint",
-    [
-        MediaType(".lip", [SEARCH, RENDER]),
-        MediaType(".clip", [SEARCH, RENDER]),
-        MediaType(".cmc", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(clip_studio_paint)
+# GIMP -------------------------------------------------------------------------
+MediaTypes.register("gimp", ".xcf", SEARCH)
+MediaTypes.register("gimp", ".ora", SEARCH)  # OpenRaster, used by Krita, GIMP, etc.
 
-# Krita ----------------------------------------------------------------------------------------
-krita = MediaTypeGroup(
-    "krita",
-    [
-        MediaType(".kra", [SEARCH, RENDER]),
-        MediaType(".krz", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(krita)
+# Krita ------------------------------------------------------------------------
+MediaTypes.register("krita", ".kra", SEARCH)
+MediaTypes.register("krita", ".krz", SEARCH)
+MediaTypes.register("krita", ".ora", SEARCH)  # OpenRaster, used by Krita, GIMP, etc.
 
-# MediBang Paint / FireAlpaca ------------------------------------------------------------------
-medibang_paint = MediaTypeGroup("medibang_paint", [MediaType(".mdp", [SEARCH, RENDER])])
-MediaTypes.register_group(medibang_paint)
+# MediBang Paint / FireAlpaca --------------------------------------------------
+MediaTypes.register("medibang_paint", ".mdp", SEARCH)
 
-# Paint.NET ------------------------------------------------------------------------------------
-paint_dot_net = MediaTypeGroup("paint_dot_net", [MediaType(".pdn", [SEARCH, RENDER])])
-MediaTypes.register_group(paint_dot_net)
+# Microsoft Office -------------------------------------------------------------
+MediaTypes.register("microsoft.office.access", ".accdb", SEARCH)
+MediaTypes.register("microsoft.office.access", ".mdb", SEARCH)
+MediaTypes.register("microsoft.office.access", ".wdb", SEARCH)
+MediaTypes.register("microsoft.office.excel", ".xlr", SEARCH)
+MediaTypes.register("microsoft.office.excel", ".xls", SEARCH)
+MediaTypes.register("microsoft.office.excel", ".xlsx", SEARCH)
+MediaTypes.register("microsoft.office.powerpoint", ".ppt", SEARCH)
+MediaTypes.register("microsoft.office.powerpoint", ".pptx", SEARCH)
+MediaTypes.register("microsoft.office.word", ".doc", SEARCH)
+MediaTypes.register("microsoft.office.word", ".docm", SEARCH)
+MediaTypes.register("microsoft.office.word", ".docx", SEARCH)
+MediaTypes.register("microsoft.office.word", ".dot", SEARCH)
+MediaTypes.register("microsoft.office.word", ".dotm", SEARCH)
+MediaTypes.register("microsoft.office.word", ".dotx", SEARCH)
+MediaTypes.register("microsoft.office.word", ".wps", SEARCH)
 
-# Archives -------------------------------------------------------------------------------------
+# MuseScore --------------------------------------------------------------------
+MediaTypes.register("musescore", ".mscz", SEARCH)
+
+# OpenDocument -----------------------------------------------------------------
+MediaTypes.register("open_document", ".fodg", SEARCH)
+MediaTypes.register("open_document", ".fodp", SEARCH)
+MediaTypes.register("open_document", ".fods", SEARCH)
+MediaTypes.register("open_document", ".fodt", SEARCH)
+MediaTypes.register("open_document", ".odf", SEARCH)
+MediaTypes.register("open_document", ".odg", SEARCH)
+MediaTypes.register("open_document", ".odp", SEARCH)
+MediaTypes.register("open_document", ".ods", SEARCH)
+MediaTypes.register("open_document", ".odt", SEARCH)
+
+# Paint.NET --------------------------------------------------------------------
+MediaTypes.register("paint_dot_net", ".pdn", SEARCH)
+
+# Valve Source Engine ----------------------------------------------------------
+MediaTypes.register("source_engine", ".fgd", SEARCH)
+MediaTypes.register("source_engine", ".gi", SEARCH)
+MediaTypes.register("source_engine", ".kv3", SEARCH)
+MediaTypes.register("source_engine", ".nut", SEARCH)
+MediaTypes.register("source_engine", ".vcfg", SEARCH)
+MediaTypes.register("source_engine", ".vdf", SEARCH)
+MediaTypes.register("source_engine", ".vmt", SEARCH)
+MediaTypes.register("source_engine", ".vqlayout", SEARCH)
+MediaTypes.register("source_engine", ".vsc", SEARCH)
+MediaTypes.register("source_engine", ".vsnd_template", SEARCH)
+MediaTypes.register("source_engine", ".vtf", SEARCH)
+
+# General Media Types ==============================================================================
+# These are general groups for media types based on the file formats and uses themselves, rather
+# than the vendors. Extensions may be duplicated here if they belong in both sections.
+
+# 3D ---------------------------------------------------------------------------
+MediaTypes.register("model", ".3ds", SEARCH)
+MediaTypes.register("model", ".fbx", SEARCH)
+MediaTypes.register("model", ".obj", SEARCH)
+MediaTypes.register("model", ".stl", SEARCH)
+MediaTypes.register("model", ".3mf", SEARCH)
+MediaTypes.register("material", ".mtl", SEARCH)
+
+# Archives ---------------------------------------------------------------------
 MediaTypes.register("archive", ".7z", SEARCH)
 MediaTypes.register("archive", ".gz", SEARCH)
 MediaTypes.register("archive", ".rar", SEARCH)
@@ -297,270 +297,70 @@ MediaTypes.register("archive", [".tar.lzma", ".tlz"], SEARCH)
 MediaTypes.register("archive", [".tar.xz", ".txz"], SEARCH)
 MediaTypes.register("archive", [".tar.zst", ".tzst"], SEARCH)
 
-# eBooks -------------------------------------------------------------------------------------
-ebook = MediaTypeGroup(
-    "ebook",
-    [
-        MediaType(".azw", [SEARCH, RENDER]),
-        MediaType(".azw3", [SEARCH, RENDER]),
-        MediaType(".cb7", [SEARCH, RENDER]),
-        MediaType(".cba", [SEARCH, RENDER]),
-        MediaType(".cbr", [SEARCH, RENDER]),
-        MediaType(".cbt", [SEARCH, RENDER]),
-        MediaType(".cbz", [SEARCH, RENDER]),
-        MediaType(".djvu", [SEARCH, RENDER]),
-        MediaType(".epub", [SEARCH, RENDER]),
-        MediaType(".fb2", [SEARCH, RENDER]),
-        MediaType(".ibook", [SEARCH, RENDER]),
-        MediaType(".kfx", [SEARCH, RENDER]),
-        MediaType(".lit", [SEARCH, RENDER]),
-        MediaType(".mobi", [SEARCH, RENDER]),
-        MediaType(".pdb", [SEARCH, RENDER]),
-        MediaType(".prc", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(ebook)
+# Audio ------------------------------------------------------------------------
+MediaTypes.register("audio.midi", [".mid", ".midi"], SEARCH)
+MediaTypes.register("audio", ".aac", SEARCH)
+MediaTypes.register("audio", ".aifc", SEARCH)
+MediaTypes.register("audio", ".caf", SEARCH)
+MediaTypes.register("audio", ".flac", SEARCH)
+MediaTypes.register("audio", ".m4a", SEARCH)
+MediaTypes.register("audio", ".m4p", SEARCH)
+MediaTypes.register("audio", ".mp3", SEARCH)
+MediaTypes.register("audio", ".ogg", SEARCH)
+MediaTypes.register("audio", ".wma", SEARCH)
+MediaTypes.register("audio", [".aif", ".aiff"], SEARCH)
+MediaTypes.register("audio", [".wav", ".wave"], SEARCH)
 
-# Fonts --------------------------------------------------------------------------------------
-font = MediaTypeGroup(
-    "font",
-    [
-        MediaType(".fon", SEARCH),
-        MediaType(".otf", [SEARCH, RENDER]),
-        MediaType(".ttc", [SEARCH, RENDER]),
-        MediaType(".ttf", [SEARCH, RENDER]),
-        MediaType(".woff", [SEARCH, RENDER]),
-        MediaType(".woff2", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(font)
+# Binary -----------------------------------------------------------------------
+MediaTypes.register("binary", ".dll", SEARCH)
+MediaTypes.register("binary", ".dylib", SEARCH)
+MediaTypes.register("binary", ".exe", SEARCH)
+MediaTypes.register("binary", ".o", SEARCH)
+MediaTypes.register("binary", ".pyc", SEARCH)
+MediaTypes.register("binary", ".pyd", SEARCH)
+MediaTypes.register("binary", ".pyo", SEARCH)
+MediaTypes.register("binary", ".aab", SEARCH)
 
-# Office & Documents ---------------------------------------------------------------------------
-powerpoint = MediaTypeGroup(
-    "office.powerpoint",
-    [
-        MediaType(".ppt", SEARCH),
-        MediaType(".pptx", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(powerpoint)
+# Databases --------------------------------------------------------------------
+MediaTypes.register("database", ".accdb", SEARCH)
+MediaTypes.register("database", ".mdb", SEARCH)
+MediaTypes.register("database", ".pdb", SEARCH)
+MediaTypes.register("database", ".db", SEARCH)
+MediaTypes.register("database", ".sqlite", SEARCH)
+MediaTypes.register("database", ".sqlite3", SEARCH)
 
-open_document = MediaTypeGroup(
-    "open_document",
-    [
-        MediaType(".fodg", [SEARCH, RENDER]),
-        MediaType(".fodp", [SEARCH, RENDER]),
-        MediaType(".fods", [SEARCH, RENDER]),
-        MediaType(".fodt", [SEARCH, RENDER]),
-        MediaType(".mscz", [SEARCH, RENDER]),
-        MediaType(".odf", [SEARCH, RENDER]),
-        MediaType(".odg", [SEARCH, RENDER]),
-        MediaType(".odp", [SEARCH, RENDER]),
-        MediaType(".ods", [SEARCH, RENDER]),
-        MediaType(".odt", [SEARCH, RENDER]),
-        MediaType(".ora", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(open_document)
+# Disk Images ------------------------------------------------------------------
+MediaTypes.register("disk_image", ".bios", SEARCH)
+MediaTypes.register("disk_image", ".dmg", SEARCH)
+MediaTypes.register("disk_image", ".fhdx", SEARCH)
+MediaTypes.register("disk_image", ".iso", SEARCH)
 
-document = MediaTypeGroup(
-    "document",
-    [
-        MediaType(".doc", SEARCH),
-        MediaType(".docm", SEARCH),
-        MediaType(".docx", SEARCH),
-        MediaType(".dot", SEARCH),
-        MediaType(".dotm", SEARCH),
-        MediaType(".dotx", SEARCH),
-        MediaType(".odt", SEARCH),
-        MediaType(".pages", SEARCH),
-        MediaType(".pdf", SEARCH),
-        MediaType(".pxd", SEARCH),
-        MediaType(".rtf", SEARCH),
-        MediaType(".tex", SEARCH),
-        MediaType(".wpd", SEARCH),
-        MediaType(".wps", SEARCH),
-    ]
-    + open_document.types
-    + powerpoint.types,
-)
+# eBooks & Comics --------------------------------------------------------------
+MediaTypes.register("ebook.comic", ".cb7", SEARCH)
+MediaTypes.register("ebook.comic", ".cba", SEARCH)
+MediaTypes.register("ebook.comic", ".cbr", SEARCH)
+MediaTypes.register("ebook.comic", ".cbt", SEARCH)
+MediaTypes.register("ebook.comic", ".cbz", SEARCH)
+MediaTypes.register("ebook", ".azw", SEARCH)
+MediaTypes.register("ebook", ".azw3", SEARCH)
+MediaTypes.register("ebook", ".djvu", SEARCH)
+MediaTypes.register("ebook", ".epub", SEARCH)
+MediaTypes.register("ebook", ".fb2", SEARCH)
+MediaTypes.register("ebook", ".ibook", SEARCH)  # Also under "apple.books"
+MediaTypes.register("ebook", ".kfx", SEARCH)
+MediaTypes.register("ebook", ".lit", SEARCH)
+MediaTypes.register("ebook", ".mobi", SEARCH)
+MediaTypes.register("ebook", ".prc", SEARCH)
 
+# Fonts ------------------------------------------------------------------------
+MediaTypes.register("font", ".fon", SEARCH)
+MediaTypes.register("font", ".otf", SEARCH)
+MediaTypes.register("font", ".ttc", SEARCH)
+MediaTypes.register("font", ".ttf", SEARCH)
+MediaTypes.register("font", ".woff", SEARCH)
+MediaTypes.register("font", ".woff2", SEARCH)
 
-MediaTypes.register_group(
-    MediaTypeGroup(
-        "iwork",
-        [
-            MediaType(".key", SEARCH),
-            MediaType(".numbers", SEARCH),
-            MediaType(".pages", SEARCH),
-        ],
-    )
-)
-
-
-presentation = MediaTypeGroup(
-    "presentation",
-    [
-        MediaType(".key", SEARCH),
-        MediaType(".odp", SEARCH),
-    ]
-    + powerpoint.types,
-)
-MediaTypes.register_group(presentation)
-
-spreadsheet = MediaTypeGroup(
-    "spreadsheet",
-    [
-        MediaType(".csv", SEARCH),
-        MediaType(".numbers", SEARCH),
-        MediaType(".ods", SEARCH),
-        MediaType(".xls", SEARCH),
-        MediaType(".xlsx", SEARCH),
-    ],
-)
-MediaTypes.register_group(spreadsheet)
-
-# 3D -------------------------------------------------------------------------------------------
-model = MediaTypeGroup(
-    "model",
-    [
-        MediaType(".3ds", SEARCH),
-        MediaType(".fbx", SEARCH),
-        MediaType(".obj", SEARCH),
-        MediaType(".stl", SEARCH),
-        MediaType(".3mf", SEARCH),
-    ],
-)
-MediaTypes.register_group(model)
-
-material = MediaTypeGroup(
-    "material",
-    [
-        MediaType(".mtl", SEARCH),
-    ],
-)
-MediaTypes.register_group(material)
-
-shader = MediaTypeGroup(
-    "shader",
-    [
-        MediaType(".effect", SEARCH),
-        MediaType(".frag", SEARCH),
-        MediaType(".fsh", SEARCH),
-        MediaType(".glsl", SEARCH),
-        MediaType(".shader", SEARCH),
-        MediaType(".vert", SEARCH),
-        MediaType(".vsh", SEARCH),
-    ],
-)
-MediaTypes.register_group(shader)
-
-# System & Misc ------------------------------------------------------------------------------
-database = MediaTypeGroup(
-    "database",
-    [
-        MediaType(".accdb", SEARCH),
-        MediaType(".mdb", SEARCH),
-        MediaType(".pdb", SEARCH),
-        MediaType(".db", SEARCH),
-        MediaType(".sqlite", SEARCH),
-        MediaType(".sqlite3", SEARCH),
-    ],
-)
-MediaTypes.register_group(database)
-
-disk_image = MediaTypeGroup(
-    "disk_image",
-    [
-        MediaType(".bios", SEARCH),
-        MediaType(".dmg", SEARCH),
-        MediaType(".fhdx", SEARCH),
-        MediaType(".iso", SEARCH),
-    ],
-)
-MediaTypes.register_group(disk_image)
-
-installer = MediaTypeGroup(
-    "installer",
-    [
-        MediaType(".appx", SEARCH),
-        MediaType(".msi", SEARCH),
-        MediaType(".msix", SEARCH),
-    ],
-)
-MediaTypes.register_group(installer)
-
-package = MediaTypeGroup(
-    "package",
-    [
-        MediaType(".aab", SEARCH),
-        MediaType(".akp", SEARCH),
-        MediaType(".apk", SEARCH),
-        MediaType(".apkm", SEARCH),
-        MediaType(".apks", SEARCH),
-        MediaType(".pkg", SEARCH),
-        MediaType(".xapk", SEARCH),
-    ],
-)
-MediaTypes.register_group(package)
-
-program = MediaTypeGroup(
-    "program",
-    [
-        MediaType(".app", SEARCH),
-        MediaType(".bin", SEARCH),
-        MediaType(".exe", SEARCH),
-    ],
-)
-MediaTypes.register_group(program)
-
-shortcut = MediaTypeGroup(
-    "shortcut",
-    [
-        MediaType(".desktop", SEARCH),
-        MediaType(".lnk", SEARCH),
-        MediaType(".url", SEARCH),
-    ],
-)
-MediaTypes.register_group(shortcut)
-
-
-# MIDI -----------------------------------------------------------------------------------------
-midi = MediaTypeGroup("midi", [MediaType([".mid", ".midi"], SEARCH)])
-MediaTypes.register_group(midi)
-
-# Audio ----------------------------------------------------------------------------------------
-audio = MediaTypeGroup(
-    "audio",
-    [
-        MediaType(".aac", [RENDER, SEARCH]),
-        MediaType(
-            [".aif", ".aiff", ".aifc"],
-            [RENDER, SEARCH],
-        ),
-        MediaType(".caf", [RENDER, SEARCH]),
-        MediaType(".flac", [RENDER, SEARCH]),
-        MediaType(".m4a", [RENDER, SEARCH]),
-        MediaType(".m4p", [RENDER, SEARCH]),
-        MediaType(".mp3", [RENDER, SEARCH]),
-        MediaType(".ogg", [RENDER, SEARCH]),
-        MediaType(".wav", [RENDER, SEARCH]),
-        MediaType(".wma", [RENDER, SEARCH]),
-    ]
-    + midi.types,
-)
-MediaTypes.register_group(audio)
-
-# Images -------------------------------------------------------------------------------------------
-MediaTypes.chain_group(
-    "image",
-    [
-        "image.animated",
-        "image.raster",
-        "image.raw",
-        "image.vector",
-    ],
-)
+# Images -----------------------------------------------------------------------
 
 # Raster Images
 MediaTypes.register("image.raster", ".apng", SEARCH)
@@ -576,21 +376,20 @@ MediaTypes.register("image.raster", [".j2k", ".jp2", ".jpg2"], SEARCH)
 MediaTypes.register("image.raster", [".tif", ".tiff"], SEARCH)
 
 # RAW Images
-MediaTypes.chain_group("image.raster", "image.raw")
-MediaTypes.register("image.raw", ".arw", SEARCH)
-MediaTypes.register("image.raw", ".cr2", SEARCH)
-MediaTypes.register("image.raw", ".cr3", SEARCH)
-MediaTypes.register("image.raw", ".crw", SEARCH)
-MediaTypes.register("image.raw", ".dng", SEARCH)
-MediaTypes.register("image.raw", ".nef", SEARCH)
-MediaTypes.register("image.raw", ".nrw", SEARCH)
-MediaTypes.register("image.raw", ".orf", SEARCH)
-MediaTypes.register("image.raw", ".r3d", SEARCH)
-MediaTypes.register("image.raw", ".raf", SEARCH)
-MediaTypes.register("image.raw", ".raw", SEARCH)
-MediaTypes.register("image.raw", ".rw2", SEARCH)
-MediaTypes.register("image.raw", ".srf", SEARCH)
-MediaTypes.register("image.raw", ".srf2", SEARCH)
+MediaTypes.register("image.raster.raw", ".arw", SEARCH)
+MediaTypes.register("image.raster.raw", ".cr2", SEARCH)
+MediaTypes.register("image.raster.raw", ".cr3", SEARCH)
+MediaTypes.register("image.raster.raw", ".crw", SEARCH)
+MediaTypes.register("image.raster.raw", ".dng", SEARCH)
+MediaTypes.register("image.raster.raw", ".nef", SEARCH)
+MediaTypes.register("image.raster.raw", ".nrw", SEARCH)
+MediaTypes.register("image.raster.raw", ".orf", SEARCH)
+MediaTypes.register("image.raster.raw", ".r3d", SEARCH)
+MediaTypes.register("image.raster.raw", ".raf", SEARCH)
+MediaTypes.register("image.raster.raw", ".raw", SEARCH)
+MediaTypes.register("image.raster.raw", ".rw2", SEARCH)
+MediaTypes.register("image.raster.raw", ".srf", SEARCH)
+MediaTypes.register("image.raster.raw", ".srf2", SEARCH)
 
 # Vector Images
 MediaTypes.register("image.vector", ".eps", SEARCH)
@@ -605,51 +404,67 @@ MediaTypes.register("image.animated", ".apng", SEARCH)
 MediaTypes.register("image.animated", ".webp", SEARCH)
 MediaTypes.register("image.animated", ".jxl", SEARCH)
 
+# LaTeX ------------------------------------------------------------------------
+MediaTypes.register("latex", ".tex", SEARCH)
 
-# Binary ---------------------------------------------------------------------------------------
-binary = MediaTypeGroup(
-    "binary",
-    [
-        MediaType(".dll", [RENDER, SEARCH]),
-        MediaType(".dylib", [RENDER, SEARCH]),
-        MediaType(".exe", [RENDER, SEARCH]),
-        MediaType(".o", [RENDER, SEARCH]),
-        MediaType(".pyc", [RENDER, SEARCH]),
-        MediaType(".pyd", [RENDER, SEARCH]),
-        MediaType(".pyo", [RENDER, SEARCH]),
-    ],
-)
+# PDF --------------------------------------------------------------------------
+MediaTypes.register("pdf", ".pdf", SEARCH)
+MediaTypes.register("pdf", ".xps", SEARCH)
+MediaTypes.register("pdf", ".ps", SEARCH)
 
-# Python ---------------------------------------------------------------------------------------
-python = MediaTypeGroup(
-    "python",
-    [
-        MediaType(".ipynb", [RENDER, SEARCH]),
-        MediaType(".py", [RENDER, SEARCH]),
-        MediaType(".pyc", SEARCH),
-        MediaType(".pyd", SEARCH),
-        MediaType(".pyi", [RENDER, SEARCH]),
-        MediaType(".pyo", SEARCH),
-    ],
-)
+# Presentations ----------------------------------------------------------------
+MediaTypes.register("presentation", ".key", SEARCH)
+MediaTypes.register("presentation", ".odp", SEARCH)
+MediaTypes.register("presentation", ".ppt", SEARCH)
+MediaTypes.register("presentation", ".pptx", SEARCH)
 
+# Programs, Installers, & Packages ---------------------------------------------
+MediaTypes.register("program", ".app", SEARCH)
+MediaTypes.register("program", ".bin", SEARCH)
+MediaTypes.register("program", ".exe", SEARCH)
+MediaTypes.register("program", ".msi", SEARCH)
+MediaTypes.register("program", ".appx", SEARCH)
+MediaTypes.register("program", ".msix", SEARCH)
+MediaTypes.register("program", ".pkg", SEARCH)
+MediaTypes.register("program", ".apk", SEARCH)
+MediaTypes.register("program", ".apkm", SEARCH)
+MediaTypes.register("program", ".apks", SEARCH)
+MediaTypes.register("program", ".xapk", SEARCH)
+
+# Rich Text --------------------------------------------------------------------
+MediaTypes.register("rich_text", ".rtf", SEARCH)
+
+# Shaders ----------------------------------------------------------------------
+MediaTypes.register("shader", ".effect", SEARCH)
+MediaTypes.register("shader", ".frag", SEARCH)
+MediaTypes.register("shader", ".fsh", SEARCH)
+MediaTypes.register("shader", ".glsl", SEARCH)
+MediaTypes.register("shader", ".shader", SEARCH)
+MediaTypes.register("shader", ".vert", SEARCH)
+MediaTypes.register("shader", ".vsh", SEARCH)
 
 # Shell Script ---------------------------------------------------------------------------------
-shell = MediaTypeGroup(
-    "shell",
-    [
-        MediaType(".bat", [SEARCH, RENDER]),
-        MediaType(".csh", [SEARCH, RENDER]),
-        MediaType(".fish", [SEARCH, RENDER]),
-        MediaType(".nu", [SEARCH, RENDER]),
-        MediaType(".ps1", [SEARCH, RENDER]),
-        MediaType(".sh", [SEARCH, RENDER]),
-        MediaType("activate", [SEARCH, RENDER]),
-    ],
-)
+MediaTypes.register("shell", ".bat", SEARCH)
+MediaTypes.register("shell", ".csh", SEARCH)
+MediaTypes.register("shell", ".fish", SEARCH)
+MediaTypes.register("shell", ".nu", SEARCH)
+MediaTypes.register("shell", ".ps1", SEARCH)
+MediaTypes.register("shell", ".sh", SEARCH)
+MediaTypes.register("shell", "activate", SEARCH)
 
+# Shortcuts --------------------------------------------------------------------
+MediaTypes.register("shortcut", ".desktop", SEARCH)
+MediaTypes.register("shortcut", ".lnk", SEARCH)
+MediaTypes.register("shortcut", ".url", SEARCH)
 
-# Plaintext ----------------------------------------------------------------------------------------
+# Spreadsheets -----------------------------------------------------------------
+MediaTypes.register("spreadsheet", ".csv", SEARCH)
+MediaTypes.register("spreadsheet", ".numbers", SEARCH)
+MediaTypes.register("spreadsheet", ".ods", SEARCH)
+MediaTypes.register("spreadsheet", ".xls", SEARCH)
+MediaTypes.register("spreadsheet", ".xlsx", SEARCH)
+
+# Plaintext --------------------------------------------------------------------
 # NOTE: If extensions here can be grouped or moved to more specific categories, do that.
 MediaTypes.register("plaintext", ".cfg", SEARCH)
 MediaTypes.register("plaintext", ".conf", SEARCH)
@@ -666,7 +481,6 @@ MediaTypes.register("plaintext", "readme", SEARCH)
 MediaTypes.register("plaintext", [".editorconfig", ".inf", ".ini"], SEARCH)
 MediaTypes.register("plaintext", [".txt", ".text"], SEARCH)
 MediaTypes.register("plaintext", ["pkginfo", ".pkginfo"], SEARCH)
-
 
 # CSS
 MediaTypes.register("plaintext.css", ".css", SEARCH)
@@ -685,7 +499,6 @@ MediaTypes.register("plaintext.javascript", ".js", SEARCH)
 MediaTypes.register("plaintext.javascript", ".jsx", SEARCH)
 MediaTypes.register("plaintext.javascript", ".mjs", SEARCH)
 
-
 # JSON
 MediaTypes.register("plaintext.json", [".json", ".json5", ".jsonc", ".jsonl"], SEARCH)
 
@@ -702,31 +515,33 @@ MediaTypes.register("plaintext.typescript", ".mts", SEARCH)
 MediaTypes.register("plaintext.typescript", ".tsx", SEARCH)
 
 # XML
-MediaTypes.register("plaintext.xml", [".drawio", ".xml", ".xul"], SEARCH)
+MediaTypes.register("plaintext.xml", [".xml", ".xul"], SEARCH)
 
 # YAML
 MediaTypes.register("plaintext.yaml", [".yaml", ".yml"], SEARCH)
 
 
-# Video ----------------------------------------------------------------------------------------
-video = MediaTypeGroup(
-    "video",
-    [
-        MediaType(".3gp", [SEARCH, RENDER]),
-        MediaType(".avi", [SEARCH, RENDER]),
-        MediaType(".flv", [SEARCH, RENDER]),
-        MediaType(".gifv", [SEARCH, RENDER]),
-        MediaType(".hevc", [SEARCH, RENDER]),
-        MediaType(".m4p", [SEARCH, RENDER]),
-        MediaType(".m4v", [SEARCH, RENDER]),
-        MediaType(".mkv", [SEARCH, RENDER]),
-        MediaType(".mov", [SEARCH, RENDER]),
-        MediaType(".mp4", [SEARCH, RENDER]),
-        MediaType(".webm", [SEARCH, RENDER]),
-        MediaType(".wmv", [SEARCH, RENDER]),
-    ],
-)
-MediaTypes.register_group(video)
+# Python -----------------------------------------------------------------------
+MediaTypes.register("python", ".ipynb", SEARCH)
+MediaTypes.register("python", ".py", SEARCH)
+MediaTypes.register("python", ".pyc", SEARCH)
+MediaTypes.register("python", ".pyd", SEARCH)
+MediaTypes.register("python", ".pyi", SEARCH)
+MediaTypes.register("python", ".pyo", SEARCH)
+
+# Video ------------------------------------------------------------------------
+MediaTypes.register("video", ".3gp", SEARCH)
+MediaTypes.register("video", ".avi", SEARCH)
+MediaTypes.register("video", ".flv", SEARCH)
+MediaTypes.register("video", ".gifv", SEARCH)
+MediaTypes.register("video", ".hevc", SEARCH)
+MediaTypes.register("video", ".m4p", SEARCH)
+MediaTypes.register("video", ".m4v", SEARCH)
+MediaTypes.register("video", ".mkv", SEARCH)
+MediaTypes.register("video", ".mov", SEARCH)
+MediaTypes.register("video", ".mp4", SEARCH)
+MediaTypes.register("video", ".webm", SEARCH)
+MediaTypes.register("video", ".wmv", SEARCH)
 
 
 FILETYPE_EQUIVALENTS = [
@@ -741,6 +556,7 @@ FILETYPE_EQUIVALENTS = [
 ]
 
 
+@deprecated("Use the new MediaTypes system.")
 class MediaTypeOld(enum.StrEnum):
     """Names of media types."""
 
@@ -781,6 +597,7 @@ class MediaTypeOld(enum.StrEnum):
     VIDEO = "video"
 
 
+@deprecated("Use the new MediaTypes system.")
 @dataclass(frozen=True)
 class MediaCategory:
     """An object representing a category of media.
@@ -817,6 +634,7 @@ class MediaCategory:
         return False
 
 
+@deprecated("Use the new MediaTypes system.")
 class MediaCategories:
     """Contain pre-made MediaCategory objects as well as methods to interact with them."""
 

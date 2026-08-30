@@ -12,9 +12,12 @@ from PIL.Image import Image
 from PIL.Image import open as open_image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("clip_studio_paint", ".clip", RENDER)
 
 
 class ClipStudioPaintPreview(BasePreview):

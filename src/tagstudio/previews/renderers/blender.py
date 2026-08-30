@@ -10,10 +10,14 @@ from PIL.Image import Image
 from PIL.Image import new as new_image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.vendored.blender_thumbnailer import blend_thumb
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("blender", ".blend", RENDER)
+MediaTypes.register("blender", ".blend1", RENDER)
 
 
 class BlenderPreview(BasePreview):

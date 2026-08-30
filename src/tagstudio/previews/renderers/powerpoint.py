@@ -9,14 +9,17 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
 
+MediaTypes.register("microsoft.office.powerpoint", ".pptx", RENDER)
+
 
 class PowerPointPreview(BasePreview):
-    media_type_name = "office.powerpoint"
+    media_type_name = "microsoft.office.powerpoint"
 
     @override
     @classmethod

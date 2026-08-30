@@ -13,10 +13,13 @@ import structlog
 from PIL.Image import Image, frombytes
 
 from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("medibang_paint", ".mdp", RENDER)
 
 
 class MediBangPaintPreview(BasePreview):

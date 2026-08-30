@@ -18,7 +18,8 @@ from PIL.Image import new as new_image
 from PIL.Image import open as open_image
 
 from tagstudio.core.enums import Theme
-from tagstudio.previews.base_preview import BasePreview
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
 from tagstudio.previews.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,  # pyright: ignore[reportPrivateUsage]
@@ -26,6 +27,18 @@ from tagstudio.previews.vendored.pydub.audio_segment import (
 from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
+
+MediaTypes.register("audio", ".aac", RENDER)
+MediaTypes.register("audio", ".aif", RENDER)
+MediaTypes.register("audio", ".aifc", RENDER)
+MediaTypes.register("audio", ".caf", RENDER)
+MediaTypes.register("audio", ".flac", RENDER)
+MediaTypes.register("audio", ".m4a", RENDER)
+MediaTypes.register("audio", ".m4p", RENDER)
+MediaTypes.register("audio", ".mp3", RENDER)
+MediaTypes.register("audio", ".ogg", RENDER)
+MediaTypes.register("audio", ".wav", RENDER)
+MediaTypes.register("audio", ".wma", RENDER)
 
 
 class AudioPreview(BasePreview):
@@ -42,6 +55,7 @@ class AudioPreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
+
         return cls.audio_album_thumb(filepath) or cls.audio_waveform_thumb(
             filepath, theme, size, dpi_scale
         )
