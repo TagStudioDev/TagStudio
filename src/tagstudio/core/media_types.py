@@ -163,7 +163,6 @@ class MediaTypes(metaclass=SanitizedAttr):
 
 # Initial chaining
 MediaTypes.chain_group("documents", ["microsoft.office", "open_document", "apple.iwork"])
-MediaTypes.chain_group("model", ["autodesk", "blender"])
 
 # Vendor.Suite.Product =============================================================================
 # The groups are designed so that searching for either the vendor, suite, or product will return
@@ -190,10 +189,10 @@ MediaTypes.register("affinity", ".af", SEARCH)
 
 # Apple & iWork ----------------------------------------------------------------
 MediaTypes.register("apple.books", ".ibook", SEARCH)
-MediaTypes.register("apple.pixelmator", ".pxd", SEARCH)
-MediaTypes.register("apple.iwork.pages", ".pages", SEARCH)
-MediaTypes.register("apple.iwork.numbers", ".numbers", SEARCH)
 MediaTypes.register("apple.iwork.keynote", ".key", SEARCH)
+MediaTypes.register("apple.iwork.numbers", ".numbers", SEARCH)
+MediaTypes.register("apple.iwork.pages", ".pages", SEARCH)
+MediaTypes.register("apple.pixelmator", ".pxd", SEARCH)
 
 # Autodesk ---------------------------------------------------------------------
 MediaTypes.register("autodesk", ".3ds", SEARCH)
@@ -214,8 +213,8 @@ MediaTypes.register("clip_studio_paint", ".lip", SEARCH)
 MediaTypes.register("corel.wordperfect", ".wpd", SEARCH)
 
 # GIMP -------------------------------------------------------------------------
-MediaTypes.register("gimp", ".xcf", SEARCH)
 MediaTypes.register("gimp", ".ora", SEARCH)  # OpenRaster, used by Krita, GIMP, etc.
+MediaTypes.register("gimp", ".xcf", SEARCH)
 
 # Krita ------------------------------------------------------------------------
 MediaTypes.register("krita", ".kra", SEARCH)
@@ -228,7 +227,6 @@ MediaTypes.register("medibang_paint", ".mdp", SEARCH)
 # Microsoft Office -------------------------------------------------------------
 MediaTypes.register("microsoft.office.access", ".accdb", SEARCH)
 MediaTypes.register("microsoft.office.access", ".mdb", SEARCH)
-MediaTypes.register("microsoft.office.access", ".wdb", SEARCH)
 MediaTypes.register("microsoft.office.excel", ".xlr", SEARCH)
 MediaTypes.register("microsoft.office.excel", ".xls", SEARCH)
 MediaTypes.register("microsoft.office.excel", ".xlsx", SEARCH)
@@ -241,6 +239,7 @@ MediaTypes.register("microsoft.office.word", ".dot", SEARCH)
 MediaTypes.register("microsoft.office.word", ".dotm", SEARCH)
 MediaTypes.register("microsoft.office.word", ".dotx", SEARCH)
 MediaTypes.register("microsoft.office.word", ".wps", SEARCH)
+MediaTypes.register("microsoft.office", ".wdb", SEARCH)
 
 # MuseScore --------------------------------------------------------------------
 MediaTypes.register("musescore", ".mscz", SEARCH)
@@ -276,13 +275,13 @@ MediaTypes.register("source_engine", ".vtf", SEARCH)
 # These are general groups for media types based on the file formats and uses themselves, rather
 # than the vendors. Extensions may be duplicated here if they belong in both sections.
 
-# 3D ---------------------------------------------------------------------------
+# 3D Models & Materials --------------------------------------------------------
+MediaTypes.register("material", ".mtl", SEARCH)
 MediaTypes.register("model", ".3ds", SEARCH)
+MediaTypes.register("model", ".3mf", SEARCH)
 MediaTypes.register("model", ".fbx", SEARCH)
 MediaTypes.register("model", ".obj", SEARCH)
 MediaTypes.register("model", ".stl", SEARCH)
-MediaTypes.register("model", ".3mf", SEARCH)
-MediaTypes.register("material", ".mtl", SEARCH)
 
 # Archives ---------------------------------------------------------------------
 MediaTypes.register("archive", ".7z", SEARCH)
@@ -312,6 +311,7 @@ MediaTypes.register("audio", [".aif", ".aiff"], SEARCH)
 MediaTypes.register("audio", [".wav", ".wave"], SEARCH)
 
 # Binary -----------------------------------------------------------------------
+MediaTypes.register("binary", ".aab", SEARCH)
 MediaTypes.register("binary", ".dll", SEARCH)
 MediaTypes.register("binary", ".dylib", SEARCH)
 MediaTypes.register("binary", ".exe", SEARCH)
@@ -319,15 +319,15 @@ MediaTypes.register("binary", ".o", SEARCH)
 MediaTypes.register("binary", ".pyc", SEARCH)
 MediaTypes.register("binary", ".pyd", SEARCH)
 MediaTypes.register("binary", ".pyo", SEARCH)
-MediaTypes.register("binary", ".aab", SEARCH)
 
 # Databases --------------------------------------------------------------------
 MediaTypes.register("database", ".accdb", SEARCH)
+MediaTypes.register("database", ".db", SEARCH)
 MediaTypes.register("database", ".mdb", SEARCH)
 MediaTypes.register("database", ".pdb", SEARCH)
-MediaTypes.register("database", ".db", SEARCH)
 MediaTypes.register("database", ".sqlite", SEARCH)
 MediaTypes.register("database", ".sqlite3", SEARCH)
+MediaTypes.register("database", ".wdb", SEARCH)
 
 # Disk Images ------------------------------------------------------------------
 MediaTypes.register("disk_image", ".bios", SEARCH)
@@ -419,16 +419,16 @@ MediaTypes.register("presentation", ".ppt", SEARCH)
 MediaTypes.register("presentation", ".pptx", SEARCH)
 
 # Programs, Installers, & Packages ---------------------------------------------
-MediaTypes.register("program", ".app", SEARCH)
-MediaTypes.register("program", ".bin", SEARCH)
-MediaTypes.register("program", ".exe", SEARCH)
-MediaTypes.register("program", ".msi", SEARCH)
-MediaTypes.register("program", ".appx", SEARCH)
-MediaTypes.register("program", ".msix", SEARCH)
-MediaTypes.register("program", ".pkg", SEARCH)
 MediaTypes.register("program", ".apk", SEARCH)
 MediaTypes.register("program", ".apkm", SEARCH)
 MediaTypes.register("program", ".apks", SEARCH)
+MediaTypes.register("program", ".app", SEARCH)
+MediaTypes.register("program", ".appx", SEARCH)
+MediaTypes.register("program", ".bin", SEARCH)
+MediaTypes.register("program", ".exe", SEARCH)
+MediaTypes.register("program", ".msi", SEARCH)
+MediaTypes.register("program", ".msix", SEARCH)
+MediaTypes.register("program", ".pkg", SEARCH)
 MediaTypes.register("program", ".xapk", SEARCH)
 
 # Rich Text --------------------------------------------------------------------
