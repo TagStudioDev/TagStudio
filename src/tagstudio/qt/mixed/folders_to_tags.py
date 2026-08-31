@@ -74,7 +74,7 @@ def folders_to_tags(library: Library):
         reversed_tag = reverse_tag(library, tag, None)
         add_tag_to_tree(reversed_tag)
 
-    for entry in library.all_entries():
+    for entry in list(library.all_entries(with_joins=True)):
         folders = entry.path.parts[0:-1]
         if not folders:
             continue
@@ -276,7 +276,7 @@ class TreeItem(QWidget):
 
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
-        self.tag_widget = ModifiedTagWidget(unwrap(data.tag), unwrap(parent_tag))
+        self.tag_widget = ModifiedTagWidget(unwrap(data.tag), parent_tag)
         self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
         self.tag_layout.addWidget(self.tag_widget)
 
@@ -317,7 +317,7 @@ class TreeItem(QWidget):
 class ModifiedTagWidget(QWidget):
     """Modified TagWidget that does not search for the Tag's display name in the Library."""
 
-    def __init__(self, tag: Tag, parent_tag: Tag) -> None:
+    def __init__(self, tag: Tag, parent_tag: Tag | None) -> None:
         super().__init__()
         self.tag = tag
 
@@ -328,7 +328,7 @@ class ModifiedTagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
+        text = (f"{tag.name} ({parent_tag.name})" if parent_tag else tag.name).replace("&", "&&")
         self.bg_button.setText(text)
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
