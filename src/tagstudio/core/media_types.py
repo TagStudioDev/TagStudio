@@ -160,6 +160,15 @@ class MediaTypes(metaclass=SanitizedAttr):
 
         return groups
 
+    @classmethod
+    def get_equivalent_exts(cls, ext: str) -> set[str]:
+        """Return a set of equivalent file extensions given an extention, including itself.
+
+        Args:
+            ext (str): The file extension, including leading dot.
+        """
+        return cls.equivalent_exts.get(ext, {ext})
+
 
 # Initial chaining
 MediaTypes.chain_group("documents", ["microsoft.office", "open_document", "apple.iwork"])
@@ -542,18 +551,6 @@ MediaTypes.register("video", ".mov", SEARCH)
 MediaTypes.register("video", ".mp4", SEARCH)
 MediaTypes.register("video", ".webm", SEARCH)
 MediaTypes.register("video", ".wmv", SEARCH)
-
-
-FILETYPE_EQUIVALENTS = [
-    {"aif", "aiff", "aifc"},
-    {"html", "htm", "xhtml", "shtml", "dhtml"},
-    {"jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"},
-    {"json", "jsonc", "json5", "jsonl"},
-    {"md", "markdown", "mkd", "rmd"},
-    {"tar.gz", "tgz"},
-    {"xml", "xul"},
-    {"yaml", "yml"},
-]
 
 
 @deprecated("Use the new MediaTypes system.")
