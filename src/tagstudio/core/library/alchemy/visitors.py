@@ -88,7 +88,14 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 )
                 return Entry.path.regexp_match(re.escape(node.value))
         elif node.type == ConstraintType.MediaType:
-            media_type: MediaTypeGroup | None = getattr(MediaTypes, node.value, None)
+            key = (
+                MediaTypes.get_group_key_from_name(
+                    node.value, case_sensitive=False, ignore_whitespace=True
+                )
+                or node.value
+            )
+
+            media_type: MediaTypeGroup | None = getattr(MediaTypes, key, None)
             extensions: set[str] = (
                 media_type.context_sets.get(SEARCH, set()) if media_type else set()
             )

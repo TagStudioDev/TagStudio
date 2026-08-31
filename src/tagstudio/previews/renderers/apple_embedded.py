@@ -16,14 +16,14 @@ from tagstudio.previews.renderers.archive import archive_thumb
 logger = structlog.get_logger(__name__)
 
 
-MediaTypes.register("apple.iwork", ".pxd", RENDER)
-MediaTypes.register("apple.iwork", ".pages", RENDER)
-MediaTypes.register("apple.iwork", ".numbers", RENDER)
-MediaTypes.register("apple.iwork", ".key", RENDER)
+MediaTypes.register("apple.embedded", ".pxd", RENDER)
+MediaTypes.register("apple.embedded", ".pages", RENDER)
+MediaTypes.register("apple.embedded", ".numbers", RENDER)
+MediaTypes.register("apple.embedded", ".key", RENDER)
 
 
 class AppleEmbeddedPreview(BasePreview):
-    media_type_name = "apple.iwork"
+    media_type_name = "apple.embedded"
 
     image_names: list[str] = [
         "preview.jpg",
