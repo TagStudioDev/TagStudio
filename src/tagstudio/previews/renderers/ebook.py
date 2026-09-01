@@ -12,7 +12,7 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import MediaCategories, MediaTypes
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import Archive, first_image_in_archive, open_archive
@@ -100,7 +100,7 @@ def cover_from_comic_info(archive: Archive, comic_info: Element, cover_type: str
         pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]  # pyright: ignore[reportUnknownVariableType]
         page_name = pages[int(unwrap(cover.get("Image")))]  # pyright: ignore[reportUnknownVariableType]
         ext = Path(page_name).suffix
-        if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
+        if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(page_name)  # pyright: ignore[reportUnknownVariableType]
             im = image_from_bytes(BytesIO(image_data))
 

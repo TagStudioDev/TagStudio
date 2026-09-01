@@ -15,7 +15,7 @@ import structlog
 from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.media_types import MediaCategories, MediaTypes
+from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.raster_image import image_from_bytes
@@ -119,7 +119,7 @@ def first_image_in_archive(archive: Archive) -> Image | None:
     """
     for file_name in archive.namelist():  # pyright: ignore[reportUnknownVariableType]
         ext = Path(file_name).suffix
-        if MediaCategories.IMAGE_RASTER_TYPES.contains(ext):
+        if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(file_name)  # pyright: ignore[reportUnknownVariableType]
             return image_from_bytes(BytesIO(image_data))
 

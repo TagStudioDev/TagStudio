@@ -10,7 +10,7 @@ from PIL.Image import Image
 
 from tagstudio.core.enums import Theme
 
-RENDER = "RENDER"
+RENDER = "RENDER"  # MediaType Context
 
 
 class BasePreview:

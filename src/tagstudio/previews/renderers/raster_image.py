@@ -45,6 +45,8 @@ MediaTypes.register("image.raster", ".heif", RENDER)
 MediaTypes.register("image.raster", ".jpg2", RENDER)
 MediaTypes.register("image.raster", ".jpeg", RENDER)
 MediaTypes.register("image.raster", ".tiff", RENDER)
+MediaTypes.register("image.raster", ".icns", RENDER)
+MediaTypes.register("image.raster", ".ico", RENDER)
 
 
 class RasterImagePreview(BasePreview):

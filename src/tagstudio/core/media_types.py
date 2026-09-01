@@ -15,7 +15,7 @@ from tagstudio.core.utils.sanitized_attr import SanitizedAttr
 logger = structlog.get_logger(__name__)
 
 
-SEARCH = "SEARCH"
+SEARCH = "SEARCH"  # MediaType Context
 
 
 class MediaType:
@@ -709,6 +709,12 @@ MediaTypes.register("image.raster", ".webp", SEARCH)
 MediaTypes.register("image.raster", [".heic", ".heif"], SEARCH)
 MediaTypes.register("image.raster", [".j2k", ".jp2", ".jpg2"], SEARCH)
 MediaTypes.register("image.raster", [".tif", ".tiff"], SEARCH)
+
+# Icons
+MediaTypes.add_name_aliases("image.raster.icon", "Icon")
+MediaTypes.register("image.raster.icon", ".icns", SEARCH)
+MediaTypes.register("image.raster.icon", ".ico", SEARCH)
+MediaTypes.register("image.raster.icon", ".icon", SEARCH)
 
 # Raw Images
 MediaTypes.add_name_aliases("image.raster.raw", ["Digital Negative", "Raw Image", "Raw"])

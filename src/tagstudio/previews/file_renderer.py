@@ -104,7 +104,6 @@ class FileRenderer:
             url (Path): The file url to assess. "$LOADING" will return the loading graphic.
         """
         ext = url.suffix.lower()
-        # types: set[MediaTypeOld] = MediaCategories.get_types(ext, mime_fallback=True)
         groups = MediaTypes.find(ext, SEARCH)
         for group in groups:
             logger.warning([g.name_key for g in groups])
