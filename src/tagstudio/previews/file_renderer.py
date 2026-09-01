@@ -17,11 +17,8 @@ from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFile, Unidentif
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.media_types import (
-    SEARCH,
-    MediaTypeGroup,
-    MediaTypes,
-)
+from tagstudio.core.media_types import MediaTypeGroup, MediaTypes
+from tagstudio.core.query_lang.filetype_groups import SEARCH
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
@@ -104,7 +101,7 @@ class FileRenderer:
             url (Path): The file url to assess. "$LOADING" will return the loading graphic.
         """
         ext = url.suffix.lower()
-        groups = MediaTypes.find(ext, SEARCH)
+        groups = MediaTypes.find(ext, SEARCH)  # Fallback icons use the SEARCH context
         for group in groups:
             logger.warning([g.name_key for g in groups])
             slug = group.name_key.replace(".", "_")

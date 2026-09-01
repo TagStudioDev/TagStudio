@@ -18,7 +18,8 @@ from rawpy import (
 )
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import SEARCH, MediaTypes
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.query_lang.filetype_groups import SEARCH
 from tagstudio.previews.video_tester import is_readable_video
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.utils.file_opener import open_file

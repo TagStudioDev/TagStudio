@@ -13,7 +13,7 @@ from sqlalchemy.sql.operators import ilike_op
 from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
-from tagstudio.core.media_types import SEARCH, MediaTypeGroup, MediaTypes
+from tagstudio.core.media_types import MediaTypeGroup, MediaTypes
 from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
@@ -24,6 +24,7 @@ from tagstudio.core.query_lang.ast import (
     ORList,
     Property,
 )
+from tagstudio.core.query_lang.filetype_groups import SEARCH
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
