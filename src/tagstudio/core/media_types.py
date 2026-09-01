@@ -169,13 +169,11 @@ class MediaTypes(metaclass=SanitizedAttr):
         assert isinstance(group, MediaTypeGroup) or group is None
 
         if group is None:
-            logger.debug(f"[MediaTypes] Creating Group: '{attr_name}' with {ext}")
             group = MediaTypeGroup(name, [])
             group.add_types([MediaType(ext, contexts)])
             setattr(MediaTypes, attr_name, group)
             cls.all_groups.append(group)
         else:
-            logger.debug(f"[MediaTypes] Amending Group: '{attr_name}' with {ext}")
             group.add_types([MediaType(ext, contexts)])
 
         # Store any file extention equivalents

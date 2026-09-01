@@ -103,10 +103,8 @@ class FileRenderer:
         ext = url.suffix.lower()
         groups = MediaTypes.find(ext, SEARCH)  # Fallback icons use the SEARCH context
         for group in groups:
-            logger.warning([g.name_key for g in groups])
             slug = group.name_key.replace(".", "_")
             if self.rm.get(slug):
-                logger.warning(slug)
                 return slug
 
         return "file_generic"
