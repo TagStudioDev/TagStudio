@@ -16,6 +16,7 @@ from tagstudio.previews.vendored.blender_thumbnailer import blend_thumb
 
 logger = structlog.get_logger(__name__)
 
+# NOTE: Filetype equivalents (i.e. ".blend1" == ".blend32") are already declared internally.
 MediaTypes.register("blender", ".blend", RENDER)
 MediaTypes.register("blender", ".blend1", RENDER)
 

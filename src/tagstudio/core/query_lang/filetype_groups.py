@@ -569,7 +569,7 @@ MediaTypes.register("image.animated", ".jxl", SEARCH)
 
 
 # Presentations ----------------------------------------------------------------
-MediaTypes.add_name_aliases("presentation", ["Presentation", "Slide Show"])
+MediaTypes.add_name_aliases("presentation", ["Presentation", "Slide Show", "Slides"])
 MediaTypes.register("presentation", ".fodp", SEARCH)
 MediaTypes.register("presentation", ".key", SEARCH)
 MediaTypes.register("presentation", ".odp", SEARCH)

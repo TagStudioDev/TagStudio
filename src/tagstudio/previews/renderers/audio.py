@@ -28,6 +28,7 @@ from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
 
+# NOTE: Filetype equivalents (i.e. ".aif" == ".aif") are already declared internally.
 MediaTypes.register("audio", ".aac", RENDER)
 MediaTypes.register("audio", ".aif", RENDER)
 MediaTypes.register("audio", ".aifc", RENDER)
