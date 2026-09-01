@@ -12,10 +12,7 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
-from rawpy import (
-    LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
-    LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
-)
+from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes

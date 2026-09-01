@@ -25,6 +25,8 @@ MediaTypes.chain_group(
         "open_document",
     ],
 )
+MediaTypes.add_name_aliases("office", ["Office", "Office Suite"])
+
 MediaTypes.chain_group(
     "document",
     [
@@ -35,6 +37,7 @@ MediaTypes.chain_group(
         "typesetting",
     ],
 )
+
 MediaTypes.chain_group(
     "presentation",
     [
@@ -43,6 +46,7 @@ MediaTypes.chain_group(
         "open_document.presentation",
     ],
 )
+
 MediaTypes.chain_group(
     "spreadsheet",
     [
