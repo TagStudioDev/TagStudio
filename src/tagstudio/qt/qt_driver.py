@@ -49,7 +49,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaTypes
-from tagstudio.core.query_lang.filetype_groups import SEARCH
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus

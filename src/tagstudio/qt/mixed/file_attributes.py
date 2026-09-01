@@ -19,7 +19,7 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
-from tagstudio.core.query_lang.filetype_groups import SEARCH
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations

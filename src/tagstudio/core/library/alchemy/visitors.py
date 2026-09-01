@@ -24,7 +24,7 @@ from tagstudio.core.query_lang.ast import (
     ORList,
     Property,
 )
-from tagstudio.core.query_lang.filetype_groups import SEARCH
+from tagstudio.core.query_lang.file_groups import SEARCH
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:

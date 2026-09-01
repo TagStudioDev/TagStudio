@@ -16,7 +16,7 @@ from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
-from tagstudio.core.query_lang.filetype_groups import SEARCH
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations

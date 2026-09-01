@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 
+import re
+
 import structlog
 
 from tagstudio.core.utils.sanitized_attr import SanitizedAttr
@@ -9,8 +11,23 @@ from tagstudio.core.utils.sanitized_attr import SanitizedAttr
 logger = structlog.get_logger(__name__)
 
 
-class MediaType:
-    """A complete description of a media type and its uses."""
+def slugify(text: str) -> str:
+    """Return a sanitized string with no whitespace or hyphens."""
+    # Replace non-word characters with underscores, strip whitespace and make lowercase
+    text = re.sub(r"\W", "_", text.strip().lower())
+    # Replace remaining spaces and hyphens with underscores
+    text = re.sub(r"[\s-]+", "_", text)
+    return text
+
+
+class FileType:
+    """An in-depth description of a single file type.
+
+    Args:
+        exts (str | list[str]): One or more file extensions, including leading dot.
+            More than one extention can be passed to treat them as equivalent and interchangeable.
+            E.g. [".jpg", ".jpeg", ".jfif"] could be treated as the same extention.
+    """
 
     def __init__(self, exts: str | list[str], contexts: str | list[str]) -> None:
         self.exts: set[str]
@@ -28,16 +45,16 @@ class MediaType:
 
 
 class MediaTypeGroup:
-    def __init__(self, name_key: str, types: list[MediaType]) -> None:
+    def __init__(self, name_key: str, types: list[FileType]) -> None:
         self.context_sets: dict[str, set[str]] = {}
         self.name_aliases: list[str] = []
         self.name_key = name_key
-        self.types: list[MediaType] = []
+        self.types: list[FileType] = []
         self.add_types(types)
 
-    def add_types(self, types: list[MediaType]) -> None:
+    def add_types(self, types: list[FileType]) -> None:
         for type_ in types:
-            updated_types: set[MediaType] = set()
+            updated_types: set[FileType] = set()
             for existing_type in self.types:
                 # If there's any overlap between the extensions, it's the same type
                 if not existing_type.exts.isdisjoint(type_.exts):
@@ -60,6 +77,8 @@ class MediaTypeGroup:
 
 
 class MediaTypes(metaclass=SanitizedAttr):
+    """A singleton class that manages registered media types and their relationships."""
+
     _chained_groups: dict[str, set[str]] = {}
     _name_to_key_map: dict[str, str] = {}
     all_groups: list[MediaTypeGroup] = []
@@ -70,7 +89,6 @@ class MediaTypes(metaclass=SanitizedAttr):
         """Adds one or more aliases for the proper name of a group.
 
         If a group with the group_key does not exist, it will be created.
-
         For example, "Adobe" and "Adobe Photoshop" would be proper group names.
         """
         group = getattr(MediaTypes, group_key, None)
@@ -86,14 +104,13 @@ class MediaTypes(metaclass=SanitizedAttr):
         for name in names:
             group.name_aliases.append(name)
             # Map the name and common variants of the name to the group key.
+            name_no_whitespace = name.replace(" ", "").replace("-", "").replace("_", "")
+            name_no_space_lower = name_no_whitespace.lower()
+
             cls._name_to_key_map[name] = group_key
             cls._name_to_key_map[name.lower()] = group_key
-            cls._name_to_key_map[
-                name.lower().replace(" ", "").replace("-", "").replace("_", "")
-            ] = group_key
-            cls._name_to_key_map[name.replace(" ", "").replace("-", "").replace("_", "")] = (
-                group_key
-            )
+            cls._name_to_key_map[name_no_whitespace] = group_key
+            cls._name_to_key_map[name_no_space_lower] = group_key
 
     @classmethod
     def chain_group(cls, parent_group: str, child_groups: str | list[str]) -> None:
@@ -109,10 +126,10 @@ class MediaTypes(metaclass=SanitizedAttr):
             child_groups = [child_groups]
 
         # If the groups don't exist, register it.
-        if getattr(MediaTypes, parent_group.replace(".", "_"), None) is None:
+        if getattr(MediaTypes, slugify(parent_group), None) is None:
             cls.register(parent_group, [], [])
         for child_group in child_groups:
-            if getattr(MediaTypes, child_group.replace(".", "_"), None) is None:
+            if getattr(MediaTypes, slugify(child_group), None) is None:
                 cls.register(child_group, [], [])
 
         if cls._chained_groups.get(parent_group) is None:
@@ -123,6 +140,7 @@ class MediaTypes(metaclass=SanitizedAttr):
 
     @classmethod
     def find(cls, ext: str, context: str) -> list[MediaTypeGroup]:
+        """Return a list of MediaTypeGroups this extention is found in with the given context."""
         groups: list[MediaTypeGroup] = []
         for group in cls.all_groups:
             for type_ in group.types:
@@ -158,7 +176,7 @@ class MediaTypes(metaclass=SanitizedAttr):
     @classmethod
     def register(cls, name: str, ext: list[str] | str, contexts: list[str] | str) -> None:
         # Sanitize and homogenize arguments
-        attr_name = name.replace(".", "_")
+        attr_name = slugify(name)
         if isinstance(ext, str):
             ext = [ext]
         if isinstance(contexts, str):
@@ -170,11 +188,11 @@ class MediaTypes(metaclass=SanitizedAttr):
 
         if group is None:
             group = MediaTypeGroup(name, [])
-            group.add_types([MediaType(ext, contexts)])
+            group.add_types([FileType(ext, contexts)])
             setattr(MediaTypes, attr_name, group)
             cls.all_groups.append(group)
         else:
-            group.add_types([MediaType(ext, contexts)])
+            group.add_types([FileType(ext, contexts)])
 
         # Store any file extention equivalents
         if len(ext) > 1:
@@ -205,6 +223,6 @@ class MediaTypes(metaclass=SanitizedAttr):
         """Return a set of equivalent file extensions given an extention, including itself.
 
         Args:
-            ext (str): The file extension, including leading dot.
+            ext (str): The file extension, including a leading dot (if there is one).
         """
         return cls.equivalent_exts.get(ext, {ext})
