@@ -18,7 +18,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import SEARCH, MediaTypeGroup, MediaTypes
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -178,9 +178,7 @@ class FileAttributes(QWidget):
                 try:
                     file_size = format_size(filepath.stat().st_size)
 
-                    if MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.FONT_TYPES, mime_fallback=True
-                    ):
+                    if MediaTypes.contains("font", ext, SEARCH):
                         font = ImageFont.truetype(filepath)
                         font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
                 except (FileNotFoundError, OSError) as e:

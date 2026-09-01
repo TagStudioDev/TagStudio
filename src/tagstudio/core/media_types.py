@@ -105,6 +105,16 @@ class MediaTypes(metaclass=SanitizedAttr):
             )
 
     @classmethod
+    def contains(cls, group_name: str, ext: str, context: str) -> bool:
+        """A passthrough method for using `contains()` on a MediaType via an attribute name.
+
+        If the group does not exist, this will return False. If ensuring the group exists is
+        important, get the group directly with from MediaTypes with `getattr()`.
+        """
+        group: MediaTypeGroup | None = getattr(MediaTypes, group_name, None)
+        return group.contains(ext, context) if group else False
+
+    @classmethod
     def get_group_key_from_name(
         cls, name: str, case_sensitive: bool = True, ignore_whitespace: bool = False
     ) -> str | None:
@@ -510,6 +520,9 @@ MediaTypes.register("open_document.spreadsheet", ".ods", SEARCH)
 MediaTypes.add_name_aliases("paint_dot_net", ["Paint.NET", "PaintDotNet"])
 MediaTypes.register("paint_dot_net", ".pdn", SEARCH)
 
+# Unity Game Engine ------------------------------------------------------------
+MediaTypes.add_name_aliases("unity", ["Unity Engine", "Unity"])
+MediaTypes.register("unity", ".meta", SEARCH)
 
 # Valve Source Engine ----------------------------------------------------------
 MediaTypes.add_name_aliases(
@@ -612,10 +625,12 @@ MediaTypes.register("archive.zip", ".zipx", SEARCH)
 MediaTypes.add_name_aliases("audio", "Audio")
 MediaTypes.register("audio", ".aac", SEARCH)
 MediaTypes.register("audio", ".aifc", SEARCH)
+MediaTypes.register("audio", ".alac", SEARCH)
 MediaTypes.register("audio", ".caf", SEARCH)
 MediaTypes.register("audio", ".flac", SEARCH)
 MediaTypes.register("audio", ".m4a", SEARCH)
 MediaTypes.register("audio", ".m4p", SEARCH)
+MediaTypes.register("audio", ".m4r", SEARCH)
 MediaTypes.register("audio", ".mp3", SEARCH)
 MediaTypes.register("audio", ".ogg", SEARCH)
 MediaTypes.register("audio", ".wma", SEARCH)
@@ -703,11 +718,12 @@ MediaTypes.register("image.raster", ".avif", SEARCH)
 MediaTypes.register("image.raster", ".bmp", SEARCH)
 MediaTypes.register("image.raster", ".exr", SEARCH)
 MediaTypes.register("image.raster", ".gif", SEARCH)
-MediaTypes.register("image.raster", [".jfif", ".jpeg_large", ".jpeg", ".jpg_large", ".jpg"], SEARCH)
 MediaTypes.register("image.raster", ".jxl", SEARCH)
+MediaTypes.register("image.raster", ".png", SEARCH)
 MediaTypes.register("image.raster", ".webp", SEARCH)
 MediaTypes.register("image.raster", [".heic", ".heif"], SEARCH)
 MediaTypes.register("image.raster", [".j2k", ".jp2", ".jpg2"], SEARCH)
+MediaTypes.register("image.raster", [".jfif", ".jpeg_large", ".jpeg", ".jpg_large", ".jpg"], SEARCH)
 MediaTypes.register("image.raster", [".tif", ".tiff"], SEARCH)
 
 # Icons
@@ -805,6 +821,7 @@ MediaTypes.register("shader", ".shader", SEARCH)
 MediaTypes.register("shader", ".vert", SEARCH)
 MediaTypes.register("shader", ".vsh", SEARCH)
 
+
 # Shell Script -----------------------------------------------------------------
 MediaTypes.add_name_aliases("shell", ["Shell Script", "Shell"])
 MediaTypes.register("shell", ".bat", SEARCH)
@@ -827,6 +844,7 @@ MediaTypes.register("shortcut", ".url", SEARCH)
 MediaTypes.add_name_aliases("spreadsheet", ["Spreadsheet", "Sheet"])
 MediaTypes.register("spreadsheet", ".csv", SEARCH)
 
+
 # Plaintext --------------------------------------------------------------------
 # NOTE: If extensions here can be grouped or moved to more specific categories, do that.
 # Something like a "Code" group may be considered, but that may be too subjective.
@@ -835,18 +853,37 @@ MediaTypes.add_name_aliases("plaintext", "Plaintext")
 MediaTypes.register("plaintext", ".cfg", SEARCH)
 MediaTypes.register("plaintext", ".conf", SEARCH)
 MediaTypes.register("plaintext", ".config", SEARCH)
+MediaTypes.register("plaintext", ".gitignore", SEARCH)
 MediaTypes.register("plaintext", ".i3u", SEARCH)
 MediaTypes.register("plaintext", ".lang", SEARCH)
 MediaTypes.register("plaintext", ".lock", SEARCH)
 MediaTypes.register("plaintext", ".log", SEARCH)
 MediaTypes.register("plaintext", ".plist", SEARCH)
+MediaTypes.register("plaintext", ".prefs", SEARCH)
+MediaTypes.register("plaintext", ".spec", SEARCH)
 MediaTypes.register("plaintext", ".theme", SEARCH)
+MediaTypes.register("plaintext", ".timestamp", SEARCH)
 MediaTypes.register("plaintext", "contributing", SEARCH)
 MediaTypes.register("plaintext", "license", SEARCH)
 MediaTypes.register("plaintext", "readme", SEARCH)
 MediaTypes.register("plaintext", [".editorconfig", ".inf", ".ini"], SEARCH)
 MediaTypes.register("plaintext", [".txt", ".text"], SEARCH)
 MediaTypes.register("plaintext", ["pkginfo", ".pkginfo"], SEARCH)
+
+# C
+MediaTypes.add_name_aliases("plaintext.c", "C")
+MediaTypes.register("plaintext.c", ".c", SEARCH)
+MediaTypes.register("plaintext.c", ".h", SEARCH)
+
+# C++
+MediaTypes.add_name_aliases("plaintext.cpp", ["C++", "CPP"])
+MediaTypes.register("plaintext.cpp", ".cpp", SEARCH)
+MediaTypes.register("plaintext.cpp", ".h", SEARCH)
+MediaTypes.register("plaintext.cpp", ".hpp", SEARCH)
+
+# C#
+MediaTypes.add_name_aliases("plaintext.csharp", ["C#", "C Sharp"])
+MediaTypes.register("plaintext.csharp", ".cs", SEARCH)
 
 # CSS
 MediaTypes.add_name_aliases("plaintext.css", "CSS")
@@ -856,6 +893,11 @@ MediaTypes.register("plaintext.css", ".qss", SEARCH)
 MediaTypes.register("plaintext.css", ".sass", SEARCH)
 MediaTypes.register("plaintext.css", ".scss", SEARCH)
 MediaTypes.register("plaintext.css", ".styl", SEARCH)
+
+# D
+MediaTypes.add_name_aliases("plaintext.d", "D")
+MediaTypes.register("plaintext.d", ".d", SEARCH)
+MediaTypes.register("plaintext.d", ".h", SEARCH)
 
 # HTML
 MediaTypes.add_name_aliases("plaintext.html", "HTML")
@@ -873,9 +915,34 @@ MediaTypes.register("plaintext.javascript", ".mjs", SEARCH)
 MediaTypes.add_name_aliases("plaintext.json", "JSON")
 MediaTypes.register("plaintext.json", [".json", ".json5", ".jsonc", ".jsonl"], SEARCH)
 
+# Lua
+MediaTypes.add_name_aliases("plaintext.lua", "Lua")
+MediaTypes.register("plaintext.lua", ".lua", SEARCH)
+
 # Markdown
 MediaTypes.add_name_aliases("plaintext.markdown", ["Markdown", "MD"])
 MediaTypes.register("plaintext.markdown", [".markdown", ".md", ".mkd", ".rmd"], SEARCH)
+
+# Nix
+MediaTypes.add_name_aliases("plaintext.nix", "Nix")
+MediaTypes.register("plaintext.nix", ".nix", SEARCH)
+
+# PHP
+MediaTypes.add_name_aliases("plaintext.php", "PHP")
+MediaTypes.register("plaintext.php", ".php", SEARCH)
+
+# Qt
+MediaTypes.add_name_aliases("plaintext.qt", "Qt")
+MediaTypes.register("plaintext.qt", ".qml", SEARCH)
+MediaTypes.register("plaintext.qt", ".qrc", SEARCH)
+
+# Rust
+MediaTypes.add_name_aliases("plaintext.rust", "Rust")
+MediaTypes.register("plaintext.rust", ".rs", SEARCH)
+
+# Tcl
+MediaTypes.add_name_aliases("plaintext.tcl", "Tcl")
+MediaTypes.register("plaintext.tcl", ".tcl", SEARCH)
 
 # TOML
 MediaTypes.add_name_aliases("plaintext.toml", "TOML")
@@ -905,6 +972,7 @@ MediaTypes.register("python", ".pyc", SEARCH)
 MediaTypes.register("python", ".pyd", SEARCH)
 MediaTypes.register("python", ".pyi", SEARCH)
 MediaTypes.register("python", ".pyo", SEARCH)
+MediaTypes.register("python", ".sip", SEARCH)
 
 
 # Typesetting ------------------------------------------------------------------
@@ -926,7 +994,6 @@ MediaTypes.register("video", ".avi", SEARCH)
 MediaTypes.register("video", ".flv", SEARCH)
 MediaTypes.register("video", ".gifv", SEARCH)
 MediaTypes.register("video", ".hevc", SEARCH)
-MediaTypes.register("video", ".m4p", SEARCH)
 MediaTypes.register("video", ".m4v", SEARCH)
 MediaTypes.register("video", ".mkv", SEARCH)
 MediaTypes.register("video", ".mov", SEARCH)

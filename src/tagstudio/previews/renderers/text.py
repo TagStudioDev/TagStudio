@@ -116,7 +116,7 @@ def text_thumb(
     im: Image | None = None
 
     try:
-        encoding: str = detect_char_encoding(filepath) or "UTF-8"
+        encoding: str = detect_char_encoding(filepath) or "utf-8"
         with open(filepath, encoding=encoding) as text_file:
             text = text_file.read(1024)
 

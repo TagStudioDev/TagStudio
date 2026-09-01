@@ -42,6 +42,20 @@ MediaTypes.register("code", ".sass", RENDER)
 MediaTypes.register("code", ".scss", RENDER)
 MediaTypes.register("code", ".styl", RENDER)
 
+# C
+MediaTypes.register("code", ".c", RENDER)
+MediaTypes.register("code", ".h", RENDER)
+
+# C++
+MediaTypes.register("code", ".cpp", RENDER)
+MediaTypes.register("code", ".hpp", RENDER)
+
+# C#
+MediaTypes.register("code", ".cs", RENDER)
+
+# D
+MediaTypes.register("code", ".d", RENDER)
+
 # HTML
 MediaTypes.register("code", ".html", RENDER)
 
@@ -54,13 +68,33 @@ MediaTypes.register("code", ".mjs", RENDER)
 # JSON
 MediaTypes.register("code", ".json", RENDER)
 
+# Lua
+MediaTypes.register("code", ".lua", RENDER)
+
 # Markdown
 MediaTypes.register("code", ".md", RENDER)
+
+# Nix
+MediaTypes.register("code", ".nix", RENDER)
+
+# PHP
+MediaTypes.register("code", ".php", RENDER)
+
+# Qt
+MediaTypes.register("code", ".qml", RENDER)
+MediaTypes.register("code", ".qrc", RENDER)
+
+# Rust
+MediaTypes.register("code", ".rs", RENDER)
+
+# TCL
+MediaTypes.register("code", ".tcl", RENDER)
 
 # Python
 MediaTypes.register("code", ".ipynb", RENDER)
 MediaTypes.register("code", ".py", RENDER)
 MediaTypes.register("code", ".pyi", RENDER)
+MediaTypes.register("code", ".sip", RENDER)
 
 # Shaders
 MediaTypes.register("code", ".effect", RENDER)
@@ -116,13 +150,17 @@ MediaTypes.register("code", ".yaml", RENDER)
 MediaTypes.register("code", ".cfg", RENDER)
 MediaTypes.register("code", ".conf", RENDER)
 MediaTypes.register("code", ".config", RENDER)
+MediaTypes.register("code", ".csv", RENDER)
+MediaTypes.register("code", ".gitignore", RENDER)
 MediaTypes.register("code", ".lock", RENDER)
 MediaTypes.register("code", ".log", RENDER)
-MediaTypes.register("code", ".plist", RENDER)
-MediaTypes.register("code", ".theme", RENDER)
+MediaTypes.register("code", ".meta", RENDER)
 MediaTypes.register("code", ".pkginfo", RENDER)
+MediaTypes.register("code", ".plist", RENDER)
+MediaTypes.register("code", ".prefs", RENDER)
+MediaTypes.register("code", ".spec", RENDER)
 MediaTypes.register("code", ".tex", RENDER)
-MediaTypes.register("code", ".csv", RENDER)
+MediaTypes.register("code", ".theme", RENDER)
 
 
 class CodeStyle(Style):
