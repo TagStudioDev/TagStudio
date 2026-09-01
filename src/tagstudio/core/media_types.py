@@ -21,12 +21,12 @@ def slugify(text: str) -> str:
 
 
 class FileType:
-    """An in-depth description of a single file type.
+    """A description of a single file type, along with an associated context.
 
     Args:
-        exts (str | list[str]): One or more file extensions, including leading dot.
-            More than one extention can be passed to treat them as equivalent and interchangeable.
-            E.g. [".jpg", ".jpeg", ".jfif"] could be treated as the same extention.
+        exts (str | list[str]): The file extention(s), including a leading dot if there is one.
+            Passing a list of extensions will treat them as equivalent/interchangeable.
+            E.g. [".jpg", ".jpeg", ".jfif"] would be treated as the same extention.
     """
 
     def __init__(self, exts: str | list[str], contexts: str | list[str]) -> None:
@@ -45,14 +45,33 @@ class FileType:
 
 
 class MediaTypeGroup:
-    def __init__(self, name_key: str, types: list[FileType]) -> None:
+    """A named group of FileTypes and context associations that represents a media group.
+
+    For example, "Image" files may be represented by a MediaTypeGroup, consisting of FileType
+    objects that are associated with individual extensions such as ".jpg" and ".png".
+    """
+
+    def __init__(self, key: str, types: list[FileType]) -> None:
+        """Initialize the MediaTypeGroup.
+
+        Args:
+            key (str): A key for the name of this group.
+                Dots are used to separate group levels (e.g. "microsoft.office.word").
+                This key is slugified before being used as an attribute.
+            types (list[FileType]): A list of FileType objects to include in the group.
+        """
         self.context_sets: dict[str, set[str]] = {}
         self.name_aliases: list[str] = []
-        self.name_key = name_key
+        self.key = key
         self.types: list[FileType] = []
         self.add_types(types)
 
     def add_types(self, types: list[FileType]) -> None:
+        """Add one or more types to the group.
+
+        Args:
+            types (list[FileType]): A list of FileType objects to add to the group.
+        """
         for type_ in types:
             updated_types: set[FileType] = set()
             for existing_type in self.types:
@@ -72,6 +91,12 @@ class MediaTypeGroup:
                     self.context_sets[context].add(ext)
 
     def contains(self, ext: str, context: str) -> bool:
+        """Return true if the group contains an extention under a given context, otherwise False.
+
+        Args:
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
+        """
         equivalent_exts = MediaTypes.equivalent_exts.get(ext) or [ext]
         return any(e in self.context_sets.get(context, []) for e in equivalent_exts)
 
@@ -86,10 +111,14 @@ class MediaTypes(metaclass=SanitizedAttr):
 
     @classmethod
     def add_name_aliases(cls, group_key: str, names: str | list[str]) -> None:
-        """Adds one or more aliases for the proper name of a group.
+        """Adds one or more user-facing names for a MediaTypeGroup.
 
-        If a group with the group_key does not exist, it will be created.
         For example, "Adobe" and "Adobe Photoshop" would be proper group names.
+
+        Args:
+            group_key (str): The name key associated with a MediaTypeGroup.
+                If a group with this group_key does not exist, it will be created.
+            names (str | list[str]): One or more user-facing names for the group.
         """
         group = getattr(MediaTypes, group_key, None)
         if group is None:
@@ -140,7 +169,12 @@ class MediaTypes(metaclass=SanitizedAttr):
 
     @classmethod
     def find(cls, ext: str, context: str) -> list[MediaTypeGroup]:
-        """Return a list of MediaTypeGroups this extention is found in with the given context."""
+        """Return a list of MediaTypeGroups this extention is found in with the given context.
+
+        Args:
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
+        """
         groups: list[MediaTypeGroup] = []
         for group in cls.all_groups:
             for type_ in group.types:
@@ -153,20 +187,31 @@ class MediaTypes(metaclass=SanitizedAttr):
         return groups
 
     @classmethod
-    def contains(cls, group_name: str, ext: str, context: str) -> bool:
+    def contains(cls, group_key: str, ext: str, context: str) -> bool:
         """A passthrough method for using `MediaTypeGroup.contains()` given a group name.
 
         If the group does not exist, this will return False. If ensuring the group exists is
         important, get the group directly with from MediaTypes with (e.g. with `getattr()`).
+
+        Args:
+            group_key (str): The name key or attribute name for the MediaTypeGroup.
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
         """
-        group: MediaTypeGroup | None = getattr(MediaTypes, group_name, None)
+        group: MediaTypeGroup | None = getattr(MediaTypes, slugify(group_key), None)
         return group.contains(ext, context) if group else False
 
     @classmethod
     def get_group_key_from_name(
         cls, name: str, case_sensitive: bool = True, ignore_whitespace: bool = False
     ) -> str | None:
-        """Attempt to return a group key given a proper name for the group."""
+        """Attempt to return a group key given a proper name for the group.
+
+        Args:
+            name (str): The user-facing name of a group, or name key.
+            case_sensitive (bool): Should the name be treated with case sensitivity?
+            ignore_whitespace (bool): Should whitespace in the name be ignored?
+        """
         if not case_sensitive:
             name = name.lower()
         if ignore_whitespace:
@@ -174,9 +219,18 @@ class MediaTypes(metaclass=SanitizedAttr):
         return cls._name_to_key_map.get(name)
 
     @classmethod
-    def register(cls, name: str, ext: list[str] | str, contexts: list[str] | str) -> None:
+    def register(cls, group_key: str, ext: str | list[str], contexts: str | list[str]) -> None:
+        """Create and register or update a existing MediaTypeGroup inside MediaTypes.
+
+        Args:
+            group_key (str): group_key (str): The name key of the MediaTypeGroup.
+            ext (str | list[str]): One or more file extensions, including leading dot.
+                Passing a list of extensions will treat them as equivalent/interchangeable.
+                E.g. [".jpg", ".jpeg", ".jfif"] would be treated as the same extention.
+            contexts (list[str] | str): One or more contexts to register the extension(s) under.
+        """
         # Sanitize and homogenize arguments
-        attr_name = slugify(name)
+        attr_name = slugify(group_key)
         if isinstance(ext, str):
             ext = [ext]
         if isinstance(contexts, str):
@@ -187,7 +241,7 @@ class MediaTypes(metaclass=SanitizedAttr):
         assert isinstance(group, MediaTypeGroup) or group is None
 
         if group is None:
-            group = MediaTypeGroup(name, [])
+            group = MediaTypeGroup(group_key, [])
             group.add_types([FileType(ext, contexts)])
             setattr(MediaTypes, attr_name, group)
             cls.all_groups.append(group)
@@ -202,7 +256,7 @@ class MediaTypes(metaclass=SanitizedAttr):
                     cls.equivalent_exts[e] = set(ext)
 
         # Create any chained groups from dot notations (e.g. "adobe.photoshop")
-        name_parts = name.split(".")
+        name_parts = group_key.split(".")
         for i in range(1, len(name_parts)):
             parent = ".".join(name_parts[:i])
             child = ".".join(name_parts[: i + 1])
@@ -211,7 +265,7 @@ class MediaTypes(metaclass=SanitizedAttr):
         # Update any chained groups
         chained_groups: set[str] = set()
         for k, v in cls._chained_groups.items():
-            if name in v:
+            if group_key in v:
                 chained_groups.add(k)
 
         if chained_groups:

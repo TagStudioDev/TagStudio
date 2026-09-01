@@ -103,7 +103,7 @@ class FileRenderer:
         ext = url.suffix.lower()
         groups = MediaTypes.find(ext, SEARCH)  # Fallback icons use the SEARCH context
         for group in groups:
-            slug = slugify(group.name_key)
+            slug = slugify(group.key)
             if self.rm.get(slug):
                 return slug
 
