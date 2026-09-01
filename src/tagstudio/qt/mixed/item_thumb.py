@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QBoxLayout, QCheckBox, QHBoxLayout, QLabel, QVBoxL
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories, MediaTypeOld
+from tagstudio.core.media_types import SEARCH, MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
@@ -361,12 +361,11 @@ class ItemThumb(FlowWidget):
         ext = filename.suffix.lower()
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        media_types: set[MediaTypeOld] = MediaCategories.get_types(ext)
         if (
-            not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
+            not MediaTypes.contains("image.raster", ext, SEARCH)
+            or MediaTypes.contains("image.raster.raw", ext, SEARCH)
+            or MediaTypes.contains("image.vector", ext, SEARCH)
+            or MediaTypes.contains("adobe.photoshop", ext, SEARCH)
             or ext
             in [
                 ".apng",
@@ -380,7 +379,9 @@ class ItemThumb(FlowWidget):
             if ext or filename.stem:
                 self.ext_badge.setText(ext.upper()[1:] or filename.stem.upper())
                 show_ext_badge = True
-            if MediaTypeOld.VIDEO in media_types or MediaTypeOld.AUDIO in media_types:
+            if MediaTypes.contains("video", ext, SEARCH) or MediaTypes.contains(
+                "audio", ext, SEARCH
+            ):
                 show_count_badge = True
 
         self.ext_badge.setHidden(not show_ext_badge)

@@ -48,7 +48,7 @@ from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import SEARCH, MediaTypes
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
@@ -1371,29 +1371,18 @@ class QtDriver(DriverMixin, QObject):
                 map(lambda x: prefix + "path:" + x, self.lib.get_paths(limit=100))
             )
         elif query_type == "mediatype":
-            single_word_completions = map(
-                lambda x: prefix + "mediatype:" + x.name,
-                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
-            )
-            single_word_completions_quoted = map(
-                lambda x: prefix + 'mediatype:"' + x.name + '"',
-                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
-            )
-            multi_word_completions = map(
-                lambda x: prefix + 'mediatype:"' + x.name + '"',
-                filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
-            )
-
-            all_completions = [
-                single_word_completions,
-                single_word_completions_quoted,
-                multi_word_completions,
-            ]
-            completion_list = [j for i in all_completions for j in i]
+            completion_list = []
+            for group in MediaTypes.all_groups:
+                for alias in group.name_aliases:
+                    if " " in alias:
+                        completion_list.append(f'{prefix}mediatype:"{alias}"')
+                    else:
+                        completion_list.append(f"{prefix}mediatype:{alias}")
+                        completion_list.append(f'{prefix}mediatype:"{alias}"')
         elif query_type == "filetype":
             extensions_list: set[str] = set()
-            for media_cat in MediaCategories.ALL_CATEGORIES:
-                extensions_list = extensions_list | media_cat.extensions
+            for group in MediaTypes.all_groups:
+                extensions_list |= group.context_sets.get(SEARCH, set())
             completion_list = list(
                 map(lambda x: prefix + "filetype:" + x.replace(".", ""), extensions_list)
             )
