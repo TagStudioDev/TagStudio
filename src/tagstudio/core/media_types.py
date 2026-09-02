@@ -187,8 +187,7 @@ class MediaTypes(metaclass=SanitizedAttr):
     def contains(cls, group_key: str, ext: str, context: str) -> bool:
         """A passthrough method for using `MediaTypeGroup.contains()` given a group name.
 
-        If the group does not exist, this will return False. If ensuring the group exists is
-        important, get the group directly with from MediaTypes with (e.g. with `getattr()`).
+        If the group does not exist, this raises an `AttributeError`.
 
         Args:
             group_key (str): The name key or attribute name for the MediaTypeGroup.
@@ -196,7 +195,9 @@ class MediaTypes(metaclass=SanitizedAttr):
             context (str): The context to check for group membership under.
         """
         group: MediaTypeGroup | None = getattr(MediaTypes, slugify(group_key), None)
-        return group.contains(ext, context) if group else False
+        if not group:
+            raise AttributeError(f"'{slugify(group_key)} is not registered with MediaTypes.")
+        return group.contains(ext, context)
 
     @classmethod
     def get_group_key_from_name(
@@ -228,6 +229,10 @@ class MediaTypes(metaclass=SanitizedAttr):
         """
         # Sanitize and homogenize arguments
         attr_name = slugify(group_key)
+
+        if attr_name in _FORBIDDEN_NAMES:
+            raise AttributeError(f"{attr_name}' collides with an internal attribute.")
+
         if isinstance(ext, str):
             ext = [ext]
         if isinstance(contexts, str):
@@ -275,3 +280,6 @@ class MediaTypes(metaclass=SanitizedAttr):
             ext (str): The file extension, including a leading dot (if there is one).
         """
         return cls.equivalent_exts.get(ext, {ext})
+
+
+_FORBIDDEN_NAMES = set(dir(MediaTypes))
