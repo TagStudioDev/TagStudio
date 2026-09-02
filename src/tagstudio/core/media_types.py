@@ -3,6 +3,7 @@
 
 
 import re
+from typing import Any
 
 import structlog
 
@@ -107,6 +108,25 @@ class MediaTypes(metaclass=SanitizedAttr):
     _name_to_key_map: dict[str, str] = {}
     all_groups: list[MediaTypeGroup] = []
     equivalent_exts: dict[str, set[str]] = {}
+
+    @classmethod
+    def _snapshot(cls) -> dict[str, Any]:
+        """Return a snapshot of the class's attributes. Used in tests."""
+        return {attr: getattr(cls, attr) for attr in dir(cls) if not attr.startswith("__")}
+
+    @classmethod
+    def _restore(cls, attrs: dict[str, Any]) -> None:
+        """Restore the state of the class from a snapshot. Used in tests."""
+        attrs_to_delete: list[str] = []
+        for name in cls.__dict__:
+            if not name.startswith("__"):
+                try:
+                    setattr(cls, name, attrs[name])
+                except KeyError:
+                    attrs_to_delete.append(name)
+
+        for attr in attrs_to_delete:
+            delattr(cls, attr)
 
     @classmethod
     def add_name_aliases(cls, group_key: str, names: str | list[str]) -> None:
