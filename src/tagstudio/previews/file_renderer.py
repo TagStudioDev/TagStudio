@@ -67,10 +67,21 @@ def _get_preview_renderers() -> list[type[BasePreview]]:
 class FileRenderer:
     """A class for rendering image previews and thumbnails from files."""
 
-    rm: ResourceManager = ResourceManager()
-    cached_img_ext: str = ".webp"
-    preview_renderers: list[type[BasePreview]] = _get_preview_renderers()
-    for pr in preview_renderers:
+    _rm: ResourceManager = ResourceManager()
+    _cached_img_ext: str = ".webp"
+    _preview_renderers: list[type[BasePreview]] = _get_preview_renderers()
+
+    # Map of media group keys to preview renderer priorities.
+    _media_group_priorities: dict[str, int] = {}
+    for pr in _preview_renderers:
+        _media_group_priorities[pr.media_type_name] = pr.priority
+
+    # Map of media group name keys to preferred icons declared in preview renderers.
+    _media_group_icons: dict[str, str] = {}
+    for pr in _preview_renderers:
+        _media_group_icons[pr.media_type_name] = pr.icon_name()
+
+    for pr in _preview_renderers:
         logger.info(
             "[FileRenderer] Loaded Preview Renderer",
             name=pr.__name__,
@@ -102,9 +113,16 @@ class FileRenderer:
         """
         ext = url.suffix.lower()
         groups = MediaTypes.find(ext, SEARCH)  # Fallback icons use the SEARCH context
+        groups.sort(  # Sort by priority and most specific dot-separated subgroup.
+            key=lambda g: (
+                g.key.count("."),
+                self._media_group_priorities.get(g.key, BasePreview.priority),
+            ),
+            reverse=True,
+        )
         for group in groups:
-            slug = slugify(group.key)
-            if self.rm.get(slug):
+            slug = slugify(self._media_group_icons.get(group.key, group.key))
+            if self._rm.get(slug, silent_fail=True):
                 return slug
 
         return "file_generic"
@@ -351,10 +369,10 @@ class FileRenderer:
         fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
 
         # Get icon by name
-        icon = self.rm.get(name)
+        icon = self._rm.get(name)
         assert isinstance(icon, Image.Image) or icon is None
         if not icon:
-            icon = self.rm.file_generic
+            icon = self._rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -437,10 +455,10 @@ class FileRenderer:
         fg: Image.Image = Image.new("RGB", size=size, color=primary_color)
 
         # Get icon by name
-        icon = self.rm.get(name)
+        icon = self._rm.get(name)
         assert isinstance(icon, Image.Image)
         if not icon:
-            icon = self.rm.file_generic
+            icon = self._rm.file_generic
 
         # Resize icon to fit icon_ratio
         icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
@@ -551,7 +569,7 @@ class FileRenderer:
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self.rm.ignored
+            icon: Image.Image = self._rm.ignored
             icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
             im_.paste(
                 im=icon.resize(
@@ -589,7 +607,7 @@ class FileRenderer:
                 mod_time = str(filepath.stat().st_mtime_ns)
             hashable_str: str = f"{str(filepath)}{mod_time}"
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
-            file_name = Path(f"{hash_value}{FileRenderer.cached_img_ext}")
+            file_name = Path(f"{hash_value}{FileRenderer._cached_img_ext}")
             image = fetch_cached_image(file_name)
 
             if not image and self.settings.generate_thumbs:
@@ -713,7 +731,7 @@ class FileRenderer:
         if filepath and filepath.is_file():
             try:
                 ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
-                for preview in FileRenderer.preview_renderers:
+                for preview in FileRenderer._preview_renderers:
                     media_type: MediaTypeGroup | None = getattr(
                         MediaTypes, preview.media_type_name, None
                     )

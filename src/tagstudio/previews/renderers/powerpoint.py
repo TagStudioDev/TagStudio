@@ -19,6 +19,7 @@ MediaTypes.register("microsoft.office.powerpoint", ".pptx", RENDER)
 
 
 class PowerPointPreview(BasePreview):
+    _fallback_icon = "presentation"
     media_type_name = "microsoft.office.powerpoint"
 
     @override

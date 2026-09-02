@@ -85,8 +85,7 @@ class MediaTypeGroup:
 
             contexts_ = [type_.contexts] if isinstance(type_.contexts, str) else type_.contexts
             for context in contexts_:
-                if self.context_sets.get(context) is None:
-                    self.context_sets[context] = set()
+                self.context_sets.setdefault(context, set())
                 for ext in type_.exts:
                     self.context_sets[context].add(ext)
 
@@ -160,9 +159,7 @@ class MediaTypes(metaclass=SanitizedAttr):
         for child_group in child_groups:
             if getattr(MediaTypes, slugify(child_group), None) is None:
                 cls.register(child_group, [], [])
-
-        if cls._chained_groups.get(parent_group) is None:
-            cls._chained_groups[parent_group] = set()
+        cls._chained_groups.setdefault(parent_group, set())
 
         for c_group in child_groups:
             cls._chained_groups[parent_group].add(c_group)
@@ -251,9 +248,7 @@ class MediaTypes(metaclass=SanitizedAttr):
         # Store any file extention equivalents
         if len(ext) > 1:
             for e in ext:
-                existing_ext = cls.equivalent_exts.get(e)
-                if existing_ext is None:
-                    cls.equivalent_exts[e] = set(ext)
+                cls.equivalent_exts.setdefault(e, set(ext))
 
         # Create any chained groups from dot notations (e.g. "adobe.photoshop")
         name_parts = group_key.split(".")
