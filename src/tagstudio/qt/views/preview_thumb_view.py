@@ -4,6 +4,7 @@
 
 import math
 import time
+from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
@@ -13,7 +14,6 @@ from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaType
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
@@ -28,6 +28,16 @@ logger = structlog.get_logger(__name__)
 
 
 THUMB_SIZE_FACTOR = 2
+
+
+class PreviewType(Enum):
+    """Enum for which of the Inspector's stacked pages should be shown for a file."""
+
+    ANIMATED = auto()
+    AUDIO = auto()
+    IMAGE = auto()
+    TEXT = auto()
+    VIDEO = auto()
 
 
 # TODO: Use newer MVC style guidelines
@@ -200,8 +210,8 @@ class PreviewThumbView(QWidget):
         if m:
             m.setScaledSize(adj_size)
 
-    def __switch_preview(self, preview: MediaType | None) -> None:
-        if preview in [MediaType.AUDIO, MediaType.VIDEO]:
+    def __switch_preview(self, preview: PreviewType | None) -> None:
+        if preview in [PreviewType.AUDIO, PreviewType.VIDEO]:
             self.__media_player.show()
             self.__image_layout.setCurrentWidget(self.__media_player_page)
             self.check_ffmpeg.emit(True)  # noqa: FBT003
@@ -210,15 +220,17 @@ class PreviewThumbView(QWidget):
             self.__media_player.hide()
             self.check_ffmpeg.emit(False)  # noqa: FBT003
 
-        if preview in [MediaType.IMAGE, MediaType.AUDIO]:
+        if preview in [PreviewType.IMAGE, PreviewType.AUDIO]:
             self.__button_wrapper.show()
             self.__image_layout.setCurrentWidget(
-                self.__preview_img_page if preview == MediaType.IMAGE else self.__media_player_page
+                self.__preview_img_page
+                if preview == PreviewType.IMAGE
+                else self.__media_player_page
             )
         else:
             self.__button_wrapper.hide()
 
-        if preview == MediaType.IMAGE_ANIMATED:
+        if preview == PreviewType.ANIMATED:
             self.__preview_gif.show()
             self.__image_layout.setCurrentWidget(self.__preview_gif_page)
         else:
@@ -251,7 +263,7 @@ class PreviewThumbView(QWidget):
     def _display_video(self, filepath: Path, size: QSize | None) -> FileAttributeData:
         self.__should_render_on_resize = False
 
-        self.__switch_preview(MediaType.VIDEO)
+        self.__switch_preview(PreviewType.VIDEO)
         self.__update_media_player(filepath)
         stats = FileAttributeData()
 
@@ -270,7 +282,7 @@ class PreviewThumbView(QWidget):
         return stats
 
     def _display_audio(self, filepath: Path) -> FileAttributeData:
-        self.__switch_preview(MediaType.AUDIO)
+        self.__switch_preview(PreviewType.AUDIO)
         self.__render_thumb(filepath)
         self.__update_media_player(filepath)
         return FileAttributeData()
@@ -300,7 +312,7 @@ class PreviewThumbView(QWidget):
             return None
 
         # The animation has more than 1 frame, continue displaying it as an animation
-        self.__switch_preview(MediaType.IMAGE_ANIMATED)
+        self.__switch_preview(PreviewType.ANIMATED)
         self.resizeEvent(
             QResizeEvent(
                 QSize(stats.width, stats.height),
@@ -315,7 +327,7 @@ class PreviewThumbView(QWidget):
 
     def _display_image(self, filepath: Path):
         """Renders the given file as an image, no matter its media type."""
-        self.__switch_preview(MediaType.IMAGE)
+        self.__switch_preview(PreviewType.IMAGE)
         self.__render_thumb(filepath)
 
     def hide_preview(self) -> None:

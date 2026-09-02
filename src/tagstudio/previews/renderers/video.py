@@ -4,25 +4,59 @@
 
 import math
 from pathlib import Path
+from typing import override
 
 import cv2
 import structlog
 from cv2.typing import MatLike
-from PIL import Image, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
+from PIL import UnidentifiedImageError
+from PIL.Image import DecompressionBombError, Image, fromarray
 
+from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.video_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
 
+MediaTypes.register("video", ".3gp", RENDER)
+MediaTypes.register("video", ".avi", RENDER)
+MediaTypes.register("video", ".flv", RENDER)
+MediaTypes.register("video", ".gifv", RENDER)
+MediaTypes.register("video", ".hevc", RENDER)
+MediaTypes.register("video", ".m4p", RENDER)
+MediaTypes.register("video", ".m4v", RENDER)
+MediaTypes.register("video", ".mkv", RENDER)
+MediaTypes.register("video", ".mov", RENDER)
+MediaTypes.register("video", ".mp4", RENDER)
+MediaTypes.register("video", ".webm", RENDER)
+MediaTypes.register("video", ".wmv", RENDER)
 
-def video_thumb(filepath: Path) -> Image.Image | None:
+
+class VideoPreview(BasePreview):
+    media_type_name = "video"
+    priority = 70
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return video_thumb(filepath)
+
+
+def video_thumb(filepath: Path) -> Image | None:
     """Render a thumbnail for a video file.
 
     Args:
         filepath (Path): The path of the file.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
     frame: MatLike | None = None
     try:
         if is_readable_video(filepath):
@@ -49,7 +83,12 @@ def video_thumb(filepath: Path) -> Image.Image | None:
                     break
             if frame is not None:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                im = Image.fromarray(frame)
-    except (UnidentifiedImageError, cv2.error, DecompressionBombError, OSError) as e:
+                im = fromarray(frame)
+    except (
+        UnidentifiedImageError,
+        cv2.error,
+        DecompressionBombError,
+        OSError,
+    ) as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im

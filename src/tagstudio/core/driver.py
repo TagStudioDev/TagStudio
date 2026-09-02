@@ -10,6 +10,7 @@ from PySide6.QtCore import QSettings
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.enums import AppCacheItems
 from tagstudio.core.library.alchemy.library import LibraryStatus
+from tagstudio.core.query_lang.file_groups import register_all
 from tagstudio.qt.app_settings import AppSettings
 
 logger = structlog.get_logger(__name__)
@@ -20,6 +21,8 @@ class DriverMixin:
     cached_values: QSettings
     # TODO: AppSettings is Qt-specific and should not be in a base driver class.
     settings: AppSettings
+
+    register_all()  # Register all filetypes for the SEARCH context.
 
     def evaluate_path(self, open_path: str | None) -> LibraryStatus:
         """Check if the path of library is valid."""

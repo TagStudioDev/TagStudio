@@ -7,26 +7,50 @@
 
 from io import BytesIO
 from pathlib import Path
+from typing import override
 
 import structlog
-from PIL import Image
+from PIL.Image import Image
+from PIL.Image import open as open_image
 from PySide6.QtCore import QBuffer, QFile, QFileDevice, QIODeviceBase, QSizeF
 from PySide6.QtGui import QImage
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 
+from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.qt.views.styles.image_effects import replace_transparent_pixels
 
 logger = structlog.get_logger(__name__)
 
+MediaTypes.register("pdf", ".pdf", RENDER)
+MediaTypes.register("pdf", ".ai", RENDER)
 
-def pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
+
+class PdfPreview(BasePreview):
+    media_type_name = "pdf"
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return pdf_thumb(filepath, size)
+
+
+def pdf_thumb(filepath: Path, size: tuple[int, int]) -> Image | None:
     """Render a thumbnail for a PDF or Adobe Illustrator file.
 
     filepath (Path): The path of the file.
         size (int): The size of the icon.
         ext (str): The file extension.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
 
     file: QFile = QFile(filepath)
     success: bool = file.open(QIODeviceBase.OpenModeFlag.ReadOnly, QFileDevice.Permission.ReadUser)
@@ -39,12 +63,13 @@ def pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
     # Transform page_size in points to pixels with proper aspect ratio
     page_size: QSizeF = document.pagePointSize(0)
     ratio_hw: float = page_size.height() / page_size.width()
+    # TODO: Make compatible with non-square images
     if ratio_hw >= 1:
-        page_size *= size / page_size.height()
+        page_size *= size[0] / page_size.height()
     else:
-        page_size *= size / page_size.width()
+        page_size *= size[0] / page_size.width()
     # Enlarge image for anti-aliasing
-    scale_factor = 2.5 if ext in {".pdf"} else 1
+    scale_factor = 2.5
     page_size *= scale_factor
     # Render image with no anti-aliasing for speed
     render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
@@ -59,7 +84,7 @@ def pdf_thumb(filepath: Path, size: int, ext: str) -> Image.Image | None:
     buffer.open(QBuffer.OpenModeFlag.ReadWrite)
     try:
         q_image.save(buffer, "PNG")  # pyright: ignore
-        im = Image.open(BytesIO(buffer.buffer().data()))
+        im = open_image(BytesIO(buffer.buffer().data()))
     finally:
         buffer.close()
     # Replace transparent pixels with white (otherwise Background defaults to transparent)

@@ -31,7 +31,7 @@ class TagClickActionOption(enum.IntEnum):
     DEFAULT = OPEN_EDIT
 
 
-class Theme(enum.StrEnum):
+class ThemePalette(enum.StrEnum):
     COLOR_BG_DARK = "#65000000"
     COLOR_BG_LIGHT = "#22000000"
     COLOR_DARK_LABEL = "#DD000000"
@@ -42,6 +42,13 @@ class Theme(enum.StrEnum):
     COLOR_DISABLED_BG = "#30000000"
     COLOR_FORBIDDEN = "#65F39CAA"
     COLOR_FORBIDDEN_BG = "#65440D12"
+
+
+class Theme(enum.IntEnum):
+    DARK = 0
+    LIGHT = 1
+    SYSTEM = 2
+    DEFAULT = SYSTEM
 
 
 class OpenStatus(enum.IntEnum):

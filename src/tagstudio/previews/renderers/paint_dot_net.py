@@ -7,14 +7,39 @@ import struct
 import xml.etree.ElementTree as ET
 from io import BytesIO
 from pathlib import Path
+from typing import override
 
 import structlog
-from PIL import Image
+from PIL.Image import Image
+from PIL.Image import new as new_image
+from PIL.Image import open as open_image
+
+from tagstudio.core.enums import Theme
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
+MediaTypes.register("paint_dot_net", ".pdn", RENDER)
 
-def paint_dot_net_thumb(filepath: Path) -> Image.Image | None:
+
+class PaintDotNetPreview(BasePreview):
+    media_type_name = "paint_dot_net"
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return paint_dot_net_thumb(filepath)
+
+
+def paint_dot_net_thumb(filepath: Path) -> Image | None:
     """Extract the base64-encoded thumbnail from a .pdn file header.
 
     Args:
@@ -23,7 +48,7 @@ def paint_dot_net_thumb(filepath: Path) -> Image.Image | None:
     Returns:
         Image: the decoded PNG thumbnail or None by default.
     """
-    im: Image.Image | None = None
+    im: Image | None = None
     with open(filepath, "rb") as f:
         try:
             # First 4 bytes are the magic number
@@ -39,9 +64,9 @@ def paint_dot_net_thumb(filepath: Path) -> Image.Image | None:
             encoded_png = thumb_element.get("png")
             if encoded_png:
                 decoded_png = base64.b64decode(encoded_png)
-                im = Image.open(BytesIO(decoded_png))
+                im = open_image(BytesIO(decoded_png))
                 if im.mode == "RGBA":
-                    new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                    new_bg = new_image("RGB", im.size, color="#1e1e1e")
                     new_bg.paste(im, mask=im.getchannel(3))
                     im = new_bg
         except Exception as e:

@@ -12,13 +12,11 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
-from rawpy import (
-    LibRawFileUnsupportedError,  # pyright: ignore[reportPrivateImportUsage]
-    LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
-)
+from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.previews.video_tester import is_readable_video
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.utils.file_opener import open_file
@@ -45,7 +43,7 @@ class PreviewThumb(PreviewThumbView):
 
         if filepath.is_dir():
             pass
-        elif MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
+        elif MediaTypes.contains("image.raster.raw", ext, SEARCH):
             try:
                 with rawpy.imread(str(filepath)) as raw:
                     rgb = raw.postprocess()
@@ -58,7 +56,7 @@ class PreviewThumb(PreviewThumbView):
                 FileNotFoundError,
             ):
                 pass
-        elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
+        elif MediaTypes.contains("image.raster", ext, SEARCH):
             try:
                 image = Image.open(str(filepath))
                 stats.width = image.width
@@ -70,7 +68,7 @@ class PreviewThumb(PreviewThumbView):
                 UnidentifiedImageError,
             ) as e:
                 logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
-        elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
+        elif MediaTypes.contains("image.vector", ext, SEARCH):
             pass  # TODO
 
         return stats
@@ -118,9 +116,7 @@ class PreviewThumb(PreviewThumbView):
         ext = filepath.suffix.lower()
 
         # Video
-        if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
-            filepath
-        ):
+        if MediaTypes.contains("video", ext, SEARCH) and is_readable_video(filepath):
             size: QSize | None = None
             try:
                 success, size = self.__get_video_res(str(filepath))
@@ -131,10 +127,10 @@ class PreviewThumb(PreviewThumbView):
 
             return self._display_video(filepath, size)
         # Audio
-        elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
+        elif MediaTypes.contains("audio", ext, SEARCH):
             return self._display_audio(filepath)
         # Animated Images
-        elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
+        elif MediaTypes.contains("image.animated", ext, SEARCH):
             if (ret := self.__get_gif_data(filepath)) and (
                 stats := self._display_gif(ret[0], ret[1])
             ) is not None:
