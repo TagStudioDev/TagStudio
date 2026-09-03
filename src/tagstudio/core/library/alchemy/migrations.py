@@ -21,7 +21,7 @@ from tagstudio.core.library.alchemy.constants import (
     DEFAULT_TEXT_FIELD_TEMPLATES,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
-from tagstudio.core.library.alchemy.utils import list_tables
+from tagstudio.core.library.alchemy.utils import list_tables, sqlqlchemy_to_dict
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -201,8 +201,8 @@ class MigrationTo8(DBMigration):
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
-        tag_colors: list[tuple] = [
-            (c.slug, c.namespace, c.name, c.primary, c.secondary)
+        tag_colors: list[dict] = [
+            sqlqlchemy_to_dict(c)
             for c in default_color_groups.shades()
             if c.slug in ["burgundy", "dark-teal", "dark_lavender"]
         ]
@@ -211,7 +211,7 @@ class MigrationTo8(DBMigration):
         conn.executemany(
             """
                 INSERT INTO tag_colors (slug, namespace, name, \"primary\", secondary)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (:slug, :namespace, :name, :primary, :secondary)
             """,
             tag_colors,
         )
@@ -221,25 +221,15 @@ class MigrationTo8(DBMigration):
         )
 
         # Update Neon colors to use the the color_border property
-        for color in default_color_groups.neon():
-            conn.execute(
-                """
-                    UPDATE tag_colors
-                    SET slug = ?, namespace = ?, name = ?,
-                        \"primary\" = ?, secondary = ?, color_border = ?
-                    WHERE namespace == ? AND slug = ?
-                """,
-                [
-                    color.slug,
-                    color.namespace,
-                    color.name,
-                    color.primary,
-                    color.secondary,
-                    color.color_border,
-                    color.namespace,
-                    color.slug,
-                ],
-            )
+        conn.executemany(
+            """
+                UPDATE tag_colors
+                SET slug = :slug, namespace = :namespace, name = :name,
+                \"primary\" = :primary, secondary = :secondary, color_border = :color_border
+                WHERE namespace == :namespace AND slug = :slug
+            """,
+            [sqlqlchemy_to_dict(c) for c in default_color_groups.neon()],
+        )
 
 
 class MigrationTo9(DBMigration):
@@ -254,12 +244,11 @@ class MigrationTo9(DBMigration):
         logger.info(fmt_log("Added filename column to entries table"))
 
         # Populate the new filename column.
-        paths = [
-            (id, Path(path_str))
+        filenames = [
+            (Path(path_str).name, id)
             for id, path_str in conn.execute("SELECT id, path FROM entries").fetchall()
         ]
-        for eid, path in paths:
-            conn.execute("UPDATE entries SET filename = ? WHERE id = ?", [path.name, eid])
+        conn.executemany("UPDATE entries SET filename = ? WHERE id = ?", filenames)
         logger.info(fmt_log("Populated filename column in entries table"))
 
 
