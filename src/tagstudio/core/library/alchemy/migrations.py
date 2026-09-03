@@ -532,43 +532,39 @@ class MigrationTo300(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
-        ## remove folder_id column from entries table
-        # create new table in the desired scheme (without folder_id column)
-        session.execute(
-            text("""
-        CREATE TABLE entries_new (
-            id INTEGER NOT NULL,
-            path VARCHAR NOT NULL,
-            suffix VARCHAR NOT NULL,
-            date_created DATETIME,
-            date_modified DATETIME,
-            date_added DATETIME,
-            filename TEXT NOT NULL DEFAULT '',
-            PRIMARY KEY (id),
-            UNIQUE (path)
-        )
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
+        # remove folder_id column from entries table
+        ## create new table in the desired scheme (without folder_id column)
+        conn.execute("""
+            CREATE TABLE entries_new (
+                id INTEGER NOT NULL,
+                path VARCHAR NOT NULL,
+                suffix VARCHAR NOT NULL,
+                date_created DATETIME,
+                date_modified DATETIME,
+                date_added DATETIME,
+                filename TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (id),
+                UNIQUE (path)
+            )
         """)
-        )
-        session.flush()
-        # transfer data to new table
-        session.execute(
-            text("""
+
+        ## transfer data to new table
+        conn.execute("""
             INSERT INTO entries_new (id, path, suffix, date_created, date_modified, date_added,
                                      filename)
             SELECT id, path, suffix, date_created, date_modified, date_added, filename
             FROM entries
         """)
-        )
-        # delete old table
-        session.execute(text("DROP TABLE entries"))
-        # rename new table to old table
-        session.execute(text("ALTER TABLE entries_new RENAME TO entries"))
-        session.flush()
 
-        ## drop table "folders"
-        session.execute(text("DROP TABLE folders"))
-        session.flush()
+        ## delete old table
+        conn.execute("DROP TABLE entries")
+
+        ## rename new table to old table
+        conn.execute("ALTER TABLE entries_new RENAME TO entries")
+
+        # drop table "folders"
+        conn.execute("DROP TABLE folders")
 
 
 class MigrationTo400(DBMigration):
