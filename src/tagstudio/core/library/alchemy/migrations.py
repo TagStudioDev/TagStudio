@@ -264,15 +264,10 @@ class MigrationTo100(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 100."""
         # Repair parent-child tag relationships that are the wrong way around.
-        stmt = update(TagParent).values(
-            parent_id=TagParent.child_id,
-            child_id=TagParent.parent_id,
-        )
-        session.execute(stmt)
-        session.flush()
+        conn.execute("UPDATE tag_parents SET parent_id = child_id, child_id = parent_id")
         logger.info(fmt_log("Refactored TagParent table"))
 
 
