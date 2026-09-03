@@ -1,6 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
-# Licensed under the GPL-3.0 License.
-# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: MIT
 
 import json
 from copy import deepcopy
@@ -11,8 +10,6 @@ from typing import TYPE_CHECKING, Any, override
 import structlog
 import toml
 from wcmatch import glob
-
-from tagstudio.core.library.alchemy.fields import FieldID
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
@@ -74,16 +71,17 @@ class Instruction:
         pass
 
 
-class AddFieldInstruction(Instruction):
-    def __init__(self, content, name: FieldID, field_type: str) -> None:
-        super().__init__()
-        self.content = content
-        self.name = name
-        self.type = field_type
+# TODO: Reimplement adding fields form macros
+# class AddFieldInstruction(Instruction):
+#     def __init__(self, content, name: FieldID, field_type: str) -> None:
+#         super().__init__()
+#         self.content = content
+#         self.name = name
+#         self.type = field_type
 
-    @override
-    def __str__(self) -> str:
-        return str(self.content)
+#     @override
+#     def __str__(self) -> str:
+#         return str(self.content)
 
 
 class AddTagInstruction(Instruction):
@@ -329,16 +327,17 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                 else:
                     continue
 
-                # TODO: Determine if the source_type is even really ever needed
-                # source_type: str = str(tab_value.get(SOURCE_TYPE, ""))
+                # TODO: Reimplement adding fields form macros
+                # # TODO: Determine if the source_type is even really ever needed
+                # # source_type: str = str(tab_value.get(SOURCE_TYPE, ""))
 
-                str_name: str = str(obj.get(NAME, FieldID.NOTES.name))
-                name: FieldID = FieldID.NOTES
-                for fid in FieldID:
-                    field_id = str_name.upper().replace(" ", "_")
-                    if field_id == fid.name:
-                        name = fid
-                        continue
+                # str_name: str = str(obj.get(NAME, FieldID.NOTES.name))
+                # name: FieldID = FieldID.NOTES
+                # for fid in FieldID:
+                #     field_id = str_name.upper().replace(" ", "_")
+                #     if field_id == fid.name:
+                #         name = fid
+                #         continue
 
                 if ts_type == TAGS:
                     use_context: bool = bool(obj.get(USE_CONTEXT, False))
@@ -395,10 +394,11 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                         )
                     )
 
-                elif ts_type in (TEXT_LINE, TEXT_BOX, DATETIME):
-                    results.append(
-                        AddFieldInstruction(content=content_value, name=name, field_type=ts_type)
-                    )
+                # TODO: Reimplement adding fields form macros
+                # elif ts_type in (TEXT_LINE, TEXT_BOX, DATETIME):
+                #     results.append(
+                #         AddFieldInstruction(content=content_value, name=name, field_type=ts_type)
+                #     )
                 else:
                     logger.error('[MacroParser] [{table_key}] Unknown "{TS_TYPE}"', type=ts_type)
 
@@ -425,25 +425,22 @@ def _add_data(table: dict[str, Any]) -> list[Instruction]:
             if ts_type == TAGS:
                 tag_strings: list[str] = obj.get(VALUE, [])
                 logger.error(tag_strings)
-                results.append(
-                    AddTagInstruction(
-                        tag_strings=tag_strings,
-                        use_context=False,
-                    )
-                )
-            elif ts_type in (TEXT_LINE, TEXT_BOX, DATETIME):
-                str_name: str = str(obj.get(NAME, FieldID.NOTES.name))
-                name: FieldID = FieldID.NOTES
-                for fid in FieldID:
-                    field_id = str_name.upper().replace(" ", "_")
-                    if field_id == fid.name:
-                        name = fid
-                        continue
+                results.append(AddTagInstruction(tag_strings=tag_strings, use_context=False))
 
-                content_value: str = str(obj.get(VALUE, ""))
-                results.append(
-                    AddFieldInstruction(content=content_value, name=name, field_type=ts_type)
-                )
+            # TODO: Reimplement adding fields form macros
+            # elif ts_type in (TEXT_LINE, TEXT_BOX, DATETIME):
+            #     str_name: str = str(obj.get(NAME, FieldID.NOTES.name))
+            #     name: FieldID = FieldID.NOTES
+            #     for fid in FieldID:
+            #         field_id = str_name.upper().replace(" ", "_")
+            #         if field_id == fid.name:
+            #             name = fid
+            #             continue
+
+            # content_value: str = str(obj.get(VALUE, ""))
+            # results.append(
+            #     AddFieldInstruction(content=content_value, name=name, field_type=ts_type)
+            # )
 
     return results
 
@@ -477,15 +474,16 @@ def _fill_template(
     return template.replace(f"{{{key}}}", f"{value}")
 
 
-def exec_instructions(library: "Library", entry_id: int, results: list[Instruction]) -> None:
+def exec_instructions(library: Library, entry_id: int, results: list[Instruction]) -> None:
     for result in results:
         if isinstance(result, AddTagInstruction):
             _exec_add_tag(library, entry_id, result)
-        elif isinstance(result, AddFieldInstruction):
-            _exec_add_field(library, entry_id, result)
+        # TODO: Reimplement adding fields form macros
+        # elif isinstance(result, AddFieldInstruction):
+        #     _exec_add_field(library, entry_id, result)
 
 
-def _exec_add_tag(library: "Library", entry_id: int, result: AddTagInstruction):
+def _exec_add_tag(library: Library, entry_id: int, result: AddTagInstruction):
     tag_ids: set[int] = set()
     for string in result.tag_strings:
         if not string.strip():
@@ -497,12 +495,12 @@ def _exec_add_tag(library: "Library", entry_id: int, result: AddTagInstruction):
         parent_results: list[int] = []
         if len(base_and_parent) > 1:
             parent = base_and_parent[1].split(")")[0]
-            r: list[set[Tag]] = library.search_tags(name=parent, limit=-1)
+            r: tuple[list[Tag], list[Tag]] = library.search_tags(name=parent, limit=-1)
             if len(r) > 0:
                 parent_results = [t.id for t in r[0]]
         # NOTE: The following code overlaps with update_tags() in tag_search.py
         # Sort and prioritize the results
-        tag_results: list[set[Tag]] = library.search_tags(name=base, limit=-1)
+        tag_results: tuple[list[Tag], list[Tag]] = library.search_tags(name=base, limit=-1)
         results_0 = list(tag_results[0])
         results_0.sort(key=lambda tag: tag.name.lower())
         results_1 = list(tag_results[1])
@@ -538,7 +536,9 @@ def _exec_add_tag(library: "Library", entry_id: int, result: AddTagInstruction):
     library.add_tags_to_entries(entry_id, tag_ids)
 
 
-def _exec_add_field(library: "Library", entry_id: int, result: AddFieldInstruction):
-    library.add_field_to_entry(
-        entry_id, field_id=result.name, value=result.content, skip_on_exists=True
-    )
+# TODO: Reimplement adding fields form macros
+# def _exec_add_field(library: Library, entry_id: int, result: AddFieldInstruction):
+#     pass
+#     library.add_field_to_entry(
+#         entry_id, field_id=result.name, value=result.content, skip_on_exists=True
+#     )

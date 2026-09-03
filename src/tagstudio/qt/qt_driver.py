@@ -20,8 +20,7 @@ from collections import OrderedDict
 from functools import partial
 from pathlib import Path
 from queue import Queue
-from shutil import which
-from typing import Generic, TypeVar
+from typing import TypeVar
 from unittest.mock import Mock
 from warnings import catch_warnings
 
@@ -41,11 +40,6 @@ from PySide6.QtGui import (
     QPalette,
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
-from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
-from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
-from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
-from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
-from tagstudio.qt.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 
 import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
 from tagstudio.core.constants import (
@@ -64,10 +58,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.macro_parser import (
-    DataResult,
-    FieldResult,
     Instruction,
-    TagResult,
     exec_instructions,
     get_macro_name,
     parse_macro_file,
@@ -1821,7 +1812,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
-        self.main_window.preview_panel.set_selection()
+        self.main_window.preview_panel.set_selection(self.selected)
 
         # page (re)rendering, extract eventually
         initial_state = BrowsingState(

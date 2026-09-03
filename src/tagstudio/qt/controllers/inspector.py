@@ -275,6 +275,10 @@ class Inspector(QWidget):
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)
 
+    def refresh_selection(self, update_preview: bool = True):
+        """Refresh the panel's widgets to use current library data."""
+        self.set_selection(self._selected, update_preview)
+
     def stop_media_playback(self) -> None:
         """Stop any media playback in the inspector."""
         self.layout().preview_thumb.media_player.stop()

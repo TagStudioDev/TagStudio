@@ -877,8 +877,8 @@ class Library:
             if search_query:
                 query = query.where(
                     or_(
-                        Tag.name.istartswith(search_query),
-                        Tag.shorthand.istartswith(search_query),
+                        Tag.name.contains(search_query),
+                        Tag.shorthand.contains(search_query),
                     )
                 )
 
@@ -886,7 +886,7 @@ class Library:
 
             if search_query:
                 query = select(TagAlias.tag_id, TagAlias.name).where(
-                    TagAlias.name.istartswith(search_query)
+                    TagAlias.name.contains(search_query)
                 )
                 tags.extend(session.execute(query))
 
