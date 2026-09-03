@@ -40,15 +40,17 @@ SELECT tag_id FROM ChildTags;
 
 
 DEFAULT_TEXT_FIELD_TEMPLATES = (
-    TextFieldTemplate(name="Title"),
-    TextFieldTemplate(name="Author"),
-    TextFieldTemplate(name="Artist"),
-    TextFieldTemplate(name="URL"),
-    TextFieldTemplate(name="Description", is_multiline=True),
-    TextFieldTemplate(name="Notes", is_multiline=True),
-    TextFieldTemplate(name="Comments", is_multiline=True),
+    {"name": "Title", "is_multiline": False},
+    {"name": "Author", "is_multiline": False},
+    {"name": "Artist", "is_multiline": False},
+    {"name": "URL", "is_multiline": False},
+    {"name": "Description", "is_multiline": True},
+    {"name": "Notes", "is_multiline": True},
+    {"name": "Comments", "is_multiline": True},
 )
 
-DEFAULT_DATETIME_FIELD_TEMPLATES = (DatetimeFieldTemplate(name="Date"),)
+DEFAULT_DATETIME_FIELD_TEMPLATES = ({"name": "Date"},)
 
-DEFAULT_FIELD_TEMPLATES = DEFAULT_TEXT_FIELD_TEMPLATES + DEFAULT_DATETIME_FIELD_TEMPLATES
+DEFAULT_FIELD_TEMPLATES = [TextFieldTemplate(**p) for p in DEFAULT_TEXT_FIELD_TEMPLATES] + [
+    DatetimeFieldTemplate(**p) for p in DEFAULT_DATETIME_FIELD_TEMPLATES
+]

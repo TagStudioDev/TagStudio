@@ -422,7 +422,14 @@ class MigrationTo200(DBMigration):
         text_boxes = [
             x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
         ]
-        conn.execute("UPDATE text_fields SET is_multiline = true WHERE name in ?", text_boxes)
+        conn.execute(
+            f"""
+                UPDATE text_fields
+                SET is_multiline = true
+                WHERE name IN ({",".join(["?"] * len(text_boxes))})
+            """,
+            text_boxes,
+        )
 
         # Repair legacy "Description" and "Comments" fields to use is_multiline = True
         logger.info(fmt_log("Repairing legacy Description and Comments fields..."))
@@ -450,12 +457,12 @@ class MigrationTo200(DBMigration):
         # Add default field templates
         logger.info(fmt_log("Adding default field templates..."))
         conn.executemany(
-            "INSERT INTO text_field_templates (id, name, is_multiline) VALUES (?, ?, ?)",
-            [(t.id, t.name, t.is_multiline) for t in DEFAULT_TEXT_FIELD_TEMPLATES],
+            "INSERT INTO text_field_templates (name, is_multiline) VALUES (:name, :is_multiline)",
+            DEFAULT_TEXT_FIELD_TEMPLATES,
         )
         conn.executemany(
-            "INSERT INTO datetime_field_templates (id, name) VALUES (?, ?)",
-            [(t.id, t.name) for t in DEFAULT_DATETIME_FIELD_TEMPLATES],
+            "INSERT INTO datetime_field_templates (name) VALUES (:name)",
+            DEFAULT_DATETIME_FIELD_TEMPLATES,
         )
 
         # DB indices for improved performance
