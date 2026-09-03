@@ -315,16 +315,14 @@ class MigrationTo103(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
-        session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
-        session.flush()
+        conn.execute("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0")
         logger.info(fmt_log("Added is_hidden column to tags table"))
 
         # mark the "Archived" tag as hidden
-        session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
-        session.flush()
+        conn.execute("UPDATE tags SET is_hidden = true WHERE id = ?", [TAG_ARCHIVED])
         logger.info(fmt_log("Updated archived tag to be hidden"))
 
 
