@@ -10,7 +10,7 @@ from typing import override
 
 import structlog
 import ujson
-from sqlalchemy import delete, select, text, update
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
@@ -19,9 +19,10 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DEFAULT_FIELD_TEMPLATES,
+    DEFAULT_DATETIME_FIELD_TEMPLATES,
+    DEFAULT_TEXT_FIELD_TEMPLATES,
 )
-from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
+from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.library.alchemy.utils import list_tables
@@ -369,111 +370,98 @@ class MigrationTo200(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 200."""
+        # TODO: this migration uses default values of the most recent DB version, fix
+        # THIS WILL BREAK ONCE THESE DEFAULT VALUES ARE CHANGED!
         # Drop unused 'boolean_fields' and 'value_type' tables
         logger.info(fmt_log("Dropping boolean_fields and value_type tables..."))
-        session.execute(text("DROP TABLE boolean_fields"))
-        session.execute(text("DROP TABLE value_type"))
+        conn.execute("DROP TABLE boolean_fields")
+        conn.execute("DROP TABLE value_type")
 
         # Add 'name' column to text_fields and datetime_fields tables
         logger.info(fmt_log("Adding name columns to field tables..."))
-        stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
-        session.execute(stmt)
-        stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
-        session.execute(stmt)
+        conn.execute('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
+        conn.execute('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
 
         # Drop unnecessary 'position' columns
         logger.info(fmt_log("Dropping position columns to field tables..."))
-        session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
-        session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
+        conn.execute("ALTER TABLE datetime_fields DROP COLUMN position")
+        conn.execute("ALTER TABLE text_fields DROP COLUMN position")
 
         # Add 'is_multiline' column to text_fields table
         logger.info(fmt_log("Adding is_multiline column to text_fields..."))
-        stmt = text("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
-        session.execute(stmt)
-        session.flush()
+        conn.execute("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
 
         # Move values from old `type_key` columns into new `name` columns
         logger.info(fmt_log("Moving values from type_key columns to name..."))
-        session.execute(text("UPDATE text_fields SET name = type_key"))
-        session.execute(text("UPDATE datetime_fields SET name = type_key"))
-        session.flush()
+        conn.execute("UPDATE text_fields SET name = type_key")
+        conn.execute("UPDATE datetime_fields SET name = type_key")
 
         # Change `name` values to title case
         logger.info(fmt_log("Normalizing TextField names..."))
-        for text_field in session.execute(select(TextField)).scalars():
-            # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
-            text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
+        # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
+        names = [
+            (name.title().replace("Url", "URL").replace("_", " "), id)
+            for id, name in conn.execute("SELECT id, name FROM text_fields").fetchall()
+        ]
+        conn.executemany("UPDATE text_fields SET name = ? WHERE id = ?", names)
+
         logger.info(fmt_log("Normalizing DatetimeField names..."))
-        for datetime_field in session.execute(select(DatetimeField)).scalars():
-            datetime_field.name = datetime_field.name.title().replace("_", " ")
-        session.flush()
+        names = [
+            (name.title().replace("_", " "), id)
+            for id, name in conn.execute("SELECT id, name FROM datetime_fields").fetchall()
+        ]
+        conn.executemany("UPDATE datetime_fields SET name = ? WHERE id = ?", names)
 
         # Add correct `is_multiline` values to text_fields table
         logger.info(fmt_log("Updating is_multiline for legacy TEXT_BOXes..."))
         text_boxes = [
             x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
         ]
-        update_stmt = (
-            update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
-        )
-        session.execute(update_stmt)
-        session.flush()
+        conn.execute("UPDATE text_fields SET is_multiline = true WHERE name in ?", text_boxes)
 
-        # Repair legacy "Description" fields to use is_multiline = True
-        logger.info(fmt_log("Repairing legacy Description fields..."))
-        desc_stmt = (
-            update(TextField)
-            .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
-            .values(is_multiline=True)
-        )
-        session.execute(desc_stmt)
-
-        # Repair legacy "Comments" fields to use is_multiline = True
-        logger.info(fmt_log("Repairing legacy Comment fields..."))
-        comm_stmt = (
-            update(TextField)
-            .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
-            .values(is_multiline=True)
-        )
-        session.execute(comm_stmt)
+        # Repair legacy "Description" and "Comments" fields to use is_multiline = True
+        logger.info(fmt_log("Repairing legacy Description and Comments fields..."))
+        conn.execute("""
+            UPDATE text_fields
+            SET is_multiline = true
+            WHERE name in ('Description', 'Comments') AND is_multiline = false
+        """)
 
         # Add field templates tables
-        session.execute(
-            text("""
-        CREATE TABLE text_field_templates (
-            id INTEGER NOT NULL PRIMARY KEY,
-            is_multiline BOOLEAN NOT NULL,
-            name VARCHAR NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE text_field_templates (
+                id INTEGER NOT NULL PRIMARY KEY,
+                is_multiline BOOLEAN NOT NULL,
+                name VARCHAR NOT NULL
+            )
         """)
-        )
-        session.execute(
-            text("""
-        CREATE TABLE datetime_field_templates (
-            id INTEGER NOT NULL PRIMARY KEY,
-            name VARCHAR NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE datetime_field_templates (
+                id INTEGER NOT NULL PRIMARY KEY,
+                name VARCHAR NOT NULL
+            )
         """)
-        )
-        session.flush()
 
         # Add default field templates
         logger.info(fmt_log("Adding default field templates..."))
-        for template in DEFAULT_FIELD_TEMPLATES:
-            session.add(template)
-        session.flush()
+        conn.executemany(
+            "INSERT INTO text_field_templates (id, name, is_multiline) VALUES (?, ?, ?)",
+            [(t.id, t.name, t.is_multiline) for t in DEFAULT_TEXT_FIELD_TEMPLATES],
+        )
+        conn.executemany(
+            "INSERT INTO datetime_field_templates (id, name) VALUES (?, ?)",
+            [(t.id, t.name) for t in DEFAULT_DATETIME_FIELD_TEMPLATES],
+        )
 
         # DB indices for improved performance
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
         )
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)")
-        )
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
         )
 
 
