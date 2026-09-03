@@ -156,8 +156,10 @@ class DBMigrations:
         """
         # Insert if key has no value yet, otherwise update the value
         self._connection.execute(
-            "INSERT INTO versions (key, value) VALUES (?, ?)"
-            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            """
+                INSERT INTO versions (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value
+            """,
             [key, value],
         )
 
@@ -171,13 +173,14 @@ class MigrationTo7(DBMigration):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info(fmt_log("Applying patches to DB_VERSION: 6 library..."))
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-        conn.execute(
-            "UPDATE tags "
-            "SET disambiguation_id = null "
-            "WHERE NOT disambiguation_id IN ("
-            "SELECT id FROM tags"
-            ")"
-        )
+        conn.execute("""
+            UPDATE tags
+            SET disambiguation_id = null
+            WHERE NOT disambiguation_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
 
 
 class MigrationTo8(DBMigration):
@@ -191,9 +194,10 @@ class MigrationTo8(DBMigration):
         # TODO: as before, this migration uses the current default colors, while it should really be
         # using the default colors as they were in that specific version.
         # FUTURE CHANGES TO THE DEFAULT COLORS WILL BREAK THIS
-        conn.execute(
-            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
-        )
+        conn.execute("""
+            ALTER TABLE tag_colors
+            ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL
+        """)
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
@@ -219,10 +223,12 @@ class MigrationTo8(DBMigration):
         # Update Neon colors to use the the color_border property
         for color in default_color_groups.neon():
             conn.execute(
-                "UPDATE tag_colors"
-                "SET slug = ?, namespace = ?, name = ?, "
-                '"primary" = ?, secondary = ?, color_border = ? '
-                "WHERE namespace == ? AND slug = ?",
+                """
+                    UPDATE tag_colors
+                    SET slug = ?, namespace = ?, name = ?,
+                        \"primary\" = ?, secondary = ?, color_border = ?
+                    WHERE namespace == ? AND slug = ?
+                """,
                 [
                     color.slug,
                     color.namespace,
