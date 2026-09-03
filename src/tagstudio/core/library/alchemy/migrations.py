@@ -10,7 +10,7 @@ from typing import override
 
 import structlog
 import ujson
-from sqlalchemy import and_, delete, select, text, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
@@ -188,13 +188,12 @@ class MigrationTo8(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
-        session.execute(
-            text("ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL")
+        conn.execute(
+            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
         )
-        session.flush()
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
@@ -206,8 +205,11 @@ class MigrationTo8(DBMigration):
 
         # Add any new default colors introduced in DB_VERSION 8
         for color in tag_colors:
-            session.add(color)
-        session.flush()
+            conn.execute(
+                'INSERT INTO tag_colors (slug, namespace, name, "primary", secondary) '
+                "VALUES (?, ?, ?, ?, ?)",
+                [color.slug, color.namespace, color.name, color.primary, color.secondary],
+            )
         logger.info(
             fmt_log("Migrated tag colors to DB_VERSION 8+"),
             color_name=tag_colors,
@@ -215,25 +217,22 @@ class MigrationTo8(DBMigration):
 
         # Update Neon colors to use the the color_border property
         for color in default_color_groups.neon():
-            neon_stmt = (
-                update(TagColorGroup)
-                .where(
-                    and_(
-                        TagColorGroup.namespace == color.namespace,
-                        TagColorGroup.slug == color.slug,
-                    )
-                )
-                .values(
-                    slug=color.slug,
-                    namespace=color.namespace,
-                    name=color.name,
-                    primary=color.primary,
-                    secondary=color.secondary,
-                    color_border=color.color_border,
-                )
+            conn.execute(
+                "UPDATE tag_colors"
+                "SET slug = ?, namespace = ?, name = ?, "
+                '"primary" = ?, secondary = ?, color_border = ? '
+                "WHERE namespace == ? AND slug = ?",
+                [
+                    color.slug,
+                    color.namespace,
+                    color.name,
+                    color.primary,
+                    color.secondary,
+                    color.color_border,
+                    color.namespace,
+                    color.slug,
+                ],
             )
-            session.execute(neon_stmt)
-        session.flush()
 
 
 class MigrationTo9(DBMigration):
