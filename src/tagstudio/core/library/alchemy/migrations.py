@@ -23,7 +23,7 @@ from tagstudio.core.library.alchemy.constants import (
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import Tag, TagColorGroup, Version
+from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
@@ -276,21 +276,19 @@ class MigrationTo101(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 101."""
         # Create versions table
-        session.execute(
-            text("""
-        CREATE TABLE versions (
-            "key" VARCHAR NOT NULL PRIMARY KEY,
-            value INTEGER NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE versions (
+                "key" VARCHAR NOT NULL PRIMARY KEY,
+                value INTEGER NOT NULL
+            )
         """)
-        )
-        session.flush()
         # Ensure version rows are present
-        session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-        session.flush()
+        conn.execute(
+            'INSERT INTO versions ("key", value) VALUES (?, ?)', [DB_VERSION_INITIAL_KEY, 100]
+        )
         logger.info(fmt_log("Created versions table"))
 
 
