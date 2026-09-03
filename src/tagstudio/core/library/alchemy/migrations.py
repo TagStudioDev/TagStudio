@@ -10,7 +10,7 @@ from typing import override
 
 import structlog
 import ujson
-from sqlalchemy import delete, select, text
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
@@ -23,8 +23,7 @@ from tagstudio.core.library.alchemy.constants import (
     DEFAULT_TEXT_FIELD_TEMPLATES,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
-from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
+from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
@@ -516,11 +515,15 @@ class MigrationTo202(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 202."""
-        stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
-        session.execute(stmt)
-        session.flush()
+        conn.execute("""
+            DELETE FROM tag_parents
+            WHERE NOT child_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
         logger.info(fmt_log("Verified TagParent table data"))
 
 
