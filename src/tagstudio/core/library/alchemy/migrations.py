@@ -471,55 +471,44 @@ class MigrationTo201(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 201."""
-        create_text_fields_table = text("""
-        CREATE TABLE text_fields_new (
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            entry_id INTEGER NOT NULL,
-            value VARCHAR,
-            is_multiline BOOLEAN NOT NULL,
-            FOREIGN KEY(entry_id) REFERENCES entries (id)
-        )
-        """)
-        create_datetime_fields_table = text("""
-        CREATE TABLE datetime_fields_new (
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            entry_id INTEGER NOT NULL,
-            value VARCHAR,
-            FOREIGN KEY(entry_id) REFERENCES entries (id)
-        )
-        """)
-
         logger.info(fmt_log("Dropping type_key from text_fields table..."))
-        session.execute(create_text_fields_table)
-        session.flush()
-        session.execute(
-            text("""
-                INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
-                SELECT id, name, entry_id, value, is_multiline
-                FROM text_fields
-            """)
-        )
-        session.execute(text("DROP TABLE text_fields"))
-        session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
+        conn.execute("""
+            CREATE TABLE text_fields_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                is_multiline BOOLEAN NOT NULL,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+        """)
+        conn.execute("""
+            INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
+            SELECT id, name, entry_id, value, is_multiline
+            FROM text_fields
+        """)
+        conn.execute("DROP TABLE text_fields")
+        conn.execute("ALTER TABLE text_fields_new RENAME TO text_fields")
 
         logger.info(fmt_log("Dropping type_key from datetime_fields table..."))
-        session.execute(create_datetime_fields_table)
-        session.flush()
-        session.execute(
-            text("""
-                INSERT INTO datetime_fields_new (id, name, entry_id, value)
-                SELECT id, name, entry_id, value
-                FROM datetime_fields
-            """)
-        )
-        session.execute(text("DROP TABLE datetime_fields"))
-        session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
-
-        session.flush()
+        conn.execute("""
+            CREATE TABLE datetime_fields_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+        """)
+        conn.execute("""
+            INSERT INTO datetime_fields_new (id, name, entry_id, value)
+            SELECT id, name, entry_id, value
+            FROM datetime_fields
+        """)
+        conn.execute("DROP TABLE datetime_fields")
+        conn.execute("ALTER TABLE datetime_fields_new RENAME TO datetime_fields")
 
 
 class MigrationTo202(DBMigration):
