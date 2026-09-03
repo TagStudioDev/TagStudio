@@ -21,7 +21,6 @@ from tagstudio.core.library.alchemy.constants import (
     DEFAULT_TEXT_FIELD_TEMPLATES,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
-from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
@@ -198,19 +197,20 @@ class MigrationTo8(DBMigration):
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
-        tag_colors: list[TagColorGroup] = [
-            color
-            for color in default_color_groups.shades()
-            if color.slug in ["burgundy", "dark-teal", "dark_lavender"]
+        tag_colors: list[tuple] = [
+            (c.slug, c.namespace, c.name, c.primary, c.secondary)
+            for c in default_color_groups.shades()
+            if c.slug in ["burgundy", "dark-teal", "dark_lavender"]
         ]
 
         # Add any new default colors introduced in DB_VERSION 8
-        for color in tag_colors:
-            conn.execute(
-                'INSERT INTO tag_colors (slug, namespace, name, "primary", secondary) '
-                "VALUES (?, ?, ?, ?, ?)",
-                [color.slug, color.namespace, color.name, color.primary, color.secondary],
-            )
+        conn.executemany(
+            """
+                INSERT INTO tag_colors (slug, namespace, name, \"primary\", secondary)
+                VALUES (?, ?, ?, ?, ?)
+            """,
+            tag_colors,
+        )
         logger.info(
             fmt_log("Migrated tag colors to DB_VERSION 8+"),
             color_name=tag_colors,
