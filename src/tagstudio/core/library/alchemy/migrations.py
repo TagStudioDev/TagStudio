@@ -331,15 +331,14 @@ class MigrationTo104(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-        cls.__migrate_sql_to_ts_ignore(session, library_dir)
-        session.execute(text("DROP TABLE preferences"))
-        session.flush()
+        cls.__migrate_sql_to_ts_ignore(conn, library_dir)
+        conn.execute("DROP TABLE preferences")
 
     @classmethod
-    def __migrate_sql_to_ts_ignore(cls, session: Session, library_dir: Path):
+    def __migrate_sql_to_ts_ignore(cls, conn: Connection, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
         if Path(ts_ignore).exists():
@@ -348,11 +347,17 @@ class MigrationTo104(DBMigration):
         # Load legacy extension data
         extensions: list[str] = ujson.loads(
             unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
-            )
+                conn.execute(
+                    "SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"
+                ).fetchone()
+            )[0]
         )
         is_exclude_list: bool = unwrap(
-            session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
+            conn.execute("""
+                SELECT value
+                FROM preferences
+                WHERE key = 'IS_EXCLUDE_LIST'
+            """).fetchone()[0]
         )
 
         with open(ts_ignore, "w") as f:
