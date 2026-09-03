@@ -10,8 +10,6 @@ from typing import override
 
 import structlog
 import ujson
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy import default_color_groups
@@ -572,16 +570,13 @@ class MigrationTo400(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log):
         logger.info(fmt_log("Creating category_exclusions table..."))
-        session.execute(
-            text("""
-        CREATE TABLE category_exclusions (
-            tag_id      INTEGER NOT NULL REFERENCES tags(id),
-            category_id INTEGER NOT NULL REFERENCES tags(id),
+        conn.execute("""
+            CREATE TABLE category_exclusions (
+                tag_id      INTEGER NOT NULL REFERENCES tags(id),
+                category_id INTEGER NOT NULL REFERENCES tags(id),
 
-            PRIMARY KEY (tag_id, category_id)
-        )
+                PRIMARY KEY (tag_id, category_id)
+            )
         """)
-        )
-        session.flush()
