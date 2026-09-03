@@ -23,7 +23,7 @@ from tagstudio.core.library.alchemy.constants import (
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
+from tagstudio.core.library.alchemy.models import Tag, TagColorGroup, Version
 from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
@@ -191,6 +191,9 @@ class MigrationTo8(DBMigration):
     def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
+        # TODO: as before, this migration uses the current default colors, while it should really be
+        # using the default colors as they were in that specific version.
+        # FUTURE CHANGES TO THE DEFAULT COLORS WILL BREAK THIS
         conn.execute(
             "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
         )
@@ -240,23 +243,19 @@ class MigrationTo9(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 8 to 9."""
         # Apply database schema changes
-        add_filename_column = text(
-            "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
-        )
-        session.execute(add_filename_column)
-        session.flush()
+        conn.execute("ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''")
         logger.info(fmt_log("Added filename column to entries table"))
 
         # Populate the new filename column.
-        # TODO: this could still break in the future through changes to the definition of Entry
-        entries = session.execute(select(Entry).distinct()).scalars()
-        for entry in entries:
-            entry.filename = entry.path.name
-            session.merge(entry)
-        session.flush()
+        paths = [
+            (id, Path(path_str))
+            for id, path_str in conn.execute("SELECT id, path FROM entries").fetchall()
+        ]
+        for eid, path in paths:
+            conn.execute("UPDATE entries SET filename = ? WHERE id = ?", [path.name, eid])
         logger.info(fmt_log("Populated filename column in entries table"))
 
 
