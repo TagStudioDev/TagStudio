@@ -297,12 +297,16 @@ class MigrationTo102(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 102."""
         # delete TagParents with a dangling parent reference
-        stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
-        session.execute(stmt)
-        session.flush()
+        conn.execute("""
+            DELETE FROM tag_parents
+            WHERE NOT parent_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
         logger.info(fmt_log("Verified TagParent table data"))
 
 
