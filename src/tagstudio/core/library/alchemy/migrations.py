@@ -5,6 +5,7 @@
 import sqlite3
 from collections.abc import Callable
 from pathlib import Path
+from sqlite3 import Connection
 from typing import override
 
 import structlog
@@ -42,7 +43,7 @@ class DBMigration:
     initial_version: int | None = None
 
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod) -> None:  # pyright: ignore[reportUnusedParameter]
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError
 
 
@@ -113,7 +114,7 @@ class DBMigrations:
                 logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
                 # any error causes transaction to rollback
                 migration.run(
-                    None,  # TODO: remove session param once all Migrations have been updated
+                    self._connection,
                     self.library_dir,
                     lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
                 )
@@ -169,19 +170,17 @@ class MigrationTo7(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info(fmt_log("Applying patches to DB_VERSION: 6 library..."))
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-        # TODO: combine into single sql statement
-        all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-        disam_stmt = (
-            update(Tag)
-            .where(Tag.disambiguation_id.not_in(all_tag_ids))
-            .values(disambiguation_id=None)
+        conn.execute(
+            "UPDATE tags "
+            "SET disambiguation_id = null "
+            "WHERE NOT disambiguation_id IN ("
+            "SELECT id FROM tags"
+            ")"
         )
-        session.execute(disam_stmt)
-        session.flush()
 
 
 class MigrationTo8(DBMigration):
