@@ -1079,7 +1079,7 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
+        iterator = FunctionIterator(lambda: tracker.refresh_dir())
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),

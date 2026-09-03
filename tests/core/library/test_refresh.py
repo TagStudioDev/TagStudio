@@ -26,7 +26,7 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
     (library_dir / IGNORE_NAME).write_text("*.md" if exclude_mode else "*\n!*.md")
 
     # Test if the single file was added
-    list(registry.refresh_dir(library_dir, force_internal_tools=True))
+    list(registry.refresh_dir(force_internal_tools=True))
     assert set(registry.files_not_in_library) == set([Path(IGNORE_NAME), Path("FOO.MD")])
 
 
@@ -43,7 +43,7 @@ def test_refresh_multi_byte_filenames(library: Library):
     (library_dir / "umlaute äöü.txt").touch()
 
     # Test if all files were added with their correct names and without exceptions
-    list(registry.refresh_dir(library_dir))
+    list(registry.refresh_dir())
     assert Path("こんにちは.txt") in registry.files_not_in_library
     assert Path("em–dash.txt") in registry.files_not_in_library
     assert Path("apostrophe’.txt") in registry.files_not_in_library
