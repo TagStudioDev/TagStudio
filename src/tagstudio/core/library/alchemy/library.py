@@ -506,13 +506,12 @@ class Library:
 
         # migrate if necessary
         try:
-            migrations = DBMigrations(library_dir, sql_filename)
+            with DBMigrations(library_dir, sql_filename) as migrations:
+                # save backup if patches will be applied
+                if migrations.required:
+                    Library.save_library_backup_to_disk(library_dir)
 
-            # save backup if patches will be applied
-            if migrations.required:
-                Library.save_library_backup_to_disk(library_dir)
-
-            migrations.run()
+                migrations.run()
         except MigrationError as e:
             return LibraryStatus(success=False, message=e.args[0])
 

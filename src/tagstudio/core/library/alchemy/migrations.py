@@ -78,11 +78,21 @@ class DBMigrations:
             f"Opening Library with DB Version {self.loaded_db_version}/{DB_VERSION}"
         )
 
+        self._exited = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._connection.close()
+        self._exited = True
+
     @property
     def required(self) -> bool:
         return self.loaded_db_version < DB_VERSION
 
     def run(self):
+        assert not self._exited
         if not self.required:
             return
 
