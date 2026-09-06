@@ -16,6 +16,8 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
+from tagstudio.core.utils.stat import get_date_created, get_date_modified
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -41,6 +43,8 @@ class RefreshTracker:
                 Entry(
                     path=entry_path,
                     fields=[],
+                    date_created=get_date_created(unwrap(self.library.library_dir) / entry_path),
+                    date_modified=get_date_modified(unwrap(self.library.library_dir) / entry_path),
                     date_added=dt.now(),
                 )
                 for entry_path in self.files_not_in_library[index:end]
@@ -140,6 +144,10 @@ class RefreshTracker:
             # Skip if the file/path is already mapped in the Library
             if f in self.library.included_files:
                 dir_file_count += 1
+
+                entry_id = self.library.get_entry_id_from_path(f)
+                self.library.refresh_file_entry_stats(entry_id, path=f)
+
                 continue
 
             # Ignore if the file is a directory
@@ -149,8 +157,13 @@ class RefreshTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_entry_with_path(f):
+            # if not self.library.has_entry_with_path(f):
+            #     self.files_not_in_library.append(f)
+            entry_id = self.library.get_entry_id_from_path(f)
+            if entry_id < 0:
                 self.files_not_in_library.append(f)
+            else:
+                self.library.refresh_file_entry_stats(entry_id, path=f)
 
         end_time_total = time()
         yield dir_file_count
@@ -183,6 +196,9 @@ class RefreshTracker:
                 # Skip if the file/path is already mapped in the Library
                 if f in self.library.included_files:
                     dir_file_count += 1
+                    relative_path = f.relative_to(library_dir)
+                    entry_id = self.library.get_entry_id_from_path(relative_path)
+                    self.library.refresh_file_entry_stats(entry_id, path=relative_path)
                     continue
 
                 # Ignore if the file is a directory
@@ -194,8 +210,14 @@ class RefreshTracker:
 
                 relative_path = f.relative_to(library_dir)
 
-                if not self.library.has_entry_with_path(relative_path):
+                # if not self.library.has_entry_with_path(relative_path):
+                #     self.files_not_in_library.append(relative_path)
+                entry_id = self.library.get_entry_id_from_path(relative_path)
+                if entry_id < 0:
                     self.files_not_in_library.append(relative_path)
+                else:
+                    self.library.refresh_file_entry_stats(entry_id, path=relative_path)
+
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
 
