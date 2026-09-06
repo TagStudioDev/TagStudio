@@ -202,8 +202,8 @@ class Entry(Base):
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     filename: Mapped[str] = mapped_column()
     suffix: Mapped[str] = mapped_column()
-    date_created: Mapped[dt | None]
-    date_modified: Mapped[dt | None]
+    date_created: Mapped[float | None]
+    date_modified: Mapped[float | None]
     date_added: Mapped[dt | None]
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
@@ -237,8 +237,8 @@ class Entry(Base):
         path: Path,
         fields: list[BaseField],
         id: int | None = None,
-        date_created: dt | None = None,
-        date_modified: dt | None = None,
+        date_created: float | None = None,
+        date_modified: float | None = None,
         date_added: dt | None = None,
     ) -> None:
         super().__init__()
