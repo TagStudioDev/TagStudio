@@ -57,6 +57,7 @@ def _get_preview_renderers() -> list[type[BasePreview]]:
                 and obj is not BasePreview
                 and obj.__module__ == module.__name__
             ):
+                obj.register_types()
                 found.append(obj)
                 break
 

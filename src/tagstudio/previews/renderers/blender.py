@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 from pathlib import Path
@@ -16,14 +16,17 @@ from tagstudio.previews.vendored.blender_thumbnailer import blend_thumb
 
 logger = structlog.get_logger(__name__)
 
-# NOTE: Filetype equivalents (i.e. ".blend1" == ".blend32") are already declared internally.
-MediaTypes.register("blender", ".blend", RENDER)
-MediaTypes.register("blender", ".blend1", RENDER)
-
 
 class BlenderPreview(BasePreview):
     media_type_name = "blender"
     priority = 40
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        # NOTE: Filetype equivalents (i.e. ".blend1" == ".blend32") are already declared internally.
+        MediaTypes.register("blender", ".blend", RENDER)
+        MediaTypes.register("blender", ".blend1", RENDER)
 
     @override
     @classmethod

@@ -19,11 +19,14 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("medibang_paint", ".mdp", RENDER)
-
 
 class MediBangPaintPreview(BasePreview):
     media_type_name = "medibang_paint"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("medibang_paint", ".mdp", RENDER)
 
     @override
     @classmethod

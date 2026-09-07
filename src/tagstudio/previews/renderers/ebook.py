@@ -20,26 +20,29 @@ from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("ebook", ".azw", RENDER)
-MediaTypes.register("ebook", ".azw3", RENDER)
-MediaTypes.register("ebook", ".cb7", RENDER)
-MediaTypes.register("ebook", ".cba", RENDER)
-MediaTypes.register("ebook", ".cbr", RENDER)
-MediaTypes.register("ebook", ".cbt", RENDER)
-MediaTypes.register("ebook", ".cbz", RENDER)
-MediaTypes.register("ebook", ".djvu", RENDER)
-MediaTypes.register("ebook", ".epub", RENDER)
-MediaTypes.register("ebook", ".fb2", RENDER)
-MediaTypes.register("ebook", ".ibook", RENDER)
-MediaTypes.register("ebook", ".kfx", RENDER)
-MediaTypes.register("ebook", ".lit", RENDER)
-MediaTypes.register("ebook", ".mobi", RENDER)
-MediaTypes.register("ebook", ".prc", RENDER)
-
 
 class EbookPreview(BasePreview):
     media_type_name = "ebook"
     priority = 40
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("ebook", ".azw", RENDER)
+        MediaTypes.register("ebook", ".azw3", RENDER)
+        MediaTypes.register("ebook", ".cb7", RENDER)
+        MediaTypes.register("ebook", ".cba", RENDER)
+        MediaTypes.register("ebook", ".cbr", RENDER)
+        MediaTypes.register("ebook", ".cbt", RENDER)
+        MediaTypes.register("ebook", ".cbz", RENDER)
+        MediaTypes.register("ebook", ".djvu", RENDER)
+        MediaTypes.register("ebook", ".epub", RENDER)
+        MediaTypes.register("ebook", ".fb2", RENDER)
+        MediaTypes.register("ebook", ".ibook", RENDER)
+        MediaTypes.register("ebook", ".kfx", RENDER)
+        MediaTypes.register("ebook", ".lit", RENDER)
+        MediaTypes.register("ebook", ".mobi", RENDER)
+        MediaTypes.register("ebook", ".prc", RENDER)
 
     @override
     @classmethod

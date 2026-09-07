@@ -16,12 +16,6 @@ from tagstudio.previews.renderers.archive import archive_thumb
 logger = structlog.get_logger(__name__)
 
 
-MediaTypes.register("apple.embedded", ".pxd", RENDER)
-MediaTypes.register("apple.embedded", ".pages", RENDER)
-MediaTypes.register("apple.embedded", ".numbers", RENDER)
-MediaTypes.register("apple.embedded", ".key", RENDER)
-
-
 class AppleEmbeddedPreview(BasePreview):
     media_type_name = "apple.embedded"
 
@@ -33,6 +27,14 @@ class AppleEmbeddedPreview(BasePreview):
         "QuickLook/Thumbnail.webp",
         "QuickLook/Icon.webp",
     ]
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("apple.embedded", ".pxd", RENDER)
+        MediaTypes.register("apple.embedded", ".pages", RENDER)
+        MediaTypes.register("apple.embedded", ".numbers", RENDER)
+        MediaTypes.register("apple.embedded", ".key", RENDER)
 
     @override
     @classmethod

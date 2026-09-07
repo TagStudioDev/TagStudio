@@ -23,12 +23,15 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("image.vector", ".svg", RENDER)
-
 
 class VectorImagePreview(BasePreview):
     media_type_name = "image.vector"
     priority = 70
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("image.vector", ".svg", RENDER)
 
     @override
     @classmethod

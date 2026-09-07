@@ -23,12 +23,15 @@ from tagstudio.qt.views.styles.image_effects import replace_transparent_pixels
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("pdf", ".pdf", RENDER)
-MediaTypes.register("pdf", ".ai", RENDER)
-
 
 class PdfPreview(BasePreview):
     media_type_name = "pdf"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("pdf", ".pdf", RENDER)
+        MediaTypes.register("pdf", ".ai", RENDER)
 
     @override
     @classmethod

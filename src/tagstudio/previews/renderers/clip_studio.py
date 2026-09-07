@@ -17,11 +17,14 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("clip_studio_paint", ".clip", RENDER)
-
 
 class ClipStudioPaintPreview(BasePreview):
     media_type_name = "clip_studio_paint"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("clip_studio_paint", ".clip", RENDER)
 
     @override
     @classmethod

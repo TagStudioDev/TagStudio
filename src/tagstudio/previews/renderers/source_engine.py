@@ -16,11 +16,15 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("source_engine", ".vtf", RENDER)
-
 
 class SourceEnginePreview(BasePreview):
     media_type_name = "source_engine"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("source_engine", ".vtf", RENDER)
+        MediaTypes.register("code", ".vmt", RENDER)  # Fallback
 
     @classmethod
     @override

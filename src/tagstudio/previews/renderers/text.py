@@ -15,7 +15,7 @@ from PIL.Image import new as new_image
 from PIL.Image import open as open_image
 from pygments import highlight
 from pygments.formatters import ImageFormatter
-from pygments.lexers import PythonLexer
+from pygments.lexers import PythonLexer  # pyright: ignore[reportUnknownVariableType]
 from pygments.style import Style
 from pygments.token import (
     Comment,
@@ -39,11 +39,35 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("plaintext", ".i3u", RENDER)
-MediaTypes.register("plaintext", "contributing", RENDER)
-MediaTypes.register("plaintext", "license", RENDER)
-MediaTypes.register("plaintext", "readme", RENDER)
-MediaTypes.register("plaintext", [".txt", ".text"], RENDER)
+
+class TextPreview(BasePreview):
+    media_type_name = "plaintext"
+    font = ImageFont.load_default(20)
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("plaintext", ".i3u", RENDER)
+        MediaTypes.register("plaintext", "contributing", RENDER)
+        MediaTypes.register("plaintext", "license", RENDER)
+        MediaTypes.register("plaintext", "readme", RENDER)
+        MediaTypes.register("plaintext", [".txt", ".text"], RENDER)
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return text_thumb(
+            filepath=filepath,
+            size=size,
+            style=TextDarkStyle if theme == Theme.DARK else TextLightStyle,
+        )
 
 
 class TextLightStyle(Style):
@@ -78,27 +102,6 @@ class TextDarkStyle(Style):
         Other: foreground,
         Punctuation: foreground,
     }
-
-
-class TextPreview(BasePreview):
-    media_type_name = "plaintext"
-    font = ImageFont.load_default(20)
-
-    @override
-    @classmethod
-    def render(
-        cls,
-        filepath: Path,
-        is_small: bool,
-        theme: Theme,
-        size: tuple[int, int],
-        dpi_scale: float,
-    ) -> Image | None:
-        return text_thumb(
-            filepath=filepath,
-            size=size,
-            style=TextDarkStyle if theme == Theme.DARK else TextLightStyle,
-        )
 
 
 def text_thumb(

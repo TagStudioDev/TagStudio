@@ -31,139 +31,159 @@ from tagstudio.previews.renderers.text import text_thumb
 
 logger = structlog.get_logger(__name__)
 
-# TODO: Use different syntax highlighting for different filetypes.
-# NOTE: Filetype equivalents (i.e. ".ini" == ".inf") are already declared internally.
 
-# CSS
-MediaTypes.register("code", ".css", RENDER)
-MediaTypes.register("code", ".less", RENDER)
-MediaTypes.register("code", ".qss", RENDER)
-MediaTypes.register("code", ".sass", RENDER)
-MediaTypes.register("code", ".scss", RENDER)
-MediaTypes.register("code", ".styl", RENDER)
+class CodePreview(BasePreview):
+    media_type_name = "code"
+    priority = 60
 
-# C
-MediaTypes.register("code", ".c", RENDER)
-MediaTypes.register("code", ".h", RENDER)
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        # NOTE: Filetype equivalents (i.e. ".ini" == ".inf") are already declared internally.
+        # CSS
+        MediaTypes.register("code", ".css", RENDER)
+        MediaTypes.register("code", ".less", RENDER)
+        MediaTypes.register("code", ".qss", RENDER)
+        MediaTypes.register("code", ".sass", RENDER)
+        MediaTypes.register("code", ".scss", RENDER)
+        MediaTypes.register("code", ".styl", RENDER)
 
-# C++
-MediaTypes.register("code", ".cpp", RENDER)
-MediaTypes.register("code", ".hpp", RENDER)
+        # C
+        MediaTypes.register("code", ".c", RENDER)
+        MediaTypes.register("code", ".h", RENDER)
 
-# C#
-MediaTypes.register("code", ".cs", RENDER)
+        # C++
+        MediaTypes.register("code", ".cpp", RENDER)
+        MediaTypes.register("code", ".hpp", RENDER)
 
-# D
-MediaTypes.register("code", ".d", RENDER)
+        # C#
+        MediaTypes.register("code", ".cs", RENDER)
 
-# HTML
-MediaTypes.register("code", ".html", RENDER)
+        # D
+        MediaTypes.register("code", ".d", RENDER)
 
-# JavaScript
-MediaTypes.register("code", ".cjs", RENDER)
-MediaTypes.register("code", ".js", RENDER)
-MediaTypes.register("code", ".jsx", RENDER)
-MediaTypes.register("code", ".mjs", RENDER)
+        # HTML
+        MediaTypes.register("code", ".html", RENDER)
 
-# JSON
-MediaTypes.register("code", ".json", RENDER)
+        # JavaScript
+        MediaTypes.register("code", ".cjs", RENDER)
+        MediaTypes.register("code", ".js", RENDER)
+        MediaTypes.register("code", ".jsx", RENDER)
+        MediaTypes.register("code", ".mjs", RENDER)
 
-# Lua
-MediaTypes.register("code", ".lua", RENDER)
+        # JSON
+        MediaTypes.register("code", ".json", RENDER)
 
-# Markdown
-MediaTypes.register("code", ".md", RENDER)
+        # Lua
+        MediaTypes.register("code", ".lua", RENDER)
 
-# Nix
-MediaTypes.register("code", ".nix", RENDER)
+        # Markdown
+        MediaTypes.register("code", ".md", RENDER)
 
-# PHP
-MediaTypes.register("code", ".php", RENDER)
+        # Nix
+        MediaTypes.register("code", ".nix", RENDER)
 
-# Qt
-MediaTypes.register("code", ".qml", RENDER)
-MediaTypes.register("code", ".qrc", RENDER)
+        # PHP
+        MediaTypes.register("code", ".php", RENDER)
 
-# Rust
-MediaTypes.register("code", ".rs", RENDER)
+        # Qt
+        MediaTypes.register("code", ".qml", RENDER)
+        MediaTypes.register("code", ".qrc", RENDER)
 
-# TCL
-MediaTypes.register("code", ".tcl", RENDER)
+        # Rust
+        MediaTypes.register("code", ".rs", RENDER)
 
-# Python
-MediaTypes.register("code", ".ipynb", RENDER)
-MediaTypes.register("code", ".py", RENDER)
-MediaTypes.register("code", ".pyi", RENDER)
-MediaTypes.register("code", ".sip", RENDER)
+        # TCL
+        MediaTypes.register("code", ".tcl", RENDER)
 
-# Shaders
-MediaTypes.register("code", ".effect", RENDER)
-MediaTypes.register("code", ".frag", RENDER)
-MediaTypes.register("code", ".fsh", RENDER)
-MediaTypes.register("code", ".glsl", RENDER)
-MediaTypes.register("code", ".shader", RENDER)
-MediaTypes.register("code", ".vert", RENDER)
-MediaTypes.register("code", ".vsh", RENDER)
+        # Python
+        MediaTypes.register("code", ".ipynb", RENDER)
+        MediaTypes.register("code", ".py", RENDER)
+        MediaTypes.register("code", ".pyi", RENDER)
+        MediaTypes.register("code", ".sip", RENDER)
 
-# Shell Script
-MediaTypes.register("code", ".bat", RENDER)
-MediaTypes.register("code", ".csh", RENDER)
-MediaTypes.register("code", ".fish", RENDER)
-MediaTypes.register("code", ".nu", RENDER)
-MediaTypes.register("code", ".ps1", RENDER)
-MediaTypes.register("code", ".sh", RENDER)
-MediaTypes.register("code", "activate", RENDER)
+        # Shaders
+        MediaTypes.register("code", ".effect", RENDER)
+        MediaTypes.register("code", ".frag", RENDER)
+        MediaTypes.register("code", ".fsh", RENDER)
+        MediaTypes.register("code", ".glsl", RENDER)
+        MediaTypes.register("code", ".shader", RENDER)
+        MediaTypes.register("code", ".vert", RENDER)
+        MediaTypes.register("code", ".vsh", RENDER)
 
-# Shortcuts
-MediaTypes.register("code", ".desktop", RENDER)
-MediaTypes.register("code", ".lnk", RENDER)
-MediaTypes.register("code", ".url", RENDER)
+        # Shell Script
+        MediaTypes.register("code", ".bat", RENDER)
+        MediaTypes.register("code", ".csh", RENDER)
+        MediaTypes.register("code", ".fish", RENDER)
+        MediaTypes.register("code", ".nu", RENDER)
+        MediaTypes.register("code", ".ps1", RENDER)
+        MediaTypes.register("code", ".sh", RENDER)
+        MediaTypes.register("code", "activate", RENDER)
 
-# TOML
-MediaTypes.register("code", ".ini", RENDER)
-MediaTypes.register("code", ".toml", RENDER)
+        # Shortcuts
+        MediaTypes.register("code", ".desktop", RENDER)
+        MediaTypes.register("code", ".lnk", RENDER)
+        MediaTypes.register("code", ".url", RENDER)
 
-# TypeScript
-MediaTypes.register("code", ".cts", RENDER)
-MediaTypes.register("code", ".ts", RENDER)
-MediaTypes.register("code", ".mts", RENDER)
-MediaTypes.register("code", ".tsx", RENDER)
+        # TOML
+        MediaTypes.register("code", ".ini", RENDER)
+        MediaTypes.register("code", ".toml", RENDER)
 
-# Valve Source Engine
-MediaTypes.register("code", ".fgd", RENDER)
-MediaTypes.register("code", ".gi", RENDER)
-MediaTypes.register("code", ".kv3", RENDER)
-MediaTypes.register("code", ".nut", RENDER)
-MediaTypes.register("code", ".vcfg", RENDER)
-MediaTypes.register("code", ".vdf", RENDER)
-MediaTypes.register("code", ".vqlayout", RENDER)
-MediaTypes.register("code", ".vsc", RENDER)
-MediaTypes.register("code", ".vsnd_template", RENDER)
+        # TypeScript
+        MediaTypes.register("code", ".cts", RENDER)
+        MediaTypes.register("code", ".ts", RENDER)
+        MediaTypes.register("code", ".mts", RENDER)
+        MediaTypes.register("code", ".tsx", RENDER)
 
-# XML
-MediaTypes.register("code", ".xml", RENDER)
+        # Valve Source Engine
+        MediaTypes.register("code", ".fgd", RENDER)
+        MediaTypes.register("code", ".gi", RENDER)
+        MediaTypes.register("code", ".kv3", RENDER)
+        MediaTypes.register("code", ".nut", RENDER)
+        MediaTypes.register("code", ".vcfg", RENDER)
+        MediaTypes.register("code", ".vdf", RENDER)
+        MediaTypes.register("code", ".vqlayout", RENDER)
+        MediaTypes.register("code", ".vsc", RENDER)
+        MediaTypes.register("code", ".vsnd_template", RENDER)
 
-# YAML
-MediaTypes.register("code", ".yaml", RENDER)
+        # XML
+        MediaTypes.register("code", ".xml", RENDER)
 
-# Misc
-MediaTypes.register("code", ".cfg", RENDER)
-MediaTypes.register("code", ".conf", RENDER)
-MediaTypes.register("code", ".config", RENDER)
-MediaTypes.register("code", ".csv", RENDER)
-MediaTypes.register("code", ".gitignore", RENDER)
-MediaTypes.register("code", ".lock", RENDER)
-MediaTypes.register("code", ".log", RENDER)
-MediaTypes.register("code", ".meta", RENDER)
-MediaTypes.register("code", ".pkginfo", RENDER)
-MediaTypes.register("code", ".plist", RENDER)
-MediaTypes.register("code", ".prefs", RENDER)
-MediaTypes.register("code", ".spec", RENDER)
-MediaTypes.register("code", ".tex", RENDER)
-MediaTypes.register("code", ".theme", RENDER)
+        # YAML
+        MediaTypes.register("code", ".yaml", RENDER)
+
+        # Misc
+        MediaTypes.register("code", ".cfg", RENDER)
+        MediaTypes.register("code", ".conf", RENDER)
+        MediaTypes.register("code", ".config", RENDER)
+        MediaTypes.register("code", ".csv", RENDER)
+        MediaTypes.register("code", ".gitignore", RENDER)
+        MediaTypes.register("code", ".lock", RENDER)
+        MediaTypes.register("code", ".log", RENDER)
+        MediaTypes.register("code", ".meta", RENDER)
+        MediaTypes.register("code", ".patch", RENDER)
+        MediaTypes.register("code", ".pkginfo", RENDER)
+        MediaTypes.register("code", ".plist", RENDER)
+        MediaTypes.register("code", ".prefs", RENDER)
+        MediaTypes.register("code", ".spec", RENDER)
+        MediaTypes.register("code", ".tex", RENDER)
+        MediaTypes.register("code", ".theme", RENDER)
+
+    @override
+    @classmethod
+    def render(
+        cls,
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+        dpi_scale: float,
+    ) -> Image | None:
+        return text_thumb(filepath, size, CodeStyle)
 
 
 class CodeStyle(Style):
+    # TODO: Use different syntax highlighting for different filetypes.
     background = "#111111"
     foreground = "#f8f8f2"
     selection = "#44475a"
@@ -218,20 +238,3 @@ class CodeStyle(Style):
         String: purple,
         Text: foreground,
     }
-
-
-class CodePreview(BasePreview):
-    media_type_name = "code"
-    priority = 60
-
-    @override
-    @classmethod
-    def render(
-        cls,
-        filepath: Path,
-        is_small: bool,
-        theme: Theme,
-        size: tuple[int, int],
-        dpi_scale: float,
-    ) -> Image | None:
-        return text_thumb(filepath, size, CodeStyle)

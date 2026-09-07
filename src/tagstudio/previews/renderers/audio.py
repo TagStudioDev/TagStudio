@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 import math
@@ -28,24 +28,27 @@ from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
 
-# NOTE: Filetype equivalents (i.e. ".aif" == ".aif") are already declared internally.
-MediaTypes.register("audio", ".aac", RENDER)
-MediaTypes.register("audio", ".aif", RENDER)
-MediaTypes.register("audio", ".aifc", RENDER)
-MediaTypes.register("audio", ".caf", RENDER)
-MediaTypes.register("audio", ".flac", RENDER)
-MediaTypes.register("audio", ".m4a", RENDER)
-MediaTypes.register("audio", ".m4p", RENDER)
-MediaTypes.register("audio", ".m4r", RENDER)
-MediaTypes.register("audio", ".mp3", RENDER)
-MediaTypes.register("audio", ".ogg", RENDER)
-MediaTypes.register("audio", ".wav", RENDER)
-MediaTypes.register("audio", ".wma", RENDER)
-
 
 class AudioPreview(BasePreview):
     media_type_name = "audio"
     priority = 70
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        # NOTE: Filetype equivalents (i.e. ".aif" == ".aif") are already declared internally.
+        MediaTypes.register("audio", ".aac", RENDER)
+        MediaTypes.register("audio", ".aif", RENDER)
+        MediaTypes.register("audio", ".aifc", RENDER)
+        MediaTypes.register("audio", ".caf", RENDER)
+        MediaTypes.register("audio", ".flac", RENDER)
+        MediaTypes.register("audio", ".m4a", RENDER)
+        MediaTypes.register("audio", ".m4p", RENDER)
+        MediaTypes.register("audio", ".m4r", RENDER)
+        MediaTypes.register("audio", ".mp3", RENDER)
+        MediaTypes.register("audio", ".ogg", RENDER)
+        MediaTypes.register("audio", ".wav", RENDER)
+        MediaTypes.register("audio", ".wma", RENDER)
 
     @override
     @classmethod

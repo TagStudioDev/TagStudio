@@ -24,18 +24,21 @@ logger = structlog.get_logger(__name__)
 
 type Archive = zipfile.ZipFile | rarfile.RarFile | SevenZipFile | TarFile
 
-# NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
-MediaTypes.register("archive", ".7z", RENDER)
-MediaTypes.register("archive", ".gz", RENDER)
-MediaTypes.register("archive", ".rar", RENDER)
-MediaTypes.register("archive", ".s7z", RENDER)
-MediaTypes.register("archive", ".tar", RENDER)
-MediaTypes.register("archive", ".zip", RENDER)
-MediaTypes.register("archive", ".tar.gz", RENDER)
-
 
 class ArchivePreview(BasePreview):
     media_type_name = "archive"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        # NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
+        MediaTypes.register("archive", ".7z", RENDER)
+        MediaTypes.register("archive", ".gz", RENDER)
+        MediaTypes.register("archive", ".rar", RENDER)
+        MediaTypes.register("archive", ".s7z", RENDER)
+        MediaTypes.register("archive", ".tar", RENDER)
+        MediaTypes.register("archive", ".zip", RENDER)
+        MediaTypes.register("archive", ".tar.gz", RENDER)
 
     @override
     @classmethod

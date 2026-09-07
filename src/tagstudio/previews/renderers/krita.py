@@ -15,12 +15,15 @@ from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("krita", ".kra", RENDER)
-MediaTypes.register("krita", ".krz", RENDER)
-
 
 class KritaPreview(BasePreview):
     media_type_name = "krita"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("krita", ".kra", RENDER)
+        MediaTypes.register("krita", ".krz", RENDER)
 
     @override
     @classmethod

@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 import math
@@ -19,23 +19,26 @@ from tagstudio.previews.video_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("video", ".3gp", RENDER)
-MediaTypes.register("video", ".avi", RENDER)
-MediaTypes.register("video", ".flv", RENDER)
-MediaTypes.register("video", ".gifv", RENDER)
-MediaTypes.register("video", ".hevc", RENDER)
-MediaTypes.register("video", ".m4p", RENDER)
-MediaTypes.register("video", ".m4v", RENDER)
-MediaTypes.register("video", ".mkv", RENDER)
-MediaTypes.register("video", ".mov", RENDER)
-MediaTypes.register("video", ".mp4", RENDER)
-MediaTypes.register("video", ".webm", RENDER)
-MediaTypes.register("video", ".wmv", RENDER)
-
 
 class VideoPreview(BasePreview):
     media_type_name = "video"
     priority = 70
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("video", ".3gp", RENDER)
+        MediaTypes.register("video", ".avi", RENDER)
+        MediaTypes.register("video", ".flv", RENDER)
+        MediaTypes.register("video", ".gifv", RENDER)
+        MediaTypes.register("video", ".hevc", RENDER)
+        MediaTypes.register("video", ".m4p", RENDER)
+        MediaTypes.register("video", ".m4v", RENDER)
+        MediaTypes.register("video", ".mkv", RENDER)
+        MediaTypes.register("video", ".mov", RENDER)
+        MediaTypes.register("video", ".mp4", RENDER)
+        MediaTypes.register("video", ".webm", RENDER)
+        MediaTypes.register("video", ".wmv", RENDER)
 
     @override
     @classmethod

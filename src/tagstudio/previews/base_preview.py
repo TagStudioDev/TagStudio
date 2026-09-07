@@ -30,6 +30,10 @@ class BasePreview:
         pass
 
     @classmethod
+    def register_types(cls) -> None:
+        pass
+
+    @classmethod
     def render(
         cls,
         filepath: Path,

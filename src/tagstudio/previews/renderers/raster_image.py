@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 import os
@@ -31,26 +31,29 @@ except ImportError as e:
 register_heif_opener()
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 
-# NOTE: Filetype equivalents (i.e. ".jpg" == ".jpeg") are already declared internally.
-MediaTypes.register("image.raster", ".apng", RENDER)
-MediaTypes.register("image.raster", ".avif", RENDER)
-MediaTypes.register("image.raster", ".bmp", RENDER)
-MediaTypes.register("image.raster", ".png", RENDER)
-MediaTypes.register("image.raster", ".exr", RENDER)
-MediaTypes.register("image.raster", ".gif", RENDER)
-MediaTypes.register("image.raster", ".jxl", RENDER)
-MediaTypes.register("image.raster", ".psd", RENDER)
-MediaTypes.register("image.raster", ".webp", RENDER)
-MediaTypes.register("image.raster", ".heif", RENDER)
-MediaTypes.register("image.raster", ".jpg2", RENDER)
-MediaTypes.register("image.raster", ".jpeg", RENDER)
-MediaTypes.register("image.raster", ".tiff", RENDER)
-MediaTypes.register("image.raster", ".icns", RENDER)
-MediaTypes.register("image.raster", ".ico", RENDER)
-
 
 class RasterImagePreview(BasePreview):
     media_type_name = "image.raster"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        # NOTE: Filetype equivalents (i.e. ".jpg" == ".jpeg") are already declared internally.
+        MediaTypes.register("image.raster", ".apng", RENDER)
+        MediaTypes.register("image.raster", ".avif", RENDER)
+        MediaTypes.register("image.raster", ".bmp", RENDER)
+        MediaTypes.register("image.raster", ".png", RENDER)
+        MediaTypes.register("image.raster", ".exr", RENDER)
+        MediaTypes.register("image.raster", ".gif", RENDER)
+        MediaTypes.register("image.raster", ".jxl", RENDER)
+        MediaTypes.register("image.raster", ".psd", RENDER)
+        MediaTypes.register("image.raster", ".webp", RENDER)
+        MediaTypes.register("image.raster", ".heif", RENDER)
+        MediaTypes.register("image.raster", ".jpg2", RENDER)
+        MediaTypes.register("image.raster", ".jpeg", RENDER)
+        MediaTypes.register("image.raster", ".tiff", RENDER)
+        MediaTypes.register("image.raster", ".icns", RENDER)
+        MediaTypes.register("image.raster", ".ico", RENDER)
 
     @override
     @classmethod

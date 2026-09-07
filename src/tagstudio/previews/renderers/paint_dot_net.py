@@ -20,11 +20,14 @@ from tagstudio.previews.base_preview import RENDER, BasePreview
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("paint_dot_net", ".pdn", RENDER)
-
 
 class PaintDotNetPreview(BasePreview):
     media_type_name = "paint_dot_net"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("paint_dot_net", ".pdn", RENDER)
 
     @override
     @classmethod

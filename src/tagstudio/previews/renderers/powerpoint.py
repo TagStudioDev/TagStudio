@@ -15,12 +15,15 @@ from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)
 
-MediaTypes.register("microsoft.office.powerpoint", ".pptx", RENDER)
-
 
 class PowerPointPreview(BasePreview):
     _fallback_icon = "presentation"
     media_type_name = "microsoft.office.powerpoint"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("microsoft.office.powerpoint", ".pptx", RENDER)
 
     @override
     @classmethod

@@ -24,13 +24,15 @@ from tagstudio.qt.views.styles.palette import UiColor
 logger = structlog.get_logger(__name__)
 
 
-MediaTypes.register("font", ".otf", RENDER)
-MediaTypes.register("font", ".ttc", RENDER)
-MediaTypes.register("font", ".ttf", RENDER)
-
-
 class FontPreview(BasePreview):
     media_type_name = "font"
+
+    @override
+    @classmethod
+    def register_types(cls) -> None:
+        MediaTypes.register("font", ".otf", RENDER)
+        MediaTypes.register("font", ".ttc", RENDER)
+        MediaTypes.register("font", ".ttf", RENDER)
 
     @override
     @classmethod
