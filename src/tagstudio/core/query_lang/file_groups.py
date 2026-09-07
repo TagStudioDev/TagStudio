@@ -12,7 +12,7 @@ logger = structlog.get_logger(__name__)
 SEARCH = "SEARCH"  # MediaType Context
 
 
-def register_all() -> None:
+def register_types() -> None:
     """Register all internally configured filetype groups with the MediaTypes system."""
     # Vendor.Suite.Product =========================================================================
     # These groups are designed so that searching for either the vendor, suite, or product
@@ -645,6 +645,7 @@ def register_all() -> None:
     MediaTypes.register("plaintext", "license", SEARCH)
     MediaTypes.register("plaintext", "readme", SEARCH)
     MediaTypes.register("plaintext", [".editorconfig", ".inf", ".ini"], SEARCH)
+    MediaTypes.register("plaintext", [".patch", ".diff"], SEARCH)
     MediaTypes.register("plaintext", [".txt", ".text"], SEARCH)
     MediaTypes.register("plaintext", ["pkginfo", ".pkginfo"], SEARCH)
 
