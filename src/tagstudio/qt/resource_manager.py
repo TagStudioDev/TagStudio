@@ -58,11 +58,12 @@ class ResourceManager:
 
         return RESOURCE_FOLDER / "resources" / resource_path
 
-    def get(self, id: str):
+    def get(self, id: str, silent_fail: bool = False):
         """Get a resource from the ResourceManager.
 
         Args:
             id (str): The name of the resource.
+            silent_fail (bool): Don't log if the resource can not be found.
 
         Returns:
             bytes: When the data is in byte format.
@@ -85,7 +86,8 @@ class ResourceManager:
                 if resource_path is None:
                     raise FileNotFoundError
             except (FileNotFoundError, AttributeError) as e:
-                logger.error("[ResourceManager]: Could not find resource", id=id, error=e)
+                if not silent_fail:
+                    logger.error("[ResourceManager]: Could not find resource", id=id, error=e)
                 return None
 
             file_path = RESOURCE_FOLDER / "resources" / resource_path

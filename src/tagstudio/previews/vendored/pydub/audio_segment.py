@@ -82,7 +82,10 @@ def classproperty(func):
 
 AUDIO_FILE_EXT_ALIASES = {
     "m4a": "mp4",
+    "m4r": "mp4",
     "wave": "wav",
+    "aif": "aiff",
+    "aifc": "aiff",
 }
 
 WavSubChunk = namedtuple("WavSubChunk", ["id", "position", "size"])

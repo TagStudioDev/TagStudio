@@ -5,7 +5,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
 
-from tagstudio.core.enums import Theme
+from tagstudio.core.enums import ThemePalette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.views.styles.palette import (
@@ -55,14 +55,14 @@ def button_style() -> str:
     """Style used for common QPushButtons."""
     return f"""
     QPushButton{{
-        background-color: {Theme.COLOR_BG.value};
+        background-color: {ThemePalette.COLOR_BG.value};
         border-radius: 6px;
         font-weight: 500;
         text-align: center;
         padding: 0px 12px;
     }}
     QPushButton::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
+        background-color: {ThemePalette.COLOR_HOVER.value};
         border-style: solid;
         border-width: 2px;
         border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
@@ -84,7 +84,7 @@ def button_style() -> str:
         padding: 0px 8px;
     }}
     QPushButton::disabled{{
-        background-color: {Theme.COLOR_DISABLED_BG.value};
+        background-color: {ThemePalette.COLOR_DISABLED_BG.value};
     }}
 """
 
@@ -92,9 +92,9 @@ def button_style() -> str:
 def line_edit_style_main() -> str:
     """Style used for common QLineEdits."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""
@@ -118,7 +118,7 @@ def line_edit_style_main() -> str:
         padding: 0px 2px;
     }}
     QLineEdit::disabled{{
-        background-color: {Theme.COLOR_DISABLED_BG.value};
+        background-color: {ThemePalette.COLOR_DISABLED_BG.value};
     }}
 """
 
@@ -259,10 +259,10 @@ def container_style() -> str:
         border-radius: 4px;
     }}
     QWidget#fieldContainer::hover{{
-        background-color: {Theme.COLOR_HOVER.value};
+        background-color: {ThemePalette.COLOR_HOVER.value};
     }}
     QWidget#fieldContainer::pressed{{
-        background-color: {Theme.COLOR_PRESSED.value};
+        background-color: {ThemePalette.COLOR_PRESSED.value};
     }}
     """
 
@@ -271,9 +271,9 @@ def form_content_style() -> str:
     return f"""
     QLabel{{
         background-color: {
-        Theme.COLOR_BG.value
+        ThemePalette.COLOR_BG.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     };
         border-radius: 3px;
         font-weight: 500;
@@ -340,9 +340,9 @@ def list_button_style(
 def properties_style() -> str:
     """Style used for small labels such as file properties."""
     label_bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_DARK_LABEL.value
+        else ThemePalette.COLOR_DARK_LABEL.value
     )
 
     return f"""
@@ -447,9 +447,9 @@ def title_line_edit_style() -> str:
 def inset_container_style(object_name: str = "") -> str:
     """Used for darkened inset areas."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""
@@ -464,9 +464,9 @@ def inset_container_style(object_name: str = "") -> str:
 def autofill_scroll_top_style(object_name: str = "") -> str:
     """Used autofill lists positioned on top of line edits."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""
@@ -482,9 +482,9 @@ def autofill_scroll_top_style(object_name: str = "") -> str:
 def autofill_scroll_top_focus_style(object_name: str = "") -> str:
     """Used autofill lists positioned on top of line edits."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""
@@ -502,9 +502,9 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
 def autofill_line_edit_style() -> str:
     """Used for QLineEdits."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""
@@ -525,9 +525,9 @@ def autofill_line_edit_style() -> str:
 def autofill_line_edit_top_style() -> str:
     """Used for QLineEdits when there's a top autofill section present."""
     bg_color = (
-        Theme.COLOR_BG_DARK.value
+        ThemePalette.COLOR_BG_DARK.value
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_BG_LIGHT.value
+        else ThemePalette.COLOR_BG_LIGHT.value
     )
 
     return f"""

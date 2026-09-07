@@ -1,714 +1,305 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
-import enum
-import mimetypes
-from dataclasses import dataclass
-from pathlib import Path
+import re
+from typing import Any
 
 import structlog
 
+from tagstudio.core.utils.sanitized_attr import SanitizedAttr
+
 logger = structlog.get_logger(__name__)
 
-FILETYPE_EQUIVALENTS = [
-    {"aif", "aiff", "aifc"},
-    {"html", "htm", "xhtml", "shtml", "dhtml"},
-    {"jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"},
-    {"json", "jsonc", "json5"},
-    {"md", "markdown", "mkd", "rmd"},
-    {"tar.gz", "tgz"},
-    {"xml", "xul"},
-    {"yaml", "yml"},
-]
+
+def slugify(text: str) -> str:
+    """Return a sanitized string with no whitespace or hyphens."""
+    # Replace non-word characters with underscores, strip whitespace and make lowercase
+    text = re.sub(r"\W", "_", text.strip().lower())
+    # Replace remaining spaces and hyphens with underscores
+    text = re.sub(r"[\s-]+", "_", text)
+    return text
 
 
-class MediaType(enum.StrEnum):
-    """Names of media types."""
-
-    ADOBE_PHOTOSHOP = "adobe_photoshop"
-    AFFINITY_PHOTO = "affinity_photo"
-    ARCHIVE = "archive"
-    AUDIO_MIDI = "audio_midi"
-    AUDIO = "audio"
-    BLENDER = "blender"
-    CLIP_STUDIO_PAINT = "clip_studio_paint"
-    CODE = "code"
-    DATABASE = "database"
-    DISK_IMAGE = "disk_image"
-    DOCUMENT = "document"
-    EBOOK = "ebook"
-    FONT = "font"
-    IMAGE_ANIMATED = "image_animated"
-    IMAGE_RAW = "image_raw"
-    IMAGE_VECTOR = "image_vector"
-    IMAGE = "image"
-    INSTALLER = "installer"
-    IWORK = "iwork"
-    MATERIAL = "material"
-    MDIPACK = "mdipack"
-    MODEL = "model"
-    OPEN_DOCUMENT = "open_document"
-    PACKAGE = "package"
-    PAINT_DOT_NET = "paint_dot_net"
-    PDF = "pdf"
-    PLAINTEXT = "plaintext"
-    PRESENTATION = "presentation"
-    PROGRAM = "program"
-    SHADER = "shader"
-    SHORTCUT = "shortcut"
-    SOURCE_ENGINE = "source_engine"
-    SPREADSHEET = "spreadsheet"
-    TEXT = "text"
-    VIDEO = "video"
-
-
-@dataclass(frozen=True)
-class MediaCategory:
-    """An object representing a category of media.
-
-    Includes a MediaType identifier, extensions set, and IANA status flag.
+class FileType:
+    """A description of a single file type, along with an associated context.
 
     Args:
-        media_type (MediaType): The MediaType Enum representing this category.
-
-        extensions (set[str]): The set of file extensions associated with this category.
-            Includes leading ".", all lowercase, and does not need to be unique to this category.
-
-        is_iana (bool): Represents whether this is an IANA registered category.
+        exts (str | list[str]): The file extention(s), including a leading dot if there is one.
+            Passing a list of extensions will treat them as equivalent/interchangeable.
+            E.g. [".jpg", ".jpeg", ".jfif"] would be treated as the same extention.
     """
 
-    media_type: MediaType
-    extensions: set[str]
-    name: str
-    is_iana: bool = False
+    def __init__(self, exts: str | list[str], contexts: str | list[str]) -> None:
+        self.exts: set[str]
+        self.contexts: set[str]
 
-    def contains(self, ext: str, mime_fallback: bool = False) -> bool:
-        """Check if an extension is a member of this MediaCategory.
+        if isinstance(exts, str):
+            self.exts = set([exts])
+        else:
+            self.exts = set(exts)
 
-        Args:
-            ext (str): File extension with a leading "." and in all lowercase.
-            mime_fallback (bool): Flag to guess MIME type if no set matches are made.
-        """
-        if ext in self.extensions:
-            return True
-        elif mime_fallback and self.is_iana:
-            mime_type: str | None = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
-            if mime_type is not None and mime_type.startswith(self.media_type.value):
-                return True
-        return False
+        if isinstance(contexts, str):
+            self.contexts = set([contexts])
+        else:
+            self.contexts = set(contexts)
 
 
-class MediaCategories:
-    """Contain pre-made MediaCategory objects as well as methods to interact with them."""
+class MediaTypeGroup:
+    """A named group of FileTypes and context associations that represents a media group.
 
-    # These sets are used either individually or together to form the final sets
-    # for the MediaCategory(s).
-    # These sets may be combined and are NOT 1:1 with the final categories.
-    _ADOBE_ILLUSTRATOR_SET: set[str] = {".ai"}
-    _ADOBE_PHOTOSHOP_SET: set[str] = {
-        ".pdd",
-        ".psb",
-        ".psd",
-    }
-    _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
-    _KRITA_SET: set[str] = {".kra", ".krz"}
-    _ARCHIVE_SET: set[str] = {
-        ".7z",
-        ".gz",
-        ".rar",
-        ".s7z",
-        ".tar",
-        ".tgz",
-        ".zip",
-    }
-    _AUDIO_MIDI_SET: set[str] = {
-        ".mid",
-        ".midi",
-    }
-    _AUDIO_SET: set[str] = {
-        ".aac",
-        ".aif",
-        ".aifc",
-        ".aiff",
-        ".alac",
-        ".caf",
-        ".flac",
-        ".m4a",
-        ".m4p",
-        ".mp3",
-        ".mpeg4",
-        ".ogg",
-        ".wav",
-        ".wma",
-    }
-    _BLENDER_SET: set[str] = {
-        ".blen_tc",
-        ".blend",
-        ".blend1",
-        ".blend2",
-        ".blend3",
-        ".blend4",
-        ".blend5",
-        ".blend6",
-        ".blend7",
-        ".blend8",
-        ".blend9",
-        ".blend10",
-        ".blend11",
-        ".blend12",
-        ".blend13",
-        ".blend14",
-        ".blend15",
-        ".blend16",
-        ".blend17",
-        ".blend18",
-        ".blend19",
-        ".blend20",
-        ".blend21",
-        ".blend22",
-        ".blend23",
-        ".blend24",
-        ".blend25",
-        ".blend26",
-        ".blend27",
-        ".blend28",
-        ".blend29",
-        ".blend30",
-        ".blend31",
-        ".blend32",
-    }
-    _CLIP_STUDIO_PAINT_SET: set[str] = {".clip"}
-    _CODE_SET: set[str] = {
-        ".bat",
-        ".cfg",
-        ".conf",
-        ".cpp",
-        ".cs",
-        ".csh",
-        ".css",
-        ".d",
-        ".dhtml",
-        ".fgd",
-        ".fish",
-        ".gitignore",
-        ".h",
-        ".hpp",
-        ".htm",
-        ".html",
-        ".inf",
-        ".ini",
-        ".js",
-        ".json",
-        ".json5",
-        ".jsonc",
-        ".jsx",
-        ".kv3",
-        ".lua",
-        ".meta",
-        ".nix",
-        ".nu",
-        ".nut",
-        ".php",
-        ".plist",
-        ".prefs",
-        ".ps1",
-        ".py",
-        ".pyi",
-        ".qml",
-        ".qrc",
-        ".qss",
-        ".rs",
-        ".sh",
-        ".shtml",
-        ".sip",
-        ".spec",
-        ".tcl",
-        ".timestamp",
-        ".toml",
-        ".ts",
-        ".tsx",
-        ".vcfg",
-        ".vdf",
-        ".vmt",
-        ".vqlayout",
-        ".vsc",
-        ".vsnd_template",
-        ".xhtml",
-        ".xml",
-        ".xul",
-        ".yaml",
-        ".yml",
-    }
-    _DATABASE_SET: set[str] = {
-        ".accdb",
-        ".mdb",
-        ".pdb",
-        ".sqlite",
-        ".sqlite3",
-    }
-    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".fhdx", ".iso"}
-    _DOCUMENT_SET: set[str] = {
-        ".doc",
-        ".docm",
-        ".docx",
-        ".dot",
-        ".dotm",
-        ".dotx",
-        ".odt",
-        ".pages",
-        ".pdf",
-        ".pxd",
-        ".rtf",
-        ".tex",
-        ".wpd",
-        ".wps",
-    }
-    _EBOOK_SET: set[str] = {
-        ".azw",
-        ".azw3",
-        ".cb7",
-        ".cba",
-        ".cbr",
-        ".cbt",
-        ".cbz",
-        ".djvu",
-        ".epub",
-        ".fb2",
-        ".ibook",
-        ".inf",
-        ".kfx",
-        ".lit",
-        ".mobi",
-        ".pdb",
-        ".prc",
-    }
-    _FONT_SET: set[str] = {
-        ".fon",
-        ".otf",
-        ".ttc",
-        ".ttf",
-        ".woff",
-        ".woff2",
-    }
-    _IMAGE_ANIMATED_SET: set[str] = {
-        ".apng",
-        ".gif",
-        ".webp",
-    }
-    _IMAGE_RAW_SET: set[str] = {
-        ".arw",
-        ".cr2",
-        ".cr3",
-        ".crw",
-        ".dng",
-        ".nef",
-        ".nrw",
-        ".orf",
-        ".r3d",
-        ".raf",
-        ".raw",
-        ".rw2",
-        ".srf",
-        ".srf2",
-    }
-    _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
-    _IMAGE_RASTER_SET: set[str] = {
-        ".apng",
-        ".avif",
-        ".bmp",
-        ".exr",
-        ".gif",
-        ".heic",
-        ".heif",
-        ".icns",
-        ".j2k",
-        ".jfif",
-        ".jp2",
-        ".jpeg_large",
-        ".jpeg",
-        ".jpg_large",
-        ".jpg",
-        ".jpg2",
-        ".jxl",
-        ".png",
-        ".psb",
-        ".psd",
-        ".tif",
-        ".tiff",
-        ".webp",
-    }
-    _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
-    _IWORK_SET: set[str] = {".key", ".numbers", ".pages"}
-    _MATERIAL_SET: set[str] = {".mtl"}
-    _MDIPACK_SET: set[str] = {".mdp"}
-    _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
-    _OPEN_DOCUMENT_SET: set[str] = {
-        ".fodg",
-        ".fodp",
-        ".fods",
-        ".fodt",
-        ".mscz",
-        ".odf",
-        ".odg",
-        ".odp",
-        ".ods",
-        ".odt",
-        ".ora",
-    }
-    _PACKAGE_SET: set[str] = {
-        ".aab",
-        ".akp",
-        ".apk",
-        ".apkm",
-        ".apks",
-        ".pkg",
-        ".xapk",
-    }
-    _PAINT_DOT_NET_SET: set[str] = {".pdn"}
-    _PDF_SET: set[str] = {".pdf"}
-    _PLAINTEXT_SET: set[str] = {
-        ".csv",
-        ".i3u",
-        ".lang",
-        ".lock",
-        ".log",
-        ".markdown",
-        ".md",
-        ".mkd",
-        ".rmd",
-        ".text",
-        ".txt",
-        "contributing",
-        "license",
-        "readme",
-    }
-    _PRESENTATION_SET: set[str] = {
-        ".key",
-        ".odp",
-        ".ppt",
-        ".pptx",
-    }
-    _PROGRAM_SET: set[str] = {".app", ".bin", ".exe"}
-    _SOURCE_ENGINE_SET: set[str] = {".vtf"}
-    _SHADER_SET: set[str] = {
-        ".effect",
-        ".frag",
-        ".fsh",
-        ".glsl",
-        ".shader",
-        ".vert",
-        ".vsh",
-    }
-    _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
-    _SPREADSHEET_SET: set[str] = {
-        ".csv",
-        ".numbers",
-        ".ods",
-        ".xls",
-        ".xlsx",
-    }
-    _VIDEO_SET: set[str] = {
-        ".3gp",
-        ".avi",
-        ".flv",
-        ".gifv",
-        ".hevc",
-        ".m4p",
-        ".m4v",
-        ".mkv",
-        ".mov",
-        ".mp4",
-        ".webm",
-        ".wmv",
-        ".ts",
-    }
+    For example, "Image" files may be represented by a MediaTypeGroup, consisting of FileType
+    objects that are associated with individual extensions such as ".jpg" and ".png".
+    """
 
-    ADOBE_PHOTOSHOP_TYPES = MediaCategory(
-        media_type=MediaType.ADOBE_PHOTOSHOP,
-        extensions=_ADOBE_PHOTOSHOP_SET,
-        is_iana=False,
-        name="photoshop",
-    )
-    AFFINITY_PHOTO_TYPES = MediaCategory(
-        media_type=MediaType.AFFINITY_PHOTO,
-        extensions=_AFFINITY_PHOTO_SET,
-        is_iana=False,
-        name="affinity photo",
-    )
-    ARCHIVE_TYPES = MediaCategory(
-        media_type=MediaType.ARCHIVE,
-        extensions=_ARCHIVE_SET,
-        is_iana=False,
-        name="archive",
-    )
-    AUDIO_MIDI_TYPES = MediaCategory(
-        media_type=MediaType.AUDIO_MIDI,
-        extensions=_AUDIO_MIDI_SET,
-        is_iana=False,
-        name="audio midi",
-    )
-    AUDIO_TYPES = MediaCategory(
-        media_type=MediaType.AUDIO,
-        extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
-        is_iana=True,
-        name="audio",
-    )
-    BLENDER_TYPES = MediaCategory(
-        media_type=MediaType.BLENDER,
-        extensions=_BLENDER_SET,
-        is_iana=False,
-        name="blender",
-    )
-    CLIP_STUDIO_PAINT_TYPES = MediaCategory(
-        media_type=MediaType.CLIP_STUDIO_PAINT,
-        extensions=_CLIP_STUDIO_PAINT_SET,
-        is_iana=False,
-        name="clip studio paint",
-    )
-    CODE_TYPES = MediaCategory(
-        media_type=MediaType.CODE,
-        extensions=_CODE_SET,
-        is_iana=False,
-        name="code",
-    )
-    DATABASE_TYPES = MediaCategory(
-        media_type=MediaType.DATABASE,
-        extensions=_DATABASE_SET,
-        is_iana=False,
-        name="database",
-    )
-    DISK_IMAGE_TYPES = MediaCategory(
-        media_type=MediaType.DISK_IMAGE,
-        extensions=_DISK_IMAGE_SET,
-        is_iana=False,
-        name="disk image",
-    )
-    DOCUMENT_TYPES = MediaCategory(
-        media_type=MediaType.DOCUMENT,
-        extensions=_DOCUMENT_SET,
-        is_iana=False,
-        name="document",
-    )
-    EBOOK_TYPES = MediaCategory(
-        media_type=MediaType.EBOOK,
-        extensions=_EBOOK_SET,
-        is_iana=False,
-        name="ebook",
-    )
-    FONT_TYPES = MediaCategory(
-        media_type=MediaType.FONT,
-        extensions=_FONT_SET,
-        is_iana=True,
-        name="font",
-    )
-    IMAGE_ANIMATED_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_ANIMATED,
-        extensions=_IMAGE_ANIMATED_SET,
-        is_iana=False,
-        name="animated image",
-    )
-    IMAGE_RAW_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_RAW,
-        extensions=_IMAGE_RAW_SET,
-        is_iana=False,
-        name="raw image",
-    )
-    IMAGE_VECTOR_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE_VECTOR,
-        extensions=_IMAGE_VECTOR_SET,
-        is_iana=False,
-        name="vector image",
-    )
-    IMAGE_RASTER_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
-        extensions=_IMAGE_RASTER_SET,
-        is_iana=False,
-        name="raster image",
-    )
-    IMAGE_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
-        extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
-        is_iana=True,
-        name="image",
-    )
-    INSTALLER_TYPES = MediaCategory(
-        media_type=MediaType.INSTALLER,
-        extensions=_INSTALLER_SET,
-        is_iana=False,
-        name="installer",
-    )
-    IWORK_TYPES = MediaCategory(
-        media_type=MediaType.IWORK,
-        extensions=_IWORK_SET,
-        is_iana=False,
-        name="iwork",
-    )
-    MATERIAL_TYPES = MediaCategory(
-        media_type=MediaType.MATERIAL,
-        extensions=_MATERIAL_SET,
-        is_iana=False,
-        name="material",
-    )
-    MDIPACK_TYPES = MediaCategory(
-        media_type=MediaType.MDIPACK,
-        extensions=_MDIPACK_SET,
-        is_iana=False,
-        name="mdipack",
-    )
-    MODEL_TYPES = MediaCategory(
-        media_type=MediaType.MODEL,
-        extensions=_MODEL_SET,
-        is_iana=True,
-        name="model",
-    )
-    OPEN_DOCUMENT_TYPES = MediaCategory(
-        media_type=MediaType.OPEN_DOCUMENT,
-        extensions=_OPEN_DOCUMENT_SET,
-        is_iana=False,
-        name="open document",
-    )
-    PACKAGE_TYPES = MediaCategory(
-        media_type=MediaType.PACKAGE,
-        extensions=_PACKAGE_SET,
-        is_iana=False,
-        name="package",
-    )
-    PAINT_DOT_NET_TYPES = MediaCategory(
-        media_type=MediaType.PAINT_DOT_NET,
-        extensions=_PAINT_DOT_NET_SET,
-        is_iana=False,
-        name="paint.net",
-    )
-    PDF_TYPES = MediaCategory(
-        media_type=MediaType.PDF,
-        extensions=_PDF_SET | _ADOBE_ILLUSTRATOR_SET,
-        is_iana=False,
-        name="pdf",
-    )
-    PLAINTEXT_TYPES = MediaCategory(
-        media_type=MediaType.PLAINTEXT,
-        extensions=_PLAINTEXT_SET | _CODE_SET,
-        is_iana=False,
-        name="plaintext",
-    )
-    PRESENTATION_TYPES = MediaCategory(
-        media_type=MediaType.PRESENTATION,
-        extensions=_PRESENTATION_SET,
-        is_iana=False,
-        name="presentation",
-    )
-    PROGRAM_TYPES = MediaCategory(
-        media_type=MediaType.PROGRAM,
-        extensions=_PROGRAM_SET,
-        is_iana=False,
-        name="program",
-    )
-    SHADER_TYPES = MediaCategory(
-        media_type=MediaType.SHADER,
-        extensions=_SHADER_SET,
-        is_iana=False,
-        name="shader",
-    )
-    SHORTCUT_TYPES = MediaCategory(
-        media_type=MediaType.SHORTCUT,
-        extensions=_SHORTCUT_SET,
-        is_iana=False,
-        name="shortcut",
-    )
-    SOURCE_ENGINE_TYPES = MediaCategory(
-        media_type=MediaType.SOURCE_ENGINE,
-        extensions=_SOURCE_ENGINE_SET,
-        is_iana=False,
-        name="source engine",
-    )
-    SPREADSHEET_TYPES = MediaCategory(
-        media_type=MediaType.SPREADSHEET,
-        extensions=_SPREADSHEET_SET,
-        is_iana=False,
-        name="spreadsheet",
-    )
-    TEXT_TYPES = MediaCategory(
-        media_type=MediaType.TEXT,
-        extensions=_DOCUMENT_SET | _PLAINTEXT_SET,
-        is_iana=True,
-        name="text",
-    )
-    VIDEO_TYPES = MediaCategory(
-        media_type=MediaType.VIDEO,
-        extensions=_VIDEO_SET,
-        is_iana=True,
-        name="video",
-    )
-    KRITA_TYPES = MediaCategory(
-        media_type=MediaType.IMAGE,
-        extensions=_KRITA_SET,
-        is_iana=False,
-        name="krita",
-    )
-
-    ALL_CATEGORIES = [
-        ADOBE_PHOTOSHOP_TYPES,
-        AFFINITY_PHOTO_TYPES,
-        ARCHIVE_TYPES,
-        AUDIO_MIDI_TYPES,
-        AUDIO_TYPES,
-        BLENDER_TYPES,
-        CLIP_STUDIO_PAINT_TYPES,
-        DATABASE_TYPES,
-        DISK_IMAGE_TYPES,
-        DOCUMENT_TYPES,
-        EBOOK_TYPES,
-        FONT_TYPES,
-        IMAGE_ANIMATED_TYPES,
-        IMAGE_RAW_TYPES,
-        IMAGE_TYPES,
-        IMAGE_VECTOR_TYPES,
-        INSTALLER_TYPES,
-        IWORK_TYPES,
-        MATERIAL_TYPES,
-        MDIPACK_TYPES,
-        MODEL_TYPES,
-        OPEN_DOCUMENT_TYPES,
-        PACKAGE_TYPES,
-        PAINT_DOT_NET_TYPES,
-        PDF_TYPES,
-        PLAINTEXT_TYPES,
-        PRESENTATION_TYPES,
-        PROGRAM_TYPES,
-        CODE_TYPES,
-        SHADER_TYPES,
-        SHORTCUT_TYPES,
-        SOURCE_ENGINE_TYPES,
-        SPREADSHEET_TYPES,
-        TEXT_TYPES,
-        VIDEO_TYPES,
-        KRITA_TYPES,
-    ]
-
-    @staticmethod
-    def get_types(ext: str, mime_fallback: bool = False) -> set[MediaType]:
-        """Return a set of MediaTypes given a file extension.
+    def __init__(self, key: str, types: list[FileType]) -> None:
+        """Initialize the MediaTypeGroup.
 
         Args:
-            ext (str): File extension with a leading "." and in all lowercase.
-            mime_fallback (bool): Flag to guess MIME type if no set matches are made.
+            key (str): A key for the name of this group.
+                Dots are used to separate group levels (e.g. "microsoft.office.word").
+                This key is slugified before being used as an attribute.
+            types (list[FileType]): A list of FileType objects to include in the group.
         """
-        media_types: set[MediaType] = set()
+        self.context_sets: dict[str, set[str]] = {}
+        self.name_aliases: list[str] = []
+        self.key = key
+        self.types: list[FileType] = []
+        self.add_types(types)
 
-        for cat in MediaCategories.ALL_CATEGORIES:
-            if cat.contains(ext, mime_fallback):
-                media_types.add(cat.media_type)
-
-        return media_types
-
-    @staticmethod
-    def is_ext_in_category(ext: str, media_cat: MediaCategory, mime_fallback: bool = False) -> bool:
-        """Check if an extension is a member of a MediaCategory.
+    def add_types(self, types: list[FileType]) -> None:
+        """Add one or more types to the group.
 
         Args:
-            ext (str): File extension with a leading "." and in all lowercase.
-            media_cat (MediaCategory): The MediaCategory to check for extension membership.
-            mime_fallback (bool): Flag to guess MIME type if no set matches are made.
+            types (list[FileType]): A list of FileType objects to add to the group.
         """
-        return media_cat.contains(ext, mime_fallback)
+        for type_ in types:
+            updated_types: set[FileType] = set()
+            for existing_type in self.types:
+                # If there's any overlap between the extensions, it's the same type
+                if not existing_type.exts.isdisjoint(type_.exts):
+                    existing_type.contexts |= type_.contexts
+                    existing_type.exts |= type_.exts
+                    updated_types.add(type_)
+            if type_ not in updated_types:
+                self.types.append(type_)
+
+            contexts_ = [type_.contexts] if isinstance(type_.contexts, str) else type_.contexts
+            for context in contexts_:
+                self.context_sets.setdefault(context, set())
+                for ext in type_.exts:
+                    self.context_sets[context].add(ext)
+
+    def contains(self, ext: str, context: str) -> bool:
+        """Return true if the group contains an extention under a given context, otherwise False.
+
+        Args:
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
+        """
+        equivalent_exts = MediaTypes.equivalent_exts.get(ext) or [ext]
+        return any(e in self.context_sets.get(context, []) for e in equivalent_exts)
+
+
+class MediaTypes(metaclass=SanitizedAttr):
+    """A singleton class that manages registered media types and their relationships."""
+
+    _chained_groups: dict[str, set[str]] = {}
+    _name_to_key_map: dict[str, str] = {}
+    all_groups: list[MediaTypeGroup] = []
+    equivalent_exts: dict[str, set[str]] = {}
+
+    @classmethod
+    def _snapshot(cls) -> dict[str, Any]:
+        """Return a snapshot of the class's attributes. Used in tests."""
+        return {attr: getattr(cls, attr) for attr in dir(cls) if not attr.startswith("__")}
+
+    @classmethod
+    def _restore(cls, attrs: dict[str, Any]) -> None:
+        """Restore the state of the class from a snapshot. Used in tests."""
+        attrs_to_delete: list[str] = []
+        for name in cls.__dict__:
+            if not name.startswith("__"):
+                try:
+                    setattr(cls, name, attrs[name])
+                except KeyError:
+                    attrs_to_delete.append(name)
+
+        for attr in attrs_to_delete:
+            delattr(cls, attr)
+
+    @classmethod
+    def add_name_aliases(cls, group_key: str, names: str | list[str]) -> None:
+        """Adds one or more user-facing names for a MediaTypeGroup.
+
+        For example, "Adobe" and "Adobe Photoshop" would be proper group names.
+
+        Args:
+            group_key (str): The name key associated with a MediaTypeGroup.
+                If a group with this group_key does not exist, it will be created.
+            names (str | list[str]): One or more user-facing names for the group.
+        """
+        group = getattr(MediaTypes, group_key, None)
+        if group is None:
+            cls.register(group_key, [], [])
+            group = getattr(MediaTypes, group_key, None)
+
+        if not isinstance(group, MediaTypeGroup):
+            return
+
+        if isinstance(names, str):
+            names = [names]
+        for name in names:
+            group.name_aliases.append(name)
+            # Map the name and common variants of the name to the group key.
+            name_no_whitespace = name.replace(" ", "").replace("-", "").replace("_", "")
+            name_no_space_lower = name_no_whitespace.lower()
+
+            cls._name_to_key_map[name] = group_key
+            cls._name_to_key_map[name.lower()] = group_key
+            cls._name_to_key_map[name_no_whitespace] = group_key
+            cls._name_to_key_map[name_no_space_lower] = group_key
+
+    @classmethod
+    def chain_group(cls, parent_group: str, child_groups: str | list[str]) -> None:
+        """Chain groups so when a type is added to a child group it's also added to a parent group.
+
+        Args:
+            parent_group (str): The group that will also update whenever a child group is updated.
+                If the group doesn't exist, it will be created.
+            child_groups (str | list[str]): Groups that tell a parent group to update as well.
+                If the group doesn't exist, it will be created.
+        """
+        if isinstance(child_groups, str):
+            child_groups = [child_groups]
+
+        # If the groups don't exist, register it.
+        if getattr(MediaTypes, slugify(parent_group), None) is None:
+            cls.register(parent_group, [], [])
+        for child_group in child_groups:
+            if getattr(MediaTypes, slugify(child_group), None) is None:
+                cls.register(child_group, [], [])
+        cls._chained_groups.setdefault(parent_group, set())
+
+        for c_group in child_groups:
+            cls._chained_groups[parent_group].add(c_group)
+
+    @classmethod
+    def find(cls, ext: str, context: str) -> list[MediaTypeGroup]:
+        """Return a list of MediaTypeGroups this extention is found in with the given context.
+
+        Args:
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
+        """
+        groups: list[MediaTypeGroup] = []
+        for group in cls.all_groups:
+            for type_ in group.types:
+                equivalent_exts = cls.equivalent_exts.get(ext) or [ext]
+                for e in equivalent_exts:
+                    if e in type_.exts and context in type_.contexts:
+                        groups.append(group)
+                        break
+
+        return groups
+
+    @classmethod
+    def contains(cls, group_key: str, ext: str, context: str) -> bool:
+        """A passthrough method for using `MediaTypeGroup.contains()` given a group name.
+
+        If the group does not exist, this raises an `AttributeError`.
+
+        Args:
+            group_key (str): The name key or attribute name for the MediaTypeGroup.
+            ext (str): The file extention to check for in the group.
+            context (str): The context to check for group membership under.
+        """
+        group: MediaTypeGroup | None = getattr(MediaTypes, slugify(group_key), None)
+        if not group:
+            raise AttributeError(f"'{slugify(group_key)} is not registered with MediaTypes.")
+        return group.contains(ext, context)
+
+    @classmethod
+    def get_group_key_from_name(
+        cls, name: str, case_sensitive: bool = True, ignore_whitespace: bool = False
+    ) -> str | None:
+        """Attempt to return a group key given a proper name for the group.
+
+        Args:
+            name (str): The user-facing name of a group, or name key.
+            case_sensitive (bool): Should the name be treated with case sensitivity?
+            ignore_whitespace (bool): Should whitespace in the name be ignored?
+        """
+        if not case_sensitive:
+            name = name.lower()
+        if ignore_whitespace:
+            name = name.replace(" ", "").replace("-", "").replace("_", "")
+        return cls._name_to_key_map.get(name)
+
+    @classmethod
+    def register(cls, group_key: str, ext: str | list[str], contexts: str | list[str]) -> None:
+        """Create and register or update a existing MediaTypeGroup inside MediaTypes.
+
+        Args:
+            group_key (str): group_key (str): The name key of the MediaTypeGroup.
+            ext (str | list[str]): One or more file extensions, including leading dot.
+                Passing a list of extensions will treat them as equivalent/interchangeable.
+                E.g. [".jpg", ".jpeg", ".jfif"] would be treated as the same extention.
+            contexts (list[str] | str): One or more contexts to register the extension(s) under.
+        """
+        # Sanitize and homogenize arguments
+        attr_name = slugify(group_key)
+
+        if attr_name in _FORBIDDEN_NAMES:
+            raise AttributeError(f"{attr_name}' collides with an internal attribute.")
+
+        if isinstance(ext, str):
+            ext = [ext]
+        if isinstance(contexts, str):
+            contexts = [contexts]
+
+        # Check for existing group or create new one
+        group = getattr(MediaTypes, attr_name, None)
+        assert isinstance(group, MediaTypeGroup) or group is None
+
+        if group is None:
+            group = MediaTypeGroup(group_key, [])
+            group.add_types([FileType(ext, contexts)])
+            setattr(MediaTypes, attr_name, group)
+            cls.all_groups.append(group)
+        else:
+            group.add_types([FileType(ext, contexts)])
+
+        # Store any file extention equivalents
+        if len(ext) > 1:
+            for e in ext:
+                cls.equivalent_exts.setdefault(e, set(ext))
+
+        # Create any chained groups from dot notations (e.g. "adobe.photoshop")
+        name_parts = group_key.split(".")
+        for i in range(1, len(name_parts)):
+            parent = ".".join(name_parts[:i])
+            child = ".".join(name_parts[: i + 1])
+            cls.chain_group(parent, [child])
+
+        # Update any chained groups
+        chained_groups: set[str] = set()
+        for k, v in cls._chained_groups.items():
+            if group_key in v:
+                chained_groups.add(k)
+
+        if chained_groups:
+            for c_name in chained_groups:
+                cls.register(c_name, ext, contexts)
+
+    @classmethod
+    def get_equivalent_exts(cls, ext: str) -> set[str]:
+        """Return a set of equivalent file extensions given an extention, including itself.
+
+        Args:
+            ext (str): The file extension, including a leading dot (if there is one).
+        """
+        return cls.equivalent_exts.get(ext, {ext})
+
+
+_FORBIDDEN_NAMES = set(dir(MediaTypes))

@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
-from tagstudio.core.enums import Theme
+from tagstudio.core.enums import ThemePalette
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
@@ -56,9 +56,9 @@ class TagColorManager(QWidget):
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
         panel_bg_color = (
-            Theme.COLOR_BG_DARK.value
+            ThemePalette.COLOR_BG_DARK.value
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value
+            else ThemePalette.COLOR_BG_LIGHT.value
         )
 
         self.title_label = QLabel()

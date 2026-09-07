@@ -4,7 +4,7 @@
 
 import platform
 from datetime import datetime
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import override
 
@@ -12,7 +12,7 @@ import structlog
 import toml
 from pydantic import BaseModel, Field
 
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
 
 logger = structlog.get_logger(__name__)
 
@@ -30,13 +30,6 @@ DEFAULT_CACHED_THUMB_QUALITY = 80  # WebP Compression Quality
 MIN_CACHED_THUMB_RES = 32  # Pixels
 MAX_CACHED_THUMB_RES = 1024  # Pixels
 DEFAULT_CACHED_THUMB_RES = 256  # Pixels
-
-
-class Theme(IntEnum):
-    DARK = 0
-    LIGHT = 1
-    SYSTEM = 2
-    DEFAULT = SYSTEM
 
 
 class Splash(StrEnum):

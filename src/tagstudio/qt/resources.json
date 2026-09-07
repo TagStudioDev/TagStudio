@@ -163,7 +163,7 @@
         "mode": "pil",
         "path": "qt/images/file_icons/spreadsheet.png"
     },
-    "text": {
+    "plaintext": {
         "mode": "pil",
         "path": "qt/images/file_icons/text.png"
     },

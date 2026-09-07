@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportPrivateUsage=false
+# pyright: reportUnusedFunction=false
+
 
 import sys
 from collections.abc import Callable, Generator
@@ -13,6 +16,7 @@ from PySide6.QtWidgets import QScrollArea
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.fields import TextField
+from tagstudio.core.media_types import MediaTypes
 
 CWD = Path(__file__).parent
 # this needs to be above `src` imports
@@ -148,9 +152,23 @@ def entry_full(library: Library):
 
 
 @pytest.fixture(autouse=True)
-def _init_qtbot(qtbot: QtBot):  # pyright: ignore[reportUnusedFunction]
+def _init_qtbot(qtbot: QtBot):
     """Ensures that a QtBot is initialized for all subsequent tests, regardless of order."""
     return qtbot
+
+
+@pytest.fixture(autouse=True)
+def _reset_media_types():
+    """Snapshot the MediaTypes state before each test, then restore it after."""
+    pre_snapshop = MediaTypes._snapshot()
+
+    yield
+
+    post_snapshop = MediaTypes._snapshot()
+
+    if pre_snapshop != post_snapshop:
+        MediaTypes._restore(pre_snapshop)
+        assert pre_snapshop == MediaTypes._snapshot(), "The MediaTypes state was not restored!"
 
 
 @pytest.fixture
