@@ -19,13 +19,11 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
     ENDB: bytes = b"ENDB"
 
     blendfile: BinaryIO | gzip.GzipFile | None = None
-    raw_file: BinaryIO | None = None
+    raw_file: BinaryIO | None
 
-    try:
-        raw_file = open(path, "rb")
-
+    with open(path, "rb") as raw_file:
         # Legacy header = 12 bytes
-        # Blender 5+   = 17 bytes
+        # Blender 5.0+   = 17 bytes
         head: bytes = raw_file.read(17)
 
         # GZIP-compressed blend file.
@@ -33,8 +31,8 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             raw_file.close()
             raw_file = None
 
-            blendfile = gzip.open(path, "rb")
-            head = blendfile.read(17)
+            with gzip.open(path, "rb") as blendfile:
+                head = blendfile.read(17)
         else:
             blendfile = raw_file
 
@@ -192,7 +190,7 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             x: int
             y: int
             x, y = struct.unpack(int_endian_pair, dimensions)
-            
+
         except struct.error:
             return None, 0, 0
 
@@ -213,13 +211,6 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             return None, 0, 0
 
         return image_buffer, x, y
-
-    finally:
-        if blendfile is not None:
-            blendfile.close()
-
-        if raw_file is not None and raw_file is not blendfile:
-            raw_file.close()
 
 
 def blend_thumb(file_in: Path | str) -> Image.Image | None:
