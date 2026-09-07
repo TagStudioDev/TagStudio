@@ -22,18 +22,13 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
     raw_file: BinaryIO | None = None
 
     try:
-        # --------------------------------------------------------------
-        # Open file.
-        # --------------------------------------------------------------
         raw_file = open(path, "rb")
 
         # Legacy header = 12 bytes
         # Blender 5+   = 17 bytes
         head: bytes = raw_file.read(17)
 
-        # --------------------------------------------------------------
         # GZIP-compressed blend file.
-        # --------------------------------------------------------------
         if head[:2] == b"\x1f\x8b":
             raw_file.close()
             raw_file = None
@@ -81,7 +76,7 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
                 blendfile.seek(header_size - 17, os.SEEK_CUR)
 
             # ----------------------------------------------------------
-            # Blender 5+ BHead
+            # Blender 5.0+ BHead
             #
             # 0-3    code
             # 4-7    SDNA index (uint32)
@@ -134,9 +129,7 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             # We read 17 bytes above, but the old header is only 12.
             blendfile.seek(12, os.SEEK_SET)
 
-        # --------------------------------------------------------------
         # Walk the BHeads until we find TEST.
-        # --------------------------------------------------------------
         while True:
             bhead: bytes = blendfile.read(sizeof_bhead)
 
@@ -150,16 +143,12 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             code: bytes = bhead[:4]
 
             # ----------------------------------------------------------
-            # Blender 5+
+            # Blender 5.0+
             #
             # The block size is at offset 16 and is uint64.
             # ----------------------------------------------------------
             if large_bhead:
-                length: int = struct.unpack_from(
-                    "<Q",
-                    bhead,
-                    16,
-                )[0]
+                length: int = struct.unpack_from("<Q", bhead, 16)[0]
 
             # ----------------------------------------------------------
             # Legacy Blender
@@ -171,16 +160,9 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             # count  = ...
             # ----------------------------------------------------------
             else:
-                length = struct.unpack_from(
-                    int_endian + "i",
-                    bhead,
-                    4,
-                )[0]
+                length = struct.unpack_from(int_endian + "i", bhead, 4)[0]
 
-            # ----------------------------------------------------------
-            # REND contains render information before TEST.
-            # Skip its payload.
-            # ----------------------------------------------------------
+            # REND contains render information before TEST, skip its payload.
             if code == REND:
                 if length < 0:
                     return None, 0, 0
@@ -191,9 +173,6 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
             # First non-REND block.
             break
 
-        # --------------------------------------------------------------
-        # We need the TEST block.
-        # --------------------------------------------------------------
         if code != TEST:
             return None, 0, 0
 
@@ -212,10 +191,8 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
         try:
             x: int
             y: int
-            x, y = struct.unpack(
-                int_endian_pair,
-                dimensions,
-            )
+            x, y = struct.unpack(int_endian_pair, dimensions)
+            
         except struct.error:
             return None, 0, 0
 
@@ -230,9 +207,6 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
         if image_length != expected_length:
             return None, 0, 0
 
-        # --------------------------------------------------------------
-        # Read RGBA thumbnail.
-        # --------------------------------------------------------------
         image_buffer: bytes = blendfile.read(image_length)
 
         if len(image_buffer) != image_length:
@@ -258,8 +232,4 @@ def blend_thumb(file_in: Path | str) -> Image.Image | None:
         buf,
     )
     image = ImageOps.flip(image)
-    # Upscale Image so it looks better at higher resolutions.
-    width, height = image.size
-    ratio = height / width
-    image = image.resize((512, round(512 * ratio)), Image.Resampling.BICUBIC)
     return image
