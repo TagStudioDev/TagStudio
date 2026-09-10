@@ -24,6 +24,7 @@ from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeFiel
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
 from tagstudio.core.library.ignore import migrate_ext_list
+from tagstudio.core.utils.normalization import norm_path
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 
@@ -101,6 +102,7 @@ class DBMigrations:
             MigrationTo202,  # changes: tag_parents
             MigrationTo300,  # changes: deletes folders
             MigrationTo400,  # changes: add category_exclusions
+            MigrationTo500,  # changes: entries
         ]
         with Session(self.engine) as session:
             for migration in migrations:
@@ -615,4 +617,53 @@ class MigrationTo400(DBMigration):
         )
         """)
         )
+        session.flush()
+
+
+class MigrationTo500(DBMigration):
+    version = 500
+
+    @override
+    @classmethod
+    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+        """Migrate DB to DB_VERSION 500."""
+        # Drop date columns that were string based to add new float ones, plus int file_size
+        logger.info(fmt_log("Dropping old entry columns..."))
+        session.execute(text("ALTER TABLE entries DROP COLUMN date_created"))
+        session.execute(text("ALTER TABLE entries DROP COLUMN date_modified"))
+        session.flush()
+        logger.info(fmt_log("Adding new entry columns..."))
+        session.execute(text("ALTER TABLE entries ADD COLUMN date_created REAL"))
+        session.execute(text("ALTER TABLE entries ADD COLUMN date_modified REAL"))
+        session.execute(text("ALTER TABLE entries ADD COLUMN file_size INTEGER"))
+        session.flush()
+
+        # Normalize entry paths to NFD
+        logger.info(fmt_log("Normalizing file entry paths..."))
+        rows = session.execute(text("SELECT id, path FROM entries")).all()
+        entries_by_key: dict[Path, list[tuple[int, str]]] = {}
+        for entry_id, path in rows:
+            nfd_path = norm_path(Path(path), case_sensitive=True)
+            entries_by_key.setdefault(nfd_path, []).append((entry_id, path))
+
+        for nfd_path, group in entries_by_key.items():
+            if len(group) > 1:
+                continue
+
+            entry_id, path = group[0]
+            if path == nfd_path.as_posix():
+                continue  # Already normalized
+
+            session.execute(
+                text(
+                    "UPDATE entries SET path = :path, filename = :filename, "
+                    "suffix = :suffix WHERE id = :id"
+                ),
+                {
+                    "path": nfd_path.as_posix(),
+                    "filename": nfd_path.name,
+                    "suffix": nfd_path.suffix.lstrip(".").lower(),
+                    "id": entry_id,
+                },
+            )
         session.flush()
