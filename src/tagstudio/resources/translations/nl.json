@@ -96,7 +96,6 @@
     "json_migration.heading.shorthands": "Afkortingen:",
     "json_migration.migration_complete": "Migratie Afgerond!",
     "json_migration.title": "Migratie Formaat Opslaan: \"{path}\"",
-    "library.refresh.scanning_preparing": "Mappen scannen voor nieuwe bestanden...\nVoorbereiden...",
     "library_info.stats.fields": "Velden:",
     "library_info.stats.tags": "Labels:",
     "menu.delete_selected_files_ambiguous": "Bestand(en) verplaatsen naar {trash_term}",

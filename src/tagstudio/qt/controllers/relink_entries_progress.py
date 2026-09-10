@@ -4,7 +4,7 @@
 
 from PySide6.QtCore import QObject, Signal
 
-from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
+from tagstudio.core.library.sync import LibrarySyncEngine
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.progress_bar import ProgressWidget
 
@@ -12,7 +12,7 @@ from tagstudio.qt.controllers.progress_bar import ProgressWidget
 class RelinkUnlinkedEntriesProgress(QObject):
     done = Signal()
 
-    def __init__(self, tracker: UnlinkedRegistry):
+    def __init__(self, tracker: LibrarySyncEngine):
         super().__init__()
         self.tracker = tracker
 
@@ -22,7 +22,7 @@ class RelinkUnlinkedEntriesProgress(QObject):
                 "entries.unlinked.relink.attempting",
                 index=x,
                 unlinked_count=self.tracker.unlinked_entries_count,
-                fixed_count=self.tracker.files_fixed_count,
+                fixed_count=self.tracker.manual_relink_count,
             )
 
         pw = ProgressWidget(
@@ -32,4 +32,6 @@ class RelinkUnlinkedEntriesProgress(QObject):
             maximum=self.tracker.unlinked_entries_count,
         )
         pw.setWindowTitle(Translations["entries.unlinked.relink.title"])
-        pw.from_iterable_function(self.tracker.fix_unlinked_entries, displayed_text, self.done.emit)
+        pw.from_iterable_function(
+            self.tracker.relink_unlinked_entries, displayed_text, self.done.emit
+        )
