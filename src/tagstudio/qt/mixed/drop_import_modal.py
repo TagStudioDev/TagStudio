@@ -178,7 +178,7 @@ class DropImportModal(QWidget):
         pw.from_iterable_function(
             self.copy_files,
             displayed_text,
-            self.driver.add_new_files_callback,
+            self.driver.sync_library_callback,
             self.deleteLater,
         )
 

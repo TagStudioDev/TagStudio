@@ -134,7 +134,7 @@ def test_title_update(
     qt_driver.main_window.menu_bar.ignore_modal_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.save_library_backup_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.close_library_action = QAction(menu_bar)
-    qt_driver.main_window.menu_bar.refresh_dir_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.sync_library_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.tag_manager_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.color_manager_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.new_tag_action = QAction(menu_bar)

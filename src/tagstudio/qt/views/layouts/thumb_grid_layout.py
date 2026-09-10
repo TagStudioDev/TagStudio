@@ -57,8 +57,6 @@ class ThumbGridLayout(QLayout):
         self._scroll_to = entry_id
 
     def set_entries(self, entry_ids: list[int]):
-        self.scroll_area.verticalScrollBar().setValue(0)
-
         self._entry_ids = entry_ids
         self._entries.clear()
         self._tag_entries.clear()
@@ -211,9 +209,10 @@ class ThumbGridLayout(QLayout):
                 pass
             self._scroll_to = None
 
-        visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
-        offset = int(offset / height_offset)
-        start = offset * per_row
+        row_offset = offset
+        visible_rows = math.ceil((view_height + (row_offset % height_offset)) / height_offset)
+        row_offset = int(row_offset / height_offset)
+        start = row_offset * per_row
         end = start + (visible_rows * per_row)
 
         first_visible = self._entry_ids[start] if 0 <= start < len(self._entry_ids) else None
