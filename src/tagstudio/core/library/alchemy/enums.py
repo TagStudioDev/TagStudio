@@ -72,7 +72,10 @@ class ItemType(enum.Enum):
 
 class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
+    DATE_CREATED = "file.date_created"
+    DATE_MODIFIED = "file.date_modified"
     FILE_NAME = "generic.filename"
+    FILE_SIZE = "file.size"
     PATH = "file.path"
     RANDOM = "sorting.mode.random"
 

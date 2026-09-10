@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 from copy import deepcopy
@@ -14,7 +14,7 @@ from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
-PATH_GLOB_FLAGS = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE
+PATH_GLOB_FLAGS: int = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE
 
 
 GLOBAL_IGNORE = [

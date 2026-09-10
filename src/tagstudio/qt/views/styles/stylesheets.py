@@ -19,6 +19,9 @@ from tagstudio.qt.views.styles.palette import (
 # TODO: There's plenty of good opportunities here to consolidate similar styles.
 # Work should be done to more closely use Qt's theming systems rather than override them.
 
+# Shared with RoundedProgressBar.set_corner_radius() so both use the exact same corner arc.
+BANNER_CORNER_RADIUS = 6
+
 
 def add_button_style() -> str:
     """Style used for tag-like "Add" buttons [+]."""
@@ -555,6 +558,142 @@ def preview_warning_style() -> str:
         border-radius: 6px;
         }}
     """
+
+
+def _is_dark_theme() -> bool:
+    return QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+
+
+def get_contrast_text_color(background_color: QColor) -> QColor:
+    """Return plain black or white, whichever reads better against `background_color`."""
+    return QColor(0, 0, 0) if background_color.lightness() > 120 else QColor(255, 255, 255)
+
+
+def _banner_button_hover_style(object_name: str) -> str:
+    """Shared hover/pressed/focus feedback for the banner's accent-tinted buttons."""
+    hover = Palette.accent().darker(140)
+    pressed = Palette.accent().lighter(120)
+    return f"""
+    QPushButton#{object_name}::hover {{
+        background-color: rgba{hover.toTuple()};
+    }}
+    QPushButton#{object_name}::pressed {{
+        background-color: rgba{pressed.toTuple()};
+    }}
+    QPushButton#{object_name}::focus {{
+        outline: none;
+    }}
+    """
+
+
+def banner_close_button_style() -> str:
+    """Style for the banner's close ("X") button in accent-colored notice modes."""
+    accent = Palette.accent().darker(180)
+    text_color = get_contrast_text_color(accent)
+
+    return f"""
+    QPushButton#bannerCloseButton {{
+        font-size: 24pt;
+        padding-bottom: 4px;
+        background: transparent;
+        color: rgba{text_color.toTuple()};
+        border: none;
+        border-radius: 3px;
+    }}
+    {_banner_button_hover_style("bannerCloseButton")}
+    """
+
+
+def banner_action_button_style() -> str:
+    """Style for the banner's action button (Refresh / Review / Open Settings)."""
+    accent = Palette.accent().darker(160)
+    text_color = get_contrast_text_color(accent)
+
+    return f"""
+    QPushButton#bannerActionButton {{
+        background-color: rgba{accent.toTuple()};
+        color: rgba{text_color.toTuple()};
+        border: none;
+        border-radius: 3px;
+        padding: 4px 8px;
+        outline: none;
+    }}
+    {_banner_button_hover_style("bannerActionButton")}
+    """
+
+
+def banner_notice_bg_color() -> QColor:
+    """Fill color for the banner card in "notice" mode."""
+    color = QColor(Palette.accent())
+    color.setAlpha(235)
+    return color
+
+
+def banner_notice_style() -> str:
+    """Label/button rules for the banner's accent-colored "notice" mode."""
+    accent = Palette.accent()
+    text_color = get_contrast_text_color(accent)
+
+    return f"""
+    #banner QLabel {{ color: rgba{text_color.toTuple()}; background: transparent; }}
+    {banner_close_button_style()}
+    {banner_action_button_style()}
+    """
+
+
+def banner_close_button_progress_style() -> str:
+    """Close button style for the progress banner mode."""
+    is_dark = _is_dark_theme()
+    text_color = QColor(255, 255, 255) if is_dark else QColor(0, 0, 0)
+    hover = "rgba(255, 255, 255, 40)" if is_dark else "rgba(0, 0, 0, 40)"
+    pressed = "rgba(255, 255, 255, 70)" if is_dark else "rgba(0, 0, 0, 70)"
+
+    return f"""
+    QPushButton#bannerCloseButton {{
+        font-size: 24pt;
+        padding-bottom: 4px;
+        background: transparent;
+        color: rgba{text_color.toTuple()};
+        border: none;
+        border-radius: 3px;
+    }}
+    QPushButton#bannerCloseButton::hover {{
+        background-color: {hover};
+    }}
+    QPushButton#bannerCloseButton::pressed {{
+        background-color: {pressed};
+    }}
+    QPushButton#bannerCloseButton::focus {{
+        outline: none;
+    }}
+    """
+
+
+def banner_progress_bg_color() -> QColor:
+    """Fill color for the banner card in "progress"/"fleeting_notice" mode."""
+    is_dark = _is_dark_theme()
+    return QColor(
+        ThemePalette.COLOR_BG_DARK.value if is_dark else ThemePalette.COLOR_BG_LIGHT.value
+    )
+
+
+def banner_progress_style() -> str:
+    """Label/button rules for the banner's neutral "progress" mode."""
+    is_dark = _is_dark_theme()
+    text_str = "white" if is_dark else "black"
+
+    return f"""
+    #banner QLabel {{ color: {text_str}; background: transparent; }}
+    {banner_close_button_progress_style()}
+    """
+
+
+def banner_progress_chunk_color() -> QColor:
+    """Fill color for the banner's custom-painted progress bar chunk."""
+    is_dark = _is_dark_theme()
+    chunk = QColor(Palette.accent().lighter(130) if is_dark else Palette.accent().darker(115))
+    chunk.setAlpha(235)
+    return chunk
 
 
 def header(string: str, level: int, color: str | None = None) -> str:

@@ -9,6 +9,8 @@ import structlog
 from sqlalchemy import Dialect, String, TypeDecorator
 from sqlalchemy.orm import DeclarativeBase
 
+from tagstudio.core.utils.normalization import norm_path
+
 logger = structlog.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class PathType(TypeDecorator):
     @override
     def process_bind_param(self, value: Path | None, dialect: Dialect):
         if value is not None:
-            return Path(value).as_posix()
+            return norm_path(Path(value), case_sensitive=True).as_posix()
         return None
 
     @override
