@@ -1120,6 +1120,12 @@ class QtDriver(DriverMixin, QObject):
             if engine.cancelled:
                 return
             searched_count, found_count = progress
+            if searched_count < 0:
+                # Scan finished, duplicate entry merging/relinking is running before the next yield
+                self.main_window.banner.show_progress(
+                    Translations["library.sync.repairing"], phase="repairing"
+                )
+                return
             self.main_window.banner.show_progress(
                 Translations.format(
                     "library.sync.scanning",
