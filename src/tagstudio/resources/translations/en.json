@@ -265,6 +265,7 @@
     "library.sync.relinked_banner.singular": "{count} File Automatically Relinked",
     "library.sync.relinked_suffix": "({count} Automatically Relinked)",
     "library.sync.remaining_unlinked_suffix": "({count} Still Unlinked)",
+    "library.sync.repairing": "Repairing Entries…",
     "library.sync.scanning": "Discovering Files… ({found_count} New Out of {searched_count})",
     "library.sync.unlinked_banner.plural": "{count} Unlinked Entries Found",
     "library.sync.unlinked_banner.singular": "{count} Unlinked Entry Found",
