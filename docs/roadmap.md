@@ -96,7 +96,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Delete Old Backups **[[v9.5.4](changelog.md#954-september-1st-2025)]**
     - [x] Delete Legacy JSON File **[[v9.5.4](changelog.md#954-september-1st-2025)]**
 - [x] Translations
-- [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+- [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Improved Tag Autocomplete :material-chevron-triple-up:{ .priority-high title="High Priority" }
     - [ ] Tags appear as widgets in search bar _(similar to new tag search/create bar)_ :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] Unified Media Player
@@ -136,7 +136,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Theme
     - [x] Thumbnail Generation **[[v9.5.4](changelog.md#954-september-1st-2025)]**
 - [x] Configurable Page Size
-- [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+- [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Stored in `.TagStudio` folder :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [ ] Toggle File Extension Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 - [ ] Toggle Duration Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
@@ -149,13 +149,13 @@ A detailed specification written for the TagStudio tag and/or library format. In
 
 - [x] Per-Library Tags
 - [ ] Global Tags :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.8.x]**
-- [ ] Multiple Root Directories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
-    - [ ] Ability to store TagStudio data folder separate from library content folder(s) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
-- [ ] Automatic Entry Relinking :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
-    - [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Detect Deletions :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Performant :material-chevron-triple-up:{ .priority-high title="High Priority" }
+- [ ] Multiple Root Directories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
+    - [ ] Ability to store TagStudio data folder separate from library content folder(s) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
+- [x] Automatic Entry Relinking :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+    - [x] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    - [x] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    - [ ] Some way to safely handle unlinked entries presumed to be from deleted files automatically (deleted after X days?) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    - [x] Performant :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [ ] Background File Scanning :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] Thumbnail Caching **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [ ] Audio Waveform Caching :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
@@ -166,7 +166,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
 File or file-like [entries](entries.md) stored in the library.
 
 - [x] File Entries **[v1.0.0]**
-- [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.6.x]**
+- [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.8.x]**
 - [x] Fields
     - [x] Text Lines
     - [x] Text Boxes
@@ -267,7 +267,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 Sharable TagStudio library data in the form of data packs (tags, colors, etc.) or other formats.
 Packs are intended as an easy way to import and export specific data between libraries and users, while export-only formats are intended to be imported by other programs.
 
-- [ ] Color Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+- [ ] Color Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Importable
     - [ ] Exportable
     - [x] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
