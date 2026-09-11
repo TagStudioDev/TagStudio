@@ -154,99 +154,6 @@ def test_sync_duplicate_case_collision_merged(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sync_unlinked_entries(library: Library):
-    """`relink_unlinked_entries()` must relink an entry to its one matching, unclaimed file."""
-    library_dir = unwrap(library.library_dir)
-    engine = LibrarySyncEngine(library=library)
-
-    (library_dir / "sub").mkdir()
-    (library_dir / "sub" / "found.txt").touch()
-    library.add_entries([Entry(path=Path("found.txt"), fields=[])])
-    entry_id = library.get_entry_id_from_path(Path("found.txt"))
-    assert entry_id >= 0
-    # Skip sync_dir() to avoid a scan, and manually create unlinked entries to test
-    engine.unlinked_entries = [unwrap(library.get_entry_full(entry_id))]
-
-    list(engine.relink_unlinked_entries())
-    assert engine.manual_relink_count == 1
-    assert engine.unlinked_entries == []
-    assert library.get_entry_id_from_path(Path("sub/found.txt")) == entry_id
-
-
-@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sync_relink_ignores_files_already_linked_elsewhere(library: Library):
-    """`find_relink_candidates()` must not offer a file linked elsewhere at a different path."""
-    library_dir = unwrap(library.library_dir)
-    engine = LibrarySyncEngine(library=library)
-
-    (library_dir / "kept").mkdir()
-    (library_dir / "kept" / "target.txt").touch()
-    list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    list(engine.save_new_entries())
-    kept_id = library.get_entry_id_from_path(Path("kept/target.txt"))
-    assert kept_id >= 0
-
-    # A different, unrelated entry that happens to share a filename with the kept file above
-    library.add_entries([Entry(path=Path("old/target.txt"), fields=[])])
-    orphan_id = library.get_entry_id_from_path(Path("old/target.txt"))
-    # Skip sync_dir() to avoid a scan, and manually create unlinked entries to test
-    engine.unlinked_entries = [unwrap(library.get_entry_full(orphan_id))]
-
-    list(engine.relink_unlinked_entries())
-    assert engine.manual_relink_count == 0
-    assert len(engine.unlinked_entries) == 1
-    # The kept entry must be untouched, no merge should have occurred
-    assert library.get_entry_id_from_path(Path("kept/target.txt")) == kept_id
-
-
-@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sync_relink_merges_nfc_nfd_duplicate(library: Library):
-    """`relink_unlinked_entries()` must merge a duplicate entry differing only by Unicode form.
-
-    PathType always normalizes to NFD, so this test uses raw SQL to simulate legacy data
-    from before that rule existed.
-    """
-    library_dir = unwrap(library.library_dir)
-    engine = LibrarySyncEngine(library=library)
-
-    nfc_name = unicodedata.normalize("NFC", "SKÅL.txt")
-    nfd_name = unicodedata.normalize("NFD", "SKÅL.txt")
-    assert nfc_name != nfd_name
-
-    # The real file lands in NFD form, as most filesystems store it regardless of input form
-    (library_dir / nfd_name).touch()
-    entry_a_id, entry_b_id = library.add_entries(
-        [
-            Entry(path=Path(nfd_name), fields=[]),
-            Entry(path=Path("placeholder.txt"), fields=[]),
-        ]
-    )
-    with Session(library.engine) as session:
-        session.execute(
-            text("UPDATE entries SET path = :path WHERE id = :id"),
-            {"path": nfc_name, "id": entry_b_id},
-        )
-        session.commit()
-    library.path_cache = None  # Force a rebuild to pick up the raw SQL change
-
-    library.get_or_build_path_cache()
-    assert library.duplicate_path_entry_ids is not None
-    assert len(library.duplicate_path_entry_ids) == 1
-    dupe_id = library.duplicate_path_entry_ids[0]
-    kept_id = entry_b_id if dupe_id == entry_a_id else entry_a_id
-    # Skip sync_dir() to isolate manual relink
-    engine.unlinked_entries = [unwrap(library.get_entry_full(dupe_id))]
-
-    entries_before = library.entries_count
-    list(engine.relink_unlinked_entries())
-    assert engine.manual_relink_count == 1
-    assert dupe_id not in {e.id for e in engine.unlinked_entries}
-    # A merge deletes the duplicate outright, rather than just reassigning its path
-    assert library.entries_count == entries_before - 1
-    assert unwrap(library.get_entry_full(kept_id)).id == kept_id
-
-
-@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_auto_relink_merges_nfc_nfd_duplicate(library: Library):
     """A duplicate entry differing only by Unicode form must be merged automatically.
 
@@ -292,8 +199,8 @@ def test_sync_auto_relink_merges_nfc_nfd_duplicate(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sync_case_sensitivity_aware_relink(library: Library):
-    """`find_relink_candidates()` must respect the library's case-sensitivity setting."""
+def test_sync_auto_relink_respects_case_sensitivity(library: Library):
+    """The filename-only fallback pass must respect the library's case-sensitivity setting."""
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
 
@@ -301,15 +208,16 @@ def test_sync_case_sensitivity_aware_relink(library: Library):
     (library_dir / "Other" / "name.txt").touch()
     library.add_entries([Entry(path=Path("Folder/Name.txt"), fields=[])])
 
-    list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    unlinked_entry = next(e for e in engine.unlinked_entries if e.path == Path("Folder/Name.txt"))
-
     library.is_case_sensitive_fs = True
-    assert engine.find_relink_candidates(unlinked_entry) == []
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    assert engine.relinked_entries_count == 0
+    assert Path("Folder/Name.txt") in {e.path for e in engine.unlinked_entries}
 
     library.is_case_sensitive_fs = False
-    engine._filename_to_path_map = None  # Rebuild the index with the new case sensitivity
-    assert engine.find_relink_candidates(unlinked_entry) == [Path("Other/name.txt")]
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    assert engine.relinked_entries_count == 1
+    assert engine.relinked_entries[0].path == Path("Folder/Name.txt")
+    assert library.get_entry_id_from_path(Path("Other/name.txt")) >= 0
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
