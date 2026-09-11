@@ -60,7 +60,6 @@
     "entries.unlinked.relink.manual": "sina o pana e ijo lon tawa ijo (&M)",
     "entries.unlinked.remove": "o weka e ijo pi ijo lon ala",
     "entries.unlinked.remove_alt": "o weka e ijo pi ijo lon ala (&V)",
-    "entries.unlinked.scanning": "mi o alasa e ijo pi ijo lon ala...",
     "entries.unlinked.title": "o pona e ijo pi ijo lon ala",
     "entries.unlinked.unlinked_count": "ijo pi ijo lon ala: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

@@ -65,7 +65,6 @@
     "entries.unlinked.relink.manual": "&Reenlace manual",
     "entries.unlinked.remove": "Eliminar Entradas No Vinculadas",
     "entries.unlinked.remove_alt": "Quit&ar entradas desvinculadas",
-    "entries.unlinked.scanning": "Buscando entradas no enlazadas en la biblioteca...",
     "entries.unlinked.title": "Corregir entradas no vinculadas",
     "entries.unlinked.unlinked_count": "Entradas no vinculadas: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

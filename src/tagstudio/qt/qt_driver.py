@@ -1166,6 +1166,9 @@ class QtDriver(DriverMixin, QObject):
         self.lib.unlinked_entries_count = unlinked_count
         if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
             self.unlinked_modal.update_unlinked_count()
+            self.unlinked_modal.remove_modal.refresh_list()
+        if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
+            self.library_info_window.update_cleanup()
 
         if self.sync_engine.cancelled:
             return

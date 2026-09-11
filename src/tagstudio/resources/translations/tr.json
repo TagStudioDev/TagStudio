@@ -49,7 +49,6 @@
     "entries.tags": "Etiketler",
     "entries.unlinked.description": "Kütüphanenizdeki her bir kayıt, dizinlerinizden bir tane dosya ile eşleştirilmektedir. Eğer bir kayıta bağlı dosya TagStudio dışında taşınır veya silinirse, o dosya artık kopmuş olarak sayılır.",
     "entries.unlinked.relink.manual": "&Manuel Yeniden Eşleştirme",
-    "entries.unlinked.scanning": "Kütüphane, Kopmuş Kayıtlar için Taranıyor...",
     "entries.unlinked.title": "Kopmuş Kayıtları Düzelt",
     "entries.unlinked.unlinked_count": "Kopmuş Kayıtlar: {count}",
     "field.add": "Ek Bilgi Ekle",

@@ -66,7 +66,6 @@
     "entries.unlinked.relink.manual": "Új&ra összekapcsolás kézileg",
     "entries.unlinked.remove": "Kapcsolat nélküli elemek eltávolítása",
     "entries.unlinked.remove_alt": "&Kapcsolat nélküli elemek eltávolítása",
-    "entries.unlinked.scanning": "Kapcsolat nélküli elemek keresése a könyvtárban…",
     "entries.unlinked.title": "Kapcsolat nélküli elemek javítása",
     "entries.unlinked.unlinked_count": "Kapcsolat nélküli elemek: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

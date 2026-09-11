@@ -61,7 +61,6 @@
     "entries.unlinked.relink.manual": "Länka om manuellt",
     "entries.unlinked.remove": "Ta Bort Olänkade Poster",
     "entries.unlinked.remove_alt": "&Ta Bort Olänkade Poster",
-    "entries.unlinked.scanning": "Skannar bibliotek efter olänkade poster...",
     "entries.unlinked.title": "Fixa olänkade poster",
     "entries.unlinked.unlinked_count": "Olänkade Poster: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

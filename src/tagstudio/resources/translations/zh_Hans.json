@@ -60,7 +60,6 @@
     "entries.unlinked.relink.manual": "手动重新链接(&m)",
     "entries.unlinked.remove": "删除未链接项目",
     "entries.unlinked.remove_alt": "删除未链接项目(&v)",
-    "entries.unlinked.scanning": "正在扫描仓库以寻找未链接的项目...",
     "entries.unlinked.title": "修复未链接的项目",
     "entries.unlinked.unlinked_count": "未链接的项目: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

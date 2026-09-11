@@ -56,7 +56,6 @@
     "entries.unlinked.description": "Cada registo na biblioteca faz referência à um ficheiro numa das suas pastas. Se um ficheiro referenciado à uma entrada for movido ou apagado fora do TagStudio, ele é depois considerado não-referenciado.",
     "entries.unlinked.relink.manual": "&Referência Manual",
     "entries.unlinked.remove_alt": "Remover Entradas sem Conexões",
-    "entries.unlinked.scanning": "A escanear biblioteca por registos não referenciados...",
     "entries.unlinked.title": "Corrigir Registos Não Referenciados",
     "entries.unlinked.unlinked_count": "Registos Não Referenciados: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

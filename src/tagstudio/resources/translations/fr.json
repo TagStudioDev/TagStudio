@@ -66,7 +66,6 @@
     "entries.unlinked.relink.manual": "&Reliage Manuel",
     "entries.unlinked.remove": "Supprimer les entrées non liées",
     "entries.unlinked.remove_alt": "Supprim&er les entrées non liées",
-    "entries.unlinked.scanning": "Balayage de la Bibliothèque pour trouver des Entrées non Liées...",
     "entries.unlinked.title": "Réparation des Entrées non Liées",
     "entries.unlinked.unlinked_count": "Entrées non Liées : {count}",
     "ffmpeg.missing.status": "{ffmpeg} : {ffmpeg_status}<br>{ffprobe} : {ffprobe_status}",

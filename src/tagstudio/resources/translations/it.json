@@ -61,7 +61,6 @@
     "entries.unlinked.relink.manual": "Ricollegamento &Manuale",
     "entries.unlinked.remove": "Rimuovi Voci non Collegate",
     "entries.unlinked.remove_alt": "Rimuo&vi Voci non Collegate",
-    "entries.unlinked.scanning": "Scansionando la Biblioteca in cerca di Voci non Collegate...",
     "entries.unlinked.title": "Correggi Voci non Collegate",
     "entries.unlinked.unlinked_count": "Voci non Collegate: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

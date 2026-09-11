@@ -58,7 +58,6 @@
     "entries.tags": "Etiketter",
     "entries.unlinked.description": "Hver biblioteksoppføring er koblet til en fil i en av dine mapper. Hvis en fil koblet til en oppføring er flyttet eller slettet utenfor TagStudio, så er den sett på som frakoblet.",
     "entries.unlinked.relink.manual": "&Manuell Gjenkobling",
-    "entries.unlinked.scanning": "Skanner bibliotek for ulenkede oppføringer …",
     "entries.unlinked.title": "Fiks ulenkede oppføringer",
     "entries.unlinked.unlinked_count": "Frakoblede Oppføringer: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

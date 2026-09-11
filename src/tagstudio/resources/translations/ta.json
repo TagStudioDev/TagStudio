@@ -61,7 +61,6 @@
     "entries.unlinked.relink.manual": "& கையேடு மறுபரிசீலனை",
     "entries.unlinked.remove": "இணைக்கப்படாத உள்ளீடுகளை அகற்று",
     "entries.unlinked.remove_alt": "இணைக்கப்படாத உள்ளீடுகளை அகற்று&விடு",
-    "entries.unlinked.scanning": "இணைக்கப்படாத நுழைவுகளை புத்தககல்லரியில் சோதனை செய்யப்படுகிறது...",
     "entries.unlinked.title": "இணைக்கப்படாத உள்ளீடுகளைச் சரிசெய்யவும்",
     "entries.unlinked.unlinked_count": "இணைக்கப்படாத உள்ளீடுகள்: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status} <br> {ffprobe}: {ffprobe_status}",

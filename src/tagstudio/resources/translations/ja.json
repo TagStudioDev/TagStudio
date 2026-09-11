@@ -66,7 +66,6 @@
     "entries.unlinked.relink.manual": "手動で再リンク(&M)",
     "entries.unlinked.remove": "リンク切れのエントリを削除",
     "entries.unlinked.remove_alt": "リンク切れのエントリを削除(&V)",
-    "entries.unlinked.scanning": "リンク切れのエントリをライブラリ内でスキャンしています…",
     "entries.unlinked.title": "リンク切れのエントリを修正",
     "entries.unlinked.unlinked_count": "リンク切れのエントリ数: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

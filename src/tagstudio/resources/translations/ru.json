@@ -62,7 +62,6 @@
     "entries.unlinked.description": "Каждая запись в библиотеке привязана к файлу, находящегося внутри той или иной папки. Если файл, к которому была привязана запись, был удалён или перемещён без использования TagStudio, то запись становиться \"откреплённой\".",
     "entries.unlinked.relink.manual": "&Ручная привязка",
     "entries.unlinked.remove": "Удалить откреплённые записи",
-    "entries.unlinked.scanning": "Сканирование библиотеки на наличие откреплённых записей...",
     "entries.unlinked.title": "Исправить откреплённые записи",
     "entries.unlinked.unlinked_count": "Откреплённых записей: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

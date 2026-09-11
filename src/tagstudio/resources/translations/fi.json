@@ -61,7 +61,6 @@
     "entries.unlinked.relink.manual": "&Manual Relink",
     "entries.unlinked.remove": "Poista linkittämättömät merkinnät",
     "entries.unlinked.remove_alt": "Remo&ve Unlinked Entries",
-    "entries.unlinked.scanning": "Skannataan kirjastosta linkittämättömiä merkintöjä...",
     "entries.unlinked.title": "Korjaa linkittämättömät merkinnät",
     "entries.unlinked.unlinked_count": "Linkittämättömät merkinnät: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

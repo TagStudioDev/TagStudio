@@ -62,7 +62,6 @@
     "entries.unlinked.relink.manual": "&Manuell Neuverknüpfen",
     "entries.unlinked.remove": "Entferne nicht verknüpfte Einträge",
     "entries.unlinked.remove_alt": "Entfer&ne nicht verknüpfte Einträge",
-    "entries.unlinked.scanning": "Bibliothek wird nach nicht verknüpften Einträgen durchsucht...",
     "entries.unlinked.title": "Unverknüpfte Einträge reparieren",
     "entries.unlinked.unlinked_count": "Unverknüpfte Einträge: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

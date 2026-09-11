@@ -61,7 +61,6 @@
     "entries.unlinked.relink.manual": "&Tsunaga gen mit hant",
     "entries.unlinked.remove": "Keste kntsunagajena shiruzmakaban",
     "entries.unlinked.remove_alt": "Keste kntsunagajena shiruzmakaban (&v)",
-    "entries.unlinked.scanning": "Taskame mlafuhuomi ima grun kntsunagajena shiruzmakaban...",
     "entries.unlinked.title": "Fiks kntsunagajena shiruzmakaban",
     "entries.unlinked.unlinked_count": "Kntsunagajena shiruzmakaban: {count}",
     "ffmpeg.missing.status": "{ffmpeg}: {ffmpeg_status}<br>{ffprobe}: {ffprobe_status}",

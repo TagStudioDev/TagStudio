@@ -40,7 +40,6 @@
     "entries.duplicates.description": "Duplicitní položky jsou definovány jako více položek, které ukazují na stejný soubor na disku. Jejich sloučením se spojí značky a metadata ze všech duplikátů do jediné konsolidované položky. Nesmí se zaměňovat s „duplicitními soubory“, což jsou duplikáty samotných vašich souborů mimo TagStudio.",
     "entries.mirror.confirmation": "Opravdu chcete zrcadlit následujících {count} položek?",
     "entries.unlinked.relink.manual": "Znovu propojit ručně",
-    "entries.unlinked.scanning": "Skenuji knihovnu pro nepropojené záznamy...",
     "entries.unlinked.title": "Opravit nepropojené záznamy",
     "field.copy": "Zkopírovat políčko",
     "field.edit": "Upravit políčko",
