@@ -4,23 +4,18 @@
 
 from typing import TYPE_CHECKING, override
 
-import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDuplicateEntriesProgress
-from tagstudio.qt.controllers.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.views.styles.stylesheets import header
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
-
-logger = structlog.get_logger(__name__)
 
 
 # TODO: Split to use MVC guidelines, or completely redo.
@@ -60,7 +55,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.refresh_unlinked_button = QPushButton(Translations["entries.generic.refresh_alt"])
-        self.refresh_unlinked_button.clicked.connect(self.refresh_unlinked)
+        self.refresh_unlinked_button.clicked.connect(self.driver.sync_library_callback)
 
         self.merge_class = MergeDuplicateEntriesProgress(self.lib, self.driver)
 
@@ -99,38 +94,6 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.button_container)
 
         self.update_unlinked_count()
-
-    def refresh_unlinked(self):
-        if self.driver.file_scan_lock:
-            logger.info("[FixUnlinkedEntries] Sync already in progress, ignoring refresh request")
-            return
-        self.driver.file_scan_lock = True
-
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=self.lib.entries_count,
-        )
-        pw.setWindowTitle(Translations["library.scan_library.title"])
-        pw.update_label(Translations["entries.unlinked.scanning"])
-
-        def finish():
-            self.driver.file_scan_lock = False
-            if (
-                hasattr(self.driver, "library_info_window")
-                and self.driver.library_info_window.isVisible()
-            ):
-                self.driver.library_info_window.update_cleanup()
-
-        # Uses the Library's shared path cache
-        pw.from_iterable_function(
-            lambda: self.sync_engine.sync_dir(unwrap(self.lib.library_dir)),
-            None,
-            self.set_unlinked_count,
-            finish,
-            self.update_unlinked_count,
-            self.remove_modal.refresh_list,
-        )
 
     def _sync_ui_from_tracker(self) -> None:
         """Refresh the UI from the tracker's current state, without rescanning the library."""
