@@ -14,7 +14,6 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDuplicateEntriesProgress
 from tagstudio.qt.controllers.progress_bar import ProgressWidget
-from tagstudio.qt.controllers.relink_entries_progress import RelinkUnlinkedEntriesProgress
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.views.styles.stylesheets import header
 
@@ -40,7 +39,14 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.unlinked_desc_widget = QLabel(Translations["entries.unlinked.description"])
+        self.unlinked_desc_widget = QLabel(
+            Translations["entries.unlinked.description"]
+            + "<br><br>"
+            + Translations["entries.unlinked.description.deleted"]
+            # TODO: Implement manual relinking
+            # + "<br><br>"
+            # + Translations["entries.unlinked.description.ambiguous"]
+        )
         self.unlinked_desc_widget.setObjectName("unlinkedDescriptionLabel")
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
@@ -57,16 +63,6 @@ class FixUnlinkedEntriesModal(QWidget):
         self.refresh_unlinked_button.clicked.connect(self.refresh_unlinked)
 
         self.merge_class = MergeDuplicateEntriesProgress(self.lib, self.driver)
-        self.relink_class = RelinkUnlinkedEntriesProgress(self.sync_engine)
-
-        self.search_button = QPushButton(Translations["entries.unlinked.search_and_relink"])
-        self.relink_class.done.connect(
-            lambda: (
-                self.driver.update_browsing_state(),
-                self._sync_ui_from_tracker(),
-            )
-        )
-        self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton(Translations["entries.unlinked.relink.manual"])
         self.manual_button.setHidden(True)
@@ -96,7 +92,6 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.unlinked_count_label)
         self.root_layout.addWidget(self.unlinked_desc_widget)
         self.root_layout.addWidget(self.refresh_unlinked_button)
-        self.root_layout.addWidget(self.search_button)
         self.root_layout.addWidget(self.manual_button)
         self.root_layout.addWidget(self.remove_button)
         self.root_layout.addStretch(1)
@@ -152,7 +147,6 @@ class FixUnlinkedEntriesModal(QWidget):
         count: int = self.lib.unlinked_entries_count
         syncing = self.driver.file_scan_lock  # Disabled while a sync is running
 
-        self.search_button.setDisabled(count < 1 or syncing)
         self.remove_button.setDisabled(count < 1 or syncing)
 
         count_text: str = Translations.format(

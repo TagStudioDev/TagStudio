@@ -9,11 +9,10 @@ from pathlib import Path
 from time import time
 
 import structlog
-from wcmatch import glob, pathlib
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.scanners import scan_paths
 from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 from tagstudio.core.utils.normalization import norm_path
@@ -36,13 +35,7 @@ class LibrarySyncEngine:
     paths_to_restat: list[tuple[int, Path]] = field(default_factory=list)
     unlinked_entries: list[Entry] = field(default_factory=list)
     relinked_entries: list[Entry] = field(default_factory=list)
-    manual_relink_count: int = 0
     cancelled: bool = False
-
-    _scanned_paths: list[Path] = field(default_factory=list, init=False, repr=False)
-    _filename_to_path_map: dict[Path, list[Path]] | None = field(
-        default=None, init=False, repr=False
-    )
 
     @property
     def new_file_count(self) -> int:
@@ -66,8 +59,6 @@ class LibrarySyncEngine:
         self.paths_to_restat = []
         self.unlinked_entries = []
         self.relinked_entries = []
-        self._scanned_paths = []
-        self._filename_to_path_map = None
 
     def _get_case_sensitivity(self) -> bool:
         if self.library.is_case_sensitive_fs is None:
@@ -106,7 +97,6 @@ class LibrarySyncEngine:
             if self.cancelled:
                 break
             count += 1
-            self._scanned_paths.append(raw_path)
             key = norm_path(raw_path, case_sensitive=case_sensitive)
             entry_id = cache.get(key)
             if entry_id is not None:
@@ -191,65 +181,6 @@ class LibrarySyncEngine:
             index = end
         self.paths_to_restat = self.paths_to_restat[index:]
 
-    def _build_filename_to_path_map(self, case_sensitive: bool) -> dict[Path, list[Path]]:
-        index: dict[Path, list[Path]] = {}
-        for path in self._scanned_paths:
-            key = norm_path(Path(path.name), case_sensitive=case_sensitive)
-            index.setdefault(key, []).append(path)
-        return index
-
-    def _glob_for_filename(self, filename: str, case_sensitive: bool) -> list[Path]:
-        """Search the library directory for files matching `filename`.
-
-        Used only as a fallback when find_relink_candidates() is called without a prior
-        sync_dir() scan in this engine instance to reuse results from.
-        """
-        library_dir = unwrap(self.library.library_dir)
-        ignore_patterns = ignore_to_glob(Ignore.get_patterns(library_dir))
-        target_path = norm_path(Path(filename), case_sensitive=case_sensitive)
-        flags = PATH_GLOB_FLAGS | (0 if case_sensitive else glob.IGNORECASE)
-
-        matches: list[Path] = []
-        for path in pathlib.Path(str(library_dir)).glob(
-            patterns=f"***/{glob.escape(filename)}",
-            flags=flags,
-            exclude=ignore_patterns,
-        ):
-            if path.is_dir():
-                continue
-            candidate = Path(path).relative_to(library_dir)
-            if norm_path(Path(candidate.name), case_sensitive=case_sensitive) == target_path:
-                matches.append(candidate)
-        return matches
-
-    def find_relink_candidates(self, entry: Entry) -> list[Path]:
-        """Try to find files in the library directory matching an unlinked entry's filename.
-
-        A file already in the path cache can only be a candidate if its normalized path matches
-        this entry's own normalized path, such as with an NFC/NFD or case only duplicate.
-        """
-        case_sensitive = self._get_case_sensitivity()
-        target_key = norm_path(Path(entry.path.name), case_sensitive=case_sensitive)
-
-        if self._scanned_paths:
-            if self._filename_to_path_map is None:
-                self._filename_to_path_map = self._build_filename_to_path_map(case_sensitive)
-            matches = list(self._filename_to_path_map.get(target_key, []))
-        else:
-            matches = self._glob_for_filename(entry.path.name, case_sensitive)
-
-        entry_key = norm_path(entry.path, case_sensitive=case_sensitive)
-        cache = self.library.get_or_build_path_cache()
-        filtered: list[Path] = []
-        for path in matches:
-            path_key = norm_path(path, case_sensitive=case_sensitive)
-            if path_key == entry_key or cache.get(path_key) is None:
-                filtered.append(path)
-        matches = filtered
-
-        logger.info("[Sync] Relink candidates", entry=entry.path.as_posix(), matches=matches)
-        return matches
-
     def _apply_relink(
         self, entry: Entry, new_path: Path, cache: dict[Path, int], case_sensitive: bool
     ) -> bool:
@@ -327,33 +258,6 @@ class LibrarySyncEngine:
         self.relinked_entries.extend(relinked)
 
         return unmatched
-
-    def relink_unlinked_entries(self) -> Iterator[int]:
-        """Attempt to fix unlinked entries by finding a single matching file in the library."""
-        self.manual_relink_count = 0
-        case_sensitive = self._get_case_sensitivity()
-        cache = self.library.get_or_build_path_cache()
-        matched: list[Entry] = []
-
-        for i, entry in enumerate(self.unlinked_entries):
-            yield i
-            candidates = self.find_relink_candidates(entry)
-            if len(candidates) != 1:
-                continue
-            new_path = candidates[0]
-            if not self._apply_relink(entry, new_path, cache, case_sensitive):
-                continue
-
-            self.manual_relink_count += 1
-            matched.append(entry)
-            logger.info(
-                "[Sync] Relinked entry",
-                entry=entry.path.as_posix(),
-                new_path=new_path.as_posix(),
-            )
-
-        for entry in matched:
-            self.unlinked_entries.remove(entry)
 
     def _merge_duplicate_path_entries(self, case_sensitive: bool, cache: dict[Path, int]) -> None:
         """Merge any entry whose stored path collides with another entry's onto that entry.
