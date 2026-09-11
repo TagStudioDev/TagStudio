@@ -12,9 +12,13 @@ icon: material/mouse
 
 To create or open a [library](libraries.md), go to **File -> Open/Create Library** in the menu bar or use <kbd>Ctrl</kbd>+<kbd>O</kbd> (<kbd>⌘ Command </kbd>+<kbd>O</kbd> on macOS) and chose a folder with file contents you'd like to use as a TagStudio library. If a `.TagStudio` folder doesn't already exist inside the directory, TagStudio will create one and automatically scan the folder for files to include. Otherwise, the pre-existing library is opened.
 
-### :material-database-refresh: Refreshing Directories
+### :material-database-sync: Library Syncing
 
-TagStudio automatically scans for new or updated files when opening a library by default. Manually refresh by going to **File -> Refresh Directories** in the menu or by using <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘ Command </kbd>+<kbd>R</kbd> on macOS).
+A TagStudio library gets synced with the files found in your content folders. This is a **non-destructive, read-only** process and none of your files are moved, modified, or deleted. Syncing is indicated by a temporary progress bar, and you can continue to use TagStudio normally while syncing occurs.
+
+### :material-link-variant: Automatic Relinking
+
+Files that become moved, renamed, or modified will try to be automatically relinked during syncing. If a file cannot be found or a match cannot be safely made, it will stay unlinked until the entries are manually deleted under "Fix Unlinked Entries". _Manual relinking is a high priority feature for future versions._
 
 <!-- prettier-ignore -->
 !!! abstract "TagStudio Libraries"
@@ -112,20 +116,6 @@ Creating and adding fields to entries is extremely similar to how [tagging](#tag
   ![Empty File Entry](assets/tag_field_bars/field_bar_search.png){ width=80% }
   <figcaption>Searching for field templates inside the field bar.</figcaption>
 </figure>
-
----
-
-## Relinking Moved Files
-
-Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to "Search & Relink" any unlinked file entries to their respective files, or "Delete Unlinked Entries" in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
-
-<!-- prettier-ignore -->
-!!! warning
-    There is currently no method to relink entries to files that have been renamed - only moved or deleted. This is a high priority for future releases.
-
-<!-- prettier-ignore -->
-!!! warning
-    If multiple matches for a moved file are found (matches are currently defined as files with a matching filename as the original), TagStudio will currently ignore the match groups. Adding a GUI for manual selection, as well as smarter automated relinking, are high priorities for future versions.
 
 ---
 
