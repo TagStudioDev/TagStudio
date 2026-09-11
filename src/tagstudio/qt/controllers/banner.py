@@ -194,6 +194,7 @@ class Banner(QWidget):
     def _present(self, mode: BannerMode, button_text: str, message: str) -> None:
         """Applies the banner mode and any label + button text, then animates the banner open."""
         self._set_mode(mode)
+        self.view.label.reset_width()
         self.view.action_button.setText(button_text)
         self.view.label.setText(message)
         self._animate_to(self.HEIGHT)
@@ -212,6 +213,7 @@ class Banner(QWidget):
     def show_fleeting_notice(self, message: str) -> None:
         """Show a brief notice with no action button that dismisses itself automatically."""
         self._set_mode("fleeting_notice")
+        self.view.label.reset_width()
         self.view.label.setText(message)
         self._animate_to(self.HEIGHT)
         # Deferred by the existing MIN_VISIBLE_MS guard, same as an unforced hide_banner().
