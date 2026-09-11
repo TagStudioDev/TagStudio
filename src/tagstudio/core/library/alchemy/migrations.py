@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 
+import sqlite3
 from collections.abc import Callable
 from pathlib import Path
+from sqlite3 import Connection
 from typing import override
 
-import sqlalchemy
 import structlog
 import ujson
-from sqlalchemy import Engine, and_, delete, select, text, update
-from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy import default_color_groups
@@ -18,11 +17,11 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DEFAULT_FIELD_TEMPLATES,
+    DEFAULT_DATETIME_FIELD_TEMPLATES,
+    DEFAULT_TEXT_FIELD_TEMPLATES,
 )
-from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
-from tagstudio.core.library.alchemy.joins import TagParent
-from tagstudio.core.library.alchemy.models import Entry, Tag, TagColorGroup, Version
+from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
+from tagstudio.core.library.alchemy.utils import list_tables, sqlqlchemy_to_dict
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -41,14 +40,16 @@ class DBMigration:
     initial_version: int | None = None
 
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod) -> None:  # pyright: ignore[reportUnusedParameter]
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError
 
 
 class DBMigrations:
-    def __init__(self, library_dir: Path, engine: Engine) -> None:
+    def __init__(self, library_dir: Path, sql_filename: str) -> None:
         self.library_dir = library_dir
-        self.engine = engine
+        self._connection = sqlite3.connect(
+            str(library_dir / TS_FOLDER_NAME / sql_filename), autocommit=False
+        )
 
         # Don't check DB version when creating new library
         self.loaded_db_version = self._get_version(DB_VERSION_CURRENT_KEY)
@@ -77,11 +78,21 @@ class DBMigrations:
             f"Opening Library with DB Version {self.loaded_db_version}/{DB_VERSION}"
         )
 
+        self._exited = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self._connection.close()
+        self._exited = True
+
     @property
     def required(self) -> bool:
         return self.loaded_db_version < DB_VERSION
 
     def run(self):
+        assert not self._exited
         if not self.required:
             return
 
@@ -102,70 +113,65 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
             MigrationTo400,  # changes: add category_exclusions
         ]
-        with Session(self.engine) as session:
-            for migration in migrations:
-                if self.loaded_db_version < migration.version and (
-                    migration.initial_version is None
-                    or self.initial_db_version < migration.initial_version
-                ):
-                    logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
-                    # any error causes transaction to rollback
-                    migration.run(
-                        session,
-                        self.library_dir,
-                        lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
+        for migration in migrations:
+            if self.loaded_db_version < migration.version and (
+                migration.initial_version is None
+                or self.initial_db_version < migration.initial_version
+            ):
+                logger.info(f"[Library][Migration][{migration.version}] Starting DB Migration")
+                # any error causes transaction to rollback
+                migration.run(
+                    self._connection,
+                    self.library_dir,
+                    lambda msg, v=migration.version: f"[Library][Migration][{v}] {msg}",
+                )
+                self.loaded_db_version = migration.version
+                try:
+                    self._set_version(DB_VERSION_CURRENT_KEY, migration.version)
+                    logger.info(f"[Library][Migration][{migration.version}] Completed DB Migration")
+                except Exception as e:
+                    logger.info(
+                        f"[Library][Migration][{migration.version}] "
+                        "Couldn't update version, continuing without commit",
+                        error=e,
                     )
-                    self.loaded_db_version = migration.version
-                    try:
-                        self._set_version(session, DB_VERSION_CURRENT_KEY, migration.version)
-                        logger.info(
-                            f"[Library][Migration][{migration.version}] Completed DB Migration"
-                        )
-                    except Exception as e:
-                        logger.info(
-                            f"[Library][Migration][{migration.version}] "
-                            "Couldn't update version, continuing without commit",
-                            error=e,
-                        )
-                        session.flush()
-                    else:
-                        session.commit()
+                else:
+                    self._connection.commit()
 
         assert self.loaded_db_version >= DB_VERSION, (
             "Ran all migrations, but the DB is still not on the newest version"
         )
 
     def _get_version(self, key: str) -> int:
-        with Session(self.engine) as session:
-            inspector = sqlalchemy.inspect(self.engine)
-            try:
-                # "Version" table added in DB_VERSION 101
-                if inspector and inspector.has_table("versions"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # "Preferences" table deprecated in TagStudio 9.5.4
-                else:
-                    return int(
-                        unwrap(
-                            session.scalar(
-                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
-                            )
-                        )
-                    )
-            except Exception:
-                return 0
+        """Get a version value from the DB.
 
-    def _set_version(self, session: Session, key: str, value: int) -> None:
+        Args:
+            key(str): The name of the version type to retrieve.
+        """
+        # "Version" table added in DB_VERSION 101
+        if "versions" in list_tables(self._connection):
+            query = ("SELECT value FROM versions WHERE key == ?", [key])
+        # "Preferences" table deprecated in TagStudio 9.5.4
+        else:
+            query = ("SELECT value FROM preferences WHERE key == 'DB_VERSION'", [])
+
+        return int(unwrap(self._connection.execute(*query).fetchone())[0])
+
+    def _set_version(self, key: str, value: int) -> None:
         """Set a version value to the DB.
 
         Args:
-            session(Session): The SQLAlchemy DB Session to use.
-            key(str): The key for the name of the version type to set.
+            key(str): The the name of the version type to set.
             value(int): The version value to set.
         """
         # Insert if key has no value yet, otherwise update the value
-        session.merge(Version(key=key, value=value))
+        self._connection.execute(
+            """
+                INSERT INTO versions (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value
+            """,
+            [key, value],
+        )
 
 
 class MigrationTo7(DBMigration):
@@ -173,19 +179,18 @@ class MigrationTo7(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 6 to 7."""
         logger.info(fmt_log("Applying patches to DB_VERSION: 6 library..."))
         # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-        # TODO: combine into single sql statement
-        all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-        disam_stmt = (
-            update(Tag)
-            .where(Tag.disambiguation_id.not_in(all_tag_ids))
-            .values(disambiguation_id=None)
-        )
-        session.execute(disam_stmt)
-        session.flush()
+        conn.execute("""
+            UPDATE tags
+            SET disambiguation_id = null
+            WHERE NOT disambiguation_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
 
 
 class MigrationTo8(DBMigration):
@@ -193,52 +198,48 @@ class MigrationTo8(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
-        session.execute(
-            text("ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL")
-        )
-        session.flush()
+        # TODO: as before, this migration uses the current default colors, while it should really be
+        # using the default colors as they were in that specific version.
+        # FUTURE CHANGES TO THE DEFAULT COLORS WILL BREAK THIS
+        conn.execute("""
+            ALTER TABLE tag_colors
+            ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL
+        """)
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
-        tag_colors: list[TagColorGroup] = [
-            color
-            for color in default_color_groups.shades()
-            if color.slug in ["burgundy", "dark-teal", "dark_lavender"]
+        tag_colors: list[dict] = [
+            sqlqlchemy_to_dict(c)
+            for c in default_color_groups.shades()
+            if c.slug in ["burgundy", "dark-teal", "dark_lavender"]
         ]
 
         # Add any new default colors introduced in DB_VERSION 8
-        for color in tag_colors:
-            session.add(color)
-        session.flush()
+        conn.executemany(
+            """
+                INSERT INTO tag_colors (slug, namespace, name, \"primary\", secondary)
+                VALUES (:slug, :namespace, :name, :primary, :secondary)
+            """,
+            tag_colors,
+        )
         logger.info(
             fmt_log("Migrated tag colors to DB_VERSION 8+"),
             color_name=tag_colors,
         )
 
         # Update Neon colors to use the the color_border property
-        for color in default_color_groups.neon():
-            neon_stmt = (
-                update(TagColorGroup)
-                .where(
-                    and_(
-                        TagColorGroup.namespace == color.namespace,
-                        TagColorGroup.slug == color.slug,
-                    )
-                )
-                .values(
-                    slug=color.slug,
-                    namespace=color.namespace,
-                    name=color.name,
-                    primary=color.primary,
-                    secondary=color.secondary,
-                    color_border=color.color_border,
-                )
-            )
-            session.execute(neon_stmt)
-        session.flush()
+        conn.executemany(
+            """
+                UPDATE tag_colors
+                SET slug = :slug, namespace = :namespace, name = :name,
+                \"primary\" = :primary, secondary = :secondary, color_border = :color_border
+                WHERE namespace == :namespace AND slug = :slug
+            """,
+            [sqlqlchemy_to_dict(c) for c in default_color_groups.neon()],
+        )
 
 
 class MigrationTo9(DBMigration):
@@ -246,23 +247,18 @@ class MigrationTo9(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 8 to 9."""
         # Apply database schema changes
-        add_filename_column = text(
-            "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
-        )
-        session.execute(add_filename_column)
-        session.flush()
+        conn.execute("ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''")
         logger.info(fmt_log("Added filename column to entries table"))
 
         # Populate the new filename column.
-        # TODO: this could still break in the future through changes to the definition of Entry
-        entries = session.execute(select(Entry).distinct()).scalars()
-        for entry in entries:
-            entry.filename = entry.path.name
-            session.merge(entry)
-        session.flush()
+        filenames = [
+            (Path(path_str).name, id)
+            for id, path_str in conn.execute("SELECT id, path FROM entries").fetchall()
+        ]
+        conn.executemany("UPDATE entries SET filename = ? WHERE id = ?", filenames)
         logger.info(fmt_log("Populated filename column in entries table"))
 
 
@@ -271,15 +267,10 @@ class MigrationTo100(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 100."""
         # Repair parent-child tag relationships that are the wrong way around.
-        stmt = update(TagParent).values(
-            parent_id=TagParent.child_id,
-            child_id=TagParent.parent_id,
-        )
-        session.execute(stmt)
-        session.flush()
+        conn.execute("UPDATE tag_parents SET parent_id = child_id, child_id = parent_id")
         logger.info(fmt_log("Refactored TagParent table"))
 
 
@@ -288,21 +279,19 @@ class MigrationTo101(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 101."""
         # Create versions table
-        session.execute(
-            text("""
-        CREATE TABLE versions (
-            "key" VARCHAR NOT NULL PRIMARY KEY,
-            value INTEGER NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE versions (
+                "key" VARCHAR NOT NULL PRIMARY KEY,
+                value INTEGER NOT NULL
+            )
         """)
-        )
-        session.flush()
         # Ensure version rows are present
-        session.add(Version(key=DB_VERSION_INITIAL_KEY, value=100))
-        session.flush()
+        conn.execute(
+            'INSERT INTO versions ("key", value) VALUES (?, ?)', [DB_VERSION_INITIAL_KEY, 100]
+        )
         logger.info(fmt_log("Created versions table"))
 
 
@@ -311,12 +300,16 @@ class MigrationTo102(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 102."""
         # delete TagParents with a dangling parent reference
-        stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
-        session.execute(stmt)
-        session.flush()
+        conn.execute("""
+            DELETE FROM tag_parents
+            WHERE NOT parent_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
         logger.info(fmt_log("Verified TagParent table data"))
 
 
@@ -325,16 +318,14 @@ class MigrationTo103(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 102 to 103."""
         # add the new hidden column for tags
-        session.execute(text("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"))
-        session.flush()
+        conn.execute("ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0")
         logger.info(fmt_log("Added is_hidden column to tags table"))
 
         # mark the "Archived" tag as hidden
-        session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
-        session.flush()
+        conn.execute("UPDATE tags SET is_hidden = true WHERE id = ?", [TAG_ARCHIVED])
         logger.info(fmt_log("Updated archived tag to be hidden"))
 
 
@@ -343,15 +334,14 @@ class MigrationTo104(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-        cls.__migrate_sql_to_ts_ignore(session, library_dir)
-        session.execute(text("DROP TABLE preferences"))
-        session.flush()
+        cls.__migrate_sql_to_ts_ignore(conn, library_dir)
+        conn.execute("DROP TABLE preferences")
 
     @classmethod
-    def __migrate_sql_to_ts_ignore(cls, session: Session, library_dir: Path):
+    def __migrate_sql_to_ts_ignore(cls, conn: Connection, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
         if Path(ts_ignore).exists():
@@ -360,11 +350,17 @@ class MigrationTo104(DBMigration):
         # Load legacy extension data
         extensions: list[str] = ujson.loads(
             unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
-            )
+                conn.execute(
+                    "SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"
+                ).fetchone()
+            )[0]
         )
         is_exclude_list: bool = unwrap(
-            session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
+            conn.execute("""
+                SELECT value
+                FROM preferences
+                WHERE key = 'IS_EXCLUDE_LIST'
+            """).fetchone()[0]
         )
 
         with open(ts_ignore, "w") as f:
@@ -376,111 +372,105 @@ class MigrationTo200(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 200."""
+        # TODO: this migration uses default values of the most recent DB version, fix
+        # THIS WILL BREAK ONCE THESE DEFAULT VALUES ARE CHANGED!
         # Drop unused 'boolean_fields' and 'value_type' tables
         logger.info(fmt_log("Dropping boolean_fields and value_type tables..."))
-        session.execute(text("DROP TABLE boolean_fields"))
-        session.execute(text("DROP TABLE value_type"))
+        conn.execute("DROP TABLE boolean_fields")
+        conn.execute("DROP TABLE value_type")
 
         # Add 'name' column to text_fields and datetime_fields tables
         logger.info(fmt_log("Adding name columns to field tables..."))
-        stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
-        session.execute(stmt)
-        stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
-        session.execute(stmt)
+        conn.execute('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
+        conn.execute('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
 
         # Drop unnecessary 'position' columns
         logger.info(fmt_log("Dropping position columns to field tables..."))
-        session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
-        session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
+        conn.execute("ALTER TABLE datetime_fields DROP COLUMN position")
+        conn.execute("ALTER TABLE text_fields DROP COLUMN position")
 
         # Add 'is_multiline' column to text_fields table
         logger.info(fmt_log("Adding is_multiline column to text_fields..."))
-        stmt = text("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
-        session.execute(stmt)
-        session.flush()
+        conn.execute("ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0")
 
         # Move values from old `type_key` columns into new `name` columns
         logger.info(fmt_log("Moving values from type_key columns to name..."))
-        session.execute(text("UPDATE text_fields SET name = type_key"))
-        session.execute(text("UPDATE datetime_fields SET name = type_key"))
-        session.flush()
+        conn.execute("UPDATE text_fields SET name = type_key")
+        conn.execute("UPDATE datetime_fields SET name = type_key")
 
         # Change `name` values to title case
         logger.info(fmt_log("Normalizing TextField names..."))
-        for text_field in session.execute(select(TextField)).scalars():
-            # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
-            text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
+        # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
+        names = [
+            (name.title().replace("Url", "URL").replace("_", " "), id)
+            for id, name in conn.execute("SELECT id, name FROM text_fields").fetchall()
+        ]
+        conn.executemany("UPDATE text_fields SET name = ? WHERE id = ?", names)
+
         logger.info(fmt_log("Normalizing DatetimeField names..."))
-        for datetime_field in session.execute(select(DatetimeField)).scalars():
-            datetime_field.name = datetime_field.name.title().replace("_", " ")
-        session.flush()
+        names = [
+            (name.title().replace("_", " "), id)
+            for id, name in conn.execute("SELECT id, name FROM datetime_fields").fetchall()
+        ]
+        conn.executemany("UPDATE datetime_fields SET name = ? WHERE id = ?", names)
 
         # Add correct `is_multiline` values to text_fields table
         logger.info(fmt_log("Updating is_multiline for legacy TEXT_BOXes..."))
         text_boxes = [
             x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
         ]
-        update_stmt = (
-            update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
+        conn.execute(
+            f"""
+                UPDATE text_fields
+                SET is_multiline = true
+                WHERE name IN ({",".join(["?"] * len(text_boxes))})
+            """,
+            text_boxes,
         )
-        session.execute(update_stmt)
-        session.flush()
 
-        # Repair legacy "Description" fields to use is_multiline = True
-        logger.info(fmt_log("Repairing legacy Description fields..."))
-        desc_stmt = (
-            update(TextField)
-            .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
-            .values(is_multiline=True)
-        )
-        session.execute(desc_stmt)
-
-        # Repair legacy "Comments" fields to use is_multiline = True
-        logger.info(fmt_log("Repairing legacy Comment fields..."))
-        comm_stmt = (
-            update(TextField)
-            .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
-            .values(is_multiline=True)
-        )
-        session.execute(comm_stmt)
+        # Repair legacy "Description" and "Comments" fields to use is_multiline = True
+        logger.info(fmt_log("Repairing legacy Description and Comments fields..."))
+        conn.execute("""
+            UPDATE text_fields
+            SET is_multiline = true
+            WHERE name in ('Description', 'Comments') AND is_multiline = false
+        """)
 
         # Add field templates tables
-        session.execute(
-            text("""
-        CREATE TABLE text_field_templates (
-            id INTEGER NOT NULL PRIMARY KEY,
-            is_multiline BOOLEAN NOT NULL,
-            name VARCHAR NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE text_field_templates (
+                id INTEGER NOT NULL PRIMARY KEY,
+                is_multiline BOOLEAN NOT NULL,
+                name VARCHAR NOT NULL
+            )
         """)
-        )
-        session.execute(
-            text("""
-        CREATE TABLE datetime_field_templates (
-            id INTEGER NOT NULL PRIMARY KEY,
-            name VARCHAR NOT NULL
-        )
+        conn.execute("""
+            CREATE TABLE datetime_field_templates (
+                id INTEGER NOT NULL PRIMARY KEY,
+                name VARCHAR NOT NULL
+            )
         """)
-        )
-        session.flush()
 
         # Add default field templates
         logger.info(fmt_log("Adding default field templates..."))
-        for template in DEFAULT_FIELD_TEMPLATES:
-            session.add(template)
-        session.flush()
+        conn.executemany(
+            "INSERT INTO text_field_templates (name, is_multiline) VALUES (:name, :is_multiline)",
+            DEFAULT_TEXT_FIELD_TEMPLATES,
+        )
+        conn.executemany(
+            "INSERT INTO datetime_field_templates (name) VALUES (:name)",
+            DEFAULT_DATETIME_FIELD_TEMPLATES,
+        )
 
         # DB indices for improved performance
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
         )
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)")
-        )
-        session.execute(
-            text("CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
         )
 
 
@@ -490,55 +480,44 @@ class MigrationTo201(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 201."""
-        create_text_fields_table = text("""
-        CREATE TABLE text_fields_new (
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            entry_id INTEGER NOT NULL,
-            value VARCHAR,
-            is_multiline BOOLEAN NOT NULL,
-            FOREIGN KEY(entry_id) REFERENCES entries (id)
-        )
-        """)
-        create_datetime_fields_table = text("""
-        CREATE TABLE datetime_fields_new (
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR NOT NULL,
-            entry_id INTEGER NOT NULL,
-            value VARCHAR,
-            FOREIGN KEY(entry_id) REFERENCES entries (id)
-        )
-        """)
-
         logger.info(fmt_log("Dropping type_key from text_fields table..."))
-        session.execute(create_text_fields_table)
-        session.flush()
-        session.execute(
-            text("""
-                INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
-                SELECT id, name, entry_id, value, is_multiline
-                FROM text_fields
-            """)
-        )
-        session.execute(text("DROP TABLE text_fields"))
-        session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
+        conn.execute("""
+            CREATE TABLE text_fields_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                is_multiline BOOLEAN NOT NULL,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+        """)
+        conn.execute("""
+            INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
+            SELECT id, name, entry_id, value, is_multiline
+            FROM text_fields
+        """)
+        conn.execute("DROP TABLE text_fields")
+        conn.execute("ALTER TABLE text_fields_new RENAME TO text_fields")
 
         logger.info(fmt_log("Dropping type_key from datetime_fields table..."))
-        session.execute(create_datetime_fields_table)
-        session.flush()
-        session.execute(
-            text("""
-                INSERT INTO datetime_fields_new (id, name, entry_id, value)
-                SELECT id, name, entry_id, value
-                FROM datetime_fields
-            """)
-        )
-        session.execute(text("DROP TABLE datetime_fields"))
-        session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
-
-        session.flush()
+        conn.execute("""
+            CREATE TABLE datetime_fields_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR NOT NULL,
+                entry_id INTEGER NOT NULL,
+                value VARCHAR,
+                FOREIGN KEY(entry_id) REFERENCES entries (id)
+            )
+        """)
+        conn.execute("""
+            INSERT INTO datetime_fields_new (id, name, entry_id, value)
+            SELECT id, name, entry_id, value
+            FROM datetime_fields
+        """)
+        conn.execute("DROP TABLE datetime_fields")
+        conn.execute("ALTER TABLE datetime_fields_new RENAME TO datetime_fields")
 
 
 class MigrationTo202(DBMigration):
@@ -546,11 +525,15 @@ class MigrationTo202(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 202."""
-        stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
-        session.execute(stmt)
-        session.flush()
+        conn.execute("""
+            DELETE FROM tag_parents
+            WHERE NOT child_id IN (
+                SELECT id
+                FROM tags
+            )
+        """)
         logger.info(fmt_log("Verified TagParent table data"))
 
 
@@ -559,43 +542,39 @@ class MigrationTo300(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log: LoggingMethod):
-        ## remove folder_id column from entries table
-        # create new table in the desired scheme (without folder_id column)
-        session.execute(
-            text("""
-        CREATE TABLE entries_new (
-            id INTEGER NOT NULL,
-            path VARCHAR NOT NULL,
-            suffix VARCHAR NOT NULL,
-            date_created DATETIME,
-            date_modified DATETIME,
-            date_added DATETIME,
-            filename TEXT NOT NULL DEFAULT '',
-            PRIMARY KEY (id),
-            UNIQUE (path)
-        )
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
+        # remove folder_id column from entries table
+        ## create new table in the desired scheme (without folder_id column)
+        conn.execute("""
+            CREATE TABLE entries_new (
+                id INTEGER NOT NULL,
+                path VARCHAR NOT NULL,
+                suffix VARCHAR NOT NULL,
+                date_created DATETIME,
+                date_modified DATETIME,
+                date_added DATETIME,
+                filename TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (id),
+                UNIQUE (path)
+            )
         """)
-        )
-        session.flush()
-        # transfer data to new table
-        session.execute(
-            text("""
+
+        ## transfer data to new table
+        conn.execute("""
             INSERT INTO entries_new (id, path, suffix, date_created, date_modified, date_added,
                                      filename)
             SELECT id, path, suffix, date_created, date_modified, date_added, filename
             FROM entries
         """)
-        )
-        # delete old table
-        session.execute(text("DROP TABLE entries"))
-        # rename new table to old table
-        session.execute(text("ALTER TABLE entries_new RENAME TO entries"))
-        session.flush()
 
-        ## drop table "folders"
-        session.execute(text("DROP TABLE folders"))
-        session.flush()
+        ## delete old table
+        conn.execute("DROP TABLE entries")
+
+        ## rename new table to old table
+        conn.execute("ALTER TABLE entries_new RENAME TO entries")
+
+        # drop table "folders"
+        conn.execute("DROP TABLE folders")
 
 
 class MigrationTo400(DBMigration):
@@ -603,16 +582,13 @@ class MigrationTo400(DBMigration):
 
     @override
     @classmethod
-    def run(cls, session: Session, library_dir: Path, fmt_log):
+    def run(cls, conn: Connection, library_dir: Path, fmt_log):
         logger.info(fmt_log("Creating category_exclusions table..."))
-        session.execute(
-            text("""
-        CREATE TABLE category_exclusions (
-            tag_id      INTEGER NOT NULL REFERENCES tags(id),
-            category_id INTEGER NOT NULL REFERENCES tags(id),
+        conn.execute("""
+            CREATE TABLE category_exclusions (
+                tag_id      INTEGER NOT NULL REFERENCES tags(id),
+                category_id INTEGER NOT NULL REFERENCES tags(id),
 
-            PRIMARY KEY (tag_id, category_id)
-        )
+                PRIMARY KEY (tag_id, category_id)
+            )
         """)
-        )
-        session.flush()
