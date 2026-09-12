@@ -7,75 +7,210 @@
 import gzip
 import os
 import struct
-from io import BufferedReader
 from pathlib import Path
+from typing import BinaryIO
 
 from PIL import Image, ImageOps
 
 
 def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
-    rend = b"REND"
-    test = b"TEST"
+    REND: bytes = b"REND"
+    TEST: bytes = b"TEST"
+    ENDB: bytes = b"ENDB"
 
-    blendfile: BufferedReader | gzip.GzipFile = open(path, "rb")
+    blendfile: BinaryIO | gzip.GzipFile | None = None
+    raw_file: BinaryIO | None
 
-    head = blendfile.read(12)
+    with open(path, "rb") as raw_file:
+        # Legacy header = 12 bytes
+        # Blender 5.0+   = 17 bytes
+        head: bytes = raw_file.read(17)
 
-    if head[0:2] == b"\x1f\x8b":  # gzip magic
-        blendfile.close()
-        blendfile = gzip.GzipFile("", "rb", 0, open(path, "rb"))
-        head = blendfile.read(12)
+        # GZIP-compressed blend file.
+        if head[:2] == b"\x1f\x8b":
+            raw_file.close()
+            raw_file = None
 
-    if not head.startswith(b"BLENDER"):
-        blendfile.close()
-        return None, 0, 0
+            with gzip.open(path, "rb") as blendfile:
+                head = blendfile.read(17)
+        else:
+            blendfile = raw_file
 
-    is_64_bit = head[7] == b"-"[0]
-
-    # true for PPC, false for X86
-    is_big_endian = head[8] == b"V"[0]
-
-    # blender pre 2.5 had no thumbs
-    if head[9:11] <= b"24":
-        return None, 0, 0
-
-    sizeof_bhead = 24 if is_64_bit else 20
-    int_endian = ">i" if is_big_endian else "<i"
-    int_endian_pair = int_endian + "i"
-
-    while True:
-        bhead = blendfile.read(sizeof_bhead)
-
-        if len(bhead) < sizeof_bhead:
+        if not head.startswith(b"BLENDER"):
             return None, 0, 0
 
-        code = bhead[:4]
-        length = struct.unpack(int_endian, bhead[4:8])[0]  # 4 == sizeof(int)
+        if len(head) < 12:
+            return None, 0, 0
 
-        if code == rend:
-            blendfile.seek(length, os.SEEK_CUR)
+        # --------------------------------------------------------------
+        # Blender 5.0+ header
+        #
+        #   BLENDER17-01v0501
+        #   01234567890123456
+        #
+        #   0-6   = BLENDER
+        #   7-8   = header size
+        #   9     = '-'
+        #   10-11 = header format
+        #   12    = 'v'
+        #   13-16 = Blender version
+        # --------------------------------------------------------------
+        is_blender_5: bool = (
+            len(head) >= 17 and head[7:9].isdigit() and head[9:13] == b"-01v"  # format
+        )
+
+        if is_blender_5:
+            try:
+                header_size: int = int(head[7:9])
+                version: int = int(head[13:17])
+            except ValueError:
+                return None, 0, 0
+
+            if header_size < 17:
+                return None, 0, 0
+
+            # We have already consumed 17 bytes.
+            if header_size > 17:
+                blendfile.seek(header_size - 17, os.SEEK_CUR)
+
+            # ----------------------------------------------------------
+            # Blender 5.0+ BHead
+            #
+            # 0-3    code
+            # 4-7    SDNA index (uint32)
+            # 8-15   old pointer (uint64)
+            # 16-23  block size (uint64)
+            # 24-31  count (uint64)
+            #
+            # Total = 32 bytes.
+            # ----------------------------------------------------------
+            sizeof_bhead: int = 32
+            large_bhead: bool = True
+
+            int_endian: str = "<"
+            int_endian_pair: str = "<ii"
+
+        # --------------------------------------------------------------
+        # Legacy Blender header
+        #
+        #   BLENDER-v400
+        #
+        #   7     pointer size
+        #         '-' = 64-bit
+        #         '_' = 32-bit
+        #
+        #   8     endian
+        #         'v' = little endian
+        #         'V' = big endian
+        #
+        #   9-11  Blender version
+        # --------------------------------------------------------------
         else:
+            is_64_bit: bool = head[7] == ord("-")
+            is_big_endian: bool = head[8] == ord("V")
+
+            try:
+                version: int = int(head[9:12])
+            except ValueError:
+                return None, 0, 0
+
+            # Blender pre-2.5 had no thumbnails.
+            if version < 250:
+                return None, 0, 0
+
+            sizeof_bhead: int = 24 if is_64_bit else 20
+            large_bhead = False
+
+            int_endian: str = ">" if is_big_endian else "<"
+            int_endian_pair = int_endian + "ii"
+
+            # We read 17 bytes above, but the old header is only 12.
+            blendfile.seek(12, os.SEEK_SET)
+
+        # Walk the BHeads until we find TEST.
+        while True:
+            bhead: bytes = blendfile.read(sizeof_bhead)
+
+            # ENDB is a special partial BHead.
+            if len(bhead) >= 4 and bhead[:4] == ENDB:
+                return None, 0, 0
+
+            if len(bhead) < sizeof_bhead:
+                return None, 0, 0
+
+            code: bytes = bhead[:4]
+
+            # ----------------------------------------------------------
+            # Blender 5.0+
+            #
+            # The block size is at offset 16 and is uint64.
+            # ----------------------------------------------------------
+            if large_bhead:
+                length: int = struct.unpack_from("<Q", bhead, 16)[0]
+
+            # ----------------------------------------------------------
+            # Legacy Blender
+            #
+            # code   = 0-3
+            # length = 4-7
+            # old    = 8-11/15
+            # SDNA   = ...
+            # count  = ...
+            # ----------------------------------------------------------
+            else:
+                length = struct.unpack_from(int_endian + "i", bhead, 4)[0]
+
+            # REND contains render information before TEST, skip its payload.
+            if code == REND:
+                if length < 0:
+                    return None, 0, 0
+
+                blendfile.seek(length, os.SEEK_CUR)
+                continue
+
+            # First non-REND block.
             break
 
-    if code != test:
-        return None, 0, 0
+        if code != TEST:
+            return None, 0, 0
 
-    try:
-        x, y = struct.unpack(int_endian_pair, blendfile.read(8))  # 8 == sizeof(int) * 2
-    except struct.error:
-        return None, 0, 0
+        # --------------------------------------------------------------
+        # TEST payload:
+        #
+        #   int32 width
+        #   int32 height
+        #   RGBA pixel data
+        # --------------------------------------------------------------
+        dimensions: bytes = blendfile.read(8)
 
-    length -= 8  # sizeof(int) * 2
+        if len(dimensions) != 8:
+            return None, 0, 0
 
-    if length != x * y * 4:
-        return None, 0, 0
+        try:
+            x: int
+            y: int
+            x, y = struct.unpack(int_endian_pair, dimensions)
 
-    image_buffer = blendfile.read(length)
+        except struct.error:
+            return None, 0, 0
 
-    if len(image_buffer) != length:
-        return None, 0, 0
+        # The TEST block length includes the two 32-bit dimensions.
+        image_length: int = length - 8
 
-    return image_buffer, x, y
+        if x <= 0 or y <= 0:
+            return None, 0, 0
+
+        expected_length: int = x * y * 4
+
+        if image_length != expected_length:
+            return None, 0, 0
+
+        image_buffer: bytes = blendfile.read(image_length)
+
+        if len(image_buffer) != image_length:
+            return None, 0, 0
+
+        return image_buffer, x, y
 
 
 def blend_thumb(file_in: Path | str) -> Image.Image | None:
