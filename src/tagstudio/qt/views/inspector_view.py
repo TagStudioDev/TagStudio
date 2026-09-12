@@ -19,7 +19,13 @@ from tagstudio.qt.controllers.return_button import ReturnButton
 from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
 from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.stylesheets import button_style, preview_warning_style
+from tagstudio.qt.views.styles.stylesheets import (
+    HALF_PAD,
+    PAD,
+    WIN_PAD,
+    button_style,
+    preview_warning_style,
+)
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -30,8 +36,8 @@ logger = structlog.get_logger(__name__)
 class InspectorView(QVBoxLayout):
     def __init__(self, driver: QtDriver, pixel_ratio: float) -> None:
         super().__init__()
-        self.setContentsMargins(0, 0, 9, 9)
-        self.setSpacing(6)
+        self.setContentsMargins(0, 0, WIN_PAD, WIN_PAD)
+        self.setSpacing(PAD)
         rm = ResourceManager()
 
         # Search/Create Boxes
@@ -53,13 +59,13 @@ class InspectorView(QVBoxLayout):
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
         preview_layout.setContentsMargins(0, 0, 0, 0)
-        preview_layout.setSpacing(6)
+        preview_layout.setSpacing(PAD)
 
         # Warning Banner (Missing FFmpeg, etc.)
         self.warning_banner = QWidget()
         self.warning_banner.setObjectName("ffmpeg_widget")
         ffmpeg_warning_layout = QHBoxLayout(self.warning_banner)
-        ffmpeg_warning_layout.setContentsMargins(3, 3, 3, 3)
+        ffmpeg_warning_layout.setContentsMargins(HALF_PAD, HALF_PAD, HALF_PAD, HALF_PAD)
         self.warning_banner.setStyleSheet(preview_warning_style())
         ffmpeg_warning_label = QLabel(
             Translations.format(
@@ -86,17 +92,17 @@ class InspectorView(QVBoxLayout):
         info_section = QWidget()
         info_layout = QVBoxLayout(info_section)
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(6)
+        info_layout.setSpacing(PAD)
 
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
-        splitter.setHandleWidth(12)
+        splitter.setHandleWidth(PAD * 2)
 
         # Add Tag/Field Buttons
         add_buttons_container = QWidget()
         add_buttons_layout = QHBoxLayout(add_buttons_container)
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
-        add_buttons_layout.setSpacing(6)
+        add_buttons_layout.setSpacing(PAD)
 
         self.add_tag_button = ReturnButton(Translations["tag.add"])
         self.add_tag_button.setEnabled(False)

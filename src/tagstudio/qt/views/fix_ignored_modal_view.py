@@ -10,8 +10,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.views.styles.stylesheets import PAD
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
@@ -27,7 +27,7 @@ class FixIgnoredEntriesModalView(QWidget):
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.root_layout.setContentsMargins(PAD, PAD, PAD, PAD)
 
         self.ignored_desc_widget = QLabel(Translations["entries.ignored.description"])
         self.ignored_desc_widget.setObjectName("ignoredDescriptionLabel")
@@ -43,7 +43,7 @@ class FixIgnoredEntriesModalView(QWidget):
 
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
-        self.button_layout.setContentsMargins(6, 6, 6, 6)
+        self.button_layout.setContentsMargins(PAD, PAD, PAD, PAD)
         self.button_layout.addStretch(1)
 
         self.done_button = QPushButton(Translations["generic.done_alt"])
@@ -59,9 +59,9 @@ class FixIgnoredEntriesModalView(QWidget):
         self.root_layout.addWidget(self.button_container)
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.done_button.click()
-        else:  # Other key presses
+        else:
             pass
         return super().keyPressEvent(event)
