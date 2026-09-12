@@ -42,7 +42,7 @@ class PreviewType(Enum):
 
 # TODO: Use newer MVC style guidelines
 class PreviewThumbView(QWidget):
-    """The Preview Panel Widget."""
+    """The file preview thumbnail widget."""
 
     check_ffmpeg = Signal(bool)
     stats_updated = Signal(Path, FileAttributeData)

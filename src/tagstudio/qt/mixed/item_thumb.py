@@ -492,9 +492,7 @@ class ItemThumb(FlowWidget):
     ):
         selected = self.driver._selected
         if len(selected) == 1 and entry_id in selected:
-            self.driver.main_window.preview_panel.containers.update_toggled_tag(
-                tag_id, toggle_value
-            )
+            self.driver.main_window.inspector.containers.update_toggled_tag(tag_id, toggle_value)
 
     @override
     def mouseMoveEvent(self, event: QMouseEvent) -> None:

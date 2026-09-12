@@ -21,7 +21,7 @@ def test_update_selection_empty(qt_driver: QtDriver):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    for container in panel.containers._containers:
+    for container in panel.containers._data_boxes:
         assert container.isHidden()
 
 
@@ -33,7 +33,7 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should show all applicable tags and field containers
-    for container in panel.containers._containers:
+    for container in panel.containers._data_boxes:
         assert not container.isHidden()
 
 
@@ -48,7 +48,7 @@ def test_update_selection_multiple(qt_driver: QtDriver):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should show mixed field editing
-    for container in panel.containers._containers:
+    for container in panel.containers._data_boxes:
         assert container.isHidden()
 
 
@@ -137,8 +137,8 @@ def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    assert len(panel.containers._containers) == 3
-    for i, container in enumerate(panel.containers._containers):
+    assert len(panel.containers._data_boxes) == 3
+    for i, container in enumerate(panel.containers._data_boxes):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
@@ -170,8 +170,8 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    assert len(panel.containers._containers) == 3
-    for i, container in enumerate(panel.containers._containers):
+    assert len(panel.containers._data_boxes) == 3
+    for i, container in enumerate(panel.containers._data_boxes):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
@@ -206,5 +206,5 @@ def test_exclude_tag_category(
     qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    assert len(panel.containers._containers) == 1
-    assert panel.containers._containers[0].title == "<h4>Tags</h4>"
+    assert len(panel.containers._data_boxes) == 1
+    assert panel.containers._data_boxes[0].title == "<h4>Tags</h4>"

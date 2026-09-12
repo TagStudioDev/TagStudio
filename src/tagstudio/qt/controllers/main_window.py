@@ -495,8 +495,8 @@ class MainWindow(QMainWindow):
         self.landing_widget: LandingWidget
         self.pagination: Pagination
 
-        # initialized in setup_preview_panel
-        self.preview_panel: Inspector
+        # initialized in setup_inspector
+        self.inspector: Inspector
         # endregion
 
         if not self.objectName():
@@ -676,7 +676,7 @@ class MainWindow(QMainWindow):
         self.setup_entry_list(driver)
         self.content_splitter.addWidget(self.central_content)
 
-        self.setup_preview_panel(driver)
+        self.setup_inspector(driver)
 
         self.content_splitter.setStretchFactor(0, 1)
         self.content_layout.addWidget(self.content_splitter)
@@ -719,9 +719,9 @@ class MainWindow(QMainWindow):
         self.pagination = Pagination(self.entry_list_container)
         self.central_content_layout.addWidget(self.entry_list_container)
 
-    def setup_preview_panel(self, driver: QtDriver):
-        self.preview_panel = Inspector(driver)
-        self.content_splitter.addWidget(self.preview_panel)
+    def setup_inspector(self, driver: QtDriver):
+        self.inspector = Inspector(driver)
+        self.content_splitter.addWidget(self.inspector)
 
     # endregion
 

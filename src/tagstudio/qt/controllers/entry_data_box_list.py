@@ -9,16 +9,8 @@ from functools import partial
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QMessageBox,
-    QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
@@ -31,12 +23,12 @@ from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.controllers.edit_text import EditText
+from tagstudio.qt.controllers.entry_data_box import EntryDataBox
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_box import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextContainerWidget
-from tagstudio.qt.views.styles.stylesheets import inset_container_style
+from tagstudio.qt.views.entry_data_box_list_view import EntryDataBoxListView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -44,9 +36,8 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-# TODO: Split to use MVC guidelines.
-class FieldContainers(QWidget):
-    """Widget for the tag and field containers displayed inside the Preview Panel."""
+class EntryDataBoxList(QWidget):
+    """Widget for the tag and field boxes displayed inside the Inspector."""
 
     on_tags_update = Signal()
 
@@ -57,43 +48,13 @@ class FieldContainers(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.is_open: bool = False
-        self.common_fields: list = []
-        self.mixed_fields: list = []
+        self.common_fields: list = []  # TODO: Reimplement
+        self.mixed_fields: list = []  # TODO: Reimplement
         self.cached_entries: list[Entry] = []
-        self._containers: list[FieldContainer] = []
+        self._data_boxes: list[EntryDataBox] = []
 
-        self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(6)
-
-        scroll_container: QWidget = QWidget()
-        scroll_container.setObjectName("entryScrollContainer")
-        scroll_container.setLayout(self.scroll_layout)
-
-        info_section = QWidget()
-        info_layout = QVBoxLayout(info_section)
-        info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setObjectName("entryScrollArea")
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-
-        # NOTE: I would rather have this style applied to the scroll_area
-        # background and NOT the scroll container background, so that the
-        # rounded corners are maintained when scrolling. I was unable to
-        # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(inset_container_style("entryScrollContainer"))
-        self.scroll_area.setWidget(scroll_container)
-
-        root_layout = QHBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.addWidget(self.scroll_area)
+        self.view = EntryDataBoxListView()
+        self.setLayout(self.view)
 
     @property
     def top_entry_id(self) -> int:
@@ -102,7 +63,7 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
-        logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
+        logger.warning("[EntryDataBoxList] Updating Selection", entry_id=entry_id)
 
         entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
@@ -131,8 +92,8 @@ class FieldContainers(QWidget):
             self.write_field_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self._containers) > container_len:
-            for i, c in enumerate(self._containers):
+        if len(self._data_boxes) > container_len:
+            for i, c in enumerate(self._data_boxes):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
@@ -151,7 +112,7 @@ class FieldContainers(QWidget):
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
-        for c in self._containers:
+        for c in self._data_boxes:
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
@@ -215,7 +176,7 @@ class FieldContainers(QWidget):
         assert isinstance(field_templates, list)
 
         logger.info(
-            "[FieldContainers][add_field_to_selected]",
+            "[EntryDataBoxList][add_field_to_selected]",
             selected=self.driver.selected,
             fields=[
                 (field_template.class_name, field_template.id) for field_template in field_templates
@@ -225,7 +186,7 @@ class FieldContainers(QWidget):
         for entry_id in self.driver.selected:
             for field_template in field_templates:
                 logger.info(
-                    "[FieldContainers][add_field_to_selected] Adding field",
+                    "[EntryDataBoxList][add_field_to_selected] Adding field",
                     name=field_template.name,
                     type=field_template.class_name,
                 )
@@ -239,7 +200,7 @@ class FieldContainers(QWidget):
         if isinstance(tag_ids, int):
             tag_ids = [tag_ids]
         logger.info(
-            "[FieldContainers][add_tags_to_selected]",
+            "[EntryDataBoxList][add_tags_to_selected]",
             selected=self.driver.selected,
             tag_ids=tag_ids,
         )
@@ -267,7 +228,7 @@ class FieldContainers(QWidget):
         self.update_from_entry(entry_id)
 
     def write_field_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
-        """Update/Create data for a field FieldContainer.
+        """Update/Create data for a field EntryDataBox.
 
         Args:
             index(int): The container index.
@@ -277,7 +238,7 @@ class FieldContainers(QWidget):
         """
 
         def write_text_container(
-            container: FieldContainer, field: TextField, title: str, is_mixed: bool
+            container: EntryDataBox, field: TextField, title: str, is_mixed: bool
         ):
             container.set_title(field.name)
 
@@ -311,7 +272,7 @@ class FieldContainers(QWidget):
                 )
 
         def write_datetime_container(
-            container: FieldContainer, field: DatetimeField, title: str, is_mixed: bool
+            container: EntryDataBox, field: DatetimeField, title: str, is_mixed: bool
         ):
             container.set_title(field.name)
 
@@ -360,19 +321,19 @@ class FieldContainers(QWidget):
             )
 
         logger.info(
-            "[FieldContainers][write_container]",
+            "[EntryDataBoxList][write_container]",
             index=index,
             name=field.name,
             type=field.class_name,
         )
 
         # Create new containers if necessary
-        if len(self._containers) < (index + 1):
-            container = FieldContainer()
-            self._containers.append(container)
-            self.scroll_layout.addWidget(container)
+        if len(self._data_boxes) < (index + 1):
+            container = EntryDataBox()
+            self._data_boxes.append(container)
+            self.view.scroll_layout.addWidget(container)
         else:
-            container = self._containers[index]
+            container = self._data_boxes[index]
 
         # Set field title
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
@@ -391,7 +352,7 @@ class FieldContainers(QWidget):
     def write_tag_container(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
     ) -> None:
-        """Update/Create tag data for a tag FieldContainer.
+        """Update/Create tag data for a tag EntryDataBox.
 
         Args:
             index(int): The container index.
@@ -400,13 +361,13 @@ class FieldContainers(QWidget):
             is_mixed(bool): Relevant when multiple items are selected.
                 If True, field is not present in all selected items.
         """
-        logger.info("[FieldContainers][write_tag_container]", index=index)
-        if len(self._containers) < (index + 1):
-            container = FieldContainer()
-            self._containers.append(container)
-            self.scroll_layout.addWidget(container)
+        logger.info("[EntryDataBoxList][write_tag_container]", index=index)
+        if len(self._data_boxes) < (index + 1):
+            container = EntryDataBox()
+            self._data_boxes.append(container)
+            self.view.scroll_layout.addWidget(container)
         else:
-            container = self._containers[index]
+            container = self._data_boxes[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
 
@@ -441,7 +402,7 @@ class FieldContainers(QWidget):
     def _remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
-            "[FieldContainers] Removing Field",
+            "[EntryDataBoxList] Removing Field",
             field=field,
             selected=[x.path for x in self.cached_entries],
         )

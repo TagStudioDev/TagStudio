@@ -229,9 +229,7 @@ class FoldersToTagsModal(QWidget):
     def on_apply(self):
         folders_to_tags(self.library)
         self.close()
-        self.driver.main_window.preview_panel.set_selection(
-            self.driver.selected, update_preview=False
-        )
+        self.driver.main_window.inspector.set_selection(self.driver.selected, update_preview=False)
 
     @override
     def showEvent(self, event: QtGui.QShowEvent):

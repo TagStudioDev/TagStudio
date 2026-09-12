@@ -25,10 +25,10 @@ from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import ThemePalette
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.entry_data_box import EntryDataBox
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
@@ -126,15 +126,15 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
                 )
-                field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
-                field_container.set_inner_widget(color_box)
+                entry_data_box = EntryDataBox(self.driver.lib.get_namespace_name(group))
+                entry_data_box.set_inner_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
-                    field_container.set_remove_callback(
+                    entry_data_box.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
@@ -143,14 +143,14 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
                         )
                     )
 
-                self.scroll_layout.addWidget(field_container)
+                self.scroll_layout.addWidget(entry_data_box)
 
             if all_default:
                 ns_container = QWidget()

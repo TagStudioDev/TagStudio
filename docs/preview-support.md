@@ -12,7 +12,7 @@ TagStudio offers built-in preview and thumbnail support for a wide variety of fi
 
 ### :material-image-outline: Images
 
-Images will generate thumbnails the first time they are viewed or since the last time they were modified. Thumbnails are used in the grid view, but not in the Preview Panel. Animated images will play in the Preview Panel.
+Images will generate thumbnails the first time they are viewed or since the last time they were modified. Thumbnails are used in the grid view, but not in the Inspector panel. Animated images will play in the Inspector panel.
 
 | Filetype             | Extensions                                         |              Animation              |
 | -------------------- | -------------------------------------------------- | :---------------------------------: |
@@ -47,7 +47,7 @@ Images will generate thumbnails the first time they are viewed or since the last
 
 ### :material-movie-open: Videos
 
-Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#optional-dependencies) installed on your system.
+Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Inspector panel requires [FFmpeg](install.md#optional-dependencies) installed on your system.
 
 | Filetype              | Extensions              | Dependencies |
 | --------------------- | ----------------------- | :----------: |
@@ -65,7 +65,7 @@ Video thumbnails will default to the closest viable frame from the middle of the
 
 ### :material-sine-wave: Audio
 
-Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#optional-dependencies) installed on your system. Audio waveforms are currently not cached.
+Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Inspector panel if you have [FFmpeg](install.md#optional-dependencies) installed on your system. Audio waveforms are currently not cached.
 
 | Filetype            | Extensions               | Dependencies |
 | ------------------- | ------------------------ | :----------: |
@@ -103,7 +103,7 @@ Preview support for office documents or well-known project file formats varies b
 
 ### :material-archive: Archives
 
-Archive thumbnails will display the first image from the archive within the Preview Panel.
+Archive thumbnails will display the first image from the archive within the Inspector panel.
 
 | Filetype | Extensions     |
 | -------- | -------------- |
@@ -129,7 +129,7 @@ Archive thumbnails will display the first image from the archive within the Prev
 
 ### :material-format-font: Fonts
 
-Font thumbnails will use a "Aa" example preview of the font, with a full alphanumeric of the font available in the Preview Panel.
+Font thumbnails will use a "Aa" example preview of the font, with a full alphanumeric of the font available in the Inspector panel.
 
 | Filetype             | Extensions        |
 | -------------------- | ----------------- |
@@ -143,7 +143,7 @@ Font thumbnails will use a "Aa" example preview of the font, with a full alphanu
 !!! info "Plain Text Support"
     TagStudio supports the *vast* majority of files considered to be "[plain text](https://en.wikipedia.org/wiki/Plain_text)". If an extension or format is not listed here, odds are it's still supported anyway.
 
-Text files render the first 256 bytes of text information to an image preview for thumbnails and the Preview Panel. Improved thumbnails, full scrollable text, and syntax highlighting are on our [roadmap](roadmap.md#uiux) for future features.
+Text files render the first 256 bytes of text information to an image preview for thumbnails and the Inspector panel. Improved thumbnails, full scrollable text, and syntax highlighting are on our [roadmap](roadmap.md#uiux) for future features.
 
 | Filetype   | Extensions                                    |        Syntax Highlighting         |
 | ---------- | --------------------------------------------- | :--------------------------------: |

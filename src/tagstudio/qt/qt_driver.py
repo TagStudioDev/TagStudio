@@ -387,7 +387,7 @@ class QtDriver(DriverMixin, QObject):
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
         self.tag_manager.done.connect(
-            lambda checked=False: self.main_window.preview_panel.set_selection(
+            lambda checked=False: self.main_window.inspector.set_selection(
                 self.selected, update_preview=False
             )
         )
@@ -406,7 +406,7 @@ class QtDriver(DriverMixin, QObject):
             is_savable=False,
         )
         self.field_template_manager.done.connect(
-            lambda checked=False: self.main_window.preview_panel.set_selection(
+            lambda checked=False: self.main_window.inspector.set_selection(
                 self.selected, update_preview=False
             )
         )
@@ -422,7 +422,7 @@ class QtDriver(DriverMixin, QObject):
         add_tag_tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False),
+                self.main_window.inspector.set_selection(self.selected, update_preview=False),
             )
         )
 
@@ -800,7 +800,7 @@ class QtDriver(DriverMixin, QObject):
         self.cached_values.sync()
 
         # Reset library state
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
         self.main_window.search_field.setText("")
         self.main_window.results_label.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
@@ -830,7 +830,7 @@ class QtDriver(DriverMixin, QObject):
             self.library_info_window.close()
 
         self.main_window.thumb_layout.set_entries([])
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
         try:
@@ -908,7 +908,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+        self.main_window.inspector.set_selection(self.selected, update_preview=False)
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
@@ -917,14 +917,14 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+        self.main_window.inspector.set_selection(self.selected, update_preview=False)
 
     def clear_select_action_callback(self):
         self.clear_selected()
 
         self.set_select_actions_visibility()
         self.set_clipboard_menu_viability()
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         selected: list[int] = self.selected
@@ -972,7 +972,7 @@ class QtDriver(DriverMixin, QObject):
             ):
                 for e_id, f in pending:
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.stop_media_playback()
+                        self.main_window.inspector.stop_media_playback()
 
                     if e_id is not None:
                         self.lib.remove_entries([e_id])
@@ -1436,7 +1436,7 @@ class QtDriver(DriverMixin, QObject):
             if TAG_FAVORITE in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
         else:
-            self.main_window.preview_panel.set_selection(self.selected)
+            self.main_window.inspector.set_selection(self.selected)
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1465,7 +1465,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
@@ -1872,7 +1872,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
         # page (re)rendering, extract eventually
         initial_state = BrowsingState(
