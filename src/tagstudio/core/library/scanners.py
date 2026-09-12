@@ -42,7 +42,14 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
     proc: subprocess.Popen[str] | None = None
     try:
         proc = silent_popen(
-            ["rg", "--files", "--follow", "--hidden", "--ignore-file", str(compiled_ignore_path)],
+            [
+                RipgrepStatus.which(),
+                "--files",
+                "--follow",
+                "--hidden",
+                "--ignore-file",
+                str(compiled_ignore_path),
+            ],
             cwd=scan_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -96,6 +103,7 @@ def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> I
         ):
             if f.is_dir():
                 continue
-            yield Path(f).relative_to(scan_dir)
+            path = Path(f).relative_to(scan_dir)
+            yield path
     except ValueError:
         logger.error("[Scanners] ValueError while scanning directory with the internal scanner")
