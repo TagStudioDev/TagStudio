@@ -20,10 +20,10 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
+from tagstudio.qt.views.styles.stylesheets import (
     get_tag_border_color,
     get_tag_highlight_color,
     get_tag_primary_color,
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
 
 
+# TODO: Split to use MVC guidelines.
 class TagAliasWidget(QWidget):
     on_remove = Signal()
 
@@ -118,7 +119,7 @@ class TagWidget(QWidget):
     tag: Tag | None
 
     def __init__(
-        self, tag: Tag | None, has_edit: bool, has_remove: bool, library: "Library | None" = None
+        self, tag: Tag | None, has_edit: bool, has_remove: bool, library: Library | None = None
     ) -> None:
         super().__init__()
         self.tag = tag

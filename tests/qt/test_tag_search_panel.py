@@ -6,7 +6,7 @@ from PySide6.QtCore import SIGNAL
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.controllers.tag_search_panel_controller import TagSearchPanel
+from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 

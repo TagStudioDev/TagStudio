@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportOptionalMemberAccess=false
 
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
+from warnings import deprecated
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -19,27 +21,26 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
+from tagstudio.qt.views.styles.stylesheets import header
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
 @dataclass
 class BranchData:
-    dirs: dict[str, "BranchData"] = field(default_factory=dict)
+    dirs: dict[str, BranchData] = field(default_factory=dict)
     files: list[str] = field(default_factory=list)
     tag: Tag | None = None
 
@@ -73,7 +74,7 @@ def folders_to_tags(library: Library):
         reversed_tag = reverse_tag(library, tag, None)
         add_tag_to_tree(reversed_tag)
 
-    for entry in library.all_entries():
+    for entry in list(library.all_entries(with_joins=True)):
         folders = entry.path.parts[0:-1]
         if not folders:
             continue
@@ -165,7 +166,7 @@ def generate_preview_data(library: Library) -> BranchData:
 
 
 class FoldersToTagsModal(QWidget):
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.library = library
         self.driver = driver
@@ -275,7 +276,7 @@ class TreeItem(QWidget):
 
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
-        self.tag_widget = ModifiedTagWidget(unwrap(data.tag), unwrap(parent_tag))
+        self.tag_widget = ModifiedTagWidget(unwrap(data.tag), parent_tag)
         self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
         self.tag_layout.addWidget(self.tag_widget)
 
@@ -316,7 +317,7 @@ class TreeItem(QWidget):
 class ModifiedTagWidget(QWidget):
     """Modified TagWidget that does not search for the Tag's display name in the Library."""
 
-    def __init__(self, tag: Tag, parent_tag: Tag) -> None:
+    def __init__(self, tag: Tag, parent_tag: Tag | None) -> None:
         super().__init__()
         self.tag = tag
 
@@ -327,7 +328,7 @@ class ModifiedTagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
+        text = (f"{tag.name} ({parent_tag.name})" if parent_tag else tag.name).replace("&", "&&")
         self.bg_button.setText(text)
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 

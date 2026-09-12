@@ -36,7 +36,7 @@ TagStudio has builds for :fontawesome-brands-windows: **Windows**, :fontawesome-
 
 ### :fontawesome-brands-python: Installing with PIP
 
-TagStudio is installable via [PIP](https://pip.pypa.io/). Note that since we don't currently distribute on PyPI, the repository needs to be cloned and installed locally. Make sure you have Python 3.12 and PIP installed if you choose to install using this method.
+TagStudio is installable via [PIP](https://pip.pypa.io/). Note that since we don't currently distribute on PyPI, the repository needs to be cloned and installed locally. Make sure you have Python 3.14 and PIP installed if you choose to install using this method.
 
 The repository can be cloned/downloaded via `git` in your terminal, or by downloading the zip file from the "Code" button on the [repository page](https://github.com/TagStudioDev/TagStudio).
 

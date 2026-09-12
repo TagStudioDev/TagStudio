@@ -7,19 +7,20 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.global_settings import GlobalSettings
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
-from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -27,24 +28,21 @@ logger = structlog.get_logger(__name__)
 class TagSuggestBox(SuggestBox[Tag]):
     search_for_tag = Signal(int)
 
-    def __init__(
-        self, library: Library, settings: GlobalSettings, placeholder_text: str = ""
-    ) -> None:
+    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
+
         edit_tag_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
         edit_tag_on_create_action.setCheckable(True)
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.addAction(edit_tag_on_create_action)
-        self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.layout().search_field.addAction(edit_tag_on_create_action)
         edit_tag_on_create_action.setChecked(self._settings.edit_tag_on_create)
         edit_tag_on_create_action.triggered.connect(
-            lambda checked: self.toggle_edit_on_tag_create(checked)
+            lambda checked: self._toggle_edit_on_tag_create(checked)
         )
 
-    def toggle_edit_on_tag_create(self, checked: bool) -> None:
+    def _toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""
         self._settings.edit_tag_on_create = checked
         self._settings.save()
@@ -89,7 +87,25 @@ class TagSuggestBox(SuggestBox[Tag]):
     @override
     def _on_item_chosen(self, item: Tag) -> None:
         self.item_chosen.emit(item.id)
-        self.done.emit()
+        self._clear_search_query()
+        self.done.emit("*")  # The query does not matter
+
+    @override
+    def _update_hint_icon(self) -> None:
+        results = bool(len(self._search_results) > 0)
+
+        if not self._is_shift_held and self._is_selected_item_added():
+            self.set_hint_icon(self._rm.hint_tag_added)
+        elif self._is_shift_held:
+            self.set_hint_icon(self._rm.hint_tag_create)
+        elif results and self._is_selected_item_added():
+            self.set_hint_icon(self._rm.hint_tag_added)
+        elif results:
+            self.set_hint_icon(self._rm.hint_tag_add)
+        elif self.layout().search_field.text():
+            self.set_hint_icon(self._rm.hint_tag_create)
+        else:
+            self.set_hint_icon(None)
 
     @override
     def _search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
@@ -117,7 +133,7 @@ class TagSuggestBox(SuggestBox[Tag]):
         if item is None:
             return
 
-        # TODO: Add tabbing to different items, and use underline to indicate which will be added
+        # Select first item
         underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks
@@ -141,10 +157,12 @@ class TagSuggestBox(SuggestBox[Tag]):
         if isinstance(edit_item_panel, BuildTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
-                tag, parent_ids=edit_item_panel.parent_ids, aliases=edit_item_panel.aliases
+                tag,
+                parent_ids=edit_item_panel.parent_ids,
+                aliases=edit_item_panel.aliases,
+                exclusion_ids=edit_item_panel.exclusion_ids,
             )
             self._on_item_chosen(tag)
-            self._clear_search_query()
 
         edit_item_panel.hide()
         self._on_search_query_changed(self.layout().search_field.text())
@@ -158,6 +176,7 @@ class TagSuggestBox(SuggestBox[Tag]):
             tag=edit_item_panel.build_tag(),
             parent_ids=edit_item_panel.parent_ids,
             aliases=edit_item_panel.aliases,
+            exclusion_ids=edit_item_panel.exclusion_ids,
         )
         self._update_items(self.layout().search_field.text())
 
@@ -173,6 +192,7 @@ class TagSuggestBox(SuggestBox[Tag]):
                 widget.setHidden(True)
                 self.layout().content_layout.addWidget(widget)
 
-        widget_: QWidget = self.layout().content_layout.itemAt(index).widget()
+        item = unwrap(self.layout().content_layout.itemAt(index))
+        widget_: QWidget = unwrap(item.widget())
         assert isinstance(widget_, UnderlinedWidget)
         return widget_

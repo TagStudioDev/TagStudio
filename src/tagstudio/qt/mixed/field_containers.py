@@ -30,27 +30,28 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.edit_text_controller import EditText
+from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
+from tagstudio.qt.controllers.tag_box import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextContainerWidget
-from tagstudio.qt.translations import FIELD_TYPE_KEYS, Translations
-from tagstudio.qt.views.stylesheets.stylesheets import inset_container_style
+from tagstudio.qt.views.styles.stylesheets import inset_container_style
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class FieldContainers(QWidget):
     """Widget for the tag and field containers displayed inside the Preview Panel."""
 
     on_tags_update = Signal()
 
-    def __init__(self, library: Library, driver: "QtDriver") -> None:
+    def __init__(self, library: Library, driver: QtDriver) -> None:
         super().__init__()
 
         self.lib = library
@@ -279,7 +280,7 @@ class FieldContainers(QWidget):
 
                 grandparent_tags: set[Tag] = set()
                 for parent_tag in parent_tags:
-                    if parent_tag in categories:
+                    if parent_tag in categories and parent_tag.id not in tag.exclusion_ids:
                         categories[parent_tag].add(tag)
                         has_category_parent = True
                     grandparent_tags.update(parent_tag.parent_tags)
@@ -423,7 +424,7 @@ class FieldContainers(QWidget):
                     text = self.driver.settings.format_datetime(
                         DatetimePicker.string2dt(field.value)
                     )
-                except (ValueError, AssertionError):
+                except ValueError, AssertionError:
                     text = str(field.value)
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"

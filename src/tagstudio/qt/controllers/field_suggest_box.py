@@ -6,40 +6,39 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtGui import QAction, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
-from tagstudio.qt.controllers.field_template_widget_controller import FieldTemplateWidget
+from tagstudio.qt.controllers.field_template_widget import FieldTemplateWidget
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.global_settings import GlobalSettings
-from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
 
 class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
-    def __init__(self, library: Library, settings: GlobalSettings, placeholder_text: str = ""):
+    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = ""):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
         edit_field_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
         edit_field_on_add_action.setCheckable(True)
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.addAction(edit_field_on_add_action)
-        self.layout().search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.layout().search_field.addAction(edit_field_on_add_action)
         edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
         edit_field_on_add_action.triggered.connect(
-            lambda checked: self.toggle_edit_on_field_add(checked)
+            lambda checked: self._toggle_edit_on_field_add(checked)
         )
 
-    def toggle_edit_on_field_add(self, checked: bool) -> None:
+    def _toggle_edit_on_field_add(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after adding a field."""
         self._settings.edit_field_on_add = checked
         self._settings.save()
@@ -77,7 +76,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     @override
     def _on_item_chosen(self, item: BaseFieldTemplate) -> None:
         self.item_chosen.emit(item)
-        self.done.emit()
+        self.done.emit("*")
 
     @override
     def _search_items(self, query: str) -> tuple[list[BaseFieldTemplate], list[BaseFieldTemplate]]:
@@ -85,6 +84,17 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             return self._lib.search_field_templates(name=query, limit=0), []
         else:
             return ([], [])
+
+    @override
+    def _update_hint_icon(self) -> None:
+        if self._is_shift_held:
+            self.set_hint_icon(self._rm.hint_field_create)
+        elif self.layout().search_field.text() and len(self._search_results) > 0:
+            self.set_hint_icon(self._rm.hint_field_add)
+        elif self.layout().search_field.text():
+            self.set_hint_icon(self._rm.hint_field_create)
+        else:
+            self.set_hint_icon(None)
 
     @override
     def _set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
@@ -146,6 +156,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
                 widget.setHidden(True)
                 self.layout().content_layout.addWidget(widget)
 
-        widget_: QWidget = self.layout().content_layout.itemAt(index).widget()
+        item = unwrap(self.layout().content_layout.itemAt(index))
+        widget_: QWidget = unwrap(item.widget())
         assert isinstance(widget_, UnderlinedWidget)
         return widget_

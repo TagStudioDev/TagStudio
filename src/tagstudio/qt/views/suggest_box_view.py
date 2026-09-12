@@ -4,10 +4,12 @@
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.controllers.horizontal_scroll_area import HorizontalScrollArea
+from tagstudio.qt.views.styles.stylesheets import (
     autofill_line_edit_style,
     autofill_scroll_top_style,
 )
@@ -18,18 +20,13 @@ logger = structlog.get_logger(__name__)
 class SuggestBoxView(QVBoxLayout):
     def __init__(self, placeholder_text: str = "") -> None:
         super().__init__()
+
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
 
-        # HACK: The transparent border allows for the focus border color to
-        # still show above the tags at the edges... sort of (overlaps on left when h-scrolling)
         scroll_area_style = """
         QScrollArea{
             background: transparent;
-            border: solid;
-            border-color: transparent;
-            border-width: 0px 2px;
-            padding-left: -2px;
             }
         QScrollArea > QWidget > QWidget{
             background: transparent;
@@ -48,8 +45,9 @@ class SuggestBoxView(QVBoxLayout):
         scroll_area_container_layout.setContentsMargins(0, 0, 0, 0)
         scroll_area_container_layout.setSpacing(0)
         scroll_area_container.setStyleSheet(autofill_scroll_top_style("container"))
-        self.scroll_area = QScrollArea()
+        self.scroll_area = HorizontalScrollArea()
         self.scroll_area.setStyleSheet(scroll_area_style)
+        self.scroll_area.setViewportMargins(2, 0, 2, 0)
         scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
         search_bar_height = 28
@@ -68,9 +66,14 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field = AutofillLineEdit(scroll_area_container)
         self.search_field.setStyleSheet(autofill_line_edit_style())
         self.search_field.setObjectName("search_field")
-        self.search_field.setMinimumHeight(28)
+        self.search_field.setMinimumHeight(search_bar_height)
         self.search_field.setPlaceholderText(placeholder_text)
+        self.hint_icon_action = self.search_field.addAction(
+            QPixmap(), AutofillLineEdit.ActionPosition.TrailingPosition
+        )
         self.scroll_area.setFocusProxy(self.search_field)
+        self.search_field.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.search_field.customContextMenuRequested.connect(self.search_field.show_action_menu)
 
         # Finalize Layout
         self.addWidget(scroll_area_container)

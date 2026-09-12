@@ -18,16 +18,18 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.utils.file_opener import FileOpenerHelper, FileOpenerLabel
-from tagstudio.qt.views.stylesheets.stylesheets import properties_style
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.file_opener_label import FileOpenerLabel
+from tagstudio.qt.utils.file_opener import FileOpenerHelper
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.stylesheets import properties_style
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -39,10 +41,9 @@ class FileAttributeData:
     duration: int | None = None
 
 
+# TODO: Split to use MVC guidelines.
 class FileAttributes(QWidget):
-    """The Preview Panel Widget."""
-
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -130,7 +131,7 @@ class FileAttributes(QWidget):
             stats = FileAttributeData()
 
         if not filepath:
-            self.layout().setSpacing(0)
+            self.layout().setSpacing(0)  # pyright: ignore[reportOptionalMemberAccess]
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.file_label.setText(f"<i>{Translations['preview.no_selection']}</i>")
             self.file_label.set_file_path(Path())
@@ -147,7 +148,7 @@ class FileAttributes(QWidget):
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
 
-            self.layout().setSpacing(6)
+            self.layout().setSpacing(6)  # pyright: ignore[reportOptionalMemberAccess]
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.file_label.set_file_path(filepath)
             self.dimensions_label.setHidden(False)
@@ -178,9 +179,7 @@ class FileAttributes(QWidget):
                 try:
                     file_size = format_size(filepath.stat().st_size)
 
-                    if MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.FONT_TYPES, mime_fallback=True
-                    ):
+                    if MediaTypes.contains("font", ext, SEARCH):
                         font = ImageFont.truetype(filepath)
                         font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
                 except (FileNotFoundError, OSError) as e:
@@ -234,7 +233,7 @@ class FileAttributes(QWidget):
 
     def update_multi_selection(self, count: int):
         """Format attributes for multiple selected items."""
-        self.layout().setSpacing(0)
+        self.layout().setSpacing(0)  # pyright: ignore[reportOptionalMemberAccess]
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.file_label.setText(Translations.format("preview.multiple_selection", count=count))
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)

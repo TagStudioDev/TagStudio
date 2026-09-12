@@ -25,6 +25,8 @@ class TagStudioCore:
     @lru_cache(maxsize=1)
     def get_most_recent_release_version() -> str | None:
         """Get the version of the most recent GitHub release."""
+        logger.info("[Core] Checking for updates...")
+
         try:
             resp = requests.get(
                 "https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest"

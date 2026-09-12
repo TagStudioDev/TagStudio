@@ -105,7 +105,14 @@ class RefreshTracker:
                 shell=True,
                 encoding="UTF-8",
             )
-            compiled_ignore_path.unlink()
+            try:
+                compiled_ignore_path.unlink()
+            except Exception as e:
+                logger.error(
+                    "[Refresh] Could not remove compiled ignore path",
+                    path=compiled_ignore_path,
+                    error=e,
+                )
 
             if result.stderr:
                 logger.error(result.stderr)

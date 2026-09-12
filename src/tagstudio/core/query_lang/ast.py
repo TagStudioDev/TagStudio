@@ -16,7 +16,7 @@ class ConstraintType(Enum):
     Special = 5
 
     @staticmethod
-    def from_string(text: str) -> "ConstraintType | None":
+    def from_string(text: str) -> ConstraintType | None:
         return {
             "tag": ConstraintType.Tag,
             "tag_id": ConstraintType.TagID,
@@ -28,7 +28,7 @@ class ConstraintType(Enum):
 
 
 class AST:
-    parent: "AST | None" = None
+    parent: AST | None = None
 
     @override
     def __str__(self):
@@ -65,9 +65,9 @@ class ORList(AST):
 class Constraint(AST):
     type: ConstraintType
     value: str
-    properties: list["Property"]
+    properties: list[Property]
 
-    def __init__(self, type: ConstraintType, value: str, properties: list["Property"]) -> None:
+    def __init__(self, type: ConstraintType, value: str, properties: list[Property]) -> None:
         super().__init__()
         for prop in properties:
             prop.parent = self

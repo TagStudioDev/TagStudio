@@ -4,6 +4,11 @@
 repos:
   - repo: local
     hooks:
+      - id: reuse
+        name: reuse
+        entry: reuse lint-file
+        language: system
+
       - id: pyright
         name: pyright
         entry: pyright

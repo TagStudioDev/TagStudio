@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-from wcmatch import pathlib
+from wcmatch import glob, pathlib
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
@@ -54,7 +54,7 @@ class UnlinkedRegistry:
         # NOTE: ignore_to_glob() is needed for wcmatch, not ripgrep.
         ignore_patterns = ignore_to_glob(Ignore.get_patterns(library_dir))
         for path in pathlib.Path(str(library_dir)).glob(
-            f"***/{match_entry.path.name}",
+            patterns=f"***/{glob.escape(match_entry.path.name)}",
             flags=PATH_GLOB_FLAGS,
             exclude=ignore_patterns,
         ):

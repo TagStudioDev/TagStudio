@@ -24,11 +24,11 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.stylesheets.stylesheets import (
+from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
+from tagstudio.qt.views.styles.stylesheets import (
     checkbox_style,
     line_edit_style,
     list_button_style,
@@ -37,6 +37,7 @@ from tagstudio.qt.views.stylesheets.stylesheets import (
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class BuildColorPanel(ModalContent):
     on_edit = Signal(TagColorGroup)
 

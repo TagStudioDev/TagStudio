@@ -16,7 +16,7 @@ from tagstudio.core.library.alchemy.fields import (
     DatetimeField,
     TextField,
 )
-from tagstudio.core.library.alchemy.joins import TagParent
+from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagParent
 
 
 class Namespace(Base):
@@ -41,7 +41,7 @@ class TagAlias(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
-    tag: Mapped["Tag"] = relationship(back_populates="aliases")
+    tag: Mapped[Tag] = relationship(back_populates="aliases")
 
     def __init__(self, name: str, tag_id: int | None = None):
         self.name = name
@@ -97,13 +97,19 @@ class Tag(Base):
     is_hidden: Mapped[bool]
     icon: Mapped[str | None]
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
-    parent_tags: Mapped[set["Tag"]] = relationship(
+    parent_tags: Mapped[set[Tag]] = relationship(
         secondary=TagParent.__tablename__,
         primaryjoin="Tag.id == TagParent.child_id",
         secondaryjoin="Tag.id == TagParent.parent_id",
         back_populates="parent_tags",
     )
     disambiguation_id: Mapped[int | None]
+    category_exclusions: Mapped[set[Tag]] = relationship(
+        secondary=CategoryExclusion.__tablename__,
+        primaryjoin="Tag.id == CategoryExclusion.tag_id",
+        secondaryjoin="Tag.id == CategoryExclusion.category_id",
+        back_populates="category_exclusions",
+    )
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -124,19 +130,24 @@ class Tag(Base):
     def alias_ids(self) -> list[int]:
         return [tag.id for tag in self.aliases]
 
+    @property
+    def exclusion_ids(self) -> list[int]:
+        return [tag.id for tag in self.category_exclusions]
+
     def __init__(
         self,
         name: str,
         id: int | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
-        parent_tags: set["Tag"] | None = None,
+        parent_tags: set[Tag] | None = None,
         icon: str | None = None,
         color_namespace: str | None = None,
         color_slug: str | None = None,
         disambiguation_id: int | None = None,
         is_category: bool = False,
         is_hidden: bool = False,
+        category_exclusions: set[Tag] | None = None,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -149,6 +160,7 @@ class Tag(Base):
         self.is_category = is_category
         self.is_hidden = is_hidden
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
+        self.category_exclusions = category_exclusions or set()
         super().__init__()
 
     @override
@@ -169,16 +181,16 @@ class Tag(Base):
             return False
         return self.id == value.id
 
-    def __lt__(self, other: "Tag") -> bool:
+    def __lt__(self, other: Tag) -> bool:
         return self.name < other.name
 
-    def __le__(self, other: "Tag") -> bool:
+    def __le__(self, other: Tag) -> bool:
         return self.name <= other.name
 
-    def __gt__(self, other: "Tag") -> bool:
+    def __gt__(self, other: Tag) -> bool:
         return self.name > other.name
 
-    def __ge__(self, other: "Tag") -> bool:
+    def __ge__(self, other: Tag) -> bool:
         return self.name >= other.name
 
 

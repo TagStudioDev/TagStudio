@@ -2,53 +2,26 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import sys
 from typing import override
 
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
-from PySide6.QtGui import (
-    QColor,
-    QEnterEvent,
-    QPainter,
-    QPainterPath,
-    QPaintEvent,
-    QPalette,
-    QPen,
-)
+from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPainterPath, QPaintEvent, QPen
 from PySide6.QtWidgets import QPushButton, QWidget
 
+from tagstudio.qt.views.styles.palette import Palette
 
+
+# TODO: Use newer MVC style guidelines
 class ThumbButton(QPushButton):
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
         self.hovered = False
         self.selected = False
+        self.select_color = Palette.accent()
 
-        # NOTE: As of PySide 6.8.0.1, the QPalette.ColorRole.Accent role no longer works on Windows.
-        # The QPalette.ColorRole.AlternateBase does for some reason, but not on macOS.
-        self.select_color: QColor
-        if sys.platform == "win32":
-            self.select_color = QPalette.color(
-                self.palette(),
-                QPalette.ColorGroup.Active,
-                QPalette.ColorRole.AlternateBase,
-            )
-            self.select_color.setHsl(
-                self.select_color.hslHue(),
-                self.select_color.hslSaturation(),
-                max(self.select_color.lightness(), 100),
-                255,
-            )
-        else:
-            self.select_color = QPalette.color(
-                self.palette(),
-                QPalette.ColorGroup.Active,
-                QPalette.ColorRole.Accent,
-            )
-
-        self.select_color_faded: QColor = QColor(self.select_color)
+        self.select_color_faded = Palette.accent()
         self.select_color_faded.setHsl(
             self.select_color_faded.hslHue(),
             self.select_color_faded.hslSaturation(),
@@ -56,26 +29,7 @@ class ThumbButton(QPushButton):
             127,
         )
 
-        self.hover_color: QColor
-        if sys.platform == "win32":
-            self.hover_color = QPalette.color(
-                self.palette(),
-                QPalette.ColorGroup.Active,
-                QPalette.ColorRole.AlternateBase,
-            )
-            self.hover_color.setHsl(
-                self.hover_color.hslHue(),
-                self.hover_color.hslSaturation(),
-                max(self.hover_color.lightness(), 100),
-                255,
-            )
-        else:
-            self.hover_color = QPalette.color(
-                self.palette(),
-                QPalette.ColorGroup.Active,
-                QPalette.ColorRole.Accent,
-            )
-
+        self.hover_color = Palette.accent()
         self.hover_color.setHsl(
             self.hover_color.hslHue(),
             self.hover_color.hslSaturation(),

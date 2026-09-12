@@ -36,25 +36,26 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.color_overlay import light_overlay
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.clickable_slider import ClickableSlider
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.clickable_slider import ClickableSlider
+from tagstudio.qt.views.styles.color_overlay import light_overlay
 
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class MediaPlayer(QGraphicsView):
     """A basic media player widget.
 
     Gives a basic control set to manage media playback.
     """
 
-    video_preview: "VideoPreview | None" = None
+    video_preview: VideoPreview | None = None
 
-    def __init__(self, driver: "QtDriver") -> None:
+    def __init__(self, driver: QtDriver) -> None:
         super().__init__()
         self.driver = driver
         self.play_icon = QPixmap.fromImage(

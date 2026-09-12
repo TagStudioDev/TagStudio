@@ -20,9 +20,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.global_settings import (
+from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
+from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
     MAX_CACHED_THUMB_RES,
@@ -31,16 +30,18 @@ from tagstudio.qt.global_settings import (
     Splash,
     Theme,
 )
-from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
+from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class SettingsPanel(ModalContent):
-    driver: "QtDriver"
+    driver: QtDriver
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
         ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
@@ -87,7 +88,7 @@ class SettingsPanel(ModalContent):
         "%Y.%m.%d": "2024.08.21",
     }
 
-    def __init__(self, driver: "QtDriver"):
+    def __init__(self, driver: QtDriver):
         super().__init__()
         # set these "constants" because language will be loaded from config shortly after startup
         # and we want to use the current language for the dropdowns
@@ -229,6 +230,15 @@ class SettingsPanel(ModalContent):
         self.edit_field_on_add_checkbox.setChecked(self.driver.settings.edit_field_on_add)
         form_layout.addRow(
             Translations["settings.edit_field_on_add"], self.edit_field_on_add_checkbox
+        )
+
+        # Keep Tag/Field Suggest Boxes Open After Adding Items
+        self.keep_suggest_boxes_open_checkbox = QCheckBox()
+        self.keep_suggest_boxes_open_checkbox.setChecked(
+            self.driver.settings.keep_suggest_boxes_open
+        )
+        form_layout.addRow(
+            Translations["settings.keep_suggest_boxes_open"], self.keep_suggest_boxes_open_checkbox
         )
 
     # TODO: Implement Library Settings
@@ -383,13 +393,14 @@ class SettingsPanel(ModalContent):
             "tag_click_action": self.tag_click_action_combobox.currentData(),
             "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
             "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
+            "keep_suggest_boxes_open": self.keep_suggest_boxes_open_checkbox.isChecked(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
             "splash": self.splash_combobox.currentData(),
         }
 
-    def update_settings(self, driver: "QtDriver"):
+    def update_settings(self, driver: QtDriver):
         settings = self.get_settings()
 
         driver.settings.language = settings["language"]
@@ -407,6 +418,7 @@ class SettingsPanel(ModalContent):
         driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
         driver.settings.edit_field_on_add = settings["edit_field_on_add"]
+        driver.settings.keep_suggest_boxes_open = settings["keep_suggest_boxes_open"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
@@ -428,7 +440,7 @@ class SettingsPanel(ModalContent):
         )
 
     @classmethod
-    def build_modal(cls, driver: "QtDriver") -> Modal:
+    def build_modal(cls, driver: QtDriver) -> Modal:
         settings_panel = cls(driver)
 
         modal = Modal(

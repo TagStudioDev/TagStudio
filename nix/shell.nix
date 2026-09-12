@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 {
   lib,
@@ -21,7 +21,7 @@ let
         stdenv.cc.cc
         zstd
       ]
-      ++ lib.optionals (!stdenv.isDarwin) [
+      ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
         dbus
         libGL
         libdrm
@@ -35,7 +35,7 @@ let
       ]
     );
 
-  libraryPath = "${lib.optionalString pkgs.stdenv.isDarwin "DY"}LD_LIBRARY_PATH";
+  libraryPath = "${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin "DY"}LD_LIBRARY_PATH";
 
   python3Wrapped = pkgs.symlinkJoin {
     inherit (python3)
@@ -118,7 +118,7 @@ pkgs.mkShellNoCC {
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          uv pip install --quiet --editable . --group docs --group extra --group test
+          uv pip install --quiet --editable . --group docs --group extra --group reuse --group test
           cp pyproject.toml "''${venv}"/pyproject.toml
       fi
 

@@ -6,10 +6,13 @@ from typing import override
 
 from PySide6.QtWidgets import QWidget
 
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.views.underlined_widget_view import UnderlinedWidgetView
 
 
 class UnderlinedWidget(QWidget):
+    """A container for a widget and an underline indicator."""
+
     def __init__(self, widget: QWidget) -> None:
         super().__init__()
         self.setLayout(UnderlinedWidgetView(widget))
@@ -19,7 +22,7 @@ class UnderlinedWidget(QWidget):
 
     @property
     def widget(self) -> QWidget:
-        return self.layout().itemAt(0).widget()
+        return unwrap(unwrap(self.layout().itemAt(0)).widget())
 
     @override
     def layout(self) -> UnderlinedWidgetView:
