@@ -18,7 +18,7 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DEFAULT_FIELD_TEMPLATES,
+    default_field_templates,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP, DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagParent
@@ -468,7 +468,7 @@ class MigrationTo200(DBMigration):
 
         # Add default field templates
         logger.info(fmt_log("Adding default field templates..."))
-        for template in DEFAULT_FIELD_TEMPLATES:
+        for template in default_field_templates():
             session.add(template)
         session.flush()
 
