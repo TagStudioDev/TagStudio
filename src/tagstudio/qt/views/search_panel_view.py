@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.views.styles.stylesheets import list_button_style
+from tagstudio.qt.views.styles.stylesheets import PAD, list_button_style
 
 if TYPE_CHECKING:
     pass
@@ -29,13 +29,13 @@ class SearchPanelView(QVBoxLayout):
     ) -> None:
         self.is_chooser: bool = is_chooser
         super().__init__()
-        self.setContentsMargins(6, 0, 6, 0)
+        self.setContentsMargins(PAD, 0, PAD, 0)
 
         # Limit container
         self.limit_container = QWidget()
         self.limit_layout = QHBoxLayout(self.limit_container)
         self.limit_layout.setContentsMargins(0, 0, 0, 0)
-        self.limit_layout.setSpacing(12)
+        self.limit_layout.setSpacing(PAD * 2)
         self.limit_layout.addStretch(1)
         self.limit_title = QLabel(Translations["home.search.view_limit"])
         self.limit_layout.addWidget(self.limit_title)
@@ -57,7 +57,7 @@ class SearchPanelView(QVBoxLayout):
         # Scroll area
         self.scroll_contents = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.scroll_layout.setContentsMargins(PAD, 0, PAD, 0)
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidget(self.scroll_contents)

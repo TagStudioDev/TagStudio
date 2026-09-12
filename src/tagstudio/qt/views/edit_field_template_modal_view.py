@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import checkbox_style
+from tagstudio.qt.views.styles.stylesheets import PAD, checkbox_style
 
 logger = structlog.get_logger(__name__)
 
@@ -29,7 +29,7 @@ class EditFieldTemplateModalView(ModalContent):
         # Layout Init
         self.setMinimumSize(460, 200)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 0, 6, 0)
+        self.root_layout.setContentsMargins(PAD, 0, PAD, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Field Name
@@ -64,14 +64,14 @@ class EditFieldTemplateModalView(ModalContent):
         self._text_field_attributes_layout = QHBoxLayout(self._text_field_attributes_widget)
         self._text_field_attributes_layout.setStretch(1, 1)
         self._text_field_attributes_layout.setContentsMargins(0, 0, 0, 0)
-        self._text_field_attributes_layout.setSpacing(6)
+        self._text_field_attributes_layout.setSpacing(PAD)
 
         # Is Multiline
         self._multiline_widget = QWidget()
         self._multiline_layout = QHBoxLayout(self._multiline_widget)
         self._multiline_layout.setStretch(1, 1)
         self._multiline_layout.setContentsMargins(0, 0, 0, 0)
-        self._multiline_layout.setSpacing(6)
+        self._multiline_layout.setSpacing(PAD)
         self._multiline_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self._multiline_title = ClickableLabel(Translations["field.text.is_multiline"])
         self._multiline_checkbox = QCheckBox()
