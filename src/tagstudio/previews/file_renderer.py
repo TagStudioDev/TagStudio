@@ -139,7 +139,7 @@ class FileRenderer:
         Args:
             size (tuple[int, int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
-            scale_radius (bool): Option to scale the radius up (Used for Preview Panel).
+            scale_radius (bool): Option to scale the radius up (Used by the Inspector).
         """
         thumb_scale: int = 512
         radius_scale: float = 1
@@ -223,7 +223,7 @@ class FileRenderer:
         Args:
             size (tuple[int,int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
-            radius_scale (float): The scale factor of the border radius (Used by Preview Panel).
+            radius_scale (float): The scale factor of the border radius (Used by the Inspector).
         """
         smooth_factor: int = 2
         radius_factor: int = 8

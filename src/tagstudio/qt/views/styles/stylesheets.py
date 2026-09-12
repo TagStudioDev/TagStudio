@@ -258,13 +258,13 @@ def color_swatch_style(
 def container_style() -> str:
     """Style used for field containers."""
     return f"""
-    QWidget#fieldContainer{{
+    QWidget#entry_data_box{{
         border-radius: 4px;
     }}
-    QWidget#fieldContainer::hover{{
+    QWidget#entry_data_box::hover{{
         background-color: {ThemePalette.COLOR_HOVER.value};
     }}
-    QWidget#fieldContainer::pressed{{
+    QWidget#entry_data_box::pressed{{
         background-color: {ThemePalette.COLOR_PRESSED.value};
     }}
     """
