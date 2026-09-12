@@ -8,9 +8,9 @@ from tagstudio.core.library.alchemy.library import Library
 # pyright: reportPrivateUsage=false
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.qt_driver import QtDriver
-from tagstudio.qt.translations import Translations
 
 
 def test_update_selection_empty(qt_driver: QtDriver):
