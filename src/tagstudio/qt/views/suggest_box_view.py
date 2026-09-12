@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout, QWi
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
 from tagstudio.qt.controllers.horizontal_scroll_area import HorizontalScrollArea
 from tagstudio.qt.views.styles.stylesheets import (
+    PAD,
     autofill_line_edit_style,
     autofill_scroll_top_style,
 )
@@ -36,7 +37,7 @@ class SuggestBoxView(QVBoxLayout):
         # Autocomplete ScrollArea
         contents = QWidget()
         self.content_layout = QHBoxLayout(contents)
-        self.content_layout.setSpacing(6)
+        self.content_layout.setSpacing(PAD)
         self.content_layout.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         scroll_area_container = QWidget()

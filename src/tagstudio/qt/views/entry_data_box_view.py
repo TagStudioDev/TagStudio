@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD
 
 # TODO: There should be a global button theme somewhere.
 _BUTTON_SIZE = 22
@@ -27,7 +28,7 @@ class EntryDataBoxView(QVBoxLayout):
         self.setContentsMargins(0, 0, 0, 0)
 
         self.inner_layout = QVBoxLayout()
-        self.inner_layout.setContentsMargins(3, 0, 0, 3)
+        self.inner_layout.setContentsMargins(HALF_PAD, 0, 0, HALF_PAD)
         self.inner_layout.setSpacing(0)
         self.field_container = QWidget()
         self.field_container.setLayout(self.inner_layout)
@@ -51,7 +52,7 @@ class EntryDataBoxView(QVBoxLayout):
         self.copy_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setFlat(True)
         self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.copy_icon)))
-        self.copy_button.setIconSize(QSize(20, 20))
+        self.copy_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import checkbox_style, title_line_edit_style
+from tagstudio.qt.views.styles.stylesheets import PAD, checkbox_style, title_line_edit_style
 
 
 class EditTextView(ModalContent):
@@ -24,7 +24,7 @@ class EditTextView(ModalContent):
         super().__init__()
         self.setMinimumSize(480, 240)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 0, 6, 0)
+        self.root_layout.setContentsMargins(PAD, 0, PAD, 0)
 
         self.name_field = QLineEdit()
         self.name_field.setStyleSheet(title_line_edit_style())

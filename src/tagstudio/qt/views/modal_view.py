@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import PAD, header
 
 logger = structlog.get_logger(__name__)
 
@@ -25,11 +25,11 @@ class ModalView(QVBoxLayout):
     ):
         super().__init__()
         self.content_widget = content_widget
-        self.setContentsMargins(6, 6 if inline_title else 12, 6, 6)
+        self.setContentsMargins(PAD, PAD if inline_title else PAD * 2, PAD, PAD)
 
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
-        self.button_layout.setContentsMargins(6, 6, 6, 6)
+        self.button_layout.setContentsMargins(PAD, PAD, PAD, PAD)
         self.button_layout.addStretch(1)
 
         # [Done]

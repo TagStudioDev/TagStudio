@@ -20,7 +20,8 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from tagstudio.qt.views.banner_view import BannerView
 from tagstudio.qt.views.styles.stylesheets import (
-    BANNER_CORNER_RADIUS,
+    PAD,
+    RADIUS,
     banner_notice_bg_color,
     banner_notice_style,
     banner_progress_bg_color,
@@ -52,7 +53,7 @@ class _BannerBackground(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         path = QPainterPath()
-        path.addRoundedRect(QRectF(self.rect()), BANNER_CORNER_RADIUS, BANNER_CORNER_RADIUS)
+        path.addRoundedRect(QRectF(self.rect()), RADIUS, RADIUS)
         painter.fillPath(path, self._bg_color)
         painter.end()
 
@@ -61,8 +62,7 @@ class Banner(QWidget):
     """A notification banner with an optional progress bar, action button, and close button."""
 
     CONTENT_HEIGHT = 36
-    GAP = 6
-    HEIGHT = CONTENT_HEIGHT + GAP
+    HEIGHT = CONTENT_HEIGHT + PAD
     ANIMATION_MS = 250
     COLOR_ANIMATION_MS = 250
     MIN_VISIBLE_MS = 3000
@@ -78,7 +78,7 @@ class Banner(QWidget):
         self.setMaximumHeight(0)
 
         outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, self.GAP)
+        outer_layout.setContentsMargins(0, 0, 0, PAD)
         outer_layout.setSpacing(0)
 
         self._background = _BannerBackground(self)
@@ -95,7 +95,7 @@ class Banner(QWidget):
         self._progress_bg_color = banner_progress_bg_color()
         self._background.setStyleSheet(self._notice_style)
         self._background.set_bg_color(self._notice_bg_color)
-        self.view.progress_bar.set_corner_radius(BANNER_CORNER_RADIUS)
+        self.view.progress_bar.set_corner_radius(RADIUS)
         self.view.progress_bar.set_chunk_color(banner_progress_chunk_color())
 
         self._card_color_anim = QVariantAnimation(self)

@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPainterPath, QPaintEve
 from PySide6.QtWidgets import QPushButton, QWidget
 
 from tagstudio.qt.views.styles.palette import Palette
+from tagstudio.qt.views.styles.stylesheets import RADIUS
 
 
 # TODO: Use newer MVC style guidelines
@@ -46,7 +47,6 @@ class ThumbButton(QPushButton):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             path = QPainterPath()
             width = 3
-            radius = 6
             path.addRoundedRect(
                 QtCore.QRectF(
                     width / 2,
@@ -54,8 +54,8 @@ class ThumbButton(QPushButton):
                     self.thumb_size[0] - width,
                     self.thumb_size[1] - width,
                 ),
-                radius,
-                radius,
+                RADIUS,
+                RADIUS,
             )
 
             if self.selected:

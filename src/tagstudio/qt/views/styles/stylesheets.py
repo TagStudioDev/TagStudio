@@ -19,8 +19,12 @@ from tagstudio.qt.views.styles.palette import (
 # TODO: There's plenty of good opportunities here to consolidate similar styles.
 # Work should be done to more closely use Qt's theming systems rather than override them.
 
-# Shared with RoundedProgressBar.set_corner_radius() so both use the exact same corner arc.
-BANNER_CORNER_RADIUS = 6
+
+RADIUS = 6  # Standard corner radius
+INNER_RADIUS = RADIUS // 2  # Inner/small corder radius
+PAD = 6  # Standard padding value
+HALF_PAD = PAD // 2
+WIN_PAD = 12  # Padding used for window edge margins
 
 
 def add_button_style() -> str:
@@ -31,7 +35,7 @@ def add_button_style() -> str:
         color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};
         font-weight: 600;
         border-color: {get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         border-style: solid;
         border-width: 2px;
         padding-right: 4px;
@@ -59,7 +63,7 @@ def button_style() -> str:
     return f"""
     QPushButton{{
         background-color: {ThemePalette.COLOR_BG.value};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         font-weight: 500;
         text-align: center;
         padding: 0px 12px;
@@ -103,7 +107,7 @@ def line_edit_style_main() -> str:
     return f"""
     QLineEdit{{
         background: {bg_color};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         font-weight: 500;
         text-align: center;
         padding: 0px 4px;
@@ -150,7 +154,7 @@ def colored_checkbox_style(
             background: rgba{primary_color.toTuple()};
             color: rgba{text_color.toTuple()};
             border-color: rgba{border_color.toTuple()};
-            border-radius: 6px;
+            border-radius: {RADIUS}px;
             border-style: solid;
             border-width: 2px;
         }}
@@ -184,7 +188,7 @@ def colored_radio_button_style(
         background: rgba{primary_color.toTuple()};
         color: rgba{text_color.toTuple()};
         border-color: rgba{border_color.toTuple()};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         border-style: solid;
         border-width: 2px;
     }}
@@ -230,7 +234,7 @@ def color_swatch_style(
         color: rgba{text_color.toTuple()};
         border-color: rgba{border_color.toTuple()};
         {bottom_color_str}
-        border-radius: 3px;
+        border-radius: {INNER_RADIUS}px;
         border-style: solid;
         border-width: 2px;
     }}
@@ -249,7 +253,7 @@ def color_swatch_style(
     QRadioButton::focus{{
         outline-style: solid;
         outline-width: 2px;
-        outline-radius: 3px;
+        outline-radius: {INNER_RADIUS}px;
         outline-color: rgba{highlight_color.toTuple()};
     }}
     """
@@ -278,7 +282,7 @@ def form_content_style() -> str:
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         else ThemePalette.COLOR_BG_LIGHT.value
     };
-        border-radius: 3px;
+        border-radius: {INNER_RADIUS}px;
         font-weight: 500;
         padding: 1px;
     }}
@@ -313,7 +317,7 @@ def list_button_style(
         font-weight: 600;
         {"font: italic;" if italic else ""}
         border-color: rgba{border_color.toTuple()};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         border-style: {border_style};
         border-width: 2px;
         padding-right: 4px;
@@ -354,7 +358,7 @@ def properties_style() -> str:
     font-family: Oxanium;
     font-weight: bold;
     font-size: 12px;
-    border-radius: 3px;
+    border-radius: {INNER_RADIUS}px;
     padding-top: 4px;
     padding-right: 1px;
     padding-bottom: 1px;
@@ -376,7 +380,7 @@ def tag_style(
         color: rgba{text_color.toTuple()};
         font-weight: 600;
         border-color: rgba{border_color.toTuple()};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         border-style: {border_style};
         border-width: 2px;
         font-size: 13px;
@@ -419,7 +423,7 @@ def tag_remove_button_style(
         color: rgba{text_color.toTuple()};
         border-color: rgba{highlight_color.toTuple()};
         border-width: 2;
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
     }}
     QPushButton::pressed{{
         background: rgba{border_color.toTuple()};
@@ -458,7 +462,7 @@ def inset_container_style(object_name: str = "") -> str:
     return f"""
     QWidget{"#" + object_name if object_name else ""}{{
         background: {bg_color};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         }}
     """
 
@@ -475,8 +479,8 @@ def autofill_scroll_top_style(object_name: str = "") -> str:
     return f"""
     QWidget{"#" + object_name if object_name else ""}{{
         background: {bg_color};
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
+        border-top-left-radius: {RADIUS}px;
+        border-top-right-radius: {RADIUS}px;
         border: none;
         }}
     """
@@ -493,8 +497,8 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
     return f"""
     QWidget{"#" + object_name if object_name else ""}{{
         background: {bg_color};
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
+        border-top-left-radius: {RADIUS}px;
+        border-top-right-radius: {RADIUS}px;
         border: solid;
         border-width: 2px 2px 0px 2px;
         border-color: rgba{Palette.accent().toTuple()};
@@ -513,8 +517,8 @@ def autofill_line_edit_style() -> str:
     return f"""
     QLineEdit{{
         background: {bg_color};
-        border-radius: 6px;
-        padding: 3px 6px;
+        border-radius: {RADIUS}px;
+        padding: {HALF_PAD}px {PAD}px;
         }}
     QLineEdit::focus{{
         padding: 4px 4px;
@@ -538,9 +542,9 @@ def autofill_line_edit_top_style() -> str:
         background: {bg_color};
         border-top-left-radius: 0px;
         border-top-right-radius: 0px;
-        border-bottom-left-radius: 6px;
-        border-bottom-right-radius: 6px;
-        padding: 0px 0px 2px 6px;
+        border-bottom-left-radius: {RADIUS}px;
+        border-bottom-right-radius: {RADIUS}px;
+        padding: 0px 0px 2px {RADIUS}px;
         }}
     QLineEdit::focus{{
         padding: 4px 4px;
@@ -555,7 +559,7 @@ def preview_warning_style() -> str:
     return f"""
     QWidget#ffmpeg_widget {{
         background: {get_ui_color(ColorType.DARK_ACCENT, UiColor.RED)};
-        border-radius: 6px;
+        border-radius: {RADIUS}px;
         }}
     """
 
@@ -598,7 +602,7 @@ def banner_close_button_style() -> str:
         background: transparent;
         color: rgba{text_color.toTuple()};
         border: none;
-        border-radius: 3px;
+        border-radius: {INNER_RADIUS}px;
     }}
     {_banner_button_hover_style("bannerCloseButton")}
     """
@@ -614,7 +618,7 @@ def banner_action_button_style() -> str:
         background-color: rgba{accent.toTuple()};
         color: rgba{text_color.toTuple()};
         border: none;
-        border-radius: 3px;
+        border-radius: {INNER_RADIUS}px;
         padding: 4px 8px;
         outline: none;
     }}
@@ -655,7 +659,7 @@ def banner_close_button_progress_style() -> str:
         background: transparent;
         color: rgba{text_color.toTuple()};
         border: none;
-        border-radius: 3px;
+        border-radius: {INNER_RADIUS}px;
     }}
     QPushButton#bannerCloseButton::hover {{
         background-color: {hover};

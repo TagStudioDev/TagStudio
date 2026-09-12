@@ -47,7 +47,7 @@ from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
-from tagstudio.qt.views.styles.stylesheets import checkbox_style
+from tagstudio.qt.views.styles.stylesheets import PAD, WIN_PAD, checkbox_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -536,7 +536,7 @@ class MainWindow(QMainWindow):
         self.central_widget.setObjectName("central_widget")
         self.central_layout = QGridLayout(self.central_widget)
         self.central_layout.setObjectName("central_layout")
-        self.central_layout.setContentsMargins(0, 9, 0, 0)
+        self.central_layout.setContentsMargins(0, WIN_PAD, 0, 0)
 
         self.setup_search_bar()
         self.setup_extra_input_bar()
@@ -548,7 +548,7 @@ class MainWindow(QMainWindow):
         self.search_bar_layout = QHBoxLayout()
         self.search_bar_layout.setObjectName("search_bar_layout")
         self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
-        self.search_bar_layout.setContentsMargins(9, 0, 0, 0)
+        self.search_bar_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
 
         self.back_button = QPushButton(self.central_widget)
         back_icon: Image.Image = self.rm.bxs_left_arrow
@@ -590,7 +590,7 @@ class MainWindow(QMainWindow):
         """Sets up inputs for sorting settings and thumbnail size."""
         self.extra_input_layout = QHBoxLayout()
         self.extra_input_layout.setObjectName("extra_input_layout")
-        self.extra_input_layout.setContentsMargins(9, 0, 0, 0)
+        self.extra_input_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
 
         self.results_label = QLabel("")
         self.results_label.setObjectName("results_label")
@@ -605,7 +605,7 @@ class MainWindow(QMainWindow):
         self.show_hidden_entries_layout = QHBoxLayout(self.show_hidden_entries_widget)
         self.show_hidden_entries_layout.setStretch(1, 1)
         self.show_hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
-        self.show_hidden_entries_layout.setSpacing(6)
+        self.show_hidden_entries_layout.setSpacing(PAD)
         self.show_hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.show_hidden_entries_title = QLabel(Translations["home.show_hidden_entries"])
         self.show_hidden_entries_checkbox = QCheckBox()
@@ -662,14 +662,14 @@ class MainWindow(QMainWindow):
 
         self.content_splitter = QSplitter()
         self.content_splitter.setObjectName("content_splitter")
-        self.content_splitter.setHandleWidth(12)
+        self.content_splitter.setHandleWidth(PAD * 2)
 
         self.central_content = QWidget()
         self.central_content.setObjectName("central_content")
         self.central_content_layout = QVBoxLayout(self.central_content)
         self.central_content_layout.setObjectName("central_content_layout")
         self.central_content_layout.setContentsMargins(0, 0, 0, 0)
-        self.central_content_layout.setSpacing(6)
+        self.central_content_layout.setSpacing(PAD)
         self.central_content_layout.addLayout(self.search_bar_layout)
         self.central_content_layout.addLayout(self.extra_input_layout)
 
@@ -687,7 +687,7 @@ class MainWindow(QMainWindow):
         self.entry_list_container = QWidget()
         self.entry_list_layout = QVBoxLayout(self.entry_list_container)
         self.entry_list_layout.setSpacing(0)
-        self.entry_list_layout.setContentsMargins(9, 0, 0, 0)
+        self.entry_list_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
 
         self.entry_scroll_area = QScrollArea()
         self.entry_scroll_area.setObjectName("entry_scroll_area")

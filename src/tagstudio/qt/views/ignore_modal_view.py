@@ -16,6 +16,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
+from tagstudio.qt.views.styles.stylesheets import PAD
 
 logger = structlog.get_logger(__name__)
 
@@ -30,7 +31,7 @@ class IgnoreModalView(ModalContent):
 
         self.setMinimumSize(640, 460)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 0, 6, 0)
+        self.root_layout.setContentsMargins(PAD, 0, PAD, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.text_edit = QPlainTextEdit()
@@ -44,6 +45,6 @@ class IgnoreModalView(ModalContent):
             Translations.format("ignore.open_file", ts_ignore=IGNORE_NAME)
         )
 
-        # Add Widgets to Layout ================================================
+        # Finalize Layout
         self.root_layout.addWidget(self.text_edit)
         self.root_layout.addWidget(self.open_button)

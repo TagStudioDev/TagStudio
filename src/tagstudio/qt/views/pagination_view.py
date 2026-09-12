@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidg
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
 
 
 class PageValidator(QIntValidator):
@@ -31,8 +32,8 @@ class PaginationView(QHBoxLayout):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(0, 6, 0, 6)
-        self.setSpacing(3)
+        self.setContentsMargins(0, PAD, 0, PAD)
+        self.setSpacing(HALF_PAD)
         _rm = ResourceManager()
 
         # [<] ----------------------------------
