@@ -41,9 +41,9 @@ from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.banner import Banner
 from tagstudio.qt.controllers.inspector import Inspector
+from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.helpers.mnemonics import assign_mnemonics
 from tagstudio.qt.mixed.landing import LandingWidget
-from tagstudio.qt.mixed.pagination import Pagination
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
