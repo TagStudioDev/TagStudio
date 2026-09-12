@@ -1641,11 +1641,14 @@ class QtDriver(DriverMixin, QObject):
         end_time = time.time()
 
         # inform user about completed search
+        time_span = f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
+        count = f"<b>{results.total_count:,}</b>"
         self.main_window.results_label.setText(
             Translations.format(
-                "status.results_found",
-                count=results.total_count,
-                time_span=format_timespan(end_time - start_time),
+                # Show "X Results" on query, "X Items" on none
+                "status.results_found" if state and state.query else "status.items",
+                count=count,
+                time_span=time_span,
             )
         )
 
