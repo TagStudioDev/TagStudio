@@ -95,7 +95,6 @@ def open_archive(filepath: Path) -> Archive:
 
     Args:
         filepath (Path): The path to the archive.
-        ext (str): The file extension.
 
     Returns:
         Archive: The opened archive.
@@ -138,7 +137,6 @@ def archive_thumb(
     Args:
         filepath (Path): The path to the archive.
         image_names: (list[Path] | list[str] | None): List of embedded image names to search for.
-        ext (str): The file extension. Used to help determine more specific archive type.
 
     Returns:
         Image: The first image found in the archive.
