@@ -17,6 +17,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagParent
+from tagstudio.core.utils.normalization import norm_path
 
 
 class Namespace(Base):
@@ -202,8 +203,9 @@ class Entry(Base):
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     filename: Mapped[str] = mapped_column()
     suffix: Mapped[str] = mapped_column()
-    date_created: Mapped[dt | None]
-    date_modified: Mapped[dt | None]
+    date_created: Mapped[float | None]
+    date_modified: Mapped[float | None]
+    file_size: Mapped[int | None]
     date_added: Mapped[dt | None]
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
@@ -237,21 +239,24 @@ class Entry(Base):
         path: Path,
         fields: list[BaseField],
         id: int | None = None,
-        date_created: dt | None = None,
-        date_modified: dt | None = None,
+        date_created: float | None = None,
+        date_modified: float | None = None,
+        file_size: int | None = None,
         date_added: dt | None = None,
     ) -> None:
         super().__init__()
-        self.path = path
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
-        self.filename = path.name
-        self.suffix = path.suffix.lstrip(".").lower()
+        self.path = norm_path(path, case_sensitive=True)  # NFD is enforced
+        self.filename = self.path.name
+        self.suffix = self.path.suffix.lstrip(".").lower()
 
         # The date the file associated with this entry was created.
         # st_birthtime on Windows and Mac, st_ctime on Linux.
         self.date_created = date_created
         # The date the file associated with this entry was last modified: st_mtime.
         self.date_modified = date_modified
+        # The size of the file associated with this entry, in bytes: st_size.
+        self.file_size = file_size
         # The date this entry was added to the library.
         self.date_added = date_added
 

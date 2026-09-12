@@ -9,7 +9,7 @@ from tempfile import TemporaryDirectory
 import pytest
 import structlog
 
-from tagstudio.core.library.alchemy.enums import BrowsingState
+from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.fields import (
     DatetimeField,
     TextField,
@@ -80,9 +80,50 @@ def test_library_add_file(library: Library):
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
 
-    assert not library.has_entry_with_path(entry.path)
+    assert library.get_entry_id_from_path(entry.path) == -1
     assert library.add_entries([entry])
-    assert library.has_entry_with_path(entry.path)
+    assert library.get_entry_id_from_path(entry.path)
+
+
+def test_path_cache_untouched_when_not_yet_built(library: Library):
+    """Only `get_or_build_path_cache()` may build the path cache."""
+    assert library.path_cache is None
+    entry = Entry(path=Path("before_any_cache.txt"), fields=[])
+    library.add_entries([entry])
+    assert library.path_cache is None
+
+
+def test_path_cache_self_maintained_by_add_entries(library: Library):
+    """`add_entries()` must keep an already-built path cache up to date on its own."""
+    library.is_case_sensitive_fs = True
+    cache = library.get_or_build_path_cache()
+    assert Path("added_directly.txt") not in cache
+
+    entry = Entry(path=Path("added_directly.txt"), fields=[])
+    new_ids = library.add_entries([entry])
+    assert cache.get(Path("added_directly.txt")) == new_ids[0]
+
+
+def test_path_cache_self_maintained_by_remove_entries(library: Library):
+    library.is_case_sensitive_fs = True
+    cache = library.get_or_build_path_cache()
+    entry = Entry(path=Path("to_remove.txt"), fields=[])
+    entry_id = library.add_entries([entry])[0]
+    assert cache.get(Path("to_remove.txt")) == entry_id
+
+    library.remove_entries([entry_id])
+    assert Path("to_remove.txt") not in cache
+
+
+def test_path_cache_self_maintained_by_update_entry_path(library: Library):
+    library.is_case_sensitive_fs = True
+    cache = library.get_or_build_path_cache()
+    entry = Entry(path=Path("old_location.txt"), fields=[])
+    entry_id = library.add_entries([entry])[0]
+
+    assert library.update_entry_path(entry_id, Path("new_location.txt"))
+    assert Path("old_location.txt") not in cache
+    assert cache.get(Path("new_location.txt")) == entry_id
 
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
@@ -146,6 +187,35 @@ def test_entries_count(library: Library):
 
     assert results.total_count == 12
     assert len(results) == 5
+
+
+@pytest.mark.parametrize(
+    "sorting_mode",
+    [SortingModeEnum.DATE_CREATED, SortingModeEnum.DATE_MODIFIED, SortingModeEnum.FILE_SIZE],
+)
+def test_search_library_sorting(library: Library, sorting_mode: SortingModeEnum):
+    entries = [
+        Entry(
+            path=Path(f"sort_{i}.txt"),
+            fields=[],
+            date_created=float(i),
+            date_modified=float(i),
+            file_size=i,
+        )
+        for i in range(3)
+    ]
+    new_ids = library.add_entries(entries)
+    assert len(new_ids) == 3
+
+    results = library.search_library(
+        BrowsingState.show_all()
+        .with_sorting_mode(sorting_mode)
+        .with_sorting_direction(ascending=True),
+        page_size=None,
+    )
+
+    sorted_new_ids = [entry_id for entry_id in results if entry_id in new_ids]
+    assert sorted_new_ids == new_ids
 
 
 def test_parents_add(library: Library, generate_tag: Callable[..., Tag]):
@@ -338,8 +408,8 @@ def test_merge_entries(library: Library):
     entry_b_: Entry = unwrap(library.get_entry_full(entry_b_id))
 
     assert library.merge_entries(entry_a_, entry_b_)
-    assert not library.has_entry_with_path(Path("a"))
-    assert library.has_entry_with_path(Path("b"))
+    assert library.get_entry_id_from_path(Path("a")) == -1
+    assert library.get_entry_id_from_path(Path("b"))
 
     entry_b_merged = unwrap(library.get_entry_full(entry_b_id))
 

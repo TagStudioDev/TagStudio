@@ -9,27 +9,22 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDuplicateEntriesProgress
-from tagstudio.qt.controllers.progress_bar import ProgressWidget
-from tagstudio.qt.controllers.relink_entries_progress import RelinkUnlinkedEntriesProgress
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.views.styles.stylesheets import header
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
 
-# TODO: Split to use MVC guidelines.
+# TODO: Split to use MVC guidelines, or completely redo.
 class FixUnlinkedEntriesModal(QWidget):
     def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.lib = library
         self.driver = driver
-
-        self.tracker = UnlinkedRegistry(lib=self.lib)
+        self.sync_engine = driver.sync_engine
 
         self.unlinked_count = -1
         self.dupe_count = -1
@@ -39,7 +34,14 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.unlinked_desc_widget = QLabel(Translations["entries.unlinked.description"])
+        self.unlinked_desc_widget = QLabel(
+            Translations["entries.unlinked.description"]
+            + "<br><br>"
+            + Translations["entries.unlinked.description.deleted"]
+            # TODO: Implement manual relinking
+            # + "<br><br>"
+            # + Translations["entries.unlinked.description.ambiguous"]
+        )
         self.unlinked_desc_widget.setObjectName("unlinkedDescriptionLabel")
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
@@ -53,35 +55,24 @@ class FixUnlinkedEntriesModal(QWidget):
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.refresh_unlinked_button = QPushButton(Translations["entries.generic.refresh_alt"])
-        self.refresh_unlinked_button.clicked.connect(self.refresh_unlinked)
+        self.refresh_unlinked_button.clicked.connect(self.driver.sync_library_callback)
 
         self.merge_class = MergeDuplicateEntriesProgress(self.lib, self.driver)
-        self.relink_class = RelinkUnlinkedEntriesProgress(self.tracker)
-
-        self.search_button = QPushButton(Translations["entries.unlinked.search_and_relink"])
-        self.relink_class.done.connect(
-            # refresh the grid
-            lambda: (
-                self.driver.update_browsing_state(),
-                self.refresh_unlinked(),
-            )
-        )
-        self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton(Translations["entries.unlinked.relink.manual"])
         self.manual_button.setHidden(True)
 
         self.remove_button = QPushButton(Translations["entries.unlinked.remove_alt"])
-        self.remove_modal = RemoveUnlinkedEntriesModal(self.driver, self.tracker)
+        self.remove_modal = RemoveUnlinkedEntriesModal(self.driver, self.sync_engine)
         self.remove_modal.done.connect(
             lambda: (
-                self.set_unlinked_count(),
-                # refresh the grid
                 self.driver.update_browsing_state(),
-                self.refresh_unlinked(),
+                self._sync_ui_from_tracker(),
             )
         )
-        self.remove_button.clicked.connect(self.remove_modal.show)
+        self.remove_button.clicked.connect(
+            lambda: (self.remove_modal.refresh_list(), self.remove_modal.show())
+        )
 
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
@@ -96,7 +87,6 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.unlinked_count_label)
         self.root_layout.addWidget(self.unlinked_desc_widget)
         self.root_layout.addWidget(self.refresh_unlinked_button)
-        self.root_layout.addWidget(self.search_button)
         self.root_layout.addWidget(self.manual_button)
         self.root_layout.addWidget(self.remove_button)
         self.root_layout.addStretch(1)
@@ -105,46 +95,22 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.update_unlinked_count()
 
-    def refresh_unlinked(self):
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=self.lib.entries_count,
-        )
-        pw.setWindowTitle(Translations["library.scan_library.title"])
-        pw.update_label(Translations["entries.unlinked.scanning"])
-
-        def update_driver_widgets():
-            if (
-                hasattr(self.driver, "library_info_window")
-                and self.driver.library_info_window.isVisible()
-            ):
-                self.driver.library_info_window.update_cleanup()
-
-        pw.from_iterable_function(
-            self.tracker.refresh_unlinked_files,
-            None,
-            self.set_unlinked_count,
-            self.update_unlinked_count,
-            self.remove_modal.refresh_list,
-            update_driver_widgets,
-        )
+    def _sync_ui_from_tracker(self) -> None:
+        """Refresh the UI from the tracker's current state, without rescanning the library."""
+        self.set_unlinked_count()
+        self.update_unlinked_count()
+        self.remove_modal.refresh_list()
 
     def set_unlinked_count(self):
         """Sets the unlinked_entries_count in the Library to the tracker's value."""
-        self.lib.unlinked_entries_count = self.tracker.unlinked_entries_count
+        self.lib.unlinked_entries_count = self.sync_engine.unlinked_entries_count
 
     def update_unlinked_count(self):
         """Updates the UI to reflect the Library's current unlinked_entries_count."""
-        # Indicates that the library is new compared to the last update.
-        # NOTE: Make sure set_unlinked_count() is called before this!
-        if self.tracker.unlinked_entries_count > 0 and self.lib.unlinked_entries_count < 0:
-            self.tracker.reset()
-
         count: int = self.lib.unlinked_entries_count
+        syncing = self.driver.file_scan_lock  # Disabled while a sync is running
 
-        self.search_button.setDisabled(count < 1)
-        self.remove_button.setDisabled(count < 1)
+        self.remove_button.setDisabled(count < 1 or syncing)
 
         count_text: str = Translations.format(
             "entries.unlinked.unlinked_count", count=count if count >= 0 else "—"
