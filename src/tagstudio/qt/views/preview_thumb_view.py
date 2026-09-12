@@ -47,7 +47,6 @@ class PreviewThumbView(QWidget):
     check_ffmpeg = Signal(bool)
     stats_updated = Signal(Path, FileAttributeData)
 
-    __img_button_size: tuple[int, int]
     __image_ratio: float
 
     _current_file: Path | None
@@ -58,7 +57,7 @@ class PreviewThumbView(QWidget):
         super().__init__()
         self._driver = driver
 
-        self.__img_button_size = (266, 266)
+        self._preview_size: tuple[int, int] = (272, 272)
         self.__image_ratio = 1.0
 
         self.__should_render_on_resize = False
@@ -79,7 +78,7 @@ class PreviewThumbView(QWidget):
         delete_action.triggered.connect(self._delete_action_callback)
 
         self.__button_wrapper = QPushButton()
-        self.__button_wrapper.setMinimumSize(*self.__img_button_size)
+        self.__button_wrapper.setMinimumSize(*self._preview_size)
         self.__button_wrapper.setFlat(True)
         self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.__button_wrapper.addAction(open_file_action)
@@ -93,7 +92,7 @@ class PreviewThumbView(QWidget):
         self.__stacked_page_setup(self.__preview_img_page, self.__button_wrapper)
 
         self.__preview_gif = QLabel()
-        self.__preview_gif.setMinimumSize(*self.__img_button_size)
+        self.__preview_gif.setMinimumSize(*self._preview_size)
         self.__preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.__preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.__preview_gif.addAction(open_file_action)
@@ -129,7 +128,7 @@ class PreviewThumbView(QWidget):
         self.__image_layout.addWidget(self.__preview_gif_page)
         self.__image_layout.addWidget(self.__media_player_page)
 
-        self.setMinimumSize(*self.__img_button_size)
+        self.setMinimumSize(*self._preview_size)
 
         self.hide_preview()
 
@@ -194,7 +193,7 @@ class PreviewThumbView(QWidget):
 
         adj_size = QSize(int(adj_width), int(adj_height))
 
-        self.__img_button_size = (int(adj_width), int(adj_height))
+        self._preview_size = (int(adj_width), int(adj_height))
         self.__button_wrapper.setMaximumSize(adj_size)
         self.__button_wrapper.setIconSize(adj_size)
         self.__preview_gif.setMaximumSize(adj_size)
@@ -243,8 +242,8 @@ class PreviewThumbView(QWidget):
         self.__should_render_on_resize = True
 
         self.__rendered_res = (
-            math.ceil(self.__img_button_size[0] * THUMB_SIZE_FACTOR),
-            math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
+            math.ceil(self._preview_size[0] * THUMB_SIZE_FACTOR),
+            math.ceil(self._preview_size[1] * THUMB_SIZE_FACTOR),
         )
 
         # TODO: Make driver update the cache manager reference here instead of passing the driver.
@@ -343,7 +342,7 @@ class PreviewThumbView(QWidget):
         if (
             self._current_file is not None
             and self.__should_render_on_resize
-            and self.__rendered_res < self.__img_button_size
+            and self.__rendered_res < self._preview_size
         ):
             self.__render_thumb(self._current_file)
 
