@@ -109,9 +109,7 @@ class FieldContainers(QWidget):
         """Update tags and fields from multiple Entry sources, showing shared tags."""
         self.update_from_selection(entry_ids, update_badges)
 
-    def update_from_selection(
-        self, entry_ids: int | list[int], update_badges: bool = True
-    ) -> None:
+    def update_from_selection(self, entry_ids: int | list[int], update_badges: bool = True) -> None:
         """Update tags and fields from one or more Entry sources."""
         entry_ids = [entry_ids] if isinstance(entry_ids, int) else list(entry_ids)
         logger.warning("[FieldContainers] Updating Selection", entry_ids=entry_ids)
@@ -346,7 +344,7 @@ class FieldContainers(QWidget):
             effect.setOpacity(0.7)
             container.setGraphicsEffect(effect)
         else:
-            container.setGraphicsEffect(None)
+            container.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     def update_text_field_callback(
         self, field: TextField, entry_id: int, content: dict[str, str | bool]

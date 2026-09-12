@@ -227,7 +227,7 @@ class TagWidget(QWidget):
             effect.setOpacity(0.55)
             self.setGraphicsEffect(effect)
         else:
-            self.setGraphicsEffect(None)
+            self.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
