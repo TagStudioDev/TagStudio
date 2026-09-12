@@ -11,12 +11,11 @@ from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_color import BuildColorPanel
-from tagstudio.qt.mixed.field_widget import FieldWidget
+from tagstudio.qt.mixed.data_box import DataBox
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.styles.stylesheets import add_button_style
 
@@ -27,7 +26,7 @@ logger = structlog.get_logger(__name__)
 
 
 # TODO: Split to use MVC guidelines.
-class ColorBoxWidget(FieldWidget):
+class ColorBoxWidget(DataBox):
     updated = Signal()
 
     def __init__(
@@ -59,8 +58,8 @@ class ColorBoxWidget(FieldWidget):
         max_width = 60
         capsules: list[Capsule] = []
 
-        while self.base_layout.itemAt(0):
-            unwrap(self.base_layout.takeAt(0)).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
+        while (item := self.base_layout.itemAt(0)) and (widget := item.widget()):
+            widget.deleteLater()
 
         for color in colors_:
             capsule = Capsule(has_edit=is_mutable, has_remove=is_mutable)

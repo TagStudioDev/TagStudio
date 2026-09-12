@@ -11,7 +11,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
-from tagstudio.qt.mixed.field_widget import FieldWidget
+from tagstudio.qt.mixed.data_box import DataBox
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ logger = structlog.get_logger(__name__)
 
 
 # TODO: Use newer MVC style guidelines
-class TagBoxWidgetView(FieldWidget):
+class TagBoxWidgetView(DataBox):
     __lib: Library
 
     def __init__(self, title: str, driver: QtDriver) -> None:

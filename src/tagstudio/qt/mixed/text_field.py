@@ -7,11 +7,11 @@ import re
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
 
-from tagstudio.qt.mixed.field_widget import FieldWidget
+from tagstudio.qt.mixed.data_box import DataBox
 
 
 # TODO: Split to use MVC guidelines.
-class TextContainerWidget(FieldWidget):
+class TextContainerWidget(DataBox):
     def __init__(self, title: str, text: str) -> None:
         super().__init__(title)
         self.setObjectName("textBox")
