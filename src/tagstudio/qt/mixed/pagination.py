@@ -7,17 +7,22 @@ from typing import cast, override
 from warnings import catch_warnings
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import QSize, Signal
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import pagination_style
 
 
 # TODO: Split to use MVC guidelines.
 class Pagination(QWidget):
     """Widget containing controls for navigating between pages of items."""
+
+    HEIGHT = 36  # Button row height (24) plus 6px above and below.
+    RIGHT_MARGIN = 6
+    SCROLLBAR_WIDTH = 14
 
     index = Signal(int)
 
@@ -37,10 +42,17 @@ class Pagination(QWidget):
 
         # [----------- ROOT LAYOUT ------------]
         self.setHidden(True)
+        self.setObjectName("pagination")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self.setFixedHeight(self.HEIGHT)
+        self.setStyleSheet(pagination_style())
         self.root_layout = QHBoxLayout(self)
-        self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Preferred)
-        self.root_layout.setContentsMargins(0, 6, 0, 0)
+        self.root_layout.setContentsMargins(0, 6, 0, 6)
         self.root_layout.setSpacing(3)
+
+        if parent is not None:
+            parent.installEventFilter(self)
+            self._sync_geometry()
 
         # [<] ----------------------------------
         self.prev_button = QPushButton()
@@ -60,6 +72,7 @@ class Pagination(QWidget):
         self.start_ellipses = QLabel()
         self.start_ellipses.setMinimumSize(self.button_size)
         self.start_ellipses.setMaximumSize(self.button_size)
+        # self.start_ellipses.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.start_ellipses.setText(". . .")
 
         # --------- [3][4] ---------------------
@@ -88,6 +101,7 @@ class Pagination(QWidget):
         self.end_ellipses = QLabel()
         self.end_ellipses.setMinimumSize(self.button_size)
         self.end_ellipses.setMaximumSize(self.button_size)
+        # self.end_ellipses.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.end_ellipses.setText(". . .")
 
         # ----------------------------- [42] ---
@@ -258,6 +272,8 @@ class Pagination(QWidget):
                         self.start_buffer_layout.itemAt(i - 1).widget().setHidden(True)
 
             self.setHidden(False)
+            self._sync_geometry()
+            self.raise_()
 
         self.validator.setTop(page_count)
         if emit:
@@ -286,6 +302,21 @@ class Pagination(QWidget):
             end_button.setMaximumSize(self.button_size)
             end_button.setHidden(True)
             self.end_buffer_layout.addWidget(end_button)
+
+    @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.parentWidget() and event.type() == QEvent.Type.Resize:
+            self._sync_geometry()
+        return super().eventFilter(watched, event)
+
+    def _sync_geometry(self):
+        parent = self.parentWidget()
+        if parent is None:
+            return
+        # Stays out of the way of the entry view scrollbar
+        right_inset = max(self.RIGHT_MARGIN, self.SCROLLBAR_WIDTH)
+        width = max(0, parent.width() - right_inset)
+        self.setGeometry(0, parent.height() - self.HEIGHT, width, self.HEIGHT)
 
 
 class Validator(QIntValidator):

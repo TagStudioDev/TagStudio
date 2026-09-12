@@ -688,6 +688,20 @@ def banner_progress_style() -> str:
     """
 
 
+def pagination_style() -> str:
+    """Style for the pagination bar."""
+    bg = QColor(banner_progress_bg_color())
+    bg.setAlpha(200)
+    border = "rgba(200, 200, 200, 30)"
+
+    return f"""
+    QWidget#pagination {{
+        background-color: rgba{bg.toTuple()};
+        border-top: 1px solid {border};
+    }}
+    """
+
+
 def banner_progress_chunk_color() -> QColor:
     """Fill color for the banner's custom-painted progress bar chunk."""
     is_dark = _is_dark_theme()

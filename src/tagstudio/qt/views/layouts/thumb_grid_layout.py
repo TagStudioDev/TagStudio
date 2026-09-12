@@ -24,13 +24,18 @@ if TYPE_CHECKING:
 
 
 class ThumbGridLayout(QLayout):
+    SPACING = 9
+
     # Id of first visible entry
     visible_changed = Signal(int)
 
-    def __init__(self, driver: QtDriver, scroll_area: QScrollArea) -> None:
+    def __init__(self, driver: QtDriver, scroll_area: QScrollArea, bottom_padding: int = 0) -> None:
         super().__init__(None)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(self.SPACING)
         self.driver: QtDriver = driver
         self.scroll_area: QScrollArea = scroll_area
+        self._bottom_padding: int = bottom_padding
 
         self._item_thumbs: list[ItemThumb] = []
         self._items: list[QLayoutItem] = []
@@ -183,8 +188,8 @@ class ThumbGridLayout(QLayout):
         width = arg__1
         per_row, _, height_offset = self._size(width)
         if per_row == 0:
-            return height_offset
-        return math.ceil(len(self._entry_ids) / per_row) * height_offset
+            return height_offset + self._bottom_padding
+        return math.ceil(len(self._entry_ids) / per_row) * height_offset + self._bottom_padding
 
     @override
     def setGeometry(self, arg__1: QRect) -> None:

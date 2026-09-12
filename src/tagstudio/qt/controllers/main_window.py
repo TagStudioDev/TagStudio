@@ -31,7 +31,6 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
     QSplitter,
-    QStatusBar,
     QVBoxLayout,
     QWidget,
 )
@@ -475,6 +474,7 @@ class MainWindow(QMainWindow):
 
         # initialized in setup_extra_input_bar
         self.extra_input_layout: QHBoxLayout
+        self.results_label: QLabel
         self.sorting_mode_combobox: QComboBox
         self.sorting_direction_combobox: QComboBox
         self.thumb_size_combobox: QComboBox
@@ -482,6 +482,8 @@ class MainWindow(QMainWindow):
         # initialized in setup_content
         self.content_layout: QHBoxLayout
         self.content_splitter: QSplitter
+        self.central_content: QWidget
+        self.central_content_layout: QVBoxLayout
 
         # initialized in setup_entry_list
         self.entry_list_container: QWidget
@@ -499,13 +501,11 @@ class MainWindow(QMainWindow):
 
         if not self.objectName():
             self.setObjectName("MainWindow")
-        self.resize(1316, 740)
+        self.resize(1280, 720)
 
         self.setup_menu_bar()
 
         self.setup_central_widget(driver)
-
-        self.setup_status_bar()
 
         QMetaObject.connectSlotsByName(self)
 
@@ -536,6 +536,7 @@ class MainWindow(QMainWindow):
         self.central_widget.setObjectName("central_widget")
         self.central_layout = QGridLayout(self.central_widget)
         self.central_layout.setObjectName("central_layout")
+        self.central_layout.setContentsMargins(0, 9, 0, 0)
 
         self.setup_search_bar()
         self.setup_extra_input_bar()
@@ -547,6 +548,7 @@ class MainWindow(QMainWindow):
         self.search_bar_layout = QHBoxLayout()
         self.search_bar_layout.setObjectName("search_bar_layout")
         self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        self.search_bar_layout.setContentsMargins(9, 0, 0, 0)
 
         self.back_button = QPushButton(self.central_widget)
         back_icon: Image.Image = self.rm.bxs_left_arrow
@@ -584,12 +586,19 @@ class MainWindow(QMainWindow):
         self.search_button.setMinimumSize(QSize(0, 32))
         self.search_bar_layout.addWidget(self.search_button)
 
-        self.central_layout.addLayout(self.search_bar_layout, 3, 0, 1, 1)
-
     def setup_extra_input_bar(self):
         """Sets up inputs for sorting settings and thumbnail size."""
         self.extra_input_layout = QHBoxLayout()
         self.extra_input_layout.setObjectName("extra_input_layout")
+        self.extra_input_layout.setContentsMargins(9, 0, 0, 0)
+
+        self.results_label = QLabel("")
+        self.results_label.setObjectName("results_label")
+        self.extra_input_layout.addWidget(self.results_label)
+
+        self.extra_input_layout.addItem(
+            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        )
 
         ## Show hidden entries checkbox
         self.show_hidden_entries_widget = QWidget()
@@ -609,11 +618,6 @@ class MainWindow(QMainWindow):
         self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_title)
 
         self.extra_input_layout.addWidget(self.show_hidden_entries_widget)
-
-        ## Spacer
-        self.extra_input_layout.addItem(
-            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
 
         ## Sorting Mode Dropdown
         self.sorting_mode_combobox = QComboBox(self.central_widget)
@@ -651,28 +655,39 @@ class MainWindow(QMainWindow):
             self.thumb_size_combobox.addItem(size[0], size[1])
         self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
 
-        self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
-
     def setup_content(self, driver: QtDriver):
         self.content_layout = QHBoxLayout()
         self.content_layout.setObjectName("content_layout")
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
 
         self.content_splitter = QSplitter()
         self.content_splitter.setObjectName("content_splitter")
         self.content_splitter.setHandleWidth(12)
 
+        self.central_content = QWidget()
+        self.central_content.setObjectName("central_content")
+        self.central_content_layout = QVBoxLayout(self.central_content)
+        self.central_content_layout.setObjectName("central_content_layout")
+        self.central_content_layout.setContentsMargins(0, 0, 0, 0)
+        self.central_content_layout.setSpacing(6)
+        self.central_content_layout.addLayout(self.search_bar_layout)
+        self.central_content_layout.addLayout(self.extra_input_layout)
+
         self.setup_entry_list(driver)
+        self.content_splitter.addWidget(self.central_content)
+
         self.setup_preview_panel(driver)
 
         self.content_splitter.setStretchFactor(0, 1)
         self.content_layout.addWidget(self.content_splitter)
 
-        self.central_layout.addLayout(self.content_layout, 10, 0, 1, 1)
+        self.central_layout.addLayout(self.content_layout, 0, 0, 1, 1)
 
     def setup_entry_list(self, driver: QtDriver):
         self.entry_list_container = QWidget()
         self.entry_list_layout = QVBoxLayout(self.entry_list_container)
         self.entry_list_layout.setSpacing(0)
+        self.entry_list_layout.setContentsMargins(9, 0, 0, 0)
 
         self.entry_scroll_area = QScrollArea()
         self.entry_scroll_area.setObjectName("entry_scroll_area")
@@ -687,8 +702,10 @@ class MainWindow(QMainWindow):
 
         self.thumb_grid = QWidget()
         self.thumb_grid.setObjectName("thumb_grid")
-        self.thumb_layout = ThumbGridLayout(driver, self.entry_scroll_area)
-        self.thumb_layout.setSpacing(min(self.thumb_size // 10, 12))
+        # Padding so floating pagination bar doesn't block bottom of scroll contents
+        self.thumb_layout = ThumbGridLayout(
+            driver, self.entry_scroll_area, bottom_padding=Pagination.HEIGHT
+        )
         self.thumb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thumb_grid.setLayout(self.thumb_layout)
         self.entry_scroll_area.setWidget(self.thumb_grid)
@@ -697,33 +714,14 @@ class MainWindow(QMainWindow):
         self.entry_list_layout.addWidget(self.banner)
 
         self.entry_list_layout.addWidget(self.entry_scroll_area)
-
         self.landing_widget = LandingWidget(driver, self.devicePixelRatio())
         self.entry_list_layout.addWidget(self.landing_widget)
-
-        self.pagination = Pagination()
-        self.entry_list_layout.addWidget(self.pagination)
-
-        self.content_splitter.addWidget(self.entry_list_container)
+        self.pagination = Pagination(self.entry_list_container)
+        self.central_content_layout.addWidget(self.entry_list_container)
 
     def setup_preview_panel(self, driver: QtDriver):
         self.preview_panel = Inspector(driver)
         self.content_splitter.addWidget(self.preview_panel)
-
-    def setup_status_bar(self):
-        # BUG: Clicking the status bar does not count as losing focus on other widgets
-        # (for example, the "Add Tag" line edit). Can this be fixed?
-        self.status_bar = QStatusBar(self)
-        self.status_bar.setObjectName("status_bar")
-        status_bar_size_policy = QSizePolicy(
-            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
-        )
-        status_bar_size_policy.setHorizontalStretch(0)
-        status_bar_size_policy.setVerticalStretch(0)
-        status_bar_size_policy.setHeightForWidth(self.status_bar.sizePolicy().hasHeightForWidth())
-        self.status_bar.setSizePolicy(status_bar_size_policy)
-        self.status_bar.setSizeGripEnabled(False)
-        self.setStatusBar(self.status_bar)
 
     # endregion
 
