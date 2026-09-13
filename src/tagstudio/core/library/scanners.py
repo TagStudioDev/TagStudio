@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 
+import os
+import stat
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 
 import structlog
-from wcmatch import pathlib
+import wcmatch.fnmatch as fnmatch
 
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, ignore_to_glob
@@ -94,17 +96,33 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
 
 
 def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[Path]:
-    """Scan for files with the internal glob-based scanner (wcmatch)."""
+    """Scan for files with the internal scanner."""
     logger.info("[Scanners] Using internal scanner for scanning", path=scan_dir)
+    matcher = fnmatch.compile(ignore_to_glob(ignore_patterns), PATH_GLOB_FLAGS)
 
-    glob_patterns = ignore_to_glob(ignore_patterns)
-    try:
-        for f in pathlib.Path(str(scan_dir)).glob(
-            "***/*", flags=PATH_GLOB_FLAGS, exclude=glob_patterns
-        ):
-            if f.is_dir():
+    def walk(dir_path: Path, ancestors: frozenset[tuple[int, int]]) -> Iterator[Path]:
+        try:
+            dir_items = list(os.scandir(dir_path))
+        except OSError as e:
+            logger.error("[Scanners] Could not scan directory", path=dir_path, error=e)
+            return
+
+        for item in dir_items:
+            rel = Path(item.path).relative_to(scan_dir)
+            if matcher.match(rel.as_posix()):
                 continue
-            path = Path(f).relative_to(scan_dir)
-            yield path
-    except ValueError:
-        logger.error("[Scanners] ValueError while scanning directory with the internal scanner")
+            try:
+                item_stat = item.stat(follow_symlinks=True)
+            except OSError:
+                continue
+
+            # Check for and handle cyclical symlinks
+            if stat.S_ISDIR(item_stat.st_mode):
+                key = (item_stat.st_dev, item_stat.st_ino)
+                if key not in ancestors:
+                    yield from walk(Path(item.path), ancestors | {key})
+            else:
+                yield rel
+
+    root_stat = scan_dir.stat()
+    yield from walk(scan_dir, frozenset({(root_stat.st_dev, root_stat.st_ino)}))
