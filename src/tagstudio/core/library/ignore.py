@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 
-from copy import deepcopy
 from pathlib import Path
 
 import structlog
@@ -43,7 +42,7 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
     Args:
         ignore_patterns (list[str]): The .gitignore-like patterns to convert.
     """
-    glob_patterns: list[str] = deepcopy(ignore_patterns)
+    glob_patterns: list[str] = list(ignore_patterns)
     glob_patterns_remove: list[str] = []
     additional_patterns: list[str] = []
     root_patterns: list[str] = []
@@ -67,25 +66,32 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
 
         elif gp.startswith("/"):
             # Matches "/file" case for .gitignore behavior where it should only match
-            # a file or folder int the root directory, and nowhere else.
-            glob_patterns_remove.append(gp)
+            # a file or folder in the root directory and nowhere else.
+            glob_patterns_remove.append(pattern)
             gp = gp.lstrip("/")
             root_patterns.append(exclusion_char + gp)
 
-    for gp in glob_patterns_remove:
-        glob_patterns.remove(gp)
-
-    glob_patterns = glob_patterns + additional_patterns
+    remove_set = set(glob_patterns_remove)
+    glob_patterns = [p for p in glob_patterns if p not in remove_set]
+    # root_patterns must be merged in before the "/**" suffix pass below, otherwise a rooted
+    # directory pattern (e.g. "/Downloads/") never gets a "/**" variant and matches nothing.
+    glob_patterns = glob_patterns + additional_patterns + root_patterns
 
     # Add "/**" suffix to suffix-less patterns to match implicit .gitignore behavior.
-    for pattern in glob_patterns:
+    for pattern in list(glob_patterns):
         if pattern.endswith("/**"):
             continue
 
         glob_patterns.append(pattern.removesuffix("/*").removesuffix("/") + "/**")
 
-    glob_patterns = glob_patterns + root_patterns
-    glob_patterns = list(set(glob_patterns))
+    # Fix wcmatch interpreting "**" as "one or more" to be a .gitignore style "zero or more".
+    # Otherwise "**/foo" won't match a root "foo" and "a/**/b" won't match match "a/b".
+    for pattern in list(glob_patterns):
+        collapsed = pattern.removeprefix("**/").replace("/**/", "/")
+        if collapsed != pattern:
+            glob_patterns.append(collapsed)
+
+    glob_patterns = list(dict.fromkeys(glob_patterns))  # Ordered deduplication
 
     logger.info("[Ignore]", glob_patterns=glob_patterns)
     return glob_patterns

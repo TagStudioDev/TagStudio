@@ -138,7 +138,7 @@ A `!` prefix before a pattern negates the pattern, allowing any files matched ma
     ```toml
     # All .jpg files will be ignored, except any located in the 'Photos' folder.
     *.jpg
-    Photos/!*.jpg
+    !Photos/*.jpg
     ```
 === "Escape a ! Symbol"
     ```toml
