@@ -47,6 +47,7 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
                 "--files",
                 "--follow",
                 "--hidden",
+                "--no-ignore",  # Ignore *literal* .gitignore files in paths
                 "--ignore-file",
                 str(compiled_ignore_path),
             ],
