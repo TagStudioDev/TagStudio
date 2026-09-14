@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+# pyright: reportPrivateUsage=false
+
+from pathlib import Path
+
 from wcmatch import glob
 
-from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, ignore_to_glob
+from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 
 
 def matches(patterns: list[str], path: str) -> bool:
@@ -102,3 +106,24 @@ def test_negation_does_not_extend_to_deeper_subfolder():
     assert matches(patterns, "a.jpg") is True
     assert matches(patterns, "Photos/a.jpg") is False
     assert matches(patterns, "Photos/Private/a.jpg") is True
+
+
+def test_ignore_file_preserves_escaped_trailing_space(tmp_path: Path):
+    """An escaped trailing space must not be stripped."""
+    ts_ignore = tmp_path / ".ts_ignore"
+    ts_ignore.write_bytes(b"foo\\ \nbar \n")
+    assert Ignore._load_ignore_file(ts_ignore) == ["foo\\ ", "bar"]
+
+
+def test_ignore_file_preserves_leading_whitespace(tmp_path: Path):
+    """Leading whitespace must not be stripped."""
+    ts_ignore = tmp_path / ".ts_ignore"
+    ts_ignore.write_bytes(b" baz\n")
+    assert Ignore._load_ignore_file(ts_ignore) == [" baz"]
+
+
+def test_ignore_file_strips_crlf_line_ending(tmp_path: Path):
+    """A Windows CRLF line ending must not become part of the pattern."""
+    ts_ignore = tmp_path / ".ts_ignore"
+    ts_ignore.write_bytes(b"qux\r\n")
+    assert Ignore._load_ignore_file(ts_ignore) == ["qux"]

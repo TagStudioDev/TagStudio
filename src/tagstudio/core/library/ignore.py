@@ -113,6 +113,18 @@ def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
     return out
 
 
+def _strip(line: str) -> str:
+    """Strip a line ending and unescaped trailing whitespace from an ignore file line.
+
+    Leading whitespace and a backslash-escaped trailing space are left intact, matching
+    .gitignore's rule that trailing spaces are ignored unless escaped.
+    """
+    line = line.rstrip("\r\n")
+    while line and line[-1].isspace() and line[-2:-1] != "\\":
+        line = line[:-1]
+    return line
+
+
 class Ignore(metaclass=Singleton):
     """Class for processing and managing glob-like file ignore file patterns."""
 
@@ -210,7 +222,7 @@ class Ignore(metaclass=Singleton):
         if path.exists():
             with open(path, encoding="utf8") as f:
                 for line_raw in f.readlines():
-                    line = line_raw.strip()
+                    line = _strip(line_raw)
                     # Ignore blank lines and comments
                     if not line or line.startswith("#"):
                         continue
