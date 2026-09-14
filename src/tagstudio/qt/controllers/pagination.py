@@ -30,24 +30,27 @@ class Pagination(QWidget):
         self.setFixedHeight(self.HEIGHT)
         self.setStyleSheet(pagination_style())
 
-        self.view = PaginationView()
-        self.setLayout(self.view)
+        self.setLayout(PaginationView())
         self._connect_callbacks()
 
         if parent is not None:
             parent.installEventFilter(self)
             self._sync_geometry()
 
+    @override
+    def layout(self) -> PaginationView:
+        return super().layout()  # pyright: ignore[reportReturnType]
+
     def _connect_callbacks(self) -> None:
-        self.view.current_page_field.returnPressed.connect(
-            lambda: self._goto_page(int(self.view.current_page_field.text()) - 1)
+        self.layout().current_page_field.returnPressed.connect(
+            lambda: self._goto_page(int(self.layout().current_page_field.text()) - 1)
         )
 
     def update_buttons(self, page_count: int, index: int, emit: bool = True):
         if index < 0:
             raise ValueError("Negative index detected")
 
-        view = self.view
+        view = self.layout()
         for i in range(0, 10):
             if button := self._get_button_at(view.start_buffer_layout, i):
                 button.setHidden(True)

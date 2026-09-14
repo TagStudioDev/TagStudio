@@ -25,10 +25,10 @@ from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import ThemePalette
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.controllers.entry_data_box import EntryDataBox
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.tiles.color_data import ColorData
+from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
-from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
@@ -119,8 +119,8 @@ class TagColorManager(QWidget):
             for group, colors in self.driver.lib.tag_color_groups.items():
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
-                color_box = ColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_data = ColorData(group, colors, self.driver.lib)
+                color_data.updated.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),
@@ -131,10 +131,10 @@ class TagColorManager(QWidget):
                         ),
                     )
                 )
-                entry_data_box = EntryDataBox(self.driver.lib.get_namespace_name(group))
-                entry_data_box.set_inner_widget(color_box)
+                tile = Tile(self.driver.lib.get_namespace_name(group))
+                tile.set_inner_widget(color_data)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
-                    entry_data_box.set_remove_callback(
+                    tile.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
@@ -150,7 +150,7 @@ class TagColorManager(QWidget):
                         )
                     )
 
-                self.scroll_layout.addWidget(entry_data_box)
+                self.scroll_layout.addWidget(tile)
 
             if all_default:
                 ns_container = QWidget()

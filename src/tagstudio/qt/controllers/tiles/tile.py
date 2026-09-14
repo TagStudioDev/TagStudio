@@ -11,88 +11,93 @@ from PySide6.QtGui import QEnterEvent, QResizeEvent
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.views.entry_data_box_view import EntryDataBoxView
 from tagstudio.qt.views.styles.stylesheets import container_style, header
+from tagstudio.qt.views.tiles.tile_view import TileView
 
 
-class EntryDataBox(QWidget):
-    def __init__(self, title: str = "DATA BOX") -> None:
+class Tile(QWidget):
+    """Wraps a title, action buttons, and data such as text or tags inside a single widget."""
+
+    def __init__(self, title: str = "TILE") -> None:
         super().__init__()
-        self.setObjectName("entry_data_box")
+        self.setObjectName("tile")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.title: str = title
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
 
-        self.view = EntryDataBoxView()
-        self.setLayout(self.view)
+        self.setLayout(TileView())
         self.set_title(title)
         self.setStyleSheet(container_style())
 
+    @override
+    def layout(self) -> TileView:
+        return super().layout()  # pyright: ignore[reportReturnType]
+
     def set_copy_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
-            self.view.copy_button.clicked.disconnect()
+            self.layout().copy_button.clicked.disconnect()
 
         self.copy_callback = callback
         if callback:
-            self.view.copy_button.clicked.connect(callback)
+            self.layout().copy_button.clicked.connect(callback)
 
     def set_edit_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
-            self.view.edit_button.clicked.disconnect()
+            self.layout().edit_button.clicked.disconnect()
 
         self.edit_callback = callback
         if callback:
-            self.view.edit_button.clicked.connect(callback)
+            self.layout().edit_button.clicked.connect(callback)
 
     def set_remove_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
-            self.view.remove_button.clicked.disconnect()
+            self.layout().remove_button.clicked.disconnect()
 
         self.remove_callback = callback
         if callback:
-            self.view.remove_button.clicked.connect(callback)
+            self.layout().remove_button.clicked.connect(callback)
 
     def set_inner_widget(self, widget: QWidget) -> None:
-        if item := self.view.data_layout.itemAt(0):
+        if item := self.layout().data_layout.itemAt(0):
             old: QWidget = unwrap(item.widget())
-            self.view.data_layout.removeWidget(old)
+            self.layout().data_layout.removeWidget(old)
             old.deleteLater()
 
-        self.view.data_layout.addWidget(widget)
+        self.layout().data_layout.addWidget(widget)
 
     def get_inner_widget(self) -> QWidget | None:
-        if item := self.view.data_layout.itemAt(0):
+        if item := self.layout().data_layout.itemAt(0):
             return item.widget()
         return None
 
     def set_title(self, title: str) -> None:
         self.title = header(title, 4)
-        self.view.title_widget.setText(self.title)
+        self.layout().title_widget.setText(self.title)
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
-        # NOTE: You could pass the hover event to the EntryDataBox if needed.
+        # NOTE: You could pass the hover event to the inner widget if needed.
         if self.copy_callback:
-            self.view.copy_button.setHidden(False)
+            self.layout().copy_button.setHidden(False)
         if self.edit_callback:
-            self.view.edit_button.setHidden(False)
+            self.layout().edit_button.setHidden(False)
         if self.remove_callback:
-            self.view.remove_button.setHidden(False)
+            self.layout().remove_button.setHidden(False)
         return super().enterEvent(event)
 
     @override
     def leaveEvent(self, event: QEvent) -> None:
         if self.copy_callback:
-            self.view.copy_button.setHidden(True)
+            self.layout().copy_button.setHidden(True)
         if self.edit_callback:
-            self.view.edit_button.setHidden(True)
+            self.layout().edit_button.setHidden(True)
         if self.remove_callback:
-            self.view.remove_button.setHidden(True)
+            self.layout().remove_button.setHidden(True)
         return super().leaveEvent(event)
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.view.title_widget.setFixedWidth(int(event.size().width() // 1.5))
+        self.layout().title_widget.setFixedWidth(int(event.size().width() // 1.5))
         return super().resizeEvent(event)
