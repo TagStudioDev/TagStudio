@@ -16,8 +16,6 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DEFAULT_DATETIME_FIELD_TEMPLATES,
-    DEFAULT_TEXT_FIELD_TEMPLATES,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
 from tagstudio.core.library.alchemy.utils import list_tables
@@ -384,8 +382,6 @@ class MigrationTo200(DBMigration):
     @classmethod
     def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB to DB_VERSION 200."""
-        # TODO: this migration uses default values of the most recent DB version, fix
-        # THIS WILL BREAK ONCE THESE DEFAULT VALUES ARE CHANGED!
         # Drop unused 'boolean_fields' and 'value_type' tables
         logger.info(fmt_log("Dropping boolean_fields and value_type tables..."))
         conn.execute("DROP TABLE boolean_fields")
@@ -467,11 +463,19 @@ class MigrationTo200(DBMigration):
         logger.info(fmt_log("Adding default field templates..."))
         conn.executemany(
             "INSERT INTO text_field_templates (name, is_multiline) VALUES (:name, :is_multiline)",
-            DEFAULT_TEXT_FIELD_TEMPLATES,
+            [
+                {"name": "Title", "is_multiline": False},
+                {"name": "Author", "is_multiline": False},
+                {"name": "Artist", "is_multiline": False},
+                {"name": "URL", "is_multiline": False},
+                {"name": "Description", "is_multiline": True},
+                {"name": "Notes", "is_multiline": True},
+                {"name": "Comments", "is_multiline": True},
+            ],
         )
-        conn.executemany(
+        conn.execute(
             "INSERT INTO datetime_field_templates (name) VALUES (:name)",
-            DEFAULT_DATETIME_FIELD_TEMPLATES,
+            {"name": "Date"},
         )
 
         # DB indices for improved performance
