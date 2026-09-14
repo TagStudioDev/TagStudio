@@ -9,7 +9,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import structlog
-import wcmatch.fnmatch as fnmatch
+from wcmatch import glob
 
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, ignore_to_glob
@@ -98,7 +98,7 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
 def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[Path]:
     """Scan for files with the internal scanner."""
     logger.info("[Scanners] Using internal scanner for scanning", path=scan_dir)
-    matcher = fnmatch.compile(ignore_to_glob(ignore_patterns), PATH_GLOB_FLAGS)
+    matcher = glob.compile(patterns=ignore_to_glob(ignore_patterns), flags=PATH_GLOB_FLAGS)
 
     def walk(dir_path: Path, ancestors: frozenset[tuple[int, int]]) -> Iterator[Path]:
         try:

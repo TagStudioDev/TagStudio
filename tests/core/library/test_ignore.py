@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-import wcmatch.fnmatch as fnmatch
+from wcmatch import glob
 
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, ignore_to_glob
 
 
 def matches(patterns: list[str], path: str) -> bool:
-    return fnmatch.compile(ignore_to_glob(patterns), PATH_GLOB_FLAGS).match(path)
+    return glob.compile(ignore_to_glob(patterns), flags=PATH_GLOB_FLAGS).match(path)
 
 
 def test_ignore_to_glob_does_not_crash_on_negated_root_anchored_pattern():
@@ -84,3 +84,21 @@ def test_ignore_to_glob_output_has_no_duplicates():
     """Output must be deduplicated."""
     glob_patterns = ignore_to_glob(["*.jpg", "Photos/", "**/foo"])
     assert len(glob_patterns) == len(set(glob_patterns))
+
+
+def test_single_asterisk_does_not_match_slash():
+    """A single "*" must not match a single "/".
+
+    fnmatch will still match "*" to a "/", when gitignore and wcmatch.glob will not.
+    """
+    patterns = ["Images/*.png"]
+    assert matches(patterns, "Images/mario.png") is True
+    assert matches(patterns, "Images/Mario/cat.png") is False
+
+
+def test_negation_does_not_extend_to_deeper_subfolder():
+    """A negation must not extend into a deeper subfolder its pattern doesn't match."""
+    patterns = ["*.jpg", "!Photos/*.jpg", "Photos/Private/*.jpg"]
+    assert matches(patterns, "a.jpg") is True
+    assert matches(patterns, "Photos/a.jpg") is False
+    assert matches(patterns, "Photos/Private/a.jpg") is True

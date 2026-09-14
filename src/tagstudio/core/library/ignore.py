@@ -5,15 +5,14 @@
 from pathlib import Path
 
 import structlog
-import wcmatch.fnmatch as fnmatch
-from wcmatch import glob, pathlib
+from wcmatch import glob
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
 from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
-PATH_GLOB_FLAGS: int = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE
+PATH_GLOB_FLAGS: int = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE
 
 
 GLOBAL_IGNORE = [
@@ -119,7 +118,7 @@ class Ignore(metaclass=Singleton):
 
     _last_loaded: tuple[Path, float] | None = None
     _patterns: list[str] = []
-    compiled_patterns: fnmatch.WcMatcher | None = None
+    compiled_patterns: glob.WcMatcher | None = None
 
     @staticmethod
     def read_ignore_file(library_dir: Path) -> list[str]:
@@ -185,9 +184,9 @@ class Ignore(metaclass=Singleton):
                 new_mtime=loaded[1],
             )
             Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
-            Ignore.compiled_patterns = fnmatch.compile(
-                ignore_to_glob(Ignore._patterns),
-                PATH_GLOB_FLAGS,
+            Ignore.compiled_patterns = glob.compile(
+                patterns=ignore_to_glob(Ignore._patterns),
+                flags=PATH_GLOB_FLAGS,
             )
         else:
             logger.info(
