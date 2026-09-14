@@ -47,7 +47,7 @@ from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
-from tagstudio.qt.views.styles.stylesheets import PAD, WIN_PAD, checkbox_style
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, WIN_PAD, checkbox_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -662,7 +662,7 @@ class MainWindow(QMainWindow):
 
         self.content_splitter = QSplitter()
         self.content_splitter.setObjectName("content_splitter")
-        self.content_splitter.setHandleWidth(PAD * 2)
+        self.content_splitter.setHandleWidth(PAD + HALF_PAD)
 
         self.central_content = QWidget()
         self.central_content.setObjectName("central_content")

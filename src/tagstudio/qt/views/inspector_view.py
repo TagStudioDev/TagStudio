@@ -12,11 +12,11 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidg
 
 from tagstudio.core.constants import FFMPEG_HELP_URL
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.controllers.entry_data_box_list import EntryDataBoxList
 from tagstudio.qt.controllers.field_suggest_box import FieldSuggestBox
 from tagstudio.qt.controllers.preview_thumb import PreviewThumb
 from tagstudio.qt.controllers.return_button import ReturnButton
 from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
+from tagstudio.qt.controllers.tiles.tile_list import TileList
 from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import (
@@ -53,7 +53,7 @@ class InspectorView(QVBoxLayout):
 
         self.preview_thumb = PreviewThumb(driver.lib, driver)
         self.file_attrs = FileAttributes(driver.lib, driver)
-        self.containers = EntryDataBoxList(driver.lib, driver)
+        self.containers = TileList(driver.lib, driver)
 
         # Visual Preview
         preview_section = QWidget()

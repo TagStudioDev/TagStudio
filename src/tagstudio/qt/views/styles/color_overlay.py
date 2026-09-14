@@ -23,7 +23,7 @@ def auto_theme_overlay(
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
-        inverse (bool): Option inverse the overlay color relative to the current theme.
+        inverse (bool): Option to invert the overlay color relative to the current theme.
         use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
     """
     dark_fg: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG

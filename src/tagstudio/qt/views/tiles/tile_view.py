@@ -17,7 +17,9 @@ _ICON_MARGIN = 4
 _ICON_SIZE = _BUTTON_SIZE - _ICON_MARGIN
 
 
-class EntryDataBoxView(QVBoxLayout):
+class TileView(QVBoxLayout):
+    """The layout used for a Tile widget."""
+
     _rm = ResourceManager()
     copy_icon = auto_theme_overlay(_rm.copy, inverse=True)
     edit_icon = auto_theme_overlay(_rm.edit, inverse=True)

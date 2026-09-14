@@ -6,6 +6,7 @@ import typing
 from collections.abc import Callable
 from datetime import datetime as dt
 from functools import partial
+from typing import override
 from warnings import catch_warnings
 
 import structlog
@@ -23,12 +24,12 @@ from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.controllers.edit_text import EditText
-from tagstudio.qt.controllers.entry_data_box import EntryDataBox
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.tag_box import TagBoxWidget
+from tagstudio.qt.controllers.tiles.tag_data import TagData
+from tagstudio.qt.controllers.tiles.text_data import TextData
+from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.text_field import TextContainerWidget
-from tagstudio.qt.views.entry_data_box_list_view import EntryDataBoxListView
+from tagstudio.qt.views.tiles.tile_list_view import TileListView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -36,8 +37,8 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class EntryDataBoxList(QWidget):
-    """Widget for the tag and field boxes displayed inside the Inspector."""
+class TileList(QWidget):
+    """A styled list of Tile widgets."""
 
     on_tags_update = Signal()
 
@@ -51,10 +52,13 @@ class EntryDataBoxList(QWidget):
         self.common_fields: list = []  # TODO: Reimplement
         self.mixed_fields: list = []  # TODO: Reimplement
         self.cached_entries: list[Entry] = []
-        self._data_boxes: list[EntryDataBox] = []
+        self._tiles: list[Tile] = []
 
-        self.view = EntryDataBoxListView()
-        self.setLayout(self.view)
+        self.setLayout(TileListView())
+
+    @override
+    def layout(self) -> TileListView:
+        return super().layout()  # pyright: ignore[reportReturnType]
 
     @property
     def top_entry_id(self) -> int:
@@ -63,7 +67,7 @@ class EntryDataBoxList(QWidget):
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
-        logger.warning("[EntryDataBoxList] Updating Selection", entry_id=entry_id)
+        logger.warning("[TileList] Updating Selection", entry_id=entry_id)
 
         entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
@@ -79,9 +83,7 @@ class EntryDataBoxList(QWidget):
         if entry_tags:
             categories = self.get_tag_categories(entry_tags)
             for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
-                self.write_tag_container(
-                    container_index, tags=tags, category_tag=cat, is_mixed=False
-                )
+                self.write_tag_tile(container_index, tags=tags, category_tag=cat, is_mixed=False)
                 container_index += 1
                 container_len += 1
         if update_badges:
@@ -89,11 +91,11 @@ class EntryDataBoxList(QWidget):
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
-            self.write_field_container(index, field, is_mixed=False)
+            self.write_field_tile(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self._data_boxes) > container_len:
-            for i, c in enumerate(self._data_boxes):
+        if len(self._tiles) > container_len:
+            for i, c in enumerate(self._tiles):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
@@ -112,7 +114,7 @@ class EntryDataBoxList(QWidget):
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
-        for c in self._data_boxes:
+        for c in self._tiles:
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
@@ -176,7 +178,7 @@ class EntryDataBoxList(QWidget):
         assert isinstance(field_templates, list)
 
         logger.info(
-            "[EntryDataBoxList][add_field_to_selected]",
+            "[TileList][add_field_to_selected]",
             selected=self.driver.selected,
             fields=[
                 (field_template.class_name, field_template.id) for field_template in field_templates
@@ -186,7 +188,7 @@ class EntryDataBoxList(QWidget):
         for entry_id in self.driver.selected:
             for field_template in field_templates:
                 logger.info(
-                    "[EntryDataBoxList][add_field_to_selected] Adding field",
+                    "[TileList][add_field_to_selected] Adding field",
                     name=field_template.name,
                     type=field_template.class_name,
                 )
@@ -200,7 +202,7 @@ class EntryDataBoxList(QWidget):
         if isinstance(tag_ids, int):
             tag_ids = [tag_ids]
         logger.info(
-            "[EntryDataBoxList][add_tags_to_selected]",
+            "[TileList][add_tags_to_selected]",
             selected=self.driver.selected,
             tag_ids=tag_ids,
         )
@@ -227,8 +229,8 @@ class EntryDataBoxList(QWidget):
         self._remove_field(field)
         self.update_from_entry(entry_id)
 
-    def write_field_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
-        """Update/Create data for a field EntryDataBox.
+    def write_field_tile(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
+        """Update/Create data for a field Tile.
 
         Args:
             index(int): The container index.
@@ -237,9 +239,7 @@ class EntryDataBoxList(QWidget):
                 If True, field is not present in all selected items.
         """
 
-        def write_text_container(
-            container: EntryDataBox, field: TextField, title: str, is_mixed: bool
-        ):
+        def write_text_tile(container: Tile, field: TextField, title: str, is_mixed: bool):
             container.set_title(field.name)
 
             # Normalize line endings in any text content.
@@ -249,7 +249,7 @@ class EntryDataBoxList(QWidget):
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"
 
-            inner_widget = TextContainerWidget(title, text)
+            inner_widget = TextData(title, text)
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
@@ -272,7 +272,7 @@ class EntryDataBoxList(QWidget):
                 )
 
         def write_datetime_container(
-            container: EntryDataBox, field: DatetimeField, title: str, is_mixed: bool
+            container: Tile, field: DatetimeField, title: str, is_mixed: bool
         ):
             container.set_title(field.name)
 
@@ -287,7 +287,7 @@ class EntryDataBoxList(QWidget):
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"
 
-            inner_widget = TextContainerWidget(title, text)
+            inner_widget = TextData(title, text)
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
@@ -311,7 +311,7 @@ class EntryDataBoxList(QWidget):
 
         def write_unknown_container():
             container.set_title(field.name)
-            inner_widget = TextContainerWidget(title, field.name)
+            inner_widget = TextData(title, field.name)
             container.set_inner_widget(inner_widget)
             container.set_remove_callback(
                 lambda: self.remove_message_box(
@@ -321,19 +321,19 @@ class EntryDataBoxList(QWidget):
             )
 
         logger.info(
-            "[EntryDataBoxList][write_container]",
+            "[TileList][write_container]",
             index=index,
             name=field.name,
             type=field.class_name,
         )
 
         # Create new containers if necessary
-        if len(self._data_boxes) < (index + 1):
-            container = EntryDataBox()
-            self._data_boxes.append(container)
-            self.view.scroll_layout.addWidget(container)
+        if len(self._tiles) < (index + 1):
+            container = Tile()
+            self._tiles.append(container)
+            self.layout().scroll_layout.addWidget(container)
         else:
-            container = self._data_boxes[index]
+            container = self._tiles[index]
 
         # Set field title
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
@@ -341,7 +341,7 @@ class EntryDataBoxList(QWidget):
 
         # Write containers
         if type(field) is TextField:
-            write_text_container(container, field, title, is_mixed)
+            write_text_tile(container, field, title, is_mixed)
         elif type(field) is DatetimeField:
             write_datetime_container(container, field, title, is_mixed)
         else:
@@ -349,10 +349,10 @@ class EntryDataBoxList(QWidget):
 
         container.setHidden(False)
 
-    def write_tag_container(
+    def write_tag_tile(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
     ) -> None:
-        """Update/Create tag data for a tag EntryDataBox.
+        """Update/Create tag data for a tag Tile.
 
         Args:
             index(int): The container index.
@@ -361,25 +361,25 @@ class EntryDataBoxList(QWidget):
             is_mixed(bool): Relevant when multiple items are selected.
                 If True, field is not present in all selected items.
         """
-        logger.info("[EntryDataBoxList][write_tag_container]", index=index)
-        if len(self._data_boxes) < (index + 1):
-            container = EntryDataBox()
-            self._data_boxes.append(container)
-            self.view.scroll_layout.addWidget(container)
+        logger.info("[TileList][write_tag_tile]", index=index)
+        if len(self._tiles) < (index + 1):
+            container = Tile()
+            self._tiles.append(container)
+            self.layout().scroll_layout.addWidget(container)
         else:
-            container = self._data_boxes[index]
+            container = self._tiles[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
 
         if not is_mixed:
             inner_widget = container.get_inner_widget()
 
-            if isinstance(inner_widget, TagBoxWidget):
+            if isinstance(inner_widget, TagData):
                 with catch_warnings(record=True):
                     inner_widget.on_update.disconnect()
 
             else:
-                inner_widget = TagBoxWidget(Translations["entries.tags"], self.driver)
+                inner_widget = TagData(Translations["entries.tags"], self.driver)
                 container.set_inner_widget(inner_widget)
             inner_widget.set_entries([e.id for e in self.cached_entries])
             inner_widget.set_tags(tags)
@@ -392,7 +392,7 @@ class EntryDataBoxList(QWidget):
             )
         else:
             text = f"<i>{Translations['field.mixed_data']}</i>"
-            inner_widget = TextContainerWidget("Mixed Tags", text)  # NOTE: Unlocalized but unused
+            inner_widget = TextData("Mixed Tags", text)  # NOTE: Unlocalized but unused
             container.set_inner_widget(inner_widget)
 
         container.set_edit_callback()
@@ -402,7 +402,7 @@ class EntryDataBoxList(QWidget):
     def _remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
-            "[EntryDataBoxList] Removing Field",
+            "[TileList] Removing Field",
             field=field,
             selected=[x.path for x in self.cached_entries],
         )

@@ -27,8 +27,8 @@ from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
 from tagstudio.qt.controllers.edit_text import EditText
-from tagstudio.qt.controllers.entry_data_box_list import EntryDataBoxList
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.tiles.tile_list import TileList
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.views.inspector_view import InspectorView
@@ -186,8 +186,8 @@ class Inspector(QWidget):
             self.layout().containers.update_from_entry(self._selected[0])
 
     def _edit_field(self, entry_id: int, field: BaseField) -> None:
-        # TODO: A lot of this code is similar to or straight up shared with EntryDataBoxList.
-        # It's possible to reuse it later, after an EntryDataBoxList refactor.
+        # TODO: A lot of this code is similar to or straight up shared with TileList.
+        # It's possible to reuse it later, after a TileList refactor.
         field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
 
         if type(field) is TextField:
@@ -281,7 +281,7 @@ class Inspector(QWidget):
         self.layout().preview_thumb.media_player.stop()
 
     @property
-    def containers(self) -> EntryDataBoxList:
+    def containers(self) -> TileList:
         return self.layout().containers
 
     @override

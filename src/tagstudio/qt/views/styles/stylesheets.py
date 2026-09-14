@@ -260,15 +260,15 @@ def color_swatch_style(
 
 
 def container_style() -> str:
-    """Style used for field containers."""
+    """Style used for Tile widgets."""
     return f"""
-    QWidget#entry_data_box{{
+    QWidget#tile{{
         border-radius: 4px;
     }}
-    QWidget#entry_data_box::hover{{
+    QWidget#tile::hover{{
         background-color: {ThemePalette.COLOR_HOVER.value};
     }}
-    QWidget#entry_data_box::pressed{{
+    QWidget#tile::pressed{{
         background-color: {ThemePalette.COLOR_PRESSED.value};
     }}
     """
