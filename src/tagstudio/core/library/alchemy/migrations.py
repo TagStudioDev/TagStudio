@@ -12,7 +12,6 @@ import structlog
 import ujson
 
 from tagstudio.core.constants import IGNORE_NAME, TAG_ARCHIVED, TS_FOLDER_NAME
-from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
@@ -21,7 +20,7 @@ from tagstudio.core.library.alchemy.constants import (
     DEFAULT_TEXT_FIELD_TEMPLATES,
 )
 from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
-from tagstudio.core.library.alchemy.utils import list_tables, sqlqlchemy_to_dict
+from tagstudio.core.library.alchemy.utils import list_tables
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -201,9 +200,6 @@ class MigrationTo8(DBMigration):
     def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
         """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
-        # TODO: as before, this migration uses the current default colors, while it should really be
-        # using the default colors as they were in that specific version.
-        # FUTURE CHANGES TO THE DEFAULT COLORS WILL BREAK THIS
         conn.execute("""
             ALTER TABLE tag_colors
             ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL
@@ -211,10 +207,28 @@ class MigrationTo8(DBMigration):
         logger.info(fmt_log("Added color_border column to tag_colors table"))
 
         # collect new default tag colors
-        tag_colors: list[dict] = [
-            sqlqlchemy_to_dict(c)
-            for c in default_color_groups.shades()
-            if c.slug in ["burgundy", "dark-teal", "dark_lavender"]
+        tag_colors = [
+            {
+                "slug": "burgundy",
+                "namespace": "tagstudio-shades",
+                "name": "Burgundy",
+                "primary": "#6E1C24",
+                "secondary": None,
+            },
+            {
+                "slug": "dark-teal",
+                "namespace": "tagstudio-shades",
+                "name": "Dark Teal",
+                "primary": "#1F5E47",
+                "secondary": None,
+            },
+            {
+                "slug": "dark_lavender",
+                "namespace": "tagstudio-shades",
+                "name": "Dark Lavender",
+                "primary": "#3D3B6C",
+                "secondary": None,
+            },
         ]
 
         # Add any new default colors introduced in DB_VERSION 8
@@ -231,15 +245,11 @@ class MigrationTo8(DBMigration):
         )
 
         # Update Neon colors to use the the color_border property
-        conn.executemany(
-            """
-                UPDATE tag_colors
-                SET slug = :slug, namespace = :namespace, name = :name,
-                \"primary\" = :primary, secondary = :secondary, color_border = :color_border
-                WHERE namespace == :namespace AND slug = :slug
-            """,
-            [sqlqlchemy_to_dict(c) for c in default_color_groups.neon()],
-        )
+        conn.execute("""
+            UPDATE tag_colors
+            SET color_border = TRUE
+            WHERE namespace = 'tagstudio-neon'
+        """)
 
 
 class MigrationTo9(DBMigration):
