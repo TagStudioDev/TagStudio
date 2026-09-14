@@ -59,8 +59,10 @@ class ColorData(TileData):
         max_width = 60
         capsules: list[Capsule] = []
 
-        while (item := self.layout().itemAt(0)) and (widget := item.widget()):
-            widget.deleteLater()
+        layout = self.layout()
+        while item := layout.takeAt(0):
+            if widget := item.widget():
+                widget.deleteLater()
 
         for color in colors_:
             capsule = Capsule(has_edit=is_mutable, has_remove=is_mutable)
