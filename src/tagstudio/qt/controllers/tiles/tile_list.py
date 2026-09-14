@@ -7,7 +7,6 @@ from collections.abc import Callable
 from datetime import datetime as dt
 from functools import partial
 from typing import override
-from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
@@ -47,12 +46,10 @@ class TileList(QWidget):
 
         self.lib = library
         self.driver: QtDriver = driver
-        self.initialized = False
-        self.is_open: bool = False
-        self.common_fields: list = []  # TODO: Reimplement
-        self.mixed_fields: list = []  # TODO: Reimplement
         self.cached_entries: list[Entry] = []
         self._tiles: list[Tile] = []
+
+        # TODO: Reimplement mixed entry editing
 
         self.setLayout(TileListView())
 
@@ -374,22 +371,17 @@ class TileList(QWidget):
         if not is_mixed:
             inner_widget = container.get_inner_widget()
 
-            if isinstance(inner_widget, TagData):
-                with catch_warnings(record=True):
-                    inner_widget.on_update.disconnect()
-
-            else:
+            if not isinstance(inner_widget, TagData):
                 inner_widget = TagData(Translations["entries.tags"], self.driver)
                 container.set_inner_widget(inner_widget)
+                inner_widget.on_update.connect(
+                    lambda: (
+                        self.update_from_entry(self.cached_entries[0].id, update_badges=True),
+                        self.on_tags_update.emit(),
+                    )
+                )
             inner_widget.set_entries([e.id for e in self.cached_entries])
             inner_widget.set_tags(tags)
-
-            inner_widget.on_update.connect(
-                lambda: (
-                    self.update_from_entry(self.cached_entries[0].id, update_badges=True),
-                    self.on_tags_update.emit(),
-                )
-            )
         else:
             text = f"<i>{Translations['field.mixed_data']}</i>"
             inner_widget = TextData("Mixed Tags", text)  # NOTE: Unlocalized but unused
@@ -431,9 +423,9 @@ class TileList(QWidget):
         remove_mb.setWindowTitle(Translations["Remove Field"])
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
+        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.DestructiveRole)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
