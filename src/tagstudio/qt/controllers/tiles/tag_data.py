@@ -14,6 +14,7 @@ from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tile_data import TileData
@@ -32,25 +33,38 @@ class TagData(TileData):
 
     def __init__(self, title: str, driver: QtDriver):
         self._driver = driver
+        self._lib = driver.lib
         self._entries: list[int] = []
-        super().__init__(title, TagDataView(driver.lib))
-        self._connect_callbacks()
+        super().__init__(title, TagDataView())
+        self.setObjectName("tag_data")
 
     @override
     def layout(self) -> TagDataView:
         return super().layout()  # pyright: ignore[reportReturnType]
 
-    def _connect_callbacks(self) -> None:
-        self.layout().tag_clicked.connect(self._on_click)
-        self.layout().tag_removed.connect(self._on_remove)
-        self.layout().tag_edited.connect(self._on_edit)
-        self.layout().tag_searched.connect(self._on_search)
-
     def set_entries(self, entries: list[int]) -> None:
         self._entries = entries
 
     def set_tags(self, tags: Iterable[Tag]) -> None:
-        self.layout().set_tags(tags)
+        tags_ = sorted(list(tags), key=lambda tag: self._lib.tag_display_name(tag))
+        logger.info("[TagData] Tags:", tags=tags)
+
+        layout = self.layout()
+        while item := layout.takeAt(0):
+            if widget := item.widget():
+                widget.deleteLater()
+
+        for tag in tags_:
+            capsule = Capsule(
+                has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
+            )
+            capsule.set_text(self._lib.tag_display_name(tag))
+            capsule.set_color_group(tag.color)
+            capsule.on_click.connect(lambda t=tag: self._on_click(t))
+            capsule.on_remove.connect(lambda t=tag: self._on_remove(t))
+            capsule.on_edit.connect(lambda t=tag: self._on_edit(t))
+            capsule.on_search.connect(lambda t=tag: self._on_search(t))
+            layout.addWidget(capsule)
 
     def _on_click(self, tag: Tag) -> None:
         match self._driver.settings.tag_click_action:
@@ -76,10 +90,7 @@ class TagData(TileData):
                 )
 
     def _on_remove(self, tag: Tag) -> None:
-        logger.info(
-            "[TagData] remove_tag",
-            selected=self._entries,
-        )
+        logger.info("[TagData] remove_tag", selected=self._entries)
 
         for entry_id in self._entries:
             self._driver.lib.remove_tags_from_entries(entry_id, tag.id)
