@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from collections.abc import Iterable
 from functools import partial
 from typing import TYPE_CHECKING, override
 
@@ -15,7 +16,8 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.views.tag_box_view import TagBoxWidgetView
+from tagstudio.qt.controllers.tiles.tile_data import TileData
+from tagstudio.qt.views.tiles.tag_data_view import TagDataView
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -23,62 +25,73 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-# TODO: Use newer MVC style guidelines
-class TagBoxWidget(TagBoxWidgetView):
+class TagData(TileData):
+    """An inner widget for tags that go in a Tile widget."""
+
     on_update = Signal()
 
-    __entries: list[int] = []
-
     def __init__(self, title: str, driver: QtDriver):
-        super().__init__(title, driver)
-        self.__driver = driver
-
-    def set_entries(self, entries: list[int]) -> None:
-        self.__entries = entries
+        self._driver = driver
+        self._entries: list[int] = []
+        super().__init__(title, TagDataView(driver.lib))
+        self._connect_callbacks()
 
     @override
+    def layout(self) -> TagDataView:
+        return super().layout()  # pyright: ignore[reportReturnType]
+
+    def _connect_callbacks(self) -> None:
+        self.layout().tag_clicked.connect(self._on_click)
+        self.layout().tag_removed.connect(self._on_remove)
+        self.layout().tag_edited.connect(self._on_edit)
+        self.layout().tag_searched.connect(self._on_search)
+
+    def set_entries(self, entries: list[int]) -> None:
+        self._entries = entries
+
+    def set_tags(self, tags: Iterable[Tag]) -> None:
+        self.layout().set_tags(tags)
+
     def _on_click(self, tag: Tag) -> None:
-        match self.__driver.settings.tag_click_action:
+        match self._driver.settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
             case TagClickActionOption.SET_SEARCH:
-                self.__driver.update_browsing_state(
-                    BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
+                self._driver.update_browsing_state(
+                    BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)
                 )
             case TagClickActionOption.ADD_TO_SEARCH:
                 # NOTE: modifying the ast and then setting that would be nicer
                 #       than this string manipulation, but also much more complex,
                 #       due to needing to implement a visitor that turns an AST to a string
                 #       So if that exists when you read this, change the following accordingly.
-                current = self.__driver.browsing_history.current
+                current = self._driver.browsing_history.current
                 suffix = unwrap(
-                    BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current).query
+                    BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current).query
                 )
-                self.__driver.update_browsing_state(
+                self._driver.update_browsing_state(
                     current.with_search_query(
                         f"{current.query} {suffix}" if current.query else suffix
                     )
                 )
 
-    @override
     def _on_remove(self, tag: Tag) -> None:
         logger.info(
-            "[TagBoxWidget] remove_tag",
-            selected=self.__entries,
+            "[TagData] remove_tag",
+            selected=self._entries,
         )
 
-        for entry_id in self.__entries:
-            self.__driver.lib.remove_tags_from_entries(entry_id, tag.id)
+        for entry_id in self._entries:
+            self._driver.lib.remove_tags_from_entries(entry_id, tag.id)
 
         self.on_update.emit()
 
-    @override
     def _on_edit(self, tag: Tag) -> None:
-        edit_tag_panel = EditTagPanel(self.__driver.lib, tag=tag)
+        edit_tag_panel = EditTagPanel(self._driver.lib, tag=tag)
 
         edit_modal = Modal(
             edit_tag_panel,
-            self.__driver.lib.tag_display_name(tag),
+            self._driver.lib.tag_display_name(tag),
             Translations["tag.edit"],
             is_savable=True,
         )
@@ -86,7 +99,7 @@ class TagBoxWidget(TagBoxWidgetView):
         edit_modal.show()
 
     def _update_tag_callback(self, edit_tag_panel: EditTagPanel):
-        self.__driver.lib.update_tag(
+        self._driver.lib.update_tag(
             edit_tag_panel.build_tag(),
             parent_ids=set(edit_tag_panel.parent_ids),
             aliases=set(edit_tag_panel.aliases),
@@ -94,9 +107,8 @@ class TagBoxWidget(TagBoxWidgetView):
         )
         self.on_update.emit()
 
-    @override
     def _on_search(self, tag: Tag) -> None:
-        self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
-        self.__driver.update_browsing_state(
-            BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
+        self._driver.main_window.search_field.setText(f"tag_id:{tag.id}")
+        self._driver.update_browsing_state(
+            BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)
         )

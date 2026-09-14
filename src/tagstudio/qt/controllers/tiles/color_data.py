@@ -4,6 +4,7 @@
 
 import typing
 from collections.abc import Iterable
+from typing import override
 
 import structlog
 from PySide6.QtCore import Qt, Signal
@@ -14,10 +15,10 @@ from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.tiles.tile_data import TileData
 from tagstudio.qt.mixed.build_color import BuildColorPanel
-from tagstudio.qt.mixed.data_box import DataBox
-from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.styles.stylesheets import add_button_style
+from tagstudio.qt.views.tiles.color_data_view import ColorDataView
 
 if typing.TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
@@ -25,8 +26,9 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-# TODO: Split to use MVC guidelines.
-class ColorBoxWidget(DataBox):
+class ColorData(TileData):
+    """An inner widget for color names that goes in a Tile widget."""
+
     updated = Signal()
 
     def __init__(
@@ -40,15 +42,14 @@ class ColorBoxWidget(DataBox):
         self.lib: Library = library
 
         title = "" if not self.lib.engine else self.lib.get_namespace_name(group)
-        super().__init__(title)
-
-        self.setObjectName("colorBox")
-        self.base_layout = FlowLayout()
-        self.base_layout.enable_grid_optimizations(value=True)
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.base_layout)
+        super().__init__(title, ColorDataView())
+        self.setObjectName("color_data")
 
         self.set_colors(self.colors)
+
+    @override
+    def layout(self) -> ColorDataView:
+        return super().layout()  # pyright: ignore[reportReturnType]
 
     def set_colors(self, colors: Iterable[TagColorGroup]):
         colors_ = sorted(
@@ -58,7 +59,7 @@ class ColorBoxWidget(DataBox):
         max_width = 60
         capsules: list[Capsule] = []
 
-        while (item := self.base_layout.itemAt(0)) and (widget := item.widget()):
+        while (item := self.layout().itemAt(0)) and (widget := item.widget()):
             widget.deleteLater()
 
         for color in colors_:
@@ -76,7 +77,7 @@ class ColorBoxWidget(DataBox):
                 capsule.setCursor(Qt.CursorShape.ArrowCursor)
 
             capsules.append(capsule)
-            self.base_layout.addWidget(capsule)
+            self.layout().addWidget(capsule)
 
         for capsule in capsules:
             capsule.setFixedWidth(max_width)
@@ -98,7 +99,7 @@ class ColorBoxWidget(DataBox):
                     )
                 )
             )
-            self.base_layout.addWidget(add_button)
+            self.layout().addWidget(add_button)
 
     def edit_color(self, color_group: TagColorGroup):
         build_color_panel = BuildColorPanel(self.lib, color_group)
@@ -132,6 +133,6 @@ class ColorBoxWidget(DataBox):
         if result != QMessageBox.ButtonRole.ActionRole.value:
             return
 
-        logger.info("[ColorBoxWidget] Removing color", color=color_group)
+        logger.info("[ColorData] Removing color", color=color_group)
         self.lib.delete_color(color_group)
         self.updated.emit()

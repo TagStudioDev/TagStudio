@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QScrollArea, QSizePolicy, QVB
 from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, inset_container_style
 
 
-class EntryDataBoxListView(QHBoxLayout):
+class TileListView(QHBoxLayout):
     def __init__(self) -> None:
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
@@ -19,11 +19,11 @@ class EntryDataBoxListView(QHBoxLayout):
         self.scroll_layout.setSpacing(PAD)
 
         scroll_container = QWidget()
-        scroll_container.setObjectName("entryScrollContainer")
+        scroll_container.setObjectName("tile_scroll_container")
         scroll_container.setLayout(self.scroll_layout)
 
         self.scroll_area = QScrollArea()
-        self.scroll_area.setObjectName("entryScrollArea")
+        self.scroll_area.setObjectName("tile_scroll_area")
         self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setWidgetResizable(True)
@@ -34,7 +34,7 @@ class EntryDataBoxListView(QHBoxLayout):
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(inset_container_style("entryScrollContainer"))
+        self.scroll_area.setStyleSheet(inset_container_style("tile_scroll_container"))
         self.scroll_area.setWidget(scroll_container)
 
         self.addWidget(self.scroll_area)
