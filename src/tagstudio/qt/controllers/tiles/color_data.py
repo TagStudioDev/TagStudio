@@ -59,8 +59,10 @@ class ColorData(TileData):
         max_width = 60
         color_widgets: list[TagColorLabel] = []
 
-        while (item := self.layout().itemAt(0)) and (widget := item.widget()):
-            widget.deleteLater()
+        layout = self.layout()
+        while item := layout.takeAt(0):
+            if widget := item.widget():
+                widget.deleteLater()
 
         for color in colors_:
             color_widget = TagColorLabel(
