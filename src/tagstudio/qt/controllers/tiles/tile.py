@@ -22,7 +22,6 @@ class Tile(QWidget):
         super().__init__()
         self.setObjectName("tile")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
-        self.title: str = title
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
@@ -79,22 +78,24 @@ class Tile(QWidget):
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
         # NOTE: You could pass the hover event to the inner widget if needed.
+        layout = self.layout()
         if self.copy_callback:
-            self.layout().copy_button.setHidden(False)
+            layout.copy_button.setHidden(False)
         if self.edit_callback:
-            self.layout().edit_button.setHidden(False)
+            layout.edit_button.setHidden(False)
         if self.remove_callback:
-            self.layout().remove_button.setHidden(False)
+            layout.remove_button.setHidden(False)
         return super().enterEvent(event)
 
     @override
     def leaveEvent(self, event: QEvent) -> None:
+        layout = self.layout()
         if self.copy_callback:
-            self.layout().copy_button.setHidden(True)
+            layout.copy_button.setHidden(True)
         if self.edit_callback:
-            self.layout().edit_button.setHidden(True)
+            layout.edit_button.setHidden(True)
         if self.remove_callback:
-            self.layout().remove_button.setHidden(True)
+            layout.remove_button.setHidden(True)
         return super().leaveEvent(event)
 
     @override

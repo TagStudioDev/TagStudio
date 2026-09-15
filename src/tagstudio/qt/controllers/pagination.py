@@ -5,11 +5,14 @@
 from typing import override
 from warnings import catch_warnings
 
+import structlog
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 
 from tagstudio.qt.views.pagination_view import PaginationView
 from tagstudio.qt.views.styles.stylesheets import pagination_style
+
+logger = structlog.get_logger(__name__)
 
 
 class Pagination(QWidget):
@@ -21,9 +24,6 @@ class Pagination(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.page_count: int = 0
-        self.current_page_index: int = 0
-
         self.setHidden(True)
         self.setObjectName("pagination")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
@@ -139,10 +139,10 @@ class Pagination(QWidget):
                         button.setHidden(True)
                     view.current_page_field.setText(str(i + 1))
 
-                start_offset = max(0, (index - 4) - 4)
-                end_offset = min(page_count - 1, (index + 4) - 4)
+                start_offset = max(0, index - view.BUFFER_PAGE_COUNT * 2)
+                end_offset = min(page_count - 1, index)
                 if i < index:
-                    if (i != 0) and i >= index - 4:
+                    if (i != 0) and i >= index - view.BUFFER_PAGE_COUNT:
                         if button := self._get_button_at(
                             view.start_buffer_layout, i - start_offset
                         ):
@@ -155,7 +155,7 @@ class Pagination(QWidget):
                         if button := self._get_button_at(view.end_buffer_layout, i):
                             button.setHidden(True)
                 elif i > index:
-                    if i != page_count - 1 and i <= index + 4:
+                    if i != page_count - 1 and i <= index + view.BUFFER_PAGE_COUNT:
                         if button := self._get_button_at(view.end_buffer_layout, i - end_offset):
                             button.setHidden(False)
                             button.setText(str(i + 1))
@@ -179,11 +179,9 @@ class Pagination(QWidget):
         view.validator.setTop(page_count)
         if emit:
             self.index.emit(index)
-        self.current_page_index = index
-        self.page_count = page_count
 
     def _goto_page(self, index: int):
-        self.update_buttons(self.page_count, index)
+        self.update_buttons(self.layout().validator.top(), index)
 
     def _assign_click(self, button: QPushButton, index: int):
         with catch_warnings(record=True):
