@@ -368,8 +368,8 @@ class MigrationTo104(DBMigration):
                 SELECT value
                 FROM preferences
                 WHERE key = 'IS_EXCLUDE_LIST'
-            """).fetchone()[0]
-        )
+            """).fetchone()
+        )[0]
 
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
