@@ -142,7 +142,7 @@ class LibrarySyncEngine:
 
     def save_new_entries(self) -> Iterator[int]:
         """Save the paths found on disk that don't have a Library entry yet."""
-        batch_size = 200
+        batch_size = 1000
         library_dir = unwrap(self.library.library_dir)
 
         index = 0
@@ -171,7 +171,7 @@ class LibrarySyncEngine:
 
     def sync_entry_stats(self) -> Iterator[int]:
         """Refresh cached os.stat() metadata for entries already known to the Library."""
-        batch_size = 500
+        batch_size = 5000
 
         index = 0
         while index < len(self.paths_to_restat):
