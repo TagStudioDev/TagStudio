@@ -5,6 +5,7 @@
 import os
 import stat
 import subprocess
+import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -42,57 +43,57 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
     compiled_ignore_path.write_text("\n".join(ignore_patterns), encoding="utf-8")
 
     proc: subprocess.Popen[str] | None = None
-    try:
-        proc = silent_popen(
-            [
-                RipgrepStatus.which(),
-                "--files",
-                "--follow",
-                "--hidden",
-                "--no-ignore",  # Ignore *literal* .gitignore files in paths
-                "--ignore-file",
-                str(compiled_ignore_path),
-            ],
-            cwd=scan_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="UTF-8",
-        )
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            line = line.rstrip("\n")
-            if not line:
-                continue
-            path = Path(line)
-            if (scan_dir / path).is_dir():
-                continue
-            yield path
-
-        proc.wait()
-        if proc.returncode not in (0, 1):  # 1 == "no matches", still successful
-            logger.error(
-                "[Scanners] ripgrep exited with an error",
-                returncode=proc.returncode,
-                stderr=proc.stderr.read() if proc.stderr else "",
-            )
-    finally:
-        if proc is not None:
-            # Loop finished
-            if proc.stdout is not None:
-                proc.stdout.close()
-            # Still running, but cancelled mid-loop
-            if proc.poll() is None:
-                proc.terminate()
-                proc.wait()
+    # Writing to a temp file instead of a pipe so it doesn't get overloaded and lock up
+    with tempfile.TemporaryFile(mode="w+", encoding="UTF-8") as stderr_file:
         try:
-            compiled_ignore_path.unlink(missing_ok=True)
-        except OSError as e:
-            logger.error(
-                "[Scanners] Could not remove compiled ignore path",
-                path=compiled_ignore_path,
-                error=e,
+            proc = silent_popen(
+                [
+                    RipgrepStatus.which(),
+                    "--files",  # Skip folders
+                    "--follow",  # Follow symlinks
+                    "--hidden",  # Scan hidden folders and files
+                    "--no-ignore",  # Ignore *literal* .gitignore files in paths
+                    "--ignore-file",  # Pass the .ts_ignore file:
+                    str(compiled_ignore_path),
+                ],
+                cwd=scan_dir,
+                stdout=subprocess.PIPE,
+                stderr=stderr_file,
+                text=True,
+                encoding="UTF-8",
             )
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                line = line.rstrip("\n")
+                if not line:
+                    continue
+                yield Path(line)
+
+            proc.wait()
+            if proc.returncode not in (0, 1):  # 1 == "no matches", still successful
+                stderr_file.seek(0)
+                logger.error(
+                    "[Scanners] ripgrep exited with an error",
+                    returncode=proc.returncode,
+                    stderr=stderr_file.read(),
+                )
+        finally:
+            if proc is not None:
+                # Loop finished
+                if proc.stdout is not None:
+                    proc.stdout.close()
+                # Still running, but cancelled mid-loop
+                if proc.poll() is None:
+                    proc.terminate()
+                    proc.wait()
+            try:
+                compiled_ignore_path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.error(
+                    "[Scanners] Could not remove compiled ignore path",
+                    path=compiled_ignore_path,
+                    error=e,
+                )
 
 
 def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[Path]:

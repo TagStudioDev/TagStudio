@@ -6,7 +6,7 @@ from collections.abc import Callable, Hashable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
 from pathlib import Path
-from time import time
+from time import sleep, time
 
 import structlog
 
@@ -23,7 +23,7 @@ logger = structlog.get_logger(__name__)
 
 # Yield progress this often during a loop to avoid overwhelming the UI.
 # TODO: Look into whether or not this can be handled on the UI side.
-YIELD_INTERVAL_SECONDS = 0.034
+YIELD_INTERVAL_SECONDS = 0.068
 
 
 @dataclass
@@ -107,6 +107,8 @@ class LibrarySyncEngine:
 
             if (time() - start_time_loop) > YIELD_INTERVAL_SECONDS:
                 yield count, len(self.new_paths)
+                # NOTE: sleep(0) will let the UI thread acquire the GIL before its required here.
+                sleep(0)
                 start_time_loop = time()
 
         if self.cancelled:
