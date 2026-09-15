@@ -10,7 +10,10 @@ def norm_path(path: Path | str, case_sensitive: bool) -> Path:
     """Return `path` normalized to Unicode Normalization Form D (NFD)."""
     if isinstance(path, str):
         path = Path(path)
-    normalized = unicodedata.normalize("NFD", path.as_posix())
+    posix = path.as_posix()
+    # NOTE: ASCII paths will be unaffected by all unicode normalization and can be skipped.
+    # See: https://unicode.org/reports/tr15/
+    normalized = posix if posix.isascii() else unicodedata.normalize("NFD", posix)
     if not case_sensitive:
         normalized = normalized.casefold()
     return Path(normalized)
