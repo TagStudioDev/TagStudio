@@ -51,7 +51,7 @@ class InspectorView(QVBoxLayout):
             driver.lib, driver.settings, ph_text("home.search_or_create_tags")
         )
 
-        self.preview_thumb = PreviewThumb(driver.lib, driver)
+        self.preview_thumb = PreviewThumb(driver)
         self.file_attrs = FileAttributes(driver.lib, driver)
         self.containers = TileList(driver.lib, driver)
 
