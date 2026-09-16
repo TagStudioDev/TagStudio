@@ -14,7 +14,6 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.scanners import scan_paths
-from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 from tagstudio.core.utils.normalization import norm_path
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
@@ -60,11 +59,6 @@ class LibrarySyncEngine:
         self.unlinked_entries = []
         self.relinked_entries = []
 
-    def _get_case_sensitivity(self) -> bool:
-        if self.library.is_case_sensitive_fs is None:
-            self.library.is_case_sensitive_fs = is_fs_case_sensitive()
-        return self.library.is_case_sensitive_fs
-
     def sync_dir(
         self, library_dir: Path, force_internal_scanner: bool = False
     ) -> Iterator[tuple[int, int]]:
@@ -85,7 +79,7 @@ class LibrarySyncEngine:
         self.reset()
         self.cancelled = False
 
-        case_sensitive = self._get_case_sensitivity()
+        case_sensitive = self.library.is_fs_case_sensitive
         cache = self.library.get_or_build_path_cache()
         unvisited = set(cache.keys())
         ignore_patterns = Ignore.get_patterns(library_dir)

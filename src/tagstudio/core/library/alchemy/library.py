@@ -93,6 +93,7 @@ from tagstudio.core.library.alchemy.models import (
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 from tagstudio.core.utils.normalization import norm_path
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
@@ -219,13 +220,14 @@ class Library:
     engine: Engine | None = None
     path_cache: dict[Path, int] | None = None
     duplicate_path_entry_ids: list[int] | None = None
-    is_case_sensitive_fs: bool | None = None
 
     def __init__(self) -> None:
         self.dupe_entries_count: int = -1  # NOTE: For internal management.
         self.dupe_files_count: int = -1
         self.ignored_entries_count: int = -1
         self.unlinked_entries_count: int = -1
+        # TODO: Make this dependant on the filesystem(s) of the library root directories.
+        self.is_fs_case_sensitive = is_fs_case_sensitive()
 
     def close(self):
         if self.engine:
@@ -234,7 +236,6 @@ class Library:
         self.folder = None
         self.path_cache = None
         self.duplicate_path_entry_ids = None
-        self.is_case_sensitive_fs = None
 
         self.dupe_entries_count = -1
         self.dupe_files_count = -1
@@ -819,10 +820,7 @@ class Library:
         return False
 
     def _path_cache_key(self, path: Path) -> Path:
-        case_sensitive = (
-            self.is_case_sensitive_fs if self.is_case_sensitive_fs is not None else True
-        )
-        return norm_path(path, case_sensitive=case_sensitive)
+        return norm_path(path, case_sensitive=self.is_fs_case_sensitive)
 
     def _cache_add_path(self, entry_id: int, path: Path) -> None:
         """Keep the path cache consistent with a newly-added or relinked entry."""

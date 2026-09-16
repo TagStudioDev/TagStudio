@@ -101,7 +101,7 @@ def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> I
     logger.info("[Scanners] Using internal scanner for scanning", path=scan_dir)
     matcher = glob.compile(patterns=ignore_to_glob(ignore_patterns), flags=PATH_GLOB_FLAGS)
 
-    def walk(dir_path: Path, ancestors: frozenset[tuple[int, int]]) -> Iterator[Path]:
+    def walk(dir_path: Path, ancestors: frozenset[str]) -> Iterator[Path]:
         try:
             dir_items = list(os.scandir(dir_path))
         except OSError as e:
@@ -119,11 +119,10 @@ def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> I
 
             # Check for and handle cyclical symlinks
             if stat.S_ISDIR(item_stat.st_mode):
-                key = (item_stat.st_dev, item_stat.st_ino)
+                key = os.path.realpath(item.path)
                 if key not in ancestors:
                     yield from walk(Path(item.path), ancestors | {key})
             else:
                 yield rel
 
-    root_stat = scan_dir.stat()
-    yield from walk(scan_dir, frozenset({(root_stat.st_dev, root_stat.st_ino)}))
+    yield from walk(scan_dir, frozenset({os.path.realpath(scan_dir)}))
