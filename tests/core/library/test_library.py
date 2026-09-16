@@ -95,7 +95,7 @@ def test_path_cache_untouched_when_not_yet_built(library: Library):
 
 def test_path_cache_self_maintained_by_add_entries(library: Library):
     """`add_entries()` must keep an already-built path cache up to date on its own."""
-    library.is_case_sensitive_fs = True
+    library.is_fs_case_sensitive = True
     cache = library.get_or_build_path_cache()
     assert Path("added_directly.txt") not in cache
 
@@ -105,7 +105,7 @@ def test_path_cache_self_maintained_by_add_entries(library: Library):
 
 
 def test_path_cache_self_maintained_by_remove_entries(library: Library):
-    library.is_case_sensitive_fs = True
+    library.is_fs_case_sensitive = True
     cache = library.get_or_build_path_cache()
     entry = Entry(path=Path("to_remove.txt"), fields=[])
     entry_id = library.add_entries([entry])[0]
@@ -116,7 +116,7 @@ def test_path_cache_self_maintained_by_remove_entries(library: Library):
 
 
 def test_path_cache_self_maintained_by_update_entry_path(library: Library):
-    library.is_case_sensitive_fs = True
+    library.is_fs_case_sensitive = True
     cache = library.get_or_build_path_cache()
     entry = Entry(path=Path("old_location.txt"), fields=[])
     entry_id = library.add_entries([entry])[0]

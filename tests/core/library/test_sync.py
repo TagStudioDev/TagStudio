@@ -4,6 +4,7 @@
 # pyright: reportPrivateUsage=false
 
 import os
+import platform
 import unicodedata
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -123,7 +124,7 @@ def test_sync_duplicate_case_collision_merged(library: Library):
     """A duplicate entry displaced by a case-insensitive collision must be merged automatically."""
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
-    library.is_case_sensitive_fs = False  # Force a case-insensitive collision
+    library.is_fs_case_sensitive = False  # Force a case-insensitive collision
 
     (library_dir / "Dupe").mkdir()
     (library_dir / "Dupe" / "photo.jpg").touch()
@@ -198,9 +199,14 @@ def test_sync_auto_relink_merges_nfc_nfd_duplicate(library: Library):
     assert unwrap(library.get_entry_full(kept_id)).id == kept_id
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="Windows is treated as case-insensitive")
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_auto_relink_respects_case_sensitivity(library: Library):
-    """The filename-only fallback pass must respect the library's case-sensitivity setting."""
+    """The filename-only fallback pass must not relink across a case difference when sensitive.
+
+
+    Currently applies broadly to any non-Windows system.
+    """
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
 
@@ -208,12 +214,26 @@ def test_sync_auto_relink_respects_case_sensitivity(library: Library):
     (library_dir / "Other" / "name.txt").touch()
     library.add_entries([Entry(path=Path("Folder/Name.txt"), fields=[])])
 
-    library.is_case_sensitive_fs = True
+    library.is_fs_case_sensitive = True
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
     assert Path("Folder/Name.txt") in {e.path for e in engine.unlinked_entries}
 
-    library.is_case_sensitive_fs = False
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_auto_relink_respects_case_sensitivity_false(library: Library):
+    """The filename-only fallback pass must relink across a case difference when insensitive.
+
+    Currently only applies to Windows, but the test can run on any system.
+    """
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+
+    (library_dir / "Other").mkdir()
+    (library_dir / "Other" / "name.txt").touch()
+    library.add_entries([Entry(path=Path("Folder/Name.txt"), fields=[])])
+
+    library.is_fs_case_sensitive = False
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].path == Path("Folder/Name.txt")
@@ -680,7 +700,7 @@ def test_sync_cancel_skips_duplicate_merge(library: Library):
     """Cancelling right after the scan must stop duplicate merging before it starts."""
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
-    library.is_case_sensitive_fs = False  # Force a collision using a case difference
+    library.is_fs_case_sensitive = False  # Force a collision using a case difference
 
     (library_dir / "Dupe").mkdir()
     (library_dir / "Dupe" / "photo.jpg").touch()
