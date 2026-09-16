@@ -8,7 +8,6 @@ from typing import cast
 from warnings import deprecated
 
 import structlog
-import wcmatch.fnmatch as fnmatch
 from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -24,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from wcmatch import glob
 
 from tagstudio.core.constants import (
     IGNORE_NAME,
@@ -512,13 +512,13 @@ class JsonMigrationModal(QObject):
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
     def assert_ignore_parity(self) -> None:
-        compiled_pats = fnmatch.compile(
+        compiled_pats = glob.compile(
             ignore_to_glob(
                 Ignore._load_ignore_file(  # pyright: ignore[reportPrivateUsage]
                     unwrap(self.json_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
                 )
             ),
-            PATH_GLOB_FLAGS,
+            flags=PATH_GLOB_FLAGS,
         )  # copied from Ignore.get_patterns since that method modifies singleton state
         path = self.json_lib.library_dir / "filename"
         for ext in self.json_lib.ext_list:

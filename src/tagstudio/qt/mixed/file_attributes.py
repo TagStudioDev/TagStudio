@@ -3,7 +3,6 @@
 
 
 import os
-import platform
 import typing
 from dataclasses import dataclass
 from datetime import datetime as dt
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
@@ -92,40 +92,35 @@ class FileAttributes(QWidget):
         self.library = library
         self.driver = driver
 
-    def update_date_label(self, filepath: Path | None = None) -> None:
+    def _format_date_or_na(self, timestamp: float | None) -> str:
+        if timestamp is None:
+            return "<i>N/A</i>"
+        return self.driver.settings.format_datetime(dt.fromtimestamp(timestamp))
+
+    def update_date_label(self, entry: Entry | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
-        if filepath and filepath.is_file():
-            created: dt
-            if platform.system() == "Windows" or platform.system() == "Darwin":
-                # NOTE: Accessing stat().st_birthtime causes linter checks to fail on some systems.
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
-            else:
-                created = dt.fromtimestamp(filepath.stat().st_ctime)
-            modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
-            self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b>"
-                + f" {self.driver.settings.format_datetime(created)}"
-            )
-            self.date_modified_label.setText(
-                f"<b>{Translations['file.date_modified']}:</b> "
-                f"{self.driver.settings.format_datetime(modified)}"
-            )
-            self.date_created_label.setHidden(False)
-            self.date_modified_label.setHidden(False)
-        elif filepath:
-            self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b> <i>N/A</i>"
-            )
-            self.date_modified_label.setText(
-                f"<b>{Translations['file.date_modified']}:</b> <i>N/A</i>"
-            )
-            self.date_created_label.setHidden(False)
-            self.date_modified_label.setHidden(False)
-        else:
+        if entry is None:
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
+            return
 
-    def update_stats(self, filepath: Path | None = None, stats: FileAttributeData | None = None):
+        created_text = self._format_date_or_na(entry.date_created)
+        modified_text = self._format_date_or_na(entry.date_modified)
+        self.date_created_label.setText(
+            f"<b>{Translations['file.date_created']}:</b> {created_text}"
+        )
+        self.date_modified_label.setText(
+            f"<b>{Translations['file.date_modified']}:</b> {modified_text}"
+        )
+        self.date_created_label.setHidden(False)
+        self.date_modified_label.setHidden(False)
+
+    def update_stats(
+        self,
+        filepath: Path | None = None,
+        stats: FileAttributeData | None = None,
+        entry: Entry | None = None,
+    ):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
             stats = FileAttributeData()
@@ -170,18 +165,15 @@ class FileAttributes(QWidget):
             # Initialize the possible stat variables
             stats_label_text = ""
             ext_display: str = ""
-            file_size: str = ""
+            file_size: str = format_size(entry.file_size) if entry and entry.file_size else ""
             font_family: str = ""
 
             # Attempt to populate the stat variables
             ext_display = ext.upper()[1:] or filepath.stem.upper()
-            if filepath and filepath.is_file():
+            if filepath and filepath.is_file() and MediaTypes.contains("font", ext, SEARCH):
                 try:
-                    file_size = format_size(filepath.stat().st_size)
-
-                    if MediaTypes.contains("font", ext, SEARCH):
-                        font = ImageFont.truetype(filepath)
-                        font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
+                    font = ImageFont.truetype(filepath)
+                    font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
                 except (FileNotFoundError, OSError) as e:
                     logger.error(
                         "[FileAttributes] Could not process file stats", filepath=filepath, error=e
@@ -206,14 +198,15 @@ class FileAttributes(QWidget):
                         f"  •  <span style='color:{orange}'>"
                         f"{Translations['preview.ignored'].upper()}</span>"
                     )
+                if file_size:
+                    stats_label_text += f"  •  {file_size}"
                 if not filepath.exists():
                     stats_label_text = (
                         f"{stats_label_text}"
                         f"  •  <span style='color:{red}'>"
                         f"{Translations['preview.unlinked'].upper()}</span>"
                     )
-                if file_size:
-                    stats_label_text += f"  •  {file_size}"
+
             elif file_size:
                 stats_label_text += file_size
 

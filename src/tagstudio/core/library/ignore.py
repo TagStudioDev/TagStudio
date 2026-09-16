@@ -1,20 +1,18 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
-from copy import deepcopy
 from pathlib import Path
 
 import structlog
-import wcmatch.fnmatch as fnmatch
-from wcmatch import glob, pathlib
+from wcmatch import glob
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
 from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
-PATH_GLOB_FLAGS = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE | pathlib.MATCHBASE
+PATH_GLOB_FLAGS: int = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE
 
 
 GLOBAL_IGNORE = [
@@ -43,7 +41,7 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
     Args:
         ignore_patterns (list[str]): The .gitignore-like patterns to convert.
     """
-    glob_patterns: list[str] = deepcopy(ignore_patterns)
+    glob_patterns: list[str] = list(ignore_patterns)
     glob_patterns_remove: list[str] = []
     additional_patterns: list[str] = []
     root_patterns: list[str] = []
@@ -67,25 +65,32 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
 
         elif gp.startswith("/"):
             # Matches "/file" case for .gitignore behavior where it should only match
-            # a file or folder int the root directory, and nowhere else.
-            glob_patterns_remove.append(gp)
+            # a file or folder in the root directory and nowhere else.
+            glob_patterns_remove.append(pattern)
             gp = gp.lstrip("/")
             root_patterns.append(exclusion_char + gp)
 
-    for gp in glob_patterns_remove:
-        glob_patterns.remove(gp)
-
-    glob_patterns = glob_patterns + additional_patterns
+    remove_set = set(glob_patterns_remove)
+    glob_patterns = [p for p in glob_patterns if p not in remove_set]
+    # root_patterns must be merged in before the "/**" suffix pass below, otherwise a rooted
+    # directory pattern (e.g. "/Downloads/") never gets a "/**" variant and matches nothing.
+    glob_patterns = glob_patterns + additional_patterns + root_patterns
 
     # Add "/**" suffix to suffix-less patterns to match implicit .gitignore behavior.
-    for pattern in glob_patterns:
+    for pattern in list(glob_patterns):
         if pattern.endswith("/**"):
             continue
 
         glob_patterns.append(pattern.removesuffix("/*").removesuffix("/") + "/**")
 
-    glob_patterns = glob_patterns + root_patterns
-    glob_patterns = list(set(glob_patterns))
+    # Fix wcmatch interpreting "**" as "one or more" to be a .gitignore style "zero or more".
+    # Otherwise "**/foo" won't match a root "foo" and "a/**/b" won't match match "a/b".
+    for pattern in list(glob_patterns):
+        collapsed = pattern.removeprefix("**/").replace("/**/", "/")
+        if collapsed != pattern:
+            glob_patterns.append(collapsed)
+
+    glob_patterns = list(dict.fromkeys(glob_patterns))  # Ordered deduplication
 
     logger.info("[Ignore]", glob_patterns=glob_patterns)
     return glob_patterns
@@ -108,12 +113,24 @@ def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
     return out
 
 
+def _strip(line: str) -> str:
+    """Strip a line ending and unescaped trailing whitespace from an ignore file line.
+
+    Leading whitespace and a backslash-escaped trailing space are left intact, matching
+    .gitignore's rule that trailing spaces are ignored unless escaped.
+    """
+    line = line.rstrip("\r\n")
+    while line and line[-1].isspace() and line[-2:-1] != "\\":
+        line = line[:-1]
+    return line
+
+
 class Ignore(metaclass=Singleton):
     """Class for processing and managing glob-like file ignore file patterns."""
 
     _last_loaded: tuple[Path, float] | None = None
     _patterns: list[str] = []
-    compiled_patterns: fnmatch.WcMatcher | None = None
+    compiled_patterns: glob.WcMatcher | None = None
 
     @staticmethod
     def read_ignore_file(library_dir: Path) -> list[str]:
@@ -179,9 +196,9 @@ class Ignore(metaclass=Singleton):
                 new_mtime=loaded[1],
             )
             Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
-            Ignore.compiled_patterns = fnmatch.compile(
-                ignore_to_glob(Ignore._patterns),
-                PATH_GLOB_FLAGS,
+            Ignore.compiled_patterns = glob.compile(
+                patterns=ignore_to_glob(Ignore._patterns),
+                flags=PATH_GLOB_FLAGS,
             )
         else:
             logger.info(
@@ -205,7 +222,7 @@ class Ignore(metaclass=Singleton):
         if path.exists():
             with open(path, encoding="utf8") as f:
                 for line_raw in f.readlines():
-                    line = line_raw.strip()
+                    line = _strip(line_raw)
                     # Ignore blank lines and comments
                     if not line or line.startswith("#"):
                         continue

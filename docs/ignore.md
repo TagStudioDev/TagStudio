@@ -8,12 +8,6 @@ icon: material/file-document-remove
 
 # :material-file-document-remove: Ignoring Files & Directories
 
-<!-- prettier-ignore -->
-!!! warning "Legacy File Extension Ignoring"
-    TagStudio versions prior to v9.5.4 use a different, more limited method to exclude or include file extensions from your library and subsequent searches. Opening a pre-exiting library in v9.5.4 or later will non-destructively convert this to the newer, more extensive `.ts_ignore` format.
-
-    If you're still running an older version of TagStudio in the meantime, you can access the legacy system by going to "Edit -> Manage File Extensions" in the menubar.
-
 TagStudio offers the ability to ignore specific files and directories via a `.ts_ignore` file located inside your [library's](libraries.md) `.TagStudio` folder. This file is designed to use very similar [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>)-style pattern matching as the [`.gitignore`](https://git-scm.com/docs/gitignore) file used by Git™[^1]. It can be edited within TagStudio or opened to edit with an external program by going to the "Edit -> Ignore Files" option in the menubar.
 
 This file is only referenced when scanning directories for new files to add to your library, and does not apply to files that have already been added to your library.
@@ -131,14 +125,15 @@ The forward slash "`/`" is used as the directory separator. Separators may occur
 A `!` prefix before a pattern negates the pattern, allowing any files matched matched by previous patterns to be un-matched.
 
 - Any matching file excluded by a previous pattern will become included again.
-- **It is not possible to re-include a file if a parent directory of that file is excluded.**
+- **An excluded parent directory can not have files within it reincluded!** (e.g. `Photos/`)
+    - Alternatively, if one or more files within a directory is excluded (e.g. `!Photos/*.jpg`) then files within can be reincluded from there (e.g. `Photos/a.jpg`).
 
 <!-- prettier-ignore-start -->
 === "Example negation"
     ```toml
     # All .jpg files will be ignored, except any located in the 'Photos' folder.
     *.jpg
-    Photos/!*.jpg
+    !Photos/*.jpg
     ```
 === "Escape a ! Symbol"
     ```toml
@@ -146,6 +141,10 @@ A `!` prefix before a pattern negates the pattern, allowing any files matched ma
     \!wowee.jpg
     ```
 <!-- prettier-ignore-end -->
+
+<!-- prettier-ignore -->
+!!! bug "Directory Exclusion Negation"
+    TagStudio attempts to match the behavior of a `.gitignore` file 1:1, however if you don't have `ripgrep` installed on your system and TagStudio falls back to its internal pattern matcher, excluded directories can be overwritten by further negations, unlike `.gitignore` behavior. Be wary that this is **not officially supported**, and this behavior may be removed at any time.
 
 ---
 

@@ -40,6 +40,7 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.banner import Banner
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.helpers.mnemonics import assign_mnemonics
 from tagstudio.qt.mixed.landing import LandingWidget
@@ -64,7 +65,7 @@ class MainMenuBar(QMenuBar):
     save_library_backup_action: QAction
     settings_action: QAction
     open_on_start_action: QAction
-    refresh_dir_action: QAction
+    sync_library_action: QAction
     close_library_action: QAction
 
     edit_menu: QMenu
@@ -152,17 +153,17 @@ class MainMenuBar(QMenuBar):
 
         self.file_menu.addSeparator()
 
-        # Refresh Directories
-        self.refresh_dir_action = QAction(Translations["menu.file.refresh_directories"], self)
-        self.refresh_dir_action.setShortcut(
+        # Sync Library
+        self.sync_library_action = QAction(Translations["menu.file.sync_library"], self)
+        self.sync_library_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
                 QtCore.Qt.Key.Key_R,
             )
         )
-        self.refresh_dir_action.setStatusTip("Ctrl+R")
-        self.refresh_dir_action.setEnabled(False)
-        self.file_menu.addAction(self.refresh_dir_action)
+        self.sync_library_action.setStatusTip("Ctrl+R")
+        self.sync_library_action.setEnabled(False)
+        self.file_menu.addAction(self.sync_library_action)
 
         self.file_menu.addSeparator()
 
@@ -485,6 +486,7 @@ class MainWindow(QMainWindow):
         # initialized in setup_entry_list
         self.entry_list_container: QWidget
         self.entry_list_layout: QVBoxLayout
+        self.banner: Banner
         self.entry_scroll_area: QScrollArea
         self.thumb_grid: QWidget
         self.thumb_layout: ThumbGridLayout
@@ -691,6 +693,9 @@ class MainWindow(QMainWindow):
         self.thumb_grid.setLayout(self.thumb_layout)
         self.entry_scroll_area.setWidget(self.thumb_grid)
 
+        self.banner = Banner()
+        self.entry_list_layout.addWidget(self.banner)
+
         self.entry_list_layout.addWidget(self.entry_scroll_area)
 
         self.landing_widget = LandingWidget(driver, self.devicePixelRatio())
@@ -698,6 +703,7 @@ class MainWindow(QMainWindow):
 
         self.pagination = Pagination()
         self.entry_list_layout.addWidget(self.pagination)
+
         self.content_splitter.addWidget(self.entry_list_container)
 
     def setup_preview_panel(self, driver: QtDriver):
