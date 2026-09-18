@@ -2,17 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import tarfile
-import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Literal, override
+from tarfile import TarFile
+from typing import Self, override
+from zipfile import ZipFile
 
-import py7zr
-import py7zr.io
-import rarfile
 import structlog
 from PIL.Image import Image
+from py7zr import SevenZipFile
+from py7zr.io import BytesIOFactory
+from rarfile import RarFile
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
@@ -22,7 +22,7 @@ from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)
 
-type Archive = zipfile.ZipFile | rarfile.RarFile | SevenZipFile | TarFile
+type Archive = Rar | SevenZip | Tar | Zip
 
 
 class ArchivePreview(BasePreview):
@@ -32,13 +32,20 @@ class ArchivePreview(BasePreview):
     @classmethod
     def register_types(cls) -> None:
         # NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
-        MediaTypes.register("archive", ".7z", RENDER)
+        MediaTypes.register("archive", [".7z", ".s7z"], RENDER)
         MediaTypes.register("archive", ".gz", RENDER)
         MediaTypes.register("archive", ".rar", RENDER)
-        MediaTypes.register("archive", ".s7z", RENDER)
         MediaTypes.register("archive", ".tar", RENDER)
         MediaTypes.register("archive", ".zip", RENDER)
-        MediaTypes.register("archive", ".tar.gz", RENDER)
+        MediaTypes.register("archive", [".bz", ".bz2"], RENDER)
+        MediaTypes.register("archive", ".xz", RENDER)
+        MediaTypes.register("archive", [".taz", ".tgz"], RENDER)
+        MediaTypes.register("archive", [".tb2", ".tbz", ".tbz2", ".tz2"], RENDER)
+        MediaTypes.register("archive", ".tlz", RENDER)
+        MediaTypes.register("archive", ".txz", RENDER)
+        MediaTypes.register("archive", ".zst", RENDER)
+        MediaTypes.register("archive", ".lzma", RENDER)
+        MediaTypes.register("archive", ".tzst", RENDER)
 
     @override
     @classmethod
@@ -53,41 +60,50 @@ class ArchivePreview(BasePreview):
         return archive_thumb(filepath)
 
 
-class SevenZipFile(py7zr.SevenZipFile):
-    """Wrapper around py7zr.SevenZipFile to mimic zipfile.ZipFile's API."""
+class Rar(RarFile):
+    """Wrapper around RarFile for a unified API."""
 
-    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
-        super().__init__(filepath, mode)
+    @classmethod
+    def open_archive(cls, filepath: Path) -> Self:
+        return cls(filepath, "r")
+
+
+class SevenZip(SevenZipFile):
+    """Wrapper around SevenZipFile for a unified API."""
+
+    @classmethod
+    def open_archive(cls, filepath: Path) -> Self:
+        return cls(filepath, "r")
 
     def read(self, name: str) -> bytes:
         # SevenZipFile must be reset after every extraction
         # See https://py7zr.readthedocs.io/en/stable/api.html#py7zr.SevenZipFile.extract
         self.reset()
-        factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
+        factory = BytesIOFactory(limit=10485760)  # 10 MiB
         self.extract(targets=[name], factory=factory)
         return factory.get(name).read()
 
 
-class TarFile:
-    """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
+class Tar(TarFile):
+    """Wrapper around TarFile for a unified API."""
 
-    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
-        self.tar: tarfile.TarFile
-        self.filepath = filepath
-        self.mode: Literal["r"] = mode
+    @classmethod
+    def open_archive(cls, filepath: Path) -> Self:
+        return cls.open(filepath, "r")
 
     def namelist(self) -> list[str]:
-        return self.tar.getnames()
+        return self.getnames()
 
     def read(self, name: str) -> bytes:
-        return unwrap(self.tar.extractfile(name)).read()
+        return unwrap(self.extractfile(name)).read()
 
-    def __enter__(self) -> TarFile:
-        self.tar = tarfile.open(name=self.filepath, mode=self.mode).__enter__()
-        return self
 
-    def __exit__(self, *args) -> None:  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
-        self.tar.__exit__(*args)
+class Zip(ZipFile):
+    """Wrapper around ZipFile for a unified API."""
+
+    @classmethod
+    def open_archive(cls, filepath: Path) -> Self:
+        return cls(filepath, "r")
 
 
 def open_archive(filepath: Path) -> Archive:
@@ -95,20 +111,30 @@ def open_archive(filepath: Path) -> Archive:
 
     Args:
         filepath (Path): The path to the archive.
-        ext (str): The file extension.
 
     Returns:
         Archive: The opened archive.
     """
     ext = filepath.suffix.lower()
-    archiver: type[Archive] = zipfile.ZipFile
+    archiver: type[Archive] = Zip
     if ext in {".7z", ".cb7", ".s7z"}:
-        archiver = SevenZipFile
+        archiver = SevenZip
     elif ext in {".cbr", ".rar"}:
-        archiver = rarfile.RarFile
-    elif ext in {".cbt", ".tar", ".tgz"}:
-        archiver = TarFile
-    return archiver(filepath, "r")
+        archiver = Rar
+    elif ext in {
+        ".cbt",
+        ".taz",
+        ".tb2",
+        ".tbz",
+        ".tbz2",
+        ".tgz",
+        ".tlz",
+        ".txz",
+        ".tz2",
+        ".tzst",
+    } or ".tar" in [suffix.lower() for suffix in filepath.suffixes]:
+        archiver = Tar
+    return archiver.open_archive(filepath)
 
 
 def first_image_in_archive(archive: Archive) -> Image | None:
@@ -138,7 +164,6 @@ def archive_thumb(
     Args:
         filepath (Path): The path to the archive.
         image_names: (list[Path] | list[str] | None): List of embedded image names to search for.
-        ext (str): The file extension. Used to help determine more specific archive type.
 
     Returns:
         Image: The first image found in the archive.
