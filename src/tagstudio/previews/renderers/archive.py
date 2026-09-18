@@ -32,13 +32,20 @@ class ArchivePreview(BasePreview):
     @classmethod
     def register_types(cls) -> None:
         # NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
-        MediaTypes.register("archive", ".7z", RENDER)
+        MediaTypes.register("archive", [".7z", ".s7z"], RENDER)
         MediaTypes.register("archive", ".gz", RENDER)
         MediaTypes.register("archive", ".rar", RENDER)
-        MediaTypes.register("archive", ".s7z", RENDER)
         MediaTypes.register("archive", ".tar", RENDER)
         MediaTypes.register("archive", ".zip", RENDER)
-        MediaTypes.register("archive", ".tar.gz", RENDER)
+        MediaTypes.register("archive", [".bz", ".bz2"], RENDER)
+        MediaTypes.register("archive", ".xz", RENDER)
+        MediaTypes.register("archive", [".taz", ".tgz"], RENDER)
+        MediaTypes.register("archive", [".tb2", ".tbz", ".tbz2", ".tz2"], RENDER)
+        MediaTypes.register("archive", ".tlz", RENDER)
+        MediaTypes.register("archive", ".txz", RENDER)
+        MediaTypes.register("archive", ".zst", RENDER)
+        MediaTypes.register("archive", ".lzma", RENDER)
+        MediaTypes.register("archive", ".tzst", RENDER)
 
     @override
     @classmethod
@@ -114,7 +121,18 @@ def open_archive(filepath: Path) -> Archive:
         archiver = SevenZip
     elif ext in {".cbr", ".rar"}:
         archiver = Rar
-    elif ext in {".cbt", ".tar", ".tgz"}:
+    elif ext in {
+        ".cbt",
+        ".taz",
+        ".tb2",
+        ".tbz",
+        ".tbz2",
+        ".tgz",
+        ".tlz",
+        ".txz",
+        ".tz2",
+        ".tzst",
+    } or ".tar" in [suffix.lower() for suffix in filepath.suffixes]:
         archiver = Tar
     return archiver.open_archive(filepath)
 
