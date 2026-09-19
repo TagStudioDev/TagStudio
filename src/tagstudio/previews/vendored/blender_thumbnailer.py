@@ -4,7 +4,7 @@
 
 """Extract an embedded thumbnail from a Blender file."""
 
-from compression import zstd, gzip
+from compression import gzip, zstd
 import os
 import struct
 from pathlib import Path
