@@ -4,12 +4,12 @@
 
 """Extract an embedded thumbnail from a Blender file."""
 
-from compression import gzip, zstd
 import os
 import struct
 from pathlib import Path
 from typing import BinaryIO
 
+from compression import gzip, zstd
 from PIL import Image, ImageOps
 
 
