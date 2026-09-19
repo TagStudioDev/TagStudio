@@ -4,7 +4,7 @@
 
 """Extract an embedded thumbnail from a Blender file."""
 
-import gzip
+from compression import zstd, gzip
 import os
 import struct
 from pathlib import Path
@@ -18,7 +18,7 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
     TEST: bytes = b"TEST"
     ENDB: bytes = b"ENDB"
 
-    blendfile: BinaryIO | gzip.GzipFile | None = None
+    blendfile: BinaryIO | gzip.GzipFile | zstd.ZstdFile | None = None
     raw_file: BinaryIO | None
 
     with open(path, "rb") as raw_file:
@@ -26,13 +26,16 @@ def blend_extract_thumb(path: Path | str) -> tuple[bytes | None, int, int]:
         # Blender 5.0+   = 17 bytes
         head: bytes = raw_file.read(17)
 
-        # GZIP-compressed blend file.
-        if head[:2] == b"\x1f\x8b":
-            raw_file.close()
-            raw_file = None
+        # ZStandard compressed file (Default for new blender versions)
+        if head[:4] == b"\x28\xb5\x2f\xfd":
+            blendfile = zstd.open(path, "rb")
+            head = blendfile.read(17)
 
-            with gzip.open(path, "rb") as blendfile:
-                head = blendfile.read(17)
+        # GZIP-compressed blend file.
+        elif head[:2] == b"\x1f\x8b":
+            blendfile = gzip.open(path, "rb")
+            head = blendfile.read(17)
+
         else:
             blendfile = raw_file
 
