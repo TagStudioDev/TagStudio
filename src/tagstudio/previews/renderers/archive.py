@@ -121,7 +121,8 @@ def first_image_in_archive(archive: Archive) -> Image | None:
         Image: The first renderable image in the archive.
     """
     for file_name in archive.namelist():  # pyright: ignore[reportUnknownVariableType]
-        ext = Path(file_name).suffix
+        archive_path = Path(file_name)
+        ext = archive_path.suffix.lower() if archive_path.suffix else archive_path.stem
         if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(file_name)  # pyright: ignore[reportUnknownVariableType]
             return image_from_bytes(BytesIO(image_data))
