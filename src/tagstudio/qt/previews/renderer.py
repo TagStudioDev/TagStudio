@@ -1284,11 +1284,11 @@ class ThumbRenderer(QObject):
                 max_triangles=_MAX_STL_TRIANGLES,
             )
         except StlRenderError as e:
-            logger.info("Skipping STL thumbnail", filepath=filepath, error=str(e))
+            logger.info("Skipping STL thumbnail", filename=filepath.name, error=str(e))
         except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-        return None
+            logger.error(
+                "Couldn't render thumbnail", filename=filepath.name, error=type(e).__name__
+            )
 
     @staticmethod
     def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:

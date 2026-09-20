@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import math
 import struct
-import threading
 from pathlib import Path
 from time import perf_counter
 
 import numpy as np
+import structlog
 from PIL import Image, ImageColor
+
+logger = structlog.get_logger(__name__)
 
 _BINARY_STL_HEADER_SIZE = 84
 _BINARY_STL_TRIANGLE_COUNT_OFFSET = 80
@@ -26,12 +28,29 @@ _BINARY_STL_DTYPE = np.dtype(
 _ASCII_VERTEX_MARKERS = (b"vertex", b"VERTEX", b"Vertex")
 _MODEL_PADDING = 0.86
 _MIN_TRIANGLE_AREA = 1e-12
-_BENCHMARK_STL_RENDERER = True
-_benchmark_print_lock = threading.Lock()
+_MODEL_BASE_COLOR = np.asarray([150.0, 153.0, 163.0], dtype=np.float32)
+_LIGHT_DIRECTION = np.asarray([0.35, -0.45, 0.82], dtype=np.float32)
+_LIGHT_DIRECTION /= np.linalg.norm(_LIGHT_DIRECTION)
+_AMBIENT_INTENSITY = 0.34
+_DIFFUSE_INTENSITY = 0.66
+_THUMBNAIL_YAW_DEGREES = 35.0
+_THUMBNAIL_PITCH_DEGREES = -42.0
 
 
 class StlRenderError(ValueError):
     """Raised when an STL file cannot be loaded or rendered."""
+
+
+def _parse_bg_color(bg_color: str) -> tuple[int, int, int]:
+    """Parses `bg_color` into an RGB triple.
+
+    Raises ValueError rather than StlRenderError: an invalid color is a
+    caller argument mistake, not a problem with the STL file being rendered.
+    """
+    rgb = ImageColor.getrgb(bg_color)
+    if len(rgb) != 3:
+        raise ValueError(f"bg_color must resolve to an RGB triple, got {bg_color!r}")
+    return rgb
 
 
 def render_stl_thumbnail(
@@ -41,7 +60,9 @@ def render_stl_thumbnail(
     max_file_size: int,
     max_triangles: int,
 ) -> Image.Image:
-    """Render an STL file to a square thumbnail image."""
+    """Render an STL file to a square thumbnail image, with orthographic projection."""
+    bg_rgb = _parse_bg_color(bg_color)
+
     file_size = filepath.stat().st_size
     if file_size > max_file_size:
         raise StlRenderError("STL file is too large")
@@ -61,25 +82,25 @@ def render_stl_thumbnail(
 
     projected, depths, normals = _project_triangles(triangles, normals, size)
     project_time = perf_counter()
-    image, drawn_triangle_count = _rasterize(projected, depths, normals, size, bg_color)
+    image, drawn_triangle_count = _rasterize(projected, depths, normals, size, bg_rgb)
     raster_time = perf_counter()
 
-    if _BENCHMARK_STL_RENDERER:
-        _print_benchmark(
-            filepath=filepath,
-            stl_kind=stl_kind,
-            file_size=file_size,
-            source_triangle_count=source_triangle_count,
-            loaded_triangle_count=loaded_triangle_count,
-            renderable_triangle_count=len(triangles),
-            drawn_triangle_count=drawn_triangle_count,
-            read_seconds=read_time - start_time,
-            load_seconds=load_time - read_time,
-            prepare_seconds=prepare_time - load_time,
-            project_seconds=project_time - prepare_time,
-            raster_seconds=raster_time - project_time,
-            total_seconds=raster_time - start_time,
-        )
+    logger.debug(
+        "[STL Renderer] Rendered thumbnail",
+        filename=filepath.name,
+        stl_kind=stl_kind,
+        file_size=file_size,
+        source_triangle_count=source_triangle_count,
+        loaded_triangle_count=loaded_triangle_count,
+        renderable_triangle_count=len(triangles),
+        drawn_triangle_count=drawn_triangle_count,
+        read_seconds=round(read_time - start_time, 4),
+        load_seconds=round(load_time - read_time, 4),
+        prepare_seconds=round(prepare_time - load_time, 4),
+        project_seconds=round(project_time - prepare_time, 4),
+        raster_seconds=round(raster_time - project_time, 4),
+        total_seconds=round(raster_time - start_time, 4),
+    )
 
     return image
 
@@ -108,14 +129,16 @@ def _load_stl_triangles(
         triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
         return triangles, triangle_count, "binary"
 
-    data = filepath.read_bytes()
-    rest = data[expected_size_if_binary:] if expected_size_if_binary <= file_size else b""
-    rest_is_just_whitespaces = not rest.strip(_BINARY_STL_TRAILING_CHARS_TO_IGNORE)
-    if file_size > expected_size_if_binary and rest_is_just_whitespaces:
-        triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
-        return triangles, triangle_count, "binary"
+    if expected_size_if_binary < file_size:
+        with filepath.open("rb") as file:
+            file.seek(expected_size_if_binary)
+            trailing = file.read(file_size - expected_size_if_binary)
+        if not trailing.strip(_BINARY_STL_TRAILING_CHARS_TO_IGNORE):
+            triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
+            return triangles, triangle_count, "binary"
 
     # No sign of binary format found. Try parsing ascii-format instead.
+    data = filepath.read_bytes()
     triangles, source_triangle_count = _load_ascii_stl_triangles(data, max_triangles)
     return triangles, source_triangle_count, "ascii"
 
@@ -133,8 +156,7 @@ def _load_binary_stl_triangles(
         offset=_BINARY_STL_HEADER_SIZE,
         shape=(triangle_count,),
     )
-    vertices = records["vertices"]
-    triangles = vertices.astype(np.float32, copy=True)
+    triangles = records["vertices"].astype(np.float32, copy=True)
     del records
     return triangles
 
@@ -164,6 +186,8 @@ def _load_ascii_stl_triangles(data: bytes, max_triangles: int) -> tuple[np.ndarr
     index = 0
     try:
         for chunk in chunks[1:]:
+            # maxsplit=3: chunk runs until the next vertex marker, so an unbounded
+            # split would rescan the rest of the file for every vertex.
             x, y, z = chunk.split(None, 3)[:3]
             values[index] = float(x)
             values[index + 1] = float(y)
@@ -174,40 +198,6 @@ def _load_ascii_stl_triangles(data: bytes, max_triangles: int) -> tuple[np.ndarr
 
     triangles = values.reshape((-1, 3, 3))
     return triangles, source_triangle_count
-
-
-def _print_benchmark(
-    filepath: Path,
-    stl_kind: str,
-    file_size: int,
-    source_triangle_count: int,
-    loaded_triangle_count: int,
-    renderable_triangle_count: int,
-    drawn_triangle_count: int,
-    read_seconds: float,
-    load_seconds: float,
-    prepare_seconds: float,
-    project_seconds: float,
-    raster_seconds: float,
-    total_seconds: float,
-) -> None:
-    with _benchmark_print_lock:
-        print()  # noqa: T201
-        print("[STL Thumbnail Benchmark]")  # noqa: T201
-        print(f"  file:       {filepath}")  # noqa: T201
-        print(f"  format:     {stl_kind}")  # noqa: T201
-        print(f"  size:       {file_size / (1024 * 1024):.2f} MiB")  # noqa: T201
-        print(f"  triangles:  source={source_triangle_count:,}")  # noqa: T201
-        print(f"              loaded={loaded_triangle_count:,}")  # noqa: T201
-        print(f"              renderable={renderable_triangle_count:,}")  # noqa: T201
-        print(f"              drawn={drawn_triangle_count:,}")  # noqa: T201
-        print("  timings:")  # noqa: T201
-        print(f"    read:     {read_seconds * 1000:8.2f} ms")  # noqa: T201
-        print(f"    load:     {load_seconds * 1000:8.2f} ms")  # noqa: T201
-        print(f"    prepare:  {prepare_seconds * 1000:8.2f} ms")  # noqa: T201
-        print(f"    project:  {project_seconds * 1000:8.2f} ms")  # noqa: T201
-        print(f"    raster:   {raster_seconds * 1000:8.2f} ms")  # noqa: T201
-        print(f"    total:    {total_seconds * 1000:8.2f} ms")  # noqa: T201
 
 
 def _prepare_triangles(triangles: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -264,8 +254,8 @@ def _project_triangles(
 
 
 def _thumbnail_rotation_matrix() -> np.ndarray:
-    yaw = math.radians(35.0)
-    pitch = math.radians(-42.0)
+    yaw = math.radians(_THUMBNAIL_YAW_DEGREES)
+    pitch = math.radians(_THUMBNAIL_PITCH_DEGREES)
     cy = math.cos(yaw)
     sy = math.sin(yaw)
     cp = math.cos(pitch)
@@ -281,36 +271,37 @@ def _rasterize(
     depths: np.ndarray,
     normals: np.ndarray,
     size: int,
-    bg_color: str,
+    bg_rgb: tuple[int, int, int],
 ) -> tuple[Image.Image, int]:
-    bg_rgb = ImageColor.getrgb(bg_color)
     pixels = np.empty((size, size, 3), dtype=np.uint8)
     pixels[:, :] = bg_rgb
+    depth_buffer = np.full((size, size), -np.inf, dtype=np.float32)
 
-    base_color = np.asarray([150.0, 153.0, 163.0], dtype=np.float32)
-    light = np.asarray([0.35, -0.45, 0.82], dtype=np.float32)
-    light /= np.linalg.norm(light)
-
-    intensities = 0.34 + (0.66 * np.abs(normals @ light))
-    colors = np.clip(base_color * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
-    triangle_indexes = _visible_triangle_indexes(normals, depths)
-    triangle_order = triangle_indexes[np.argsort(depths[triangle_indexes].mean(axis=1))]
+    intensities = _AMBIENT_INTENSITY + (_DIFFUSE_INTENSITY * np.abs(normals @ _LIGHT_DIRECTION))
+    colors = np.clip(_MODEL_BASE_COLOR * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
 
     projected_list = projected.tolist()
+    depths_list = depths.tolist()
     colors_list = colors.tolist()
     rendered_any = False
     drawn_triangle_count = 0
 
-    for index in triangle_order.tolist():
-        tri = projected_list[index]
-        xs = (tri[0][0], tri[1][0], tri[2][0])
-        ys = (tri[0][1], tri[1][1], tri[2][1])
+    for index in range(len(projected_list)):
+        xy = projected_list[index]
+        xs = (xy[0][0], xy[1][0], xy[2][0])
+        ys = (xy[0][1], xy[1][1], xy[2][1])
         if max(xs) < 0 or min(xs) >= size or max(ys) < 0 or min(ys) >= size:
             continue
 
-        _fill_triangle(pixels, tri, size, colors_list[index])
-        rendered_any = True
-        drawn_triangle_count += 1
+        tri_z = depths_list[index]
+        tri = (
+            (xy[0][0], xy[0][1], tri_z[0]),
+            (xy[1][0], xy[1][1], tri_z[1]),
+            (xy[2][0], xy[2][1], tri_z[2]),
+        )
+        if _fill_triangle(pixels, depth_buffer, tri, size, colors_list[index]):
+            rendered_any = True
+            drawn_triangle_count += 1
 
     if not rendered_any:
         raise StlRenderError("STL mesh is outside the thumbnail frame")
@@ -318,46 +309,61 @@ def _rasterize(
     return Image.fromarray(pixels, "RGB"), drawn_triangle_count
 
 
-def _fill_triangle(pixels: np.ndarray, tri: list[list[float]], size: int, color: list[int]) -> None:
-    """Fill a single triangle directly into a pixel buffer via scanline conversion."""
-    (ax, ay), (bx, by), (cx, cy) = tri
+def _fill_triangle(
+    pixels: np.ndarray,
+    depth_buffer: np.ndarray,
+    tri: tuple[tuple[float, float, float], ...],
+    size: int,
+    color: list[int],
+) -> bool:
+    """Fill a single triangle into a pixel buffer via scanline conversion."""
+    (ax, ay, az), (bx, by, bz), (cx, cy, cz) = tri
     if ay > by:
-        ax, ay, bx, by = bx, by, ax, ay
+        ax, ay, az, bx, by, bz = bx, by, bz, ax, ay, az
     if by > cy:
-        bx, by, cx, cy = cx, cy, bx, by
+        bx, by, bz, cx, cy, cz = cx, cy, cz, bx, by, bz
     if ay > by:
-        ax, ay, bx, by = bx, by, ax, ay
+        ax, ay, az, bx, by, bz = bx, by, bz, ax, ay, az
 
     y_start = max(0, math.ceil(ay))
     y_end = min(size - 1, math.ceil(cy) - 1)
     r, g, b = color
+    drew_any = False
 
+    # a/b/c are the triangle's vertices sorted by y; ta/tb interpolate the left/right
+    # edge x and z at each scanline.
     for y in range(y_start, y_end + 1):
         fy = float(y)
-        xa = ax if cy == ay else ax + (fy - ay) / (cy - ay) * (cx - ax)
+        ta = 0.0 if cy == ay else (fy - ay) / (cy - ay)
+        xa = ax + ta * (cx - ax)
+        za = az + ta * (cz - az)
         if fy < by:
-            xb = ax if by == ay else ax + (fy - ay) / (by - ay) * (bx - ax)
+            tb = 0.0 if by == ay else (fy - ay) / (by - ay)
+            xb = ax + tb * (bx - ax)
+            zb = az + tb * (bz - az)
         else:
-            xb = bx if cy == by else bx + (fy - by) / (cy - by) * (cx - bx)
+            tb = 0.0 if cy == by else (fy - by) / (cy - by)
+            xb = bx + tb * (cx - bx)
+            zb = bz + tb * (cz - bz)
 
-        x_start = max(0, math.ceil(min(xa, xb)))
-        x_end = min(size - 1, math.ceil(max(xa, xb)) - 1)
+        if xa > xb:
+            xa, xb = xb, xa
+            za, zb = zb, za
+
+        x_start = max(0, math.ceil(xa))
+        x_end = min(size - 1, math.ceil(xb) - 1)
         for x in range(x_start, x_end + 1):
+            tx = 0.0 if xb == xa else (x - xa) / (xb - xa)
+            # Linear z interpolation is only correct because the projection is
+            # orthographic; this test makes triangles occlude correctly regardless
+            # of draw order.
+            z = za + tx * (zb - za)
+            if z <= depth_buffer[y, x]:
+                continue
+            depth_buffer[y, x] = z
             pixels[y, x, 0] = r
             pixels[y, x, 1] = g
             pixels[y, x, 2] = b
+            drew_any = True
 
-
-def _visible_triangle_indexes(normals: np.ndarray, depths: np.ndarray) -> np.ndarray:
-    front_facing = normals[:, 2] > 0
-    front_count = int(np.count_nonzero(front_facing))
-    back_count = len(normals) - front_count
-
-    if front_count > len(normals) * 0.25 and back_count > len(normals) * 0.25:
-        front_indexes = np.flatnonzero(front_facing)
-        back_indexes = np.flatnonzero(~front_facing)
-        front_depth = float(depths[front_indexes].mean())
-        back_depth = float(depths[back_indexes].mean())
-        return front_indexes if front_depth >= back_depth else back_indexes
-
-    return np.arange(len(normals))
+    return drew_any
