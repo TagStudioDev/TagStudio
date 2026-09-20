@@ -399,7 +399,6 @@ def register_types() -> None:
     MediaTypes.register("archive.zip", ".7z", SEARCH)
     MediaTypes.register("archive.zip", ".cb7", SEARCH)  # Also under "ebook.comic"
     MediaTypes.register("archive.zip", ".cbz", SEARCH)  # Also under "ebook.comic"
-    MediaTypes.register("archive.zip", ".gz", SEARCH)
     MediaTypes.register("archive.zip", ".s7z", SEARCH)
     MediaTypes.register("archive.zip", ".zip", SEARCH)
     MediaTypes.register("archive.zip", ".zipx", SEARCH)

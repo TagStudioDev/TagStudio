@@ -13,6 +13,7 @@ from tomllib import load
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
+from PyInstaller.utils.hooks import collect_submodules
 
 parser = ArgumentParser()
 # HACK: Without this, the script will fail if empty arguments are passed.
@@ -45,7 +46,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=datafiles,
-    hiddenimports=[],
+    hiddenimports=collect_submodules("tagstudio.previews.renderers"),
     hookspath=[],
     hooksconfig={},
     excludes=[],
