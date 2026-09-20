@@ -9,6 +9,133 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+## 9.6.3 <small>August 15th, 2026</small>
+
+This update includes some critical library bugfixes along with a handful QoL tweaks and additions to the tag/field search bars. The [documentation](https://docs.tagstud.io/usage/#tagging) on this feature has been updated to include the new improvements.
+
+### Added
+
+- feat(ui): show library format version in "About" window by @CyanVoxel in 102cfdf4a2e12635f4b6e47259aa23ea95787421
+
+#### Tag and Field Bars
+
+- feat(ui): keep tag/field search bars open by default by @CyanVoxel in #1472
+- feat(ui): translate vertical scrolling to horizontal in tag/field search bars by @CyanVoxel in #1473
+- feat(ui): use tab and shift+tab to navigate tag/field search bars by @CyanVoxel in #1474
+- feat(ui): add hint icons to tag/field search bars by @CyanVoxel in #1475
+
+### Changed
+
+#### Internal Changes
+
+- refactor: almost final migrations cleanup by @Computerdores in #1456
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hebrew** updated by @Tatrask
+- **Hungarian** updated by @smileyhead
+- **Japanese** updated by @coolzdaddy55-art
+
+### Fixed
+
+- fix: fix being unable to create new colors by @CyanVoxel in dd00f4d4a02fd74b24d40c51b55ae3cc7db09203
+- fix(ui): increase spacing between color palettes by @CyanVoxel in 354c0a0afcdaae2e490dd6c1eca5a556e7724aea
+- fix: fix infinite loading in various refresh operations by @CyanVoxel in 3ce65552f7d459a2edebadb29cf1c17de6a1c742
+- fix(ui): fix update popup showing after closing main window by @CyanVoxel in 30c81257fa3882376111ec03637bd6f517500908
+- fix(ui): fix accent color issues on Windows by @CyanVoxel in #1477
+
+---
+
+## 9.6.2 <small>August 6th, 2026</small>
+
+### Added
+
+- feat(thumbs): render `.ai` (Adobe Illustrator) thumbnails by @purpletennisball in #1453
+
+### Changed
+
+#### Tag & Field Search/Create Bars (by @CyanVoxel in #1451)
+
+The tagging workflow has gotten a major overhaul! Clicking the "Add Tag" button or pressing <kbd>Ctrl</kbd>+<kbd>T</kbd> will now activate an inline tag search bar that you can also use to quickly create and apply new or existing tags! Creating new tags in an empty library is now as simple as clicking the "Add Tag" button, typing in the name of a tag you wish to create, and hitting <kbd>Enter</kbd>! The whole workflow was redone with both casual and power users in mind, and is entirely keyboard friendly. And fields have also gotten the same treatment!
+
+![Empty File Entry](assets/tag_field_bars/add_buttons_normal.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/tag_bar_empty.png){ width=45% }
+![Empty File Entry](assets/tag_field_bars/tag_bar_search_match.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/field_bar_search.png){ width=45% }
+
+You can read the brief feature overview below or read the updated [documentation](https://docs.tagstud.io/usage/#tagging) to see the full changes and features:
+
+- Open tagging bar clicking "Add Tag" or using <kbd>Ctrl</kbd>+<kbd>T</kbd>
+- Open field bar clicking "Add Field" or using <kbd>Ctrl</kbd>+<kbd>L</kbd>
+- When searching, the underlined tag/field template will be added on <kbd>Enter</kbd>
+- With no search results, a new tag or field template will be created on <kbd>Enter</kbd> and added to the selection
+- Holding <kbd>Shift</kbd> while pressing <kbd>Enter</kbd> will force create a new tag/field template, regardless of the search results
+- An option to always open an Edit window for new tags after creation is available by right-clicking the search bar or by going to the Settings (**off** by default)
+- An option to always open an Edit window for field content after applying a template is available by right-clicking the search bar or by going to the Settings (**on** by default)
+    - Field templates are _always_ edited after being created
+- The classic tag search panel can be accessed from **File -> Add Tag to Selected** / <kbd>Shift</kbd>+<kbd>Ctrl</kbd>+<kbd>T</kbd>
+
+#### Internal Changes
+
+- refactor: split out sql migrations from library by @Computerdores in #1432
+- refactor: remove dead folders table by @Computerdores in #1444
+- ci(docs): migrate from mkdocs to properdocs by @CyanVoxel in #1459
+- refactor(ui): refactor PanelModal and PanelWidget into MVC Modal, ModalView, and ModalContent classes by @CyanVoxel in #1454
+- refactor(ui): apply new MVC guidelines to search panels by @CyanVoxel in #1461
+- refactor: split ThumbRenderer class by @CyanVoxel in #1462
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hungarian** updated by @smileyhead
+- **Chinese (Simplified Han Script)** updated by ？？？
+- **Spanish** updated by @2004milenadiaz-source, @JulArr22
+
+### Fixed
+
+- fix: thumbnail rendering for older pxd files by @purpletennisball in #1441
+- fix: correctly display duration statistic in preview panel by @ludvig-sandh in #1421
+- fix: fix new aliases not saving on new tags by @CyanVoxel in #1455
+- fix: don't update media playback when adding tags from menu modal by @CyanVoxel in f52e0fa56816ae43c4faf01b61d46ee8f49b206f
+
+---
+
+## 9.6.1 <small>July 9th, 2026</small>
+
+### Added
+
+- feat(ui): render .pxd thumbnails by @Sola-ris in #1430
+
+### Changed
+
+- feat(ui): organize settings into panels by @purpletennisball in #1425
+- feat(ui): left click to edit tag in tag manager by @purpletennisball in #1416
+
+### Fixed
+
+- fix: fix issues with updating tag aliases causing freezes by @CyanVoxel in #1412
+- fix: make TagStudio python package executable by @Computerdores in #1414
+- fix: use optimized SQL when selecting non-hidden entries by @racerand in #1240
+- fix: fix ripgrep not being located for macOS builds by @CyanVoxel in #1427
+- fix: remove invalid child_id relationships from tag_parents by @CyanVoxel in #1423
+- fix(ui): fix "search for tag" function in tag manager by @CyanVoxel in #1411
+- fix(ui): mouse down selects thumbnail instead of mouse up by @purpletennisball in #1420
+- fix(ui): thumbnail grid not resizing to fill width by @TheBobBobs in #1433
+
+#### Internal Changes
+
+- fix(nix): add pyright to devshell by @Computerdores in #1415
+- fix(deps): replace optional dependencies with dependency groups by @Xarvex in #1435
+- feat(ci)!: complete workflows revamp by @Xarvex in #1437
+
+#### Translations
+
+- **French** updated by @kitsumed
+- **Hungarian** updated by @smileyhead
+- **Russian** updated by @romandobra
+- **Spanish** updated by @JCC1998, @2004milenadiaz-source
+
+---
+
 ## 9.6.0 <small>June 29th, 2026</small>
 
 <p align="center">

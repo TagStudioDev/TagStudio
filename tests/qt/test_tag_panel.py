@@ -7,7 +7,7 @@ from pytestqt.qtbot import QtBot
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.qt_driver import QtDriver
 
 
 def test_tag_panel(qtbot: QtBot, library: Library):
@@ -22,8 +22,9 @@ def test_add_tag_callback(qt_driver: QtDriver):
     qt_driver.add_tag_action_callback()
 
     # When
-    assert isinstance(qt_driver.modal.widget, BuildTagPanel)
-    qt_driver.modal.widget.name_field.setText("xxx")
+    build_tag_panel = qt_driver.modal.layout().content_widget
+    assert isinstance(build_tag_panel, BuildTagPanel)
+    build_tag_panel.name_field.setText("xxx")
     # qt_driver.modal.widget.color_field.setCurrentIndex(1)
     qt_driver.modal.saved.emit()
 

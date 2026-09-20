@@ -2,11 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-# NOTE: This file contains necessary use of deprecated first-party code until that
-# code is removed in a future version (prefs).
-# pyright: reportDeprecated=false
-
-
 import re
 import shutil
 import sys
@@ -18,10 +13,7 @@ from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
 from typing import TYPE_CHECKING
-from uuid import uuid4
-from warnings import catch_warnings
 
-import sqlalchemy
 import structlog
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
@@ -45,7 +37,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.dialects import sqlite
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import (
     InstanceState,
     Session,
@@ -73,16 +65,13 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
+    DEFAULT_FIELD_TEMPLATES,
     JSON_FILENAME,
     SQL_FILENAME,
     TAG_CHILDREN_QUERY,
 )
-from tagstudio.core.library.alchemy.db import make_tables
-from tagstudio.core.library.alchemy.enums import (
-    MAX_SQL_VARIABLES,
-    BrowsingState,
-    SortingModeEnum,
-)
+from tagstudio.core.library.alchemy.db import Base as ModelBase
+from tagstudio.core.library.alchemy.enums import MAX_SQL_VARIABLES, BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.fields import (
     LEGACY_FIELD_MAP,
     BaseField,
@@ -92,10 +81,10 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
     TextFieldTemplate,
 )
-from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
+from tagstudio.core.library.alchemy.joins import CategoryExclusion, TagEntry, TagParent
+from tagstudio.core.library.alchemy.migrations import DBMigrations, MigrationError
 from tagstudio.core.library.alchemy.models import (
     Entry,
-    Folder,
     Namespace,
     Tag,
     TagAlias,
@@ -106,7 +95,6 @@ from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
@@ -172,20 +160,6 @@ def get_default_tags() -> tuple[Tag, ...]:
     return archive_tag, favorite_tag, meta_tag
 
 
-def get_default_field_templates() -> tuple[BaseFieldTemplate, ...]:
-    """Return the default field templates for a new TagStudio library."""
-    title = TextFieldTemplate(name="Title")
-    author = TextFieldTemplate(name="Author")
-    artist = TextFieldTemplate(name="Artist")
-    url = TextFieldTemplate(name="URL")
-    description = TextFieldTemplate(name="Description", is_multiline=True)
-    notes = TextFieldTemplate(name="Notes", is_multiline=True)
-    comments = TextFieldTemplate(name="Comments", is_multiline=True)
-    date = DatetimeFieldTemplate(name="Date")
-
-    return title, author, artist, url, description, notes, comments, date
-
-
 # The difference in the number of default JSON tags vs default tags in the current version.
 DEFAULT_TAG_DIFF: int = len(get_default_tags()) - len([TAG_ARCHIVED, TAG_FAVORITE])
 
@@ -234,7 +208,6 @@ class Library:
 
     library_dir: Path | None = None
     engine: Engine | None = None
-    folder: Folder | None = None
     included_files: set[Path] = set()
 
     def __init__(self) -> None:
@@ -259,7 +232,6 @@ class Library:
         """Migrate JSON library data to the SQLite database."""
         logger.info("Starting Library Conversion...")
         start_time = time.time()
-        folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
 
         # Tags
         for tag in json_lib.tags:
@@ -312,7 +284,6 @@ class Library:
             [
                 Entry(
                     path=entry.path / entry.filename,
-                    folder=folder,
                     fields=[],
                     id=entry.id + 1,  # NOTE: JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
@@ -381,20 +352,19 @@ class Library:
             return tag.name
 
     def open_library(self, library_dir: Path, in_memory: bool = False) -> LibraryStatus:
-        """Wrapper for open_sqlite_library.
+        """Wrapper for open_sqlite_library and create_sqlite_library.
 
         Handles in-memory storage and checks whether a JSON-migration is necessary.
         """
         assert isinstance(library_dir, Path)
 
-        if in_memory:
-            return self.open_sqlite_library(library_dir, is_new=True, storage_path=":memory:")
-
-        is_new = True
         sql_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
-        if self.verify_ts_folder(library_dir) and (is_new := not sql_path.exists()):
-            json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
-            if json_path.exists():
+        json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
+
+        is_new = not sql_path.exists()
+        if not in_memory:
+            self.verify_ts_folder(library_dir)  # ensure .TagStudio directory exists
+            if is_new and json_path.exists():
                 return LibraryStatus(
                     success=False,
                     library_path=library_dir,
@@ -402,14 +372,18 @@ class Library:
                     json_migration_req=True,
                 )
 
-        return self.open_sqlite_library(library_dir, is_new, str(sql_path))
+        if is_new:
+            return self.create_sqlite_library(library_dir, in_memory)
 
-    def open_sqlite_library(
-        self, library_dir: Path, is_new: bool, storage_path: str
-    ) -> LibraryStatus:
+        return self.open_sqlite_library(library_dir, in_memory)
+
+    @staticmethod
+    def __get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
         connection_string = URL.create(
             drivername="sqlite",
-            database=storage_path,
+            database=(
+                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / sql_filename)
+            ),
         )
         # NOTE: File-based databases should use NullPool to create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
@@ -418,169 +392,92 @@ class Library:
         # More info can be found on the SQLAlchemy docs:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if storage_path == ":memory:" else NullPool
-        loaded_db_version: int = 0
-        initial_db_version: int = DB_VERSION
+        poolclass = None if in_memory else NullPool
+
+        logger.info(
+            "[Library] Creating SQLAlchemy Engine",
+            connection_string=connection_string,
+            poolclass=poolclass,
+        )
+        return create_engine(
+            connection_string, poolclass=poolclass, connect_args={"autocommit": False}
+        )
+
+    def create_sqlite_library(
+        self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
+    ) -> LibraryStatus:
+        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
 
         logger.info(
             "[Library] Opening SQLite Library",
             library_dir=library_dir,
-            connection_string=connection_string,
         )
-        self.engine = create_engine(connection_string, poolclass=poolclass)
-        with Session(self.engine) as session:
-            # Don't check DB version when creating new library
-            if not is_new:
-                loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
-                initial_db_version = self.get_version(DB_VERSION_INITIAL_KEY)
 
-                # ======================== Library Database Version Checking =======================
-                # DB_VERSION 6 is the first supported SQLite DB version.
-                # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
-                #   - Dividing by 100 and flooring gives the major (breaking changes) version.
-                #   - If a DB has major version higher than the current program, don't load it.
-                #   - If only the minor version is higher, it's still allowed to load.
-                if loaded_db_version < 6 or (
-                    loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
-                ):
-                    mismatch_text = Translations["status.library_version_mismatch"]
-                    found_text = Translations["status.library_version_found"]
-                    expected_text = Translations["status.library_version_expected"]
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            f"{mismatch_text}\n"
-                            f"{found_text} v{loaded_db_version}, "
-                            f"{expected_text} v{DB_VERSION}"
-                        ),
+        logger.info("[Library] Creating DB tables...")
+        with self.engine.connect() as conn:
+            ModelBase.metadata.create_all(conn)
+            conn.commit()
+
+            # TODO - find a better way
+            # is this the better way?
+            # Could we perhaps update the row we are reading from here?
+            result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+            autoincrement_val = result.scalar()
+            if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
+                try:
+                    conn.execute(
+                        text(
+                            "INSERT INTO tags "
+                            "(id, name, color_namespace, color_slug, is_category, is_hidden) "
+                            f"VALUES ({RESERVED_TAG_END}, 'temp', NULL, NULL, false, false)"
+                        )
                     )
+                    conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+                    conn.commit()
+                except OperationalError as e:
+                    logger.error("Could not initialize built-in tags", error=e)
+                    conn.rollback()
 
-            logger.info(f"[Library] Library DB version: {loaded_db_version}")
-            make_tables(self.engine)
+        with Session(self.engine) as session:
+            # Add default tag color namespaces.
+            namespaces = default_color_groups.namespaces()
 
-            if is_new:
-                # Add default tag color namespaces.
-                namespaces = default_color_groups.namespaces()
-                try:
-                    session.add_all(namespaces)
-                    session.commit()
-                except IntegrityError as e:
-                    logger.error("[Library] Couldn't add default tag color namespaces", error=e)
-                    session.rollback()
+            session.add_all(namespaces)
+            session.flush()
 
-                # Add default tag colors.
-                tag_colors: list[TagColorGroup] = default_color_groups.standard()
-                tag_colors += default_color_groups.pastels()
-                tag_colors += default_color_groups.shades()
-                tag_colors += default_color_groups.grayscale()
-                tag_colors += default_color_groups.earth_tones()
-                tag_colors += default_color_groups.neon()
-                if is_new:
-                    try:
-                        session.add_all(tag_colors)
-                        session.commit()
-                    except IntegrityError as e:
-                        logger.error("[Library] Couldn't add default tag colors", error=e)
-                        session.rollback()
+            # Add default tag colors.
+            tag_colors: list[TagColorGroup] = default_color_groups.standard()
+            tag_colors += default_color_groups.pastels()
+            tag_colors += default_color_groups.shades()
+            tag_colors += default_color_groups.grayscale()
+            tag_colors += default_color_groups.earth_tones()
+            tag_colors += default_color_groups.neon()
 
-                # Add default tags.
-                tags = get_default_tags()
-                try:
-                    session.add_all(tags)
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
+            session.add_all(tag_colors)
+            session.flush()
+
+            # Add default tags.
+            session.add_all(get_default_tags())
+            session.flush()
 
             # Add default field templates
-            if is_new:
-                for template in get_default_field_templates():
-                    try:
-                        session.add(template)
-                        session.commit()
-                    except IntegrityError:
-                        logger.info(
-                            "[Library] FieldTemplate already exists", field_template=template
-                        )
-                        session.rollback()
+            for template in DEFAULT_FIELD_TEMPLATES:
+                session.add(template)
+            session.flush()
 
             # Ensure version rows are present
-            with catch_warnings(record=True):
-                try:
-                    initial = DB_VERSION if is_new else 100
-                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-                try:
-                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-            # check if folder matching current path exists already
-            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
-            if not self.folder:
-                folder = Folder(
-                    path=library_dir,
-                    uuid=str(uuid4()),
-                )
-                session.add(folder)
-                session.expunge(folder)
-                session.commit()
-                self.folder = folder
+            session.add(Version(key=DB_VERSION_INITIAL_KEY, value=DB_VERSION))
+            session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+            session.flush()
 
             # Generate default .ts_ignore file
-            if is_new:
-                try:
-                    ts_ignore_template = (
-                        Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
-                    )
-                    shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
-                except Exception as e:
-                    logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
-
-            # Apply any post-SQL migration patches.
-            if not is_new:
-                assert loaded_db_version >= 6
-
-                # save backup if patches will be applied
-                if loaded_db_version < DB_VERSION:
-                    self.library_dir = library_dir
-                    self.save_library_backup_to_disk()
-                    self.library_dir = None
-
-                # migrate DB step by step from one version to the next
-                if loaded_db_version < 7:
-                    # changes: value_type, tags
-                    self.__apply_db7_migration(session)
-                if loaded_db_version < 8:
-                    # changes: tag_colors
-                    self.__apply_db8_migration(session)
-                if loaded_db_version < 9:
-                    # changes: entries
-                    self.__apply_db9_migration(session)
-                if loaded_db_version < 100:
-                    # changes: tag_parents
-                    self.__apply_db100_migration(session)
-                if loaded_db_version < 102:
-                    # changes: tag_parents
-                    self.__apply_db102_migration(session)
-                if loaded_db_version < 103:
-                    # changes: tags
-                    self.__apply_db103_migration(session)
-                if loaded_db_version < 104:
-                    # changes: deletes preferences
-                    self.__apply_db104_migration(session, library_dir)
-                if loaded_db_version < 200:
-                    # changes: field tables
-                    self.__apply_db200_migration(session)
-                if initial_db_version < 200 and loaded_db_version < 201:
-                    # changes: field tables
-                    self.__apply_db201_migration(session)
-                if loaded_db_version < 202:
-                    # changes: tag_parents
-                    self.__apply_db202_migration(session)
+            try:
+                ts_ignore_template = (
+                    Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
+                )
+                shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+            except Exception as e:
+                logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
 
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
@@ -596,337 +493,32 @@ class Library:
                 )
             )
 
-            # Update DB_VERSION
-            if loaded_db_version < DB_VERSION:
-                logger.info(f"[Library] Library migrated to DB version {DB_VERSION}")
-                self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
+            session.commit()
 
         # everything is fine, set the library path
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def __apply_db7_migration(self, session: Session):
-        """Migrate DB from DB_VERSION 6 to 7."""
-        logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
-        with session:
-            # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
-            disam_stmt = (
-                update(Tag)
-                .where(Tag.disambiguation_id.not_in(all_tag_ids))
-                .values(disambiguation_id=None)
-            )
-            session.execute(disam_stmt)
-            session.commit()
+    def open_sqlite_library(
+        self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
+    ) -> LibraryStatus:
+        logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
-    def __apply_db8_migration(self, session: Session):
-        """Migrate DB from DB_VERSION 7 to 8."""
-        # Add the missing color_border column to the TagColorGroups table.
-        color_border_stmt = text(
-            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
-        )
+        # migrate if necessary
         try:
-            session.execute(color_border_stmt)
-            session.commit()
-            logger.info("[Library][Migration] Added color_border column to tag_colors table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create color_border column in tag_colors table!",
-                error=e,
-            )
-            session.rollback()
+            with DBMigrations(library_dir, sql_filename) as migrations:
+                # save backup if patches will be applied
+                if migrations.required:
+                    Library.save_library_backup_to_disk(library_dir)
 
-        # collect new default tag colors
-        tag_colors: list[TagColorGroup] = default_color_groups.standard()
-        tag_colors += default_color_groups.pastels()
-        tag_colors += default_color_groups.shades()
-        tag_colors += default_color_groups.grayscale()
-        tag_colors += default_color_groups.earth_tones()
-        # tag_colors += default_color_groups.neon() # NOTE: Neon is handled separately
+                migrations.run()
+        except MigrationError as e:
+            return LibraryStatus(success=False, message=e.args[0])
 
-        # Add any new default colors introduced in DB_VERSION 8
-        for color in tag_colors:
-            try:
-                session.add(color)
-                logger.info(
-                    "[Library][Migration] Migrated tag color to DB_VERSION 8+",
-                    color_name=color.name,
-                )
-                session.commit()
-            except IntegrityError:
-                session.rollback()
-
-        # Update Neon colors to use the the color_border property
-        for color in default_color_groups.neon():
-            try:
-                neon_stmt = (
-                    update(TagColorGroup)
-                    .where(
-                        and_(
-                            TagColorGroup.namespace == color.namespace,
-                            TagColorGroup.slug == color.slug,
-                        )
-                    )
-                    .values(
-                        slug=color.slug,
-                        namespace=color.namespace,
-                        name=color.name,
-                        primary=color.primary,
-                        secondary=color.secondary,
-                        color_border=color.color_border,
-                    )
-                )
-                session.execute(neon_stmt)
-                session.commit()
-            except IntegrityError as e:
-                logger.error(
-                    "[Library] Could not migrate Neon colors to DB_VERSION 8+!",
-                    error=e,
-                )
-                session.rollback()
-
-    def __apply_db9_migration(self, session: Session):
-        """Migrate DB from DB_VERSION 8 to 9."""
-        # Apply database schema changes
-        add_filename_column = text(
-            "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
-        )
-        try:
-            session.execute(add_filename_column)
-            session.commit()
-            logger.info("[Library][Migration] Added filename column to entries table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create filename column in entries table!",
-                error=e,
-            )
-            session.rollback()
-
-        # Populate the new filename column.
-        for entry in self.all_entries():
-            session.merge(entry).filename = entry.path.name
-        session.commit()
-        logger.info("[Library][Migration] Populated filename column in entries table")
-
-    def __apply_db100_migration(self, session: Session):
-        """Migrate DB to DB_VERSION 100."""
-        with session:
-            # Repair parent-child tag relationships that are the wrong way around.
-            stmt = update(TagParent).values(
-                parent_id=TagParent.child_id,
-                child_id=TagParent.parent_id,
-            )
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Refactored TagParent table")
-
-    def __apply_db102_migration(self, session: Session):
-        """Migrate DB to DB_VERSION 102."""
-        with session:
-            stmt = delete(TagParent).where(TagParent.parent_id.not_in(select(Tag.id).distinct()))
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Verified TagParent table data")
-
-    def __apply_db103_migration(self, session: Session):
-        """Migrate DB from DB_VERSION 102 to 103."""
-        # add the new hidden column for tags
-        add_is_hidden_column = text(
-            "ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"
-        )
-        try:
-            session.execute(add_is_hidden_column)
-            session.commit()
-            logger.info("[Library][Migration] Added is_hidden column to tags table")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not create is_hidden column in tags table!",
-                error=e,
-            )
-            session.rollback()
-
-        # mark the "Archived" tag as hidden
-        try:
-            session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
-            session.commit()
-            logger.info("[Library][Migration] Updated archived tag to be hidden")
-        except Exception as e:
-            logger.error(
-                "[Library][Migration] Could not update archived tag to be hidden!",
-                error=e,
-            )
-            session.rollback()
-
-    def __apply_db104_migration(self, session: Session, library_dir: Path):
-        """Migrate DB from DB_VERSION 103 to 104."""
-        # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-        self.__migrate_sql_to_ts_ignore(library_dir)
-        session.execute(text("DROP TABLE preferences"))
-        session.commit()
-
-    def __migrate_sql_to_ts_ignore(self, library_dir: Path):
-        # Do not continue if existing '.ts_ignore' file is found
-        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
-        if Path(ts_ignore).exists():
-            return
-
-        # Load legacy extension data
-        with Session(self.engine) as session:
-            extensions: list[str] = unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
-            )
-            is_exclude_list: bool = unwrap(
-                session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
-            )
-
-        with open(ts_ignore, "w") as f:
-            f.write(migrate_ext_list(extensions, is_exclude_list))
-
-    def __apply_db200_migration(self, session: Session):
-        """Migrate DB to DB_VERSION 200."""
-        with session:
-            # Drop unused 'boolean_fields' and 'value_type' tables
-            logger.info(
-                "[Library][Migration][200] Dropping boolean_fields and value_type tables..."
-            )
-            session.execute(text("DROP TABLE boolean_fields"))
-            session.execute(text("DROP TABLE value_type"))
-
-            # Add 'name' column to text_fields and datetime_fields tables
-            logger.info("[Library][Migration][200] Adding name columns to field tables...")
-            stmt = text('ALTER TABLE text_fields ADD COLUMN name VARCHAR DEFAULT ""')
-            session.execute(stmt)
-            stmt = text('ALTER TABLE datetime_fields ADD COLUMN name VARCHAR DEFAULT ""')
-            session.execute(stmt)
-
-            # Drop unnecessary 'position' columns
-            logger.info("[Library][Migration][200] Dropping position columns to field tables...")
-            session.execute(text("ALTER TABLE datetime_fields DROP COLUMN position"))
-            session.execute(text("ALTER TABLE text_fields DROP COLUMN position"))
-
-            # Add 'is_multiline' column to text_fields table
-            logger.info("[Library][Migration][200] Adding is_multiline column to text_fields...")
-            stmt = text(
-                "ALTER TABLE text_fields ADD COLUMN is_multiline BOOLEAN NOT NULL DEFAULT 0"
-            )
-            session.execute(stmt)
-            session.flush()
-
-            # Move values from old `type_key` columns into new `name` columns
-            logger.info("[Library][Migration][200] Moving values from type_key columns to name...")
-            session.execute(text("UPDATE text_fields SET name = type_key"))
-            session.execute(text("UPDATE datetime_fields SET name = type_key"))
-            session.flush()
-
-            # Change `name` values to title case
-            logger.info("[Library][Migration][200] Normalizing TextField names...")
-            for text_field in session.execute(select(TextField)).scalars():
-                # NOTE: The only exception to the "Title Case" conversion is the "URL" field.
-                text_field.name = text_field.name.title().replace("Url", "URL").replace("_", " ")
-            logger.info("[Library][Migration][200] Normalizing DatetimeField names...")
-            for datetime_field in session.execute(select(DatetimeField)).scalars():
-                datetime_field.name = datetime_field.name.title().replace("_", " ")
-            session.flush()
-
-            # Add correct `is_multiline` values to text_fields table
-            logger.info("[Library][Migration][200] Updating is_multiline for legacy TEXT_BOXes...")
-            text_boxes = [
-                x.get("name") for x in LEGACY_FIELD_MAP.values() if x.get("is_multiline") is True
-            ]
-            update_stmt = (
-                update(TextField).where(TextField.name.in_(text_boxes)).values(is_multiline=True)
-            )
-            session.execute(update_stmt)
-            session.flush()
-
-            # Repair legacy "Description" fields to use is_multiline = True
-            logger.info("[Library][Migration][200] Repairing legacy Description fields...")
-            desc_stmt = (
-                update(TextField)
-                .where(TextField.name == "Description" and TextField.is_multiline == False)  # noqa: E712
-                .values(is_multiline=True)
-            )
-            session.execute(desc_stmt)
-
-            # Repair legacy "Comments" fields to use is_multiline = True
-            logger.info("[Library][Migration][200] Repairing legacy Comment fields...")
-            comm_stmt = (
-                update(TextField)
-                .where(TextField.name == "Comments" and TextField.is_multiline == False)  # noqa: E712
-                .values(is_multiline=True)
-            )
-            session.execute(comm_stmt)
-
-            # Add default field templates
-            logger.info("[Library][Migration][200] Adding default field templates...")
-            for template in get_default_field_templates():
-                try:
-                    session.add(template)
-                    session.flush()
-                except IntegrityError:
-                    logger.error("[Library] FieldTemplate already exists", field_template=template)
-                    session.rollback()
-
-            session.commit()
-
-    def __apply_db201_migration(self, session: Session):
-        """Migrate DB to DB_VERSION 201."""
-        with session:
-            create_text_fields_table = text("""
-            CREATE TABLE text_fields_new (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR NOT NULL,
-                entry_id INTEGER NOT NULL,
-                value VARCHAR,
-                is_multiline BOOLEAN NOT NULL,
-                FOREIGN KEY(entry_id) REFERENCES entries (id)
-            )
-            """)
-            create_datetime_fields_table = text("""
-            CREATE TABLE datetime_fields_new (
-                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR NOT NULL,
-                entry_id INTEGER NOT NULL,
-                value VARCHAR,
-                FOREIGN KEY(entry_id) REFERENCES entries (id)
-            )
-            """)
-
-            logger.info("[Library][Migration][201] Dropping type_key from text_fields table...")
-            session.execute(create_text_fields_table)
-            session.flush()
-            session.execute(
-                text("""
-                    INSERT INTO text_fields_new (id, name, entry_id, value, is_multiline)
-                    SELECT id, name, entry_id, value, is_multiline
-                    FROM text_fields
-                """)
-            )
-            session.execute(text("DROP TABLE text_fields"))
-            session.execute(text("ALTER TABLE text_fields_new RENAME TO text_fields"))
-
-            logger.info("[Library][Migration][201] Dropping type_key from datetime_fields table...")
-            session.execute(create_datetime_fields_table)
-            session.flush()
-            session.execute(
-                text("""
-                    INSERT INTO datetime_fields_new (id, name, entry_id, value)
-                    SELECT id, name, entry_id, value
-                    FROM datetime_fields
-                """)
-            )
-            session.execute(text("DROP TABLE datetime_fields"))
-            session.execute(text("ALTER TABLE datetime_fields_new RENAME TO datetime_fields"))
-
-            session.commit()
-
-    def __apply_db202_migration(self, session: Session):
-        """Migrate DB to DB_VERSION 202."""
-        with session:
-            stmt = delete(TagParent).where(TagParent.child_id.not_in(select(Tag.id).distinct()))
-            session.execute(stmt)
-            session.commit()
-            logger.info("[Library][Migration] Verified TagParent table data")
+        # open up-to-date library
+        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
+        self.library_dir = library_dir
+        return LibraryStatus(success=True, library_path=library_dir)
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:
@@ -1128,11 +720,12 @@ class Library:
             raise ValueError("Invalid library directory.")
 
         full_ts_path = library_dir / TS_FOLDER_NAME
-        if not full_ts_path.exists():
-            logger.info("creating library directory", dir=full_ts_path)
-            full_ts_path.mkdir(parents=True, exist_ok=True)
-            return False
-        return True
+        if full_ts_path.exists():
+            return True
+
+        logger.info("creating library directory", dir=full_ts_path)
+        full_ts_path.mkdir(parents=True, exist_ok=True)
+        return False
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple Entry records to the Library."""
@@ -1726,6 +1319,7 @@ class Library:
         tag: Tag,
         parent_ids: list[int] | set[int] | None = None,
         aliases: Iterable[TagAlias] | None = None,
+        exclusion_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1737,8 +1331,13 @@ class Library:
                     session.flush()
 
                 if aliases is not None:
+                    for a in aliases:
+                        a.tag_id = tag.id
                     self.update_aliases(tag, aliases, session)
                     session.flush()
+
+                if exclusion_ids is not None:
+                    self._update_category_exclusion(tag, exclusion_ids, session)
 
                 session.commit()
                 session.expunge(tag)
@@ -1845,16 +1444,17 @@ class Library:
                 session.rollback()
                 return None
 
-    def save_library_backup_to_disk(self) -> Path:
-        assert isinstance(self.library_dir, Path)
-        makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
+    @staticmethod
+    def save_library_backup_to_disk(library_dir: Path) -> Path:
+        assert isinstance(library_dir, Path)
+        makedirs(str(library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
         filename = f"ts_library_backup_{datetime.now(UTC).strftime('%Y_%m_%d_%H%M%S')}.sqlite"
 
-        target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
+        target_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / SQL_FILENAME,
+            library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
 
@@ -1868,6 +1468,7 @@ class Library:
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
                 joinedload(Tag.color),
+                selectinload(Tag.category_exclusions),
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
@@ -1938,7 +1539,10 @@ class Library:
 
             statement = select(Tag).where(Tag.id.in_(all_tag_ids))
             statement = statement.options(
-                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
+                noload(Tag.parent_tags),
+                selectinload(Tag.aliases),
+                selectinload(Tag.category_exclusions),
+                joinedload(Tag.color),
             )
             tags = session.scalars(statement).fetchall()
             for tag in tags:
@@ -2017,9 +1621,10 @@ class Library:
         tag: Tag,
         parent_ids: list[int] | set[int] | None = None,
         aliases: Iterable[TagAlias] | None = None,
+        exclusion_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
-        self.add_tag(tag, parent_ids, aliases)
+        self.add_tag(tag, parent_ids, aliases, exclusion_ids)
 
     def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
         """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
@@ -2067,8 +1672,10 @@ class Library:
                 )
                 session.execute(update_tags_stmt)
                 session.commit()
-            else:
-                self.add_color(new_color_group)
+                return
+
+        # "if not existing_color", out of the session context
+        self.add_color(new_color_group)
 
     def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> bool:
         """Update TagAliases for a given Tag."""
@@ -2140,6 +1747,23 @@ class Library:
             )
             session.add(parent_tag)
 
+    def _update_category_exclusion(
+        self, tag: Tag, exclusion_ids: list[int] | set[int], session: Session
+    ):
+        prev_exclusions = session.scalars(
+            select(CategoryExclusion).where(CategoryExclusion.tag_id == tag.id)
+        ).all()
+
+        for exclusion in prev_exclusions:
+            if exclusion.category_id not in exclusion_ids:
+                session.delete(exclusion)
+            else:
+                exclusion_ids.remove(exclusion.category_id)
+
+        for exclusion_id in exclusion_ids:
+            exclusion = CategoryExclusion(tag_id=tag.id, category_id=exclusion_id)
+            session.add(exclusion)
+
     def get_version(self, key: str) -> int:
         """Get a version value from the DB.
 
@@ -2147,43 +1771,11 @@ class Library:
             key(str): The key for the name of the version type to set.
         """
         with Session(self.engine) as session:
-            engine = sqlalchemy.inspect(self.engine)
-            try:
-                # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("versions"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-                # and is set to be removed in a future release.
-                else:
-                    return int(
-                        unwrap(
-                            session.scalar(
-                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
-                            )
-                        )
-                    )
-            except Exception:
+            version = session.scalar(select(Version).where(Version.key == key))
+            if version is None:
+                logger.info(f"[Library] Couldn't get version of type '{key}'")
                 return 0
-
-    def set_version(self, key: str, value: int) -> None:
-        """Set a version value to the DB.
-
-        Args:
-            key(str): The key for the name of the version type to set.
-            value(int): The version value to set.
-        """
-        with Session(self.engine) as session:
-            try:
-                version = session.scalar(select(Version).where(Version.key == key))
-                assert version
-                version.value = value
-                session.add(version)
-                session.commit()
-            except (IntegrityError, AssertionError) as e:
-                logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
-                session.rollback()
+            return version.value
 
     def mirror_entry_fields(self, entries: list[Entry]) -> None:
         """Mirror fields among multiple Entry items."""

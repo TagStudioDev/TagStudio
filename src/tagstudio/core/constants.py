@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+from importlib.metadata import version
 
-VERSION: str = "9.6.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
+VERSION: str = version("tagstudio")
+BUILD_TYPE: str = ""  # Usually "", "app.nightly", or "app.pre_release"
 COPYRIGHT_YEARS: str = "2021-2026"
 COPYRIGHT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien & TagStudio Contributors"
 COPYRIGHT_COMPACT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien\n& TagStudio Contributors"

@@ -13,7 +13,7 @@ from sqlalchemy.sql.operators import ilike_op
 from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
-from tagstudio.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
+from tagstudio.core.media_types import MediaTypeGroup, MediaTypes
 from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
@@ -24,6 +24,7 @@ from tagstudio.core.query_lang.ast import (
     ORList,
     Property,
 )
+from tagstudio.core.query_lang.file_groups import SEARCH
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -32,13 +33,6 @@ else:
     Library = None  # don't import library because of circular imports
 
 logger = structlog.get_logger(__name__)
-
-
-def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
-    for s in FILETYPE_EQUIVALENTS:
-        if item in s:
-            return s
-    return [item]
 
 
 class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
@@ -95,15 +89,27 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 )
                 return Entry.path.regexp_match(re.escape(node.value))
         elif node.type == ConstraintType.MediaType:
-            extensions: set[str] = set[str]()
-            for media_cat in MediaCategories.ALL_CATEGORIES:
-                if node.value == media_cat.name:
-                    extensions = extensions | media_cat.extensions
-                    break
+            key = (
+                MediaTypes.get_group_key_from_name(
+                    node.value, case_sensitive=False, ignore_whitespace=True
+                )
+                or node.value
+            )
+
+            media_type: MediaTypeGroup | None = getattr(MediaTypes, key, None)
+            extensions: set[str] = (
+                media_type.context_sets.get(SEARCH, set()) if media_type else set()
+            )
             return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
+
         elif node.type == ConstraintType.FileType:
+            # NOTE: Entries store their suffix without a leading dot, the MediaTypes system includes
+            # the leading dot (if any), and this search system should take in either variant.
             return or_(
-                *[Entry.suffix.ilike(ft) for ft in get_filetype_equivalency_list(node.value)]
+                *[
+                    Entry.suffix.ilike(ft.removeprefix("."))
+                    for ft in MediaTypes.get_equivalent_exts(f".{node.value.removeprefix('.')}")
+                ]
             )
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":

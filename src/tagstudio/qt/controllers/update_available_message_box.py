@@ -14,15 +14,16 @@ from PySide6.QtWidgets import QMessageBox
 from tagstudio.core.constants import GITHUB_RELEASE_URL, VERSION
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split view into UpdateAvailableMessageBoxView
 class UpdateAvailableMessageBox(QMessageBox):
-    """A warning dialog for if the TagStudio is not running under the latest release version."""
+    """A message box notifying the user if there is a new version of TagStudio available."""
 
     def __init__(self):
         super().__init__()

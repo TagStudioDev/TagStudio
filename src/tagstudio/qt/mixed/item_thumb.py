@@ -15,17 +15,18 @@ from PySide6.QtWidgets import QBoxLayout, QCheckBox, QHBoxLayout, QLabel, QVBoxL
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.platform_strings import open_file_str, trash_term
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.platform_strings import open_file_str, trash_term
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
 from tagstudio.qt.views.layouts.flow_layout import FlowWidget
 from tagstudio.qt.views.thumb_button import ThumbButton
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.models import Entry
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -60,6 +61,7 @@ def badge_update_lock(func):
     return wrapper
 
 
+# TODO: Split to use MVC guidelines.
 class ItemThumb(FlowWidget):
     """The thumbnail widget for a library item (Entry, Entry Group, etc.)."""
 
@@ -95,7 +97,7 @@ class ItemThumb(FlowWidget):
         self,
         mode: ItemType | None,
         library: Library,
-        driver: "QtDriver",
+        driver: QtDriver,
         thumb_size: tuple[int, int],
         show_filename_label: bool = False,
     ):
@@ -300,11 +302,14 @@ class ItemThumb(FlowWidget):
         # NOTE: self.item_id seems to act as a reference here and does not need to be updated inside
         # QtDriver.update_thumbs() while item_thumb.delete_action does.
         # If this behavior ever changes, move this method back to QtDriver.update_thumbs().
-        self.thumb_button.clicked.connect(
-            lambda: self.driver.toggle_item_selection(
-                self.item_id,
-                append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
-                bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+        self.thumb_button.pressed.connect(
+            lambda: (
+                self.toggle_item_selection()
+                if (
+                    QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+                    or not self.thumb_button.selected
+                )
+                else None
             )
         )
         self.set_mode(mode)
@@ -316,6 +321,13 @@ class ItemThumb(FlowWidget):
     @property
     def is_archived(self) -> bool:
         return self.badge_active[BadgeType.ARCHIVED]
+
+    def toggle_item_selection(self):
+        self.driver.toggle_item_selection(
+            self.item_id,
+            append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
+            bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+        )
 
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
@@ -350,12 +362,11 @@ class ItemThumb(FlowWidget):
         ext = filename.suffix.lower()
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        media_types: set[MediaType] = MediaCategories.get_types(ext)
         if (
-            not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
-            or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
+            not MediaTypes.contains("image.raster", ext, SEARCH)
+            or MediaTypes.contains("image.raster.raw", ext, SEARCH)
+            or MediaTypes.contains("image.vector", ext, SEARCH)
+            or MediaTypes.contains("adobe.photoshop", ext, SEARCH)
             or ext
             in [
                 ".apng",
@@ -369,7 +380,9 @@ class ItemThumb(FlowWidget):
             if ext or filename.stem:
                 self.ext_badge.setText(ext.upper()[1:] or filename.stem.upper())
                 show_ext_badge = True
-            if MediaType.VIDEO in media_types or MediaType.AUDIO in media_types:
+            if MediaTypes.contains("video", ext, SEARCH) or MediaTypes.contains(
+                "audio", ext, SEARCH
+            ):
                 show_count_badge = True
 
         self.ext_badge.setHidden(not show_ext_badge)
@@ -418,7 +431,7 @@ class ItemThumb(FlowWidget):
         self.thumb_button.setMinimumSize(size)
         self.thumb_button.setMaximumSize(size)
 
-    def set_item(self, entry: "Entry"):
+    def set_item(self, entry: Entry):
         self.set_item_id(entry.id)
         path = unwrap(self.lib.library_dir) / entry.path
         self.set_item_path(path)
@@ -479,7 +492,7 @@ class ItemThumb(FlowWidget):
     ):
         selected = self.driver._selected
         if len(selected) == 1 and entry_id in selected:
-            self.driver.main_window.preview_panel.field_containers_widget.update_toggled_tag(
+            self.driver.main_window.preview_panel.containers.update_toggled_tag(
                 tag_id, toggle_value
             )
 

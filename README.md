@@ -3,11 +3,10 @@
 
 # TagStudio: A User-Focused Photo & File Management System
 
-[![Downloads](https://img.shields.io/github/downloads/TagStudioDev/TagStudio/total.svg?maxAge=2592001)](https://github.com/TagStudioDev/TagStudio/releases)
+[![Downloads](https://img.shields.io/github/downloads/TagStudioDev/TagStudio/total.svg)](https://github.com/TagStudioDev/TagStudio/releases)
 [![Translations](https://hosted.weblate.org/widget/tagstudio/strings/svg-badge.svg)](https://hosted.weblate.org/projects/tagstudio/strings/)
-[![PyTest](https://github.com/TagStudioDev/TagStudio/actions/workflows/pytest.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/pytest.yaml)
-[![MyPy](https://github.com/TagStudioDev/TagStudio/actions/workflows/mypy.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/mypy.yaml)
-[![Ruff](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/ruff.yaml)
+[![REUSE Status](https://api.reuse.software/badge/github.com/TagStudioDev/TagStudio)](https://api.reuse.software/info/github.com/TagStudioDev/TagStudio)
+[![Python Checks](https://github.com/TagStudioDev/TagStudio/actions/workflows/checks_python.yml/badge.svg)](https://github.com/TagStudioDev/TagStudio/actions/workflows/checks_python.yml)
 
 <p align="center">
   <img width="60%" src="src/tagstudio/resources/qt/images/tagstudio_logo-text_color.png">

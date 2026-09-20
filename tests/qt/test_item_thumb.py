@@ -6,7 +6,7 @@ import pytest
 
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
-from tagstudio.qt.ts_qt import QtDriver
+from tagstudio.qt.qt_driver import QtDriver
 
 
 @pytest.mark.parametrize("new_value", (True, False))

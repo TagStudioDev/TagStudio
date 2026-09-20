@@ -4,7 +4,6 @@
 
 import math
 from pathlib import Path
-from shutil import which
 
 from PIL import ImageQt
 from PySide6.QtCore import QSize, Qt
@@ -20,29 +19,37 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import (
+    BUILD_TYPE,
     COPYRIGHT,
     DISCORD_URL,
     DOCS_URL,
     GITHUB_REPO_URL,
     VERSION,
-    VERSION_BRANCH,
 )
+from tagstudio.core.library.alchemy.constants import DB_VERSION
 from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
-from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.stylesheets.stylesheets import form_content_style
+from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.stylesheets import form_content_style, header
 
 
+# TODO: Split to use MVC guidelines.
 class AboutModal(QWidget):
     """Modal window showing information about the TagStudio application."""
 
-    VERSION_STR: str = f"{Translations['about.version']} {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"  # noqa: E501
+    VERSION_STR: str = " ".join(
+        [
+            f"{Translations['about.version']}",
+            f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
+        ]
+    )
 
     def __init__(self, config_path: Path | str):
         super().__init__()
@@ -66,6 +73,10 @@ class AboutModal(QWidget):
         self.content_layout.setContentsMargins(12, 12, 12, 12)
         self.content_layout.setSpacing(12)
 
+        red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
+        green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
+        amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
+
         # TagStudio Logo -------------------------------------------------------
         self.logo_widget = QLabel()
         self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.ts_logo_text_color))
@@ -78,7 +89,7 @@ class AboutModal(QWidget):
         self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Version --------------------------------------------------------------
-        self.version_label = QLabel(f"<h3>{AboutModal.VERSION_STR}</h3>")
+        self.version_label = QLabel(header(AboutModal.VERSION_STR, 3))
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Copyright ------------------------------------------------------------
@@ -94,49 +105,34 @@ class AboutModal(QWidget):
         self.desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # System Info ----------------------------------------------------------
-        ff_version = ffmpeg.version()
-        red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
-        green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
-        amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
-        missing = Translations["generic.missing"]
-        found = Translations["about.module.found"]
-
-        ffmpeg_status = f'<span style="color:{red}">{missing}</span>'
-        if ff_version["ffmpeg"] is not None:
-            ffmpeg_status = (
-                f'<span style="color:{green}">{found}</span> (' + ff_version["ffmpeg"] + ")"
-            )
-
-        ffprobe_status = f'<span style="color:{red}">{missing}</span>'
-        if ff_version["ffprobe"] is not None:
-            ffprobe_status = (
-                f'<span style="color:{green}">{found}</span> (' + ff_version["ffprobe"] + ")"
-            )
-
-        ripgrep_status = f'<span style="color:{amber}">{missing}</span>'
-        if which("rg") is not None:
-            ripgrep_status = f'<span style="color:{green}">{found}</span>'
 
         self.system_info_widget = QWidget()
         self.system_info_layout = QFormLayout(self.system_info_widget)
+        self.system_info_layout.setSpacing(4)
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        # Version
-        version_title = QLabel(Translations["about.version"])
-        latest_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
-        version_content_style = form_content_style()
-        if not is_version_outdated(VERSION, latest_version):
-            version_content = QLabel(f"{VERSION}")
+        # TagStudio Version
+        ts_version_title = QLabel(Translations["about.version"])
+        latest_ts_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
+        ts_version_content_style = form_content_style()
+        if not is_version_outdated(VERSION, latest_ts_version):
+            ts_version_content = QLabel(f"{VERSION}")
         else:
-            version_content = QLabel(
+            ts_version_content = QLabel(
                 Translations.format(
-                    "about.version.latest", built_version=VERSION, latest_version=latest_version
+                    "about.version.latest", built_version=VERSION, latest_version=latest_ts_version
                 )
             )
-            version_content_style += f"color: {red};"
-        version_content.setStyleSheet(version_content_style)
-        self.system_info_layout.addRow(version_title, version_content)
-        version_content.setMaximumWidth(version_content.sizeHint().width())
+            ts_version_content_style += f"color: {red};"
+        ts_version_content.setStyleSheet(ts_version_content_style)
+        self.system_info_layout.addRow(ts_version_title, ts_version_content)
+        ts_version_content.setMaximumWidth(ts_version_content.sizeHint().width())
+
+        # Library DB Version
+        db_version_title = QLabel(Translations["about.library_version"])
+        db_version_content = QLabel(f"{DB_VERSION}")
+        db_version_content.setStyleSheet(form_content_style())
+        self.system_info_layout.addRow(db_version_title, db_version_content)
 
         # Config Path
         config_path_title = QLabel(f"{Translations['about.config_path']}")
@@ -149,46 +145,84 @@ class AboutModal(QWidget):
 
         # TODO: Add row for "App Cache Path" (currently that TagStudio.ini file)
 
+        # Optional Modules -----------------------------------------------------
+
+        self.parent_optional_modules_widget = QWidget()
+        self.parent_optional_modules_layout = QVBoxLayout(self.parent_optional_modules_widget)
+        self.parent_optional_modules_layout.setContentsMargins(0, 0, 0, 0)
+        self.parent_optional_modules_layout.setSpacing(0)
+
+        # Subtitle
+        self.optional_modules_label = QLabel(header(Translations["about.modules.title"], 4))
+
+        self.optional_modules_widget = QWidget()
+        self.optional_modules_layout = QFormLayout(self.optional_modules_widget)
+        self.optional_modules_layout.setSpacing(4)
+        self.optional_modules_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        ffmpeg_ver = FfmpegStatus.version()
+        ffprobe_ver = FfprobeStatus.version()
+        ripgrep_ver = RipgrepStatus.version()
+
+        missing = Translations["generic.missing"]
+        found = Translations["about.module.found"]
+
+        ffmpeg_status = f'<span style="color:{red}">{missing}</span>'
+        if ffmpeg_ver is not None:
+            ffmpeg_status = f'<span style="color:{green}">{found}</span> (' + ffmpeg_ver + ")"
+
+        ffprobe_status = f'<span style="color:{red}">{missing}</span>'
+        if ffprobe_ver is not None:
+            ffprobe_status = f'<span style="color:{green}">{found}</span> (' + ffprobe_ver + ")"
+
+        ripgrep_status = f'<span style="color:{amber}">{missing}</span>'
+        if ripgrep_ver is not None:
+            ripgrep_status = f'<span style="color:{green}">{found}</span> (' + ripgrep_ver + ")"
+
         # FFmpeg Status
         ffmpeg_path_title = QLabel("FFmpeg")
         ffmpeg_path_content = ClickableLabel(f"{ffmpeg_status}")
-        ffmpeg_location = which(ffmpeg._get_ffmpeg_location())  # pyright: ignore[reportPrivateUsage]
+        ffmpeg_location = FfmpegStatus.which()
         if ffmpeg_location:
             ffmpeg_path_content.clicked.connect(
                 lambda: open_file(ffmpeg_location, file_manager=True)
             )
             ffmpeg_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
+            ffmpeg_path_content.setToolTip(ffmpeg_location)
         ffmpeg_path_content.setStyleSheet(form_content_style())
-        self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
+        self.optional_modules_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
         ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
 
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
         ffprobe_path_content = ClickableLabel(f"{ffprobe_status}")
-        ffprobe_location = which(ffmpeg._get_ffprobe_location())  # pyright: ignore[reportPrivateUsage]
+        ffprobe_location = FfprobeStatus.which()
         if ffprobe_location:
             ffprobe_path_content.clicked.connect(
                 lambda: open_file(ffprobe_location, file_manager=True)
             )
             ffprobe_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
+            ffprobe_path_content.setToolTip(ffprobe_location)
         ffprobe_path_content.setStyleSheet(form_content_style())
-        self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
+        self.optional_modules_layout.addRow(ffprobe_path_title, ffprobe_path_content)
         ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
 
         # ripgrep Status
-        # TODO: Add a central class to find ripgrep info, similar to ffmpeg
         ripgrep_path_title = QLabel("ripgrep")  # NOTE: Don't localize
-        ripgrep_path_content = ClickableLabel()
-        ripgrep_path_content.setText(f"{ripgrep_status}")  # TODO: Pass in constructor after #1386
-        ripgrep_location = which("rg")
+        ripgrep_path_content = ClickableLabel(f"{ripgrep_status}")
+        ripgrep_location = RipgrepStatus.which()
         if ripgrep_location:
             ripgrep_path_content.clicked.connect(
                 lambda: open_file(ripgrep_location, file_manager=True)
             )
             ripgrep_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
+            ripgrep_path_content.setToolTip(ripgrep_location)
         ripgrep_path_content.setStyleSheet(form_content_style())
         ripgrep_path_content.setMaximumWidth(ripgrep_path_content.sizeHint().width())
-        self.system_info_layout.addRow(ripgrep_path_title, ripgrep_path_content)
+        self.optional_modules_layout.addRow(ripgrep_path_title, ripgrep_path_content)
+
+        self.parent_optional_modules_layout.addWidget(self.optional_modules_label)
+        self.parent_optional_modules_layout.addWidget(self.optional_modules_widget)
 
         # Links ----------------------------------------------------------------
 
@@ -217,6 +251,7 @@ class AboutModal(QWidget):
         self.content_layout.addWidget(self.version_label)
         self.content_layout.addWidget(self.desc_label)
         self.content_layout.addWidget(self.system_info_widget)
+        self.content_layout.addWidget(self.parent_optional_modules_widget)
         self.content_layout.addStretch(1)
         self.content_layout.addWidget(self.links_label)
         self.content_layout.addWidget(self.copyright_label)

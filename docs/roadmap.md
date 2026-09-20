@@ -98,7 +98,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
 - [x] Translations
 - [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
     - [ ] Improved Tag Autocomplete :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    - [ ] Tags appear as widgets in search bar :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    - [ ] Tags appear as widgets in search bar _(similar to new tag search/create bar)_ :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] Unified Media Player
     - [x] Auto-Hiding Player Controls
     - [x] Play/Pause
@@ -116,7 +116,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Basic Support
     - [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
     - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.x]**
-- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
+- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Top Tags
     - [ ] Recent Tags
     - [ ] Tag Search
@@ -203,8 +203,8 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     - [ ] User-Defined Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Tint Icons with Text Color :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
 - [x] [Category Property](tags.md#is-category) **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-    - [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title
-    - [ ] Fine-tuned exclusion from categories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
+    - [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the inspector under a title
+    - [x] Fine-tuned exclusion from categories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.x]**
 - [x] Hidden Property **[[v9.5.7](changelog.md#957-may-5th-2026)]**
     - [x] Built-in "Archived" tag has this property by default **[[v9.5.7](changelog.md#957-may-5th-2026)]**
     - [x] Checkbox near search bar to show hidden tags in search **[[v9.5.7](changelog.md#957-may-5th-2026)]**

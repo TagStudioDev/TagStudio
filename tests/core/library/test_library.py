@@ -1,0 +1,482 @@
+# SPDX-FileCopyrightText: (c) TagStudio Contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
+
+from collections.abc import Callable
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import pytest
+import structlog
+
+from tagstudio.core.library.alchemy.enums import BrowsingState
+from tagstudio.core.library.alchemy.fields import (
+    DatetimeField,
+    TextField,
+)
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
+from tagstudio.core.utils.types import unwrap
+
+logger = structlog.get_logger()
+
+
+def test_library_add_alias(library: Library, generate_tag: Callable[..., Tag]):
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+
+    parent_ids: set[int] = set()
+    aliases: set[TagAlias] = set()
+    aliases.add(TagAlias("test_alias", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
+    tag = unwrap(library.get_tag(tag.id))
+    alias_ids = set(tag.alias_ids)
+
+    assert len(alias_ids) == 1
+
+
+def test_library_get_alias(library: Library, generate_tag: Callable[..., Tag]):
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+
+    parent_ids: set[int] = set()
+    aliases: set[TagAlias] = set()
+    aliases.add(TagAlias("test_alias", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
+    tag = unwrap(library.get_tag(tag.id))
+    alias_ids = tag.alias_ids
+
+    alias = unwrap(library.get_alias(tag.id, alias_ids[0]))
+    assert alias.name == "test_alias"
+
+
+def test_library_update_alias(library: Library, generate_tag: Callable[..., Tag]):
+    tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+
+    parent_ids: set[int] = set()
+    aliases: set[TagAlias] = set()
+    test_alias = TagAlias("test_alias", tag.id)
+    aliases.add(test_alias)
+    library.update_tag(tag, parent_ids, aliases)
+    tag = unwrap(library.get_tag(tag.id))
+    alias_ids = tag.alias_ids
+
+    alias = unwrap(library.get_alias(tag.id, alias_ids[0]))
+    assert alias.name == "test_alias"
+
+    aliases.remove(test_alias)
+    aliases.add(TagAlias("alias_update", tag.id))
+    library.update_tag(tag, parent_ids, aliases)
+
+    tag = unwrap(library.get_tag(tag.id))
+    assert len(tag.alias_ids) == 1
+    alias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
+    assert alias.name == "alias_update"
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_library_add_file(library: Library):
+    """Check Entry.path handling for insert vs lookup"""
+    entry = Entry(
+        path=Path("bar.txt"),
+        fields=[TextField(name="Title", value="I'm a Test Title")],
+    )
+
+    assert not library.has_entry_with_path(entry.path)
+    assert library.add_entries([entry])
+    assert library.has_entry_with_path(entry.path)
+
+
+def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
+    # tag already exists
+    assert library.add_tag(generate_tag("foo", id=1000)) is None
+
+    # new tag name
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    assert tag.id == 123
+
+    tag_inc = unwrap(library.add_tag(generate_tag("yyy")))
+    assert tag_inc.id > 1000
+
+
+def test_tag_self_parent(library: Library, generate_tag: Callable[..., Tag]):
+    # tag already exists
+    assert library.add_tag(generate_tag("foo", id=1000)) is None
+
+    # new tag name
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    assert tag.id == 123
+
+    library.update_tag(tag, {tag.id}, [])
+    tag = unwrap(library.get_tag(tag.id))
+    assert len(tag.parent_ids) == 0
+
+
+def test_library_search(library: Library, entry_full: Entry):
+    assert library.entries_count == 2
+    tag = list(entry_full.tags)[0]
+
+    results = library.search_library(
+        BrowsingState.from_tag_name(tag.name),
+        page_size=500,
+    )
+
+    assert results.total_count == 1
+    assert len(results) == 1
+
+
+def test_tag_search(library: Library):
+    tag = library.tags[0]
+
+    assert library.search_tags(tag.name.lower())[0]
+    assert library.search_tags(tag.name.upper())[0]
+    assert library.search_tags(tag.name[2:-2])[0]
+    assert library.search_tags(tag.name * 2) == ([], [])
+
+
+def test_get_entry(library: Library, entry_min: Entry):
+    result = unwrap(library.get_entry_full(unwrap(entry_min.id)))
+    assert len(result.tags) == 1
+
+
+def test_entries_count(library: Library):
+    entries = [Entry(path=Path(f"{x}.txt"), fields=[]) for x in range(10)]
+    new_ids = library.add_entries(entries)
+    assert len(new_ids) == 10
+
+    results = library.search_library(BrowsingState.show_all(), page_size=5)
+
+    assert results.total_count == 12
+    assert len(results) == 5
+
+
+def test_parents_add(library: Library, generate_tag: Callable[..., Tag]):
+    # Given
+    tag: Tag = library.tags[0]
+
+    parent_tag: Tag = generate_tag("parent_tag_01")
+    parent_tag = unwrap(library.add_tag(parent_tag))
+
+    # When
+    assert library.add_parent_tag(tag.id, unwrap(parent_tag.id))
+
+    # Then
+    tag = unwrap(library.get_tag(unwrap(tag.id)))
+    assert tag.parent_ids
+
+
+def test_remove_tag(library: Library, generate_tag: Callable[..., Tag]):
+    tag = unwrap(library.add_tag(generate_tag("food", id=123)))
+
+    tag_count = len(library.tags)
+
+    library.remove_tag(tag.id)
+    assert len(library.tags) == tag_count - 1
+
+
+def test_search_library_case_insensitive(library: Library):
+    # Given
+    entries = list(library.all_entries(with_joins=True))
+    assert len(entries) == 2, entries
+
+    entry = entries[0]
+    tag = list(entry.tags)[0]
+
+    # When
+    results = library.search_library(
+        BrowsingState.from_tag_name(tag.name.upper()),
+        page_size=500,
+    )
+
+    # Then
+    assert results.total_count == 1
+    assert len(results) == 1
+
+    assert results[0] == entry.id
+
+
+def test_remove_entry_field(library: Library, entry_full: Entry):
+    title_field = entry_full.text_fields[0]
+
+    library.remove_entry_field(title_field, [entry_full.id])
+
+    entry = next(library.all_entries(with_joins=True))
+    assert not entry.text_fields
+
+
+def test_remove_text_field_entry_with_multiple_fields(library: Library, entry_full: Entry):
+    # Given
+    title_field = entry_full.text_fields[0]
+
+    # When
+    # add identical field
+    assert library.add_field_to_entries(entry_full.id, field=title_field)
+
+    # remove entry field
+    library.remove_entry_field(title_field, [entry_full.id])
+
+    # Then one field should remain
+    entry = next(library.all_entries(with_joins=True))
+    assert len(entry.text_fields) == 1
+
+
+def test_update_entry_field(library: Library, entry_full: Entry):
+    title_field = entry_full.text_fields[0]
+
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
+
+    entry = next(library.all_entries(with_joins=True))
+    assert entry.text_fields[0].value == "new value"
+
+
+def test_update_entry_with_multiple_identical_text_fields(library: Library, entry_full: Entry):
+    # Given
+    title_field = entry_full.text_fields[0]
+
+    # When
+    # add identical field
+    empty_title = TextField(name="Title", value="")
+    library.add_field_to_entries(entry_full.id, field=empty_title)
+
+    # update one of the fields
+    library.update_text_field(
+        entry_full.id, title_field, title_field.name, "new value", title_field.is_multiline
+    )
+
+    # Then only one should be updated
+    entry = next(library.all_entries(with_joins=True))
+    assert entry.text_fields[0].value == ""
+    assert entry.text_fields[1].value == "new value"
+
+
+def test_mirror_entry_fields(library: Library):
+    # Create and add entries with fields
+    entry_a = Entry(
+        path=Path("title_and_date.txt"),
+        fields=[
+            TextField(name="Title", value="I'm a Test Title"),
+            DatetimeField(name="Date", value="2026-05-07 12:59:24"),
+        ],
+    )
+    entry_b = Entry(
+        path=Path("notes.txt"),
+        fields=[
+            TextField(name="Notes", value="These are my notes.\nNo peeking!", is_multiline=True),
+            TextField(name="Title", value="I'm a Test Title"),
+        ],
+    )
+    entry_c = Entry(
+        path=Path("date_published.txt"),
+        fields=[
+            DatetimeField(name="Date Published", value="2000-01-01 12:00:00"),
+        ],
+    )
+    entry_a_id, entry_b_id, entry_c_id = library.add_entries([entry_a, entry_b, entry_c])
+
+    # Retrieve from library
+    entry_a_ = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_ = unwrap(library.get_entry_full(entry_b_id))
+    entry_c_ = unwrap(library.get_entry_full(entry_c_id))
+
+    # Sanity check for initial fields
+    assert entry_a_.fields[0].name == "Title"
+    assert entry_a_.fields[1].name == "Date"
+    assert entry_b_.fields[0].name == "Notes"
+    assert entry_c_.fields[0].name == "Date Published"
+    assert len(entry_a_.fields) == 2
+    assert len(entry_b_.fields) == 2
+    assert len(entry_c_.fields) == 1
+
+    # Mirror fields between entries
+    library.mirror_entry_fields([entry_b_, entry_a_, entry_c_])
+
+    # Retrieve from library, again
+    entry_a_mirrored = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_mirrored = unwrap(library.get_entry_full(entry_b_id))
+    entry_c_mirrored = unwrap(library.get_entry_full(entry_c_id))
+
+    for entry in [entry_a_mirrored, entry_b_mirrored, entry_c_mirrored]:
+        logger.info(
+            "[Library][mirror_fields]", entry_id=entry.id, field_count_after=len(entry.fields)
+        )
+
+    # Assert presence of all fields on all entries
+    assert len(entry_a_mirrored.fields) == 4
+    assert len(entry_b_mirrored.fields) == 4
+    assert len(entry_c_mirrored.fields) == 4
+
+    assert {(type(x), x.name) for x in entry_a_mirrored.fields} == {
+        (TextField, "Title"),
+        (TextField, "Notes"),
+        (DatetimeField, "Date"),
+        (DatetimeField, "Date Published"),
+    }
+
+
+def test_merge_entries(library: Library):
+    tag_0: Tag = unwrap(library.add_tag(Tag(id=1010, name="tag_0")))
+    tag_1: Tag = unwrap(library.add_tag(Tag(id=1011, name="tag_1")))
+    tag_2: Tag = unwrap(library.add_tag(Tag(id=1012, name="tag_2")))
+
+    entry_a = Entry(
+        path=Path("a"),
+        fields=[
+            TextField(name="Author", value="Author McAuthorson"),
+            TextField(name="Description", value="test description", is_multiline=True),
+        ],
+    )
+    entry_b = Entry(
+        path=Path("b"),
+        fields=[TextField(name="Notes", value="test note", is_multiline=True)],
+    )
+    entry_a_id, entry_b_id = library.add_entries([entry_a, entry_b])
+
+    library.add_tags_to_entries(entry_a_id, [tag_0.id, tag_2.id])
+    library.add_tags_to_entries(entry_b_id, [tag_1.id])
+
+    entry_a_: Entry = unwrap(library.get_entry_full(entry_a_id))
+    entry_b_: Entry = unwrap(library.get_entry_full(entry_b_id))
+
+    assert library.merge_entries(entry_a_, entry_b_)
+    assert not library.has_entry_with_path(Path("a"))
+    assert library.has_entry_with_path(Path("b"))
+
+    entry_b_merged = unwrap(library.get_entry_full(entry_b_id))
+
+    fields = [field.value for field in entry_b_merged.fields]
+    assert "Author McAuthorson" in fields
+    assert "test description" in fields
+    assert "test note" in fields
+    b_tags = [t.id for t in entry_b_merged.tags]
+    assert tag_0.id in b_tags
+    assert tag_1.id in b_tags
+    assert tag_2.id in b_tags
+
+
+def test_remove_tags_from_entries(library: Library, entry_full: Entry):
+    removed_tag_id = -1
+    for tag in entry_full.tags:
+        removed_tag_id = tag.id
+        library.remove_tags_from_entries(entry_full.id, tag.id)
+
+    entry = next(library.all_entries(with_joins=True))
+    assert removed_tag_id not in [t.id for t in entry.tags]
+
+
+@pytest.mark.parametrize(
+    ["query_name", "has_result"],
+    [
+        (1, 1),
+        ("1", 1),
+        ("xxx", 0),
+        (222, 0),
+    ],
+)
+def test_search_entry_id(library: Library, query_name: int, has_result: bool):
+    result = library.get_entry(query_name)
+
+    assert (result is not None) == has_result
+
+
+def test_path_search_ilike(library: Library):
+    results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    assert results.total_count == 1
+    assert len(results.ids) == 1
+
+
+def test_path_search_like(library: Library):
+    results = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
+    assert results.total_count == 0
+    assert len(results.ids) == 0
+
+
+def test_path_search_default_with_sep(library: Library):
+    results = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
+    assert results.total_count == 1
+    assert len(results.ids) == 1
+
+
+def test_path_search_glob_after(library: Library):
+    results = library.search_library(BrowsingState.from_path("foo*"), page_size=500)
+    assert results.total_count == 1
+    assert len(results.ids) == 1
+
+
+def test_path_search_glob_in_front(library: Library):
+    results = library.search_library(BrowsingState.from_path("*bar.md"), page_size=500)
+    assert results.total_count == 1
+    assert len(results.ids) == 1
+
+
+def test_path_search_glob_both_sides(library: Library):
+    results = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
+    assert results.total_count == 1
+    assert len(results.ids) == 1
+
+
+# TODO: deduplicate this code with pytest parametrisation or a for loop
+def test_path_search_ilike_glob_equality(library: Library):
+    results_ilike = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("bar"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+
+# TODO: isn't this the exact same as the one before?
+def test_path_search_like_glob_equality(library: Library):
+    results_ilike = library.search_library(BrowsingState.from_path("ONE/two"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*ONE/two*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
+    assert results_ilike.ids == results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
+    assert results_ilike.ids != results_glob.ids
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
+    assert results_ilike.ids != results_glob.ids
+    results_ilike, results_glob = None, None
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
+def test_filetype_search(library: Library, filetype: str, num_of_filetype: int):
+    results = library.search_library(BrowsingState.from_filetype(filetype), page_size=500)
+    assert len(results.ids) == num_of_filetype
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
+def test_filetype_return_one_filetype(
+    file_mediatypes_library: Library, filetype: str, num_of_filetype: int
+):
+    results = file_mediatypes_library.search_library(
+        BrowsingState.from_filetype(filetype), page_size=500
+    )
+    assert len(results.ids) == num_of_filetype
+
+
+@pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
+def test_mediatype_search(library: Library, mediatype: str, num_of_mediatype: int):
+    results = library.search_library(BrowsingState.from_mediatype(mediatype), page_size=500)
+    assert len(results.ids) == num_of_mediatype

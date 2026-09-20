@@ -10,18 +10,19 @@ from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
-from tagstudio.qt.mixed.progress_bar import ProgressWidget
-from tagstudio.qt.translations import Translations
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.progress_bar import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Split to use MVC guidelines.
 class MirrorEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: DupeFilesRegistry):
+    def __init__(self, driver: QtDriver, tracker: DupeFilesRegistry):
         super().__init__()
         self.driver = driver
         self.setWindowTitle(Translations["entries.mirror.window_title"])

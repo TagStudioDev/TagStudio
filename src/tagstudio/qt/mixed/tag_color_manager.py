@@ -22,27 +22,28 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
-from tagstudio.core.enums import Theme
+from tagstudio.core.enums import ThemePalette
+from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelModal
-from tagstudio.qt.views.stylesheets.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
 
-# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
+    from tagstudio.qt.qt_driver import QtDriver
 
 
+# TODO: Split to use MVC guidelines.
 class TagColorManager(QWidget):
-    create_namespace_modal: PanelModal | None = None
+    create_namespace_modal: Modal | None = None
 
     def __init__(
         self,
-        driver: "QtDriver",
+        driver: QtDriver,
     ):
         super().__init__()
         self.driver = driver
@@ -55,9 +56,9 @@ class TagColorManager(QWidget):
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
         panel_bg_color = (
-            Theme.COLOR_BG_DARK.value
+            ThemePalette.COLOR_BG_DARK.value
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value
+            else ThemePalette.COLOR_BG_LIGHT.value
         )
 
         self.title_label = QLabel()
@@ -68,7 +69,7 @@ class TagColorManager(QWidget):
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(0)
+        self.scroll_layout.setSpacing(6)
 
         scroll_container: QWidget = QWidget()
         scroll_container.setObjectName("entryScrollContainer")
@@ -125,7 +126,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -142,7 +143,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.field_containers_widget.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
@@ -166,7 +167,8 @@ class TagColorManager(QWidget):
 
     def reset(self):
         while self.scroll_layout.count():
-            widget = self.scroll_layout.itemAt(0).widget()
+            item = unwrap(self.scroll_layout.itemAt(0))
+            widget = unwrap(item.widget())
             self.scroll_layout.removeWidget(widget)
             widget.deleteLater()
         self.is_initialized = False
@@ -174,7 +176,7 @@ class TagColorManager(QWidget):
     def create_namespace(self):
         build_namespace_panel = BuildNamespacePanel(self.lib)
 
-        self.create_namespace_modal = PanelModal(
+        self.create_namespace_modal = Modal(
             build_namespace_panel,
             Translations["namespace.create.title"],
             is_savable=True,

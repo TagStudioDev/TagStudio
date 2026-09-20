@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 {
   lib,
@@ -21,21 +21,21 @@ let
         stdenv.cc.cc
         zstd
       ]
-      ++ lib.optionals (!stdenv.isDarwin) [
+      ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
         dbus
         libGL
         libdrm
         libpulseaudio
         libva
+        libx11
         libxkbcommon
+        libxrandr
         pipewire
         qt6.qtwayland
-        xorg.libX11
-        xorg.libXrandr
       ]
     );
 
-  libraryPath = "${lib.optionalString pkgs.stdenv.isDarwin "DY"}LD_LIBRARY_PATH";
+  libraryPath = "${lib.optionalString pkgs.stdenv.hostPlatform.isDarwin "DY"}LD_LIBRARY_PATH";
 
   python3Wrapped = pkgs.symlinkJoin {
     inherit (python3)
@@ -73,19 +73,17 @@ let
   };
 in
 pkgs.mkShellNoCC {
-  nativeBuildInputs = with pkgs; [
+  packages = [
+    python3Wrapped
+  ]
+  ++ (with pkgs; [
     coreutils
+    ffmpeg-headless
+    ripgrep
     uv
 
     pyright
     ruff
-  ];
-  buildInputs = [
-    python3Wrapped
-  ]
-  ++ (with pkgs; [
-    ffmpeg-headless
-    ripgrep
   ]);
 
   env = {
@@ -120,7 +118,7 @@ pkgs.mkShellNoCC {
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          uv pip install --quiet --editable '.[mkdocs,mypy,pre-commit,pytest]'
+          uv pip install --quiet --editable . --group docs --group extra --group reuse --group test
           cp pyproject.toml "''${venv}"/pyproject.toml
       fi
 

@@ -57,7 +57,7 @@ class TagColorEnum(enum.IntEnum):
     OLIVE = 37
 
     @staticmethod
-    def get_color_from_str(color_name: str) -> "TagColorEnum":
+    def get_color_from_str(color_name: str) -> TagColorEnum:
         for color in TagColorEnum:
             if color.name == color_name.upper().replace(" ", "_"):
                 return color
@@ -99,17 +99,15 @@ class BrowsingState:
         return Parser(self.query).parse()
 
     @classmethod
-    def show_all(cls) -> "BrowsingState":
+    def show_all(cls) -> BrowsingState:
         return BrowsingState()
 
     @classmethod
-    def from_search_query(cls, search_query: str) -> "BrowsingState":
+    def from_search_query(cls, search_query: str) -> BrowsingState:
         return cls(query=search_query)
 
     @classmethod
-    def from_tag_id(
-        cls, tag_id: int | str, state: "BrowsingState | None" = None
-    ) -> "BrowsingState":
+    def from_tag_id(cls, tag_id: int | str, state: BrowsingState | None = None) -> BrowsingState:
         """Create and return a BrowsingState object given a tag ID.
 
         Args:
@@ -124,35 +122,35 @@ class BrowsingState:
         return cls(query=f"tag_id:{str(tag_id)}")
 
     @classmethod
-    def from_path(cls, path: Path | str) -> "BrowsingState":
+    def from_path(cls, path: Path | str) -> BrowsingState:
         return cls(query=f'path:"{str(path).strip()}"')
 
     @classmethod
-    def from_mediatype(cls, mediatype: str) -> "BrowsingState":
+    def from_mediatype(cls, mediatype: str) -> BrowsingState:
         return cls(query=f"mediatype:{mediatype}")
 
     @classmethod
-    def from_filetype(cls, filetype: str) -> "BrowsingState":
+    def from_filetype(cls, filetype: str) -> BrowsingState:
         return cls(query=f"filetype:{filetype}")
 
     @classmethod
-    def from_tag_name(cls, tag_name: str) -> "BrowsingState":
+    def from_tag_name(cls, tag_name: str) -> BrowsingState:
         return cls(query=f'tag:"{tag_name}"')
 
-    def with_page_index(self, index: int) -> "BrowsingState":
+    def with_page_index(self, index: int) -> BrowsingState:
         return replace(self, page_index=index)
 
-    def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
+    def with_sorting_mode(self, mode: SortingModeEnum) -> BrowsingState:
         seed = self.random_seed
         if mode == SortingModeEnum.RANDOM:
             seed = random.random()
         return replace(self, sorting_mode=mode, random_seed=seed)
 
-    def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
+    def with_sorting_direction(self, ascending: bool) -> BrowsingState:
         return replace(self, ascending=ascending)
 
-    def with_search_query(self, search_query: str) -> "BrowsingState":
+    def with_search_query(self, search_query: str) -> BrowsingState:
         return replace(self, query=search_query)
 
-    def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
+    def with_show_hidden_entries(self, show_hidden_entries: bool) -> BrowsingState:
         return replace(self, show_hidden_entries=show_hidden_entries)

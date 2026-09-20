@@ -12,13 +12,15 @@ from PySide6.QtCore import QEvent, QSize, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.qt.helpers.color_overlay import auto_theme_overlay
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.stylesheets.stylesheets import container_style, header
+from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.stylesheets import container_style, header
 
 logger = structlog.get_logger(__name__)
 
 
+# TODO: Split to use MVC guidelines.
 class FieldContainer(QWidget):
     rm: ResourceManager = ResourceManager()
     copy_icon = auto_theme_overlay(rm.copy, inverse=True)
@@ -34,7 +36,9 @@ class FieldContainer(QWidget):
         self.copy_callback: Callable[[], None] | None = None
         self.edit_callback: Callable[[], None] | None = None
         self.remove_callback: Callable[[], None] | None = None
-        button_size = 24
+        button_size = 22
+        icon_margins = 4
+        icon_size = button_size - icon_margins
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
@@ -42,7 +46,7 @@ class FieldContainer(QWidget):
 
         self.inner_layout = QVBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(6, 0, 6, 6)
+        self.inner_layout.setContentsMargins(3, 0, 0, 3)
         self.inner_layout.setSpacing(0)
         self.field_container = QWidget()
         self.field_container.setObjectName("fieldContainer")
@@ -82,7 +86,7 @@ class FieldContainer(QWidget):
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
         self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(FieldContainer.edit_icon)))
-        self.edit_button.setIconSize(QSize(20, 20))
+        self.edit_button.setIconSize(QSize(icon_size, icon_size))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
@@ -93,7 +97,7 @@ class FieldContainer(QWidget):
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
         self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(FieldContainer.trash_icon)))
-        self.remove_button.setIconSize(QSize(20, 20))
+        self.remove_button.setIconSize(QSize(icon_size, icon_size))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)
@@ -133,17 +137,19 @@ class FieldContainer(QWidget):
         if callback:
             self.remove_button.clicked.connect(callback)
 
-    def set_inner_widget(self, widget: "FieldWidget") -> None:
-        if self.field_layout.itemAt(0):
-            old: QWidget = self.field_layout.itemAt(0).widget()
+    def set_inner_widget(self, widget: FieldWidget) -> None:
+        item = self.field_layout.itemAt(0)
+        if item:
+            old: QWidget = unwrap(item.widget())
             self.field_layout.removeWidget(old)
             old.deleteLater()
 
         self.field_layout.addWidget(widget)
 
     def get_inner_widget(self) -> QWidget | None:
-        if self.field_layout.itemAt(0):
-            return self.field_layout.itemAt(0).widget()
+        item = self.field_layout.itemAt(0)
+        if item:
+            return item.widget()
         return None
 
     def set_title(self, title: str) -> None:

@@ -47,7 +47,7 @@ Images will generate thumbnails the first time they are viewed or since the last
 
 ### :material-movie-open: Videos
 
-Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#third-party-dependencies) installed on your system.
+Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#optional-dependencies) installed on your system.
 
 | Filetype              | Extensions              | Dependencies |
 | --------------------- | ----------------------- | :----------: |
@@ -65,7 +65,7 @@ Video thumbnails will default to the closest viable frame from the middle of the
 
 ### :material-sine-wave: Audio
 
-Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
+Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#optional-dependencies) installed on your system. Audio waveforms are currently not cached.
 
 | Filetype            | Extensions               | Dependencies |
 | ------------------- | ------------------------ | :----------: |
@@ -82,23 +82,24 @@ Audio thumbnails will default to embedded cover art (if any) and fallback to gen
 
 Preview support for office documents or well-known project file formats varies by the format and whether or not embedded thumbnails are available to be read from. OpenDocument-based files are typically supported.
 
-| Filetype                             | Extensions            | Preview Type                                                               |
-| ------------------------------------ | --------------------- | -------------------------------------------------------------------------- |
-| Blender                              | `.blend`, `.blend<#>` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
-| Clip Studio Paint                    | `.clip`               | Embedded thumbnail                                                         |
-| Keynote (Apple iWork)                | `.key`                | Embedded thumbnail                                                         |
-| Krita[^3]                            | `.kra`, `.krz`        | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
-| Mdipack (FireAlpaca, Medibang Paint) | `.mdp`                | Embedded thumbnail                                                         |
-| MuseScore                            | `.mscz`               | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
-| Numbers (Apple iWork)                | `.numbers`            | Embedded thumbnail                                                         |
-| OpenDocument Presentation            | `.odp`, `.fodp`       | Embedded thumbnail                                                         |
-| OpenDocument Spreadsheet             | `.ods`, `.fods`       | Embedded thumbnail                                                         |
-| OpenDocument Text                    | `.odt`, `.fodt`       | Embedded thumbnail                                                         |
-| Pages (Apple iWork)                  | `.pages`              | Embedded thumbnail                                                         |
-| Paint.NET                            | `.pdn`                | Embedded thumbnail                                                         |
-| PDF                                  | `.pdf`                | First page render                                                          |
-| Photoshop                            | `.psd`                | Flattened image render                                                     |
-| PowerPoint (Microsoft Office)        | `.pptx`, `.ppt`       | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Filetype                              | Extensions            | Preview Type                                                               |
+| ------------------------------------- | --------------------- | -------------------------------------------------------------------------- |
+| Blender                               | `.blend`, `.blend<#>` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Clip Studio Paint                     | `.clip`               | Embedded thumbnail                                                         |
+| Keynote (Apple iWork)                 | `.key`                | Embedded thumbnail                                                         |
+| Krita[^3]                             | `.kra`, `.krz`        | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Mdipack (FireAlpaca, Medibang Paint)  | `.mdp`                | Embedded thumbnail                                                         |
+| MuseScore                             | `.mscz`               | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Numbers (Apple iWork)                 | `.numbers`            | Embedded thumbnail                                                         |
+| OpenDocument Presentation             | `.odp`, `.fodp`       | Embedded thumbnail                                                         |
+| OpenDocument Spreadsheet              | `.ods`, `.fods`       | Embedded thumbnail                                                         |
+| OpenDocument Text                     | `.odt`, `.fodt`       | Embedded thumbnail                                                         |
+| Pages (Apple iWork)                   | `.pages`              | Embedded thumbnail                                                         |
+| Paint.NET                             | `.pdn`                | Embedded thumbnail                                                         |
+| PDF                                   | `.pdf`                | First page render                                                          |
+| Photoshop                             | `.psd`                | Flattened image render                                                     |
+| Pixelmator Pro (Apple Creator Studio) | `.pxd`                | Embedded thumbnail                                                         |
+| PowerPoint (Microsoft Office)         | `.pptx`, `.ppt`       | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
 
 ### :material-archive: Archives
 

@@ -14,13 +14,14 @@ from PySide6.QtWidgets import (
 from tagstudio.core.constants import IGNORE_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.panel_modal import PanelWidget
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.modal_content import ModalContent
 
 logger = structlog.get_logger(__name__)
 
 
-class IgnoreModalView(PanelWidget):
+# TODO: Use newer MVC style guidelines
+class IgnoreModalView(ModalContent):
     on_edit = Signal(Tag)
 
     def __init__(self, library: Library) -> None:
