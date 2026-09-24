@@ -6,10 +6,10 @@
 
 import os
 import struct
+from compression import gzip, zstd
 from pathlib import Path
 from typing import BinaryIO
 
-from compression import gzip, zstd
 from PIL import Image, ImageOps
 
 
