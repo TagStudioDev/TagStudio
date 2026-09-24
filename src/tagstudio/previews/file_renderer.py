@@ -96,9 +96,9 @@ class FileRenderer:
         self.settings = settings
 
         # Cached thumbnail elements.
-        # Key: Size + Pixel Ratio Tuple + Radius Scale
-        #      (Ex. (512, 512, 1.25, 4))
-        self.thumb_masks: dict[tuple[int, int, float, float], Image.Image] = {}
+        # Key: Size + Pixel Ratio Tuple
+        #      (Ex. (512, 512, 1.25))
+        self.thumb_masks: dict[tuple[int, int, float], Image.Image] = {}
         self.raised_edges: dict[tuple[int, int, float], tuple[Image.Image, Image.Image]] = {}
 
         # Key: ("name", UiColor, 512, 512, 1.25)
@@ -129,27 +129,19 @@ class FileRenderer:
         return "file_generic"
 
     # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
-    def _get_mask(
-        self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
-    ) -> Image.Image:
-        """Return a thumbnail mask given a size, pixel ratio, and radius scaling option.
+    def _get_mask(self, size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        """Return a thumbnail mask given a size and pixel ratio.
 
         If one is not already cached, a new one will be rendered.
 
         Args:
             size (tuple[int, int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
-            scale_radius (bool): Option to scale the radius up (Used by the Inspector).
         """
-        thumb_scale: int = 512
-        radius_scale: float = 1
-        if scale_radius:
-            radius_scale = max(size[0], size[1]) / thumb_scale
-
-        item: Image.Image | None = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
+        item: Image.Image | None = self.thumb_masks.get((*size, pixel_ratio))
         if not item:
-            item = self._render_mask(size, pixel_ratio, radius_scale)
-            self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
+            item = self._render_mask(size, pixel_ratio)
+            self.thumb_masks[(*size, pixel_ratio)] = item
         return item
 
     # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
@@ -215,15 +207,12 @@ class FileRenderer:
         return item
 
     # NOTE: This method will be replaced with frontend specific decorations (Qt painting)
-    def _render_mask(
-        self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
-    ) -> Image.Image:
+    def _render_mask(self, size: tuple[int, int], pixel_ratio: float) -> Image.Image:
         """Render a thumbnail mask graphic.
 
         Args:
             size (tuple[int,int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
-            radius_scale (float): The scale factor of the border radius (Used by the Inspector).
         """
         smooth_factor: int = 2
         radius_factor: int = 8
@@ -236,7 +225,7 @@ class FileRenderer:
         draw = ImageDraw.Draw(im)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio * radius_scale),
+            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
             fill="white",
         )
         im = im.resize(
@@ -686,11 +675,7 @@ class FileRenderer:
                     if not filepath.exists() or filepath.is_dir()
                     else render_default((512, 512), 2)
                 )
-                render_mask_and_edge = False
-            mask = self._get_mask(image.size, dpi_scale, scale_radius=True)
-            bg = Image.new("RGBA", image.size, (0, 0, 0, 0))
-            bg.paste(image, mask=mask.getchannel(0))
-            image = bg
+            image = image.convert("RGBA")
 
         # If the image couldn't be rendered, use a default media image.
         if not image:

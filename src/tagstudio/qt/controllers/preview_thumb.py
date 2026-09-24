@@ -14,7 +14,7 @@ import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
 from PySide6.QtGui import QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QWidget
 from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
@@ -27,7 +27,6 @@ from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 from tagstudio.qt.utils.file_opener import open_file
 from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
-from tagstudio.qt.views.styles.rounded_pixmap_style import RoundedPixmapStyle
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -66,6 +65,7 @@ class PreviewThumb(QWidget):
         self._preview_size: tuple[int, int] = _DEFAULT_PREVIEW_SIZE
         self._rendered_res: tuple[int, int] = (0, 0)
         self._should_render_on_resize: bool = False
+        self._source_pixmap: QPixmap = QPixmap()
 
         self.setMinimumSize(*self._preview_size)
         self.setLayout(PreviewThumbView(driver))
@@ -132,7 +132,19 @@ class PreviewThumb(QWidget):
     def _thumb_renderer_updated_callback(
         self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
     ) -> None:
-        self.layout().button_wrapper.setIcon(img)
+        self._source_pixmap = img
+        self._update_icon()
+
+    def _update_icon(self) -> None:
+        button = self.layout().button_wrapper
+        ratio = self.devicePixelRatio()
+        pixmap = self._source_pixmap.scaled(
+            button.iconSize() * ratio,
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        pixmap.setDevicePixelRatio(ratio)
+        button.setIcon(pixmap)
 
     def _thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
         self._image_ratio = ratio
@@ -140,39 +152,38 @@ class PreviewThumb(QWidget):
 
     def _update_image_size(self, size: tuple[int, int]) -> None:
         view = self.layout()
-        adj_width: float = size[0]
-        adj_height: float = size[1]
+        scaled_width: float = size[0]
+        scaled_height: float = size[1]
         # Landscape
         if self._image_ratio > 1:
-            adj_height = size[0] * (1 / self._image_ratio)
+            scaled_height = size[0] * (1 / self._image_ratio)
         # Portrait
         elif self._image_ratio <= 1:
-            adj_width = size[1] * self._image_ratio
+            scaled_width = size[1] * self._image_ratio
 
-        if adj_width > size[0]:
-            adj_height = adj_height * (size[0] / adj_width)
-            adj_width = size[0]
-        elif adj_height > size[1]:
-            adj_width = adj_width * (size[1] / adj_height)
-            adj_height = size[1]
+        if scaled_width > size[0]:
+            scaled_height = scaled_height * (size[0] / scaled_width)
+            scaled_width = size[0]
+        elif scaled_height > size[1]:
+            scaled_width = scaled_width * (size[1] / scaled_height)
+            scaled_height = size[1]
 
-        adj_size = QSize(int(adj_width), int(adj_height))
+        scaled_size = QSize(int(scaled_width), int(scaled_height))
 
-        self._preview_size = (int(adj_width), int(adj_height))
-        view.button_wrapper.setMaximumSize(adj_size)
-        view.button_wrapper.setIconSize(adj_size)
-        view.preview_gif.setMaximumSize(adj_size)
-        view.preview_gif.setMinimumSize(adj_size)
+        self._preview_size = (int(scaled_width), int(scaled_height))
+        view.button_wrapper.setMaximumSize(scaled_size)
+        view.button_wrapper.setMinimumSize(scaled_size)
+        view.button_wrapper.setIconSize(scaled_size)
+        self._update_icon()
+        view.preview_gif.setMaximumSize(scaled_size)
+        view.preview_gif.setMinimumSize(scaled_size)
 
-        view.media_player.setMaximumSize(adj_size)
-        view.media_player.setMinimumSize(adj_size)
+        view.media_player.setMaximumSize(scaled_size)
+        view.media_player.setMinimumSize(scaled_size)
 
-        proxy_style = RoundedPixmapStyle(radius=8)
-        view.preview_gif.setStyle(proxy_style)
-        view.media_player.setStyle(proxy_style)
-        m = view.preview_gif.movie()
-        if m:
-            m.setScaledSize(adj_size)
+        movie = view.preview_gif.movie()
+        if movie:
+            movie.setScaledSize(scaled_size)
 
     def _switch_preview(self, preview: _PreviewType | None) -> None:
         view = self.layout()

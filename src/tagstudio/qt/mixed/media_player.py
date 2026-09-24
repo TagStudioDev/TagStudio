@@ -8,18 +8,16 @@ from time import gmtime
 from typing import override
 
 import structlog
-from PIL import Image, ImageDraw, ImageQt
+from PIL import ImageQt
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
 from PySide6.QtGui import (
     QAction,
-    QBitmap,
     QBrush,
     QColor,
     QLinearGradient,
     QMouseEvent,
     QPen,
     QPixmap,
-    QRegion,
     QResizeEvent,
 )
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
@@ -264,16 +262,6 @@ class MediaPlayer(QGraphicsView):
         self.driver.settings.save()
         self.player.setLoops(-1 if self.driver.settings.loop else 1)
 
-    def apply_rounded_corners(self) -> None:
-        """Apply a rounded corner effect to the video player."""
-        width: int = int(max(self.contentsRect().size().width(), 0))
-        height: int = int(max(self.contentsRect().size().height(), 0))
-        mask = Image.new("RGBA", (width, height), (0, 0, 0, 255))
-        draw = ImageDraw.Draw(mask)
-        draw.rounded_rectangle((0, 0) + (width, height), radius=8, fill=(0, 0, 0, 0))
-        final_mask: QPixmap = mask.getchannel("A").toqpixmap()  # pyright: ignore[reportUnknownVariableType]
-        self.setMask(QRegion(QBitmap(final_mask)))
-
     def set_tint_opacity(self, opacity: int) -> None:
         """Set the opacity of the video player's tint.
 
@@ -474,7 +462,6 @@ class MediaPlayer(QGraphicsView):
                 self.centerOn(self.video_preview)
 
         self.tint.setRect(0, 0, self.size().width(), self.size().height())
-        self.apply_rounded_corners()
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:

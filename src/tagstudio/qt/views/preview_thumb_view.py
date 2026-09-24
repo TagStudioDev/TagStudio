@@ -11,6 +11,8 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, 
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.media_player import MediaPlayer
+from tagstudio.qt.views.styles.corner_radius_effect import CornerRadiusEffect
+from tagstudio.qt.views.styles.stylesheets import RADIUS
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -75,4 +77,5 @@ class PreviewThumbView(QStackedLayout):
         layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         widget.setCursor(Qt.CursorShape.PointingHandCursor)
+        widget.setGraphicsEffect(CornerRadiusEffect(widget, RADIUS))
         page.setLayout(layout)
