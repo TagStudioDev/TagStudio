@@ -337,7 +337,7 @@
     "settings.library": "Library Settings",
     "settings.localization": "Localization",
     "settings.media": "Media",
-    "settings.open_library_on_start": "Open Library on Start",
+    "settings.open_library_on_start": "Reopen Library on Start",
     "settings.page_size": "Page Size",
     "settings.restart_required": "Please restart TagStudio for changes to take effect.",
     "settings.scan_files_on_open": "Automatically Load New Files",

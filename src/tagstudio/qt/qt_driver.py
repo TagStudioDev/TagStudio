@@ -441,7 +441,7 @@ class QtDriver(DriverMixin, QObject):
         # Settings
         self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
 
-        # Open Library on Start
+        # Reopen Library on Start
         self.main_window.menu_bar.open_on_start_action.setChecked(
             self.settings.open_last_loaded_on_startup
         )
@@ -644,7 +644,9 @@ class QtDriver(DriverMixin, QObject):
             if last_library:
                 startup_path = str(last_library)
 
-        if startup_path:
+        if not startup_path:
+            self.main_window.landing_widget.animate_logo_in()
+        else:
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
             if startup_result.success and startup_result.library_path:
                 self.open_library(startup_result.library_path)
@@ -797,8 +799,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
-        self.cached_values.sync()
+        if not is_shutdown:
+            self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
+            self.cached_values.sync()
 
         # Reset library state
         self.main_window.preview_panel.set_selection(self.selected)
@@ -809,14 +812,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
         self.cache_manager = None
-
         self.thumb_job_queue.queue.clear()
+
         if is_shutdown:
-            # no need to do other things on shutdown
             return
 
         self.main_window.setWindowTitle(self.base_title)
-
         self.frame_content.clear()
         self._selected.clear()
         if self.color_manager_panel:
@@ -831,6 +832,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.thumb_layout.set_entries([])
         self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.landing_widget.animate_logo_in()
         self.main_window.pagination.setHidden(True)
         try:
             self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
@@ -1682,6 +1684,8 @@ class QtDriver(DriverMixin, QObject):
             library_dir_display = self.lib.library_dir.name
 
         self.update_libs_list(path)
+        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.sync()
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",
