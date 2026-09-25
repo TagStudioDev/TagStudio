@@ -8,7 +8,8 @@ from PySide6.QtCore import QSettings
 
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems
-from tagstudio.core.library.alchemy.library import LibraryStatus
+from tagstudio.core.library.alchemy.library import OpenLibraryResult
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
 
 
@@ -27,7 +28,7 @@ def test_evaluate_path_empty():
     result = driver.evaluate_path(None)
 
     # Then
-    assert result == LibraryStatus(success=True)
+    assert result == OpenLibraryResult(success=True)
 
 
 def test_evaluate_path_missing():
@@ -38,7 +39,13 @@ def test_evaluate_path_missing():
     result = driver.evaluate_path("/0/4/5/1/")
 
     # Then
-    assert result == LibraryStatus(success=False, message="Path does not exist.")
+    assert result == OpenLibraryResult(
+        success=False,
+        error_title=Translations["menu.file.missing_library.title"],
+        error_description=Translations.format(
+            "menu.file.missing_library.message", library="/0/4/5/1/"
+        ),
+    )
 
 
 def test_evaluate_path_last_lib_not_exists():
@@ -51,7 +58,7 @@ def test_evaluate_path_last_lib_not_exists():
     result = driver.evaluate_path(None)
 
     # Then
-    assert result == LibraryStatus(success=True, library_path=None, message=None)
+    assert result == OpenLibraryResult(success=True, library_path=None)
 
 
 def test_evaluate_path_last_lib_present(library_dir: Path):
@@ -70,4 +77,4 @@ def test_evaluate_path_last_lib_present(library_dir: Path):
     result = driver.evaluate_path(None)
 
     # Then
-    assert result == LibraryStatus(success=True, library_path=library_dir)
+    assert result == OpenLibraryResult(success=True, library_path=library_dir)

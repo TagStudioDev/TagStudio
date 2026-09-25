@@ -44,7 +44,7 @@ from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VER
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
-from tagstudio.core.library.alchemy.library import Library, LibraryStatus
+from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
@@ -1612,23 +1612,23 @@ class QtDriver(DriverMixin, QObject):
         if self.lib.library_dir:
             self.close_library()
 
-        open_status: LibraryStatus | None = None
+        open_status: OpenLibraryResult | None = None
         try:
             open_status = self.lib.open_library(path)
         except ValueError as e:
             logger.warning(e)
-            open_status = LibraryStatus(
+            open_status = OpenLibraryResult(
                 success=False,
                 library_path=path,
-                message=Translations["menu.file.missing_library.title"],
-                msg_description=Translations.format(
+                error_title=Translations["menu.file.missing_library.title"],
+                error_description=Translations.format(
                     "menu.file.missing_library.message", library=library_dir_display
                 ),
             )
         except Exception as e:
             logger.error(e)
-            open_status = LibraryStatus(
-                success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
+            open_status = OpenLibraryResult(
+                success=False, library_path=path, error_description=f"{type(e).__name__}: {e}"
             )
         self.cache_manager = CacheManager(
             path,
@@ -1641,7 +1641,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Migration is required
-        if open_status.json_migration_req:
+        if open_status.needs_json_migration:
             self.migration_modal = JsonMigrationModal(path)
             self.migration_modal.migration_finished.connect(
                 lambda: self._init_library(path, self.lib.open_library(path))
@@ -1651,12 +1651,12 @@ class QtDriver(DriverMixin, QObject):
         else:
             self._init_library(path, open_status)
 
-    def _init_library(self, path: Path, open_status: LibraryStatus):
+    def _init_library(self, path: Path, open_status: OpenLibraryResult):
         if not open_status.success:
             self.show_error_message(
-                error_name=open_status.message
+                error_name=open_status.error_title
                 or Translations["window.message.error_opening_library"],
-                error_desc=open_status.msg_description,
+                error_desc=open_status.error_description,
             )
             return open_status
 

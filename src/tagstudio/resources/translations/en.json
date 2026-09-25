@@ -377,9 +377,10 @@
     "status.library_closing": "Closing Library…",
     "status.library_save_success": "Library Saved and Closed!",
     "status.library_search_query": "Searching Library…",
-    "status.library_version_expected": "Expected:",
-    "status.library_version_found": "Found:",
-    "status.library_version_mismatch": "Library Version Mismatch!",
+    "status.library_version_dev": "This library is using an unsupported format used for development and can't be opened.",
+    "status.library_version_expected": "Supported Versions:",
+    "status.library_version_found": "Library Version:",
+    "status.library_version_newer": "This library was saved using a newer version of TagStudio and can't be opened in this version.",
     "status.results": "Results",
     "status.results_found": "{count} Results Found ({time_span})",
     "status.results.invalid_syntax": "Invalid Search Syntax:",
@@ -432,7 +433,7 @@
     "view.size.2": "Medium",
     "view.size.3": "Large",
     "view.size.4": "Extra Large",
-    "window.message.error_opening_library": "Error opening library.",
+    "window.message.error_opening_library": "Error Opening Library",
     "window.title.error": "Error",
     "window.title.open_create_library": "Open/Create Library"
 }
