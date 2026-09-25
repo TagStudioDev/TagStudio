@@ -6,8 +6,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings
 
+from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import AppCacheItems
 from tagstudio.core.library.alchemy.library import OpenLibraryResult
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
@@ -20,61 +20,60 @@ class TestBaseDriver(DriverMixin):
         self.cached_values = cache
 
 
-def test_evaluate_path_empty():
+def test_verify_library_path_missing():
     # Given
     driver = TestBaseDriver(AppSettings(), QSettings())
 
     # When
-    result = driver.evaluate_path(None)
-
-    # Then
-    assert result == OpenLibraryResult(success=True)
-
-
-def test_evaluate_path_missing():
-    # Given
-    driver = TestBaseDriver(AppSettings(), QSettings())
-
-    # When
-    result = driver.evaluate_path("/0/4/5/1/")
+    result = driver.verify_library_path("/0/4/5/1/")
 
     # Then
     assert result == OpenLibraryResult(
         success=False,
+        library_path=Path("/0/4/5/1/"),
         error_title=Translations["menu.file.missing_library.title"],
         error_description=Translations.format(
-            "menu.file.missing_library.message", library="/0/4/5/1/"
+            "menu.file.missing_library.message", library=Path("/0/4/5/1/")
         ),
     )
 
 
-def test_evaluate_path_last_lib_not_exists():
+def test_verify_library_path_not_a_library(tmp_path: Path):
     # Given
-    cache = QSettings()
-    cache.setValue(AppCacheItems.LAST_LIBRARY, "/0/4/5/1/")
-    driver = TestBaseDriver(AppSettings(), cache)
+    driver = TestBaseDriver(AppSettings(), QSettings())
 
     # When
-    result = driver.evaluate_path(None)
+    result = driver.verify_library_path(str(tmp_path), allow_creation=False)
 
     # Then
-    assert result == OpenLibraryResult(success=True, library_path=None)
+    assert result == OpenLibraryResult(
+        success=False,
+        library_path=tmp_path,
+        error_title=Translations["menu.file.missing_library.title"],
+        error_description=Translations.format(
+            "menu.file.missing_library.message", library=tmp_path
+        ),
+    )
+    assert not (tmp_path / TS_FOLDER_NAME).exists()
 
 
-def test_evaluate_path_last_lib_present(library_dir: Path):
+def test_verify_library_path_allow_creation(tmp_path: Path):
     # Given
-    cache_file = library_dir / "test_settings.ini"
-    cache = QSettings(str(cache_file), QSettings.Format.IniFormat)
-    cache.setValue(AppCacheItems.LAST_LIBRARY, library_dir)
-    cache.sync()
-
-    settings = AppSettings()
-    settings.open_last_loaded_on_startup = True
-
-    driver = TestBaseDriver(settings, cache)
+    driver = TestBaseDriver(AppSettings(), QSettings())
 
     # When
-    result = driver.evaluate_path(None)
+    result = driver.verify_library_path(str(tmp_path), allow_creation=True)
+
+    # Then
+    assert result == OpenLibraryResult(success=True, library_path=tmp_path)
+
+
+def test_verify_library_path_existing_library(library_dir: Path):
+    # Given
+    driver = TestBaseDriver(AppSettings(), QSettings())
+
+    # When
+    result = driver.verify_library_path(library_dir, allow_creation=False)
 
     # Then
     assert result == OpenLibraryResult(success=True, library_path=library_dir)

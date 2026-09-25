@@ -638,14 +638,22 @@ class QtDriver(DriverMixin, QObject):
         self.init_library_window()
         self.migration_modal: JsonMigrationModal | None = None
 
-        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
-        if path_result.success and path_result.library_path:
-            self.open_library(path_result.library_path)
-        elif self.settings.open_last_loaded_on_startup:
-            # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
-            path_result = self.evaluate_path(None)
-            if path_result.success and path_result.library_path:
-                self.open_library(path_result.library_path)
+        startup_path: str | None = self.args.open.strip() if self.args.open else None
+        if not startup_path and self.settings.open_last_loaded_on_startup:
+            last_library = self.cached_values.value(AppCacheItems.LAST_LIBRARY)
+            if last_library:
+                startup_path = str(last_library)
+
+        if startup_path:
+            startup_result = self.verify_library_path(startup_path, allow_creation=False)
+            if startup_result.success and startup_result.library_path:
+                self.open_library(startup_result.library_path)
+            else:
+                self.show_error_message(
+                    error_name=startup_result.error_title
+                    or Translations["window.message.error_opening_library"],
+                    error_desc=startup_result.error_description,
+                )
 
         self.main_window.search_field.setFocus()
 
