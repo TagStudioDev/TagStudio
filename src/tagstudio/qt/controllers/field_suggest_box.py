@@ -6,7 +6,7 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QShowEvent
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
@@ -29,12 +29,11 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
-        edit_field_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
-        edit_field_on_add_action.setCheckable(True)
-        self.addAction(edit_field_on_add_action)
-        self.layout().search_field.addAction(edit_field_on_add_action)
-        edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
-        edit_field_on_add_action.triggered.connect(
+        self._edit_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
+        self._edit_on_add_action.setCheckable(True)
+        self.addAction(self._edit_on_add_action)
+        self.layout().search_field.addAction(self._edit_on_add_action)
+        self._edit_on_add_action.triggered.connect(
             lambda checked: self._toggle_edit_on_field_add(checked)
         )
 
@@ -42,6 +41,11 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         """Toggle the setting for opening the edit window after adding a field."""
         self._settings.edit_field_on_add = checked
         self._settings.save()
+
+    @override
+    def showEvent(self, event: QShowEvent) -> None:
+        self._edit_on_add_action.setChecked(self._settings.edit_field_on_add)
+        return super().showEvent(event)
 
     @override
     def _on_item_create(self) -> None:
@@ -91,6 +95,8 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             self.set_hint_icon(self._rm.hint_field_create)
         elif self.layout().search_field.text() and len(self._search_results) > 0:
             self.set_hint_icon(self._rm.hint_field_add)
+        elif self._is_query_invalid():
+            self.set_hint_icon(self._rm.hint_field_issue)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_field_create)
         else:

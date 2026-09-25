@@ -7,7 +7,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QShowEvent
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -32,20 +32,37 @@ class TagSuggestBox(SuggestBox[Tag]):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
-
-        edit_tag_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
-        edit_tag_on_create_action.setCheckable(True)
-        self.addAction(edit_tag_on_create_action)
-        self.layout().search_field.addAction(edit_tag_on_create_action)
-        edit_tag_on_create_action.setChecked(self._settings.edit_tag_on_create)
-        edit_tag_on_create_action.triggered.connect(
+        self._edit_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
+        self._edit_on_create_action.setCheckable(True)
+        self.addAction(self._edit_on_create_action)
+        self.layout().search_field.addAction(self._edit_on_create_action)
+        self._edit_on_create_action.triggered.connect(
             lambda checked: self._toggle_edit_on_tag_create(checked)
+        )
+
+        self._sort_added_last_action = QAction(Translations["settings.sort_added_tags_last"], self)
+        self._sort_added_last_action.setCheckable(True)
+        self.addAction(self._sort_added_last_action)
+        self.layout().search_field.addAction(self._sort_added_last_action)
+        self._sort_added_last_action.triggered.connect(
+            lambda checked: self._toggle_sort_added_last(checked)
         )
 
     def _toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""
         self._settings.edit_tag_on_create = checked
         self._settings.save()
+
+    def _toggle_sort_added_last(self, checked: bool) -> None:
+        self._settings.sort_added_tags_last = checked
+        self._settings.save()
+        self._on_search_query_changed(self.layout().search_field.text())
+
+    @override
+    def showEvent(self, event: QShowEvent) -> None:
+        self._edit_on_create_action.setChecked(self._settings.edit_tag_on_create)
+        self._sort_added_last_action.setChecked(self._settings.sort_added_tags_last)
+        return super().showEvent(event)
 
     @override
     def _on_item_create(self) -> None:
@@ -102,6 +119,8 @@ class TagSuggestBox(SuggestBox[Tag]):
             self.set_hint_icon(self._rm.hint_tag_added)
         elif results:
             self.set_hint_icon(self._rm.hint_tag_add)
+        elif self._is_query_invalid():
+            self.set_hint_icon(self._rm.hint_tag_issue)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_tag_create)
         else:
@@ -123,9 +142,9 @@ class TagSuggestBox(SuggestBox[Tag]):
         tag_widget.has_remove = False
         tag_widget.set_tag(item)
         underlined_widget.setHidden(item is None)
-        opacity_effect = QGraphicsOpacityEffect(self)
-        opacity_effect.setOpacity(0.3)
         if item and item.id in self.added:
+            opacity_effect = QGraphicsOpacityEffect(self)
+            opacity_effect.setOpacity(0.3)
             tag_widget.setGraphicsEffect(opacity_effect)
         else:
             tag_widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]

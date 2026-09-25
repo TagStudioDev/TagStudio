@@ -499,13 +499,18 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
     """
 
 
-def autofill_line_edit_style() -> str:
+def autofill_line_edit_style(is_invalid: bool = False) -> str:
     """Used for QLineEdits."""
-    bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    )
+    if is_invalid:
+        bg_color = ThemePalette.COLOR_FORBIDDEN_BG.value
+        focus_border_color = get_ui_color(ColorType.PRIMARY, UiColor.RED)
+    else:
+        bg_color = (
+            ThemePalette.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else ThemePalette.COLOR_BG_LIGHT.value
+        )
+        focus_border_color = f"rgba{Palette.accent().toTuple()}"
 
     return f"""
     QLineEdit{{
@@ -517,7 +522,7 @@ def autofill_line_edit_style() -> str:
         padding: 4px 4px;
         border: solid;
         border-width: 2px;
-        border-color: rgba{Palette.accent().toTuple()};
+        border-color: {focus_border_color};
         }}
     """
 
