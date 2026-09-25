@@ -79,6 +79,10 @@
         "mode": "pil",
         "path": "qt/images/hint_field_create.png"
     },
+    "hint_field_issue": {
+        "mode": "pil",
+        "path": "qt/images/hint_field_issue.png"
+    },
     "hint_tag_add": {
         "mode": "pil",
         "path": "qt/images/hint_tag_add.png"
@@ -90,6 +94,10 @@
     "hint_tag_create": {
         "mode": "pil",
         "path": "qt/images/hint_tag_create.png"
+    },
+    "hint_tag_issue": {
+        "mode": "pil",
+        "path": "qt/images/hint_tag_issue.png"
     },
     "icon": {
         "mode": "pil",

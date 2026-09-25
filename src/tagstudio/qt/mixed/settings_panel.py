@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
 from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -28,7 +28,6 @@ from tagstudio.qt.app_settings import (
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
     Splash,
-    Theme,
 )
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
@@ -241,6 +240,33 @@ class SettingsPanel(ModalContent):
             Translations["settings.keep_suggest_boxes_open"], self.keep_suggest_boxes_open_checkbox
         )
 
+        # Don't Create New Items on Enter
+        self.dont_create_items_on_enter_checkbox = QCheckBox()
+        self.dont_create_items_on_enter_checkbox.setChecked(
+            self.driver.settings.dont_create_items_on_enter
+        )
+        form_layout.addRow(
+            Translations["settings.dont_create_items_on_enter"],
+            self.dont_create_items_on_enter_checkbox,
+        )
+
+        # Sort Added Tags After Other Results in Suggest Box
+        self.sort_added_tags_last_checkbox = QCheckBox()
+        self.sort_added_tags_last_checkbox.setChecked(self.driver.settings.sort_added_tags_last)
+        form_layout.addRow(
+            Translations["settings.sort_added_tags_last"], self.sort_added_tags_last_checkbox
+        )
+
+        # Invert Suggest Box Scrolling
+        self.invert_suggest_box_scroll_checkbox = QCheckBox()
+        self.invert_suggest_box_scroll_checkbox.setChecked(
+            self.driver.settings.invert_suggest_box_scroll
+        )
+        form_layout.addRow(
+            Translations["settings.invert_suggest_box_scroll"],
+            self.invert_suggest_box_scroll_checkbox,
+        )
+
     # TODO: Implement Library Settings
     def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
         form_layout = QFormLayout(self.library_settings_container)
@@ -394,6 +420,9 @@ class SettingsPanel(ModalContent):
             "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
             "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
             "keep_suggest_boxes_open": self.keep_suggest_boxes_open_checkbox.isChecked(),
+            "dont_create_items_on_enter": self.dont_create_items_on_enter_checkbox.isChecked(),
+            "sort_added_tags_last": self.sort_added_tags_last_checkbox.isChecked(),
+            "invert_suggest_box_scroll": self.invert_suggest_box_scroll_checkbox.isChecked(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
@@ -419,6 +448,9 @@ class SettingsPanel(ModalContent):
         driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
         driver.settings.edit_field_on_add = settings["edit_field_on_add"]
         driver.settings.keep_suggest_boxes_open = settings["keep_suggest_boxes_open"]
+        driver.settings.dont_create_items_on_enter = settings["dont_create_items_on_enter"]
+        driver.settings.sort_added_tags_last = settings["sort_added_tags_last"]
+        driver.settings.invert_suggest_box_scroll = settings["invert_suggest_box_scroll"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
