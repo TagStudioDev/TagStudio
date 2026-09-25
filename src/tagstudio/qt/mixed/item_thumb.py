@@ -108,6 +108,7 @@ class ItemThumb(FlowWidget):
         self.item_id: int = -1
         self.item_path: Path | None = None
         self.rendered_path: Path | None = None
+        self._select_on_release: bool = False
         self.thumb_size: tuple[int, int] = thumb_size
         self.show_filename_label: bool = show_filename_label
         self.label_height = 12
@@ -302,16 +303,8 @@ class ItemThumb(FlowWidget):
         # NOTE: self.item_id seems to act as a reference here and does not need to be updated inside
         # QtDriver.update_thumbs() while item_thumb.delete_action does.
         # If this behavior ever changes, move this method back to QtDriver.update_thumbs().
-        self.thumb_button.pressed.connect(
-            lambda: (
-                self.toggle_item_selection()
-                if (
-                    QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
-                    or not self.thumb_button.selected
-                )
-                else None
-            )
-        )
+        self.thumb_button.pressed.connect(self._on_thumb_pressed)
+        self.thumb_button.clicked.connect(self._on_thumb_clicked)
         self.set_mode(mode)
 
     @property
@@ -328,6 +321,19 @@ class ItemThumb(FlowWidget):
             append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
             bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
         )
+
+    def _on_thumb_pressed(self) -> None:
+        ctrl = QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+        self._select_on_release = False
+        if ctrl or not self.thumb_button.selected:
+            self.toggle_item_selection()
+        elif len(self.driver.selected) > 1:
+            # Wait for release so clicking a selected item can still drag the existing selection
+            self._select_on_release = True
+
+    def _on_thumb_clicked(self) -> None:
+        if self._select_on_release:
+            self.toggle_item_selection()
 
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
