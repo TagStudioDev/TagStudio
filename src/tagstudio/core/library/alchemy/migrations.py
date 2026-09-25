@@ -58,16 +58,19 @@ class DBMigrations:
         #   - Dividing by 100 and flooring gives the major (breaking changes) version.
         #   - If a DB has major version higher than the current program, don't load it.
         #   - If only the minor version is higher, it's still allowed to load.
-        if self.loaded_db_version < 6 or (
-            self.loaded_db_version >= 100 and self.loaded_db_version // 100 > DB_VERSION // 100
-        ):
-            mismatch_text = Translations["status.library_version_mismatch"]
-            found_text = Translations["status.library_version_found"]
-            expected_text = Translations["status.library_version_expected"]
+
+        supported_versions: str = f"v6 - v{((DB_VERSION // 100) * 100) + 99}"
+        if self.loaded_db_version < 6:
             raise MigrationError(
-                f"{mismatch_text}\n"
-                f"{found_text} v{self.loaded_db_version}, "
-                f"{expected_text} v{DB_VERSION}"
+                f"{Translations['status.library_version_dev']}\n\n"
+                f"{Translations['status.library_version_found']} v{self.loaded_db_version}\n"
+                f"{Translations['status.library_version_expected']} {supported_versions}"
+            )
+        elif self.loaded_db_version >= 100 and self.loaded_db_version // 100 > DB_VERSION // 100:
+            raise MigrationError(
+                f"{Translations['status.library_version_newer']}\n\n"
+                f"{Translations['status.library_version_found']} v{self.loaded_db_version}\n"
+                f"{Translations['status.library_version_expected']} {supported_versions}"
             )
 
         logger.info(
