@@ -995,20 +995,20 @@ class QtDriver(DriverMixin, QObject):
                     if delete_file(library_dir / f):
                         deleted_count += 1
 
-        self.clear_select_action_callback()
-        self.update_browsing_state()
+                self.clear_select_action_callback()
+                self.update_browsing_state()
 
-        if deleted_count > 0 and deleted_count != len(pending):
-            msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
-        else:
-            index = min(deleted_count, 2)
-            msg = (
-                Translations["status.deleted_none"],
-                Translations["status.deleted_file_singular"],
-                Translations.format("status.deleted_file_plural", count=deleted_count),
-            )[index]
-        self.main_window.status_bar.showMessage(msg)
-        self.main_window.status_bar.repaint()
+                if deleted_count > 0 and deleted_count != len(pending):
+                    msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
+                else:
+                    index = min(deleted_count, 2)
+                    msg = (
+                        Translations["status.deleted_none"],
+                        Translations["status.deleted_file_singular"],
+                        Translations.format("status.deleted_file_plural", count=deleted_count),
+                    )[index]
+                self.main_window.status_bar.showMessage(msg)
+                self.main_window.status_bar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
         """A confirmation dialogue box for deleting files.
