@@ -23,6 +23,7 @@ from queue import Queue
 from typing import TypeVar
 from warnings import catch_warnings
 
+import semver
 import structlog
 from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
@@ -61,6 +62,7 @@ from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controllers.changelog_modal import ChangelogModal
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal import IgnoreModal
@@ -603,6 +605,7 @@ class QtDriver(DriverMixin, QObject):
             self.about_modal.show()
 
         self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
+        self.main_window.menu_bar.changelog_action.triggered.connect(self.show_changelog)
 
         # endregion
 
@@ -635,6 +638,7 @@ class QtDriver(DriverMixin, QObject):
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
+        show_changelog = self._record_program_version()
         self.init_library_window()
         self.migration_modal: JsonMigrationModal | None = None
 
@@ -647,6 +651,8 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
+        if show_changelog:
+            self.show_changelog()
         self.main_window.search_field.setFocus()
 
         self.check_for_update()
@@ -1594,6 +1600,37 @@ class QtDriver(DriverMixin, QObject):
                 partial(self.dismiss_update, str(latest_version))
             )
             update_box.exec()
+
+    def _record_program_version(self) -> bool:
+        """Record the version of the program to the cache file.
+
+        Returns:
+            bool: True if the current version is newer than the previously recorded one.
+                Will be False on first time runs of the program, and True if it's not the first run
+                but there's no existing record of the last version used.
+        """
+        is_first_run = not self.cached_values.allKeys()  # No cache keys means this is a first run
+        last_version_opened = self.cached_values.value(AppCacheItems.LAST_VERSION_OPENED)
+        self.cached_values.setValue(AppCacheItems.LAST_VERSION_OPENED, VERSION)
+        self.cached_values.sync()
+
+        if is_first_run:
+            return False
+        if not last_version_opened:
+            return True
+        try:
+            return semver.Version.parse(str(last_version_opened)) < semver.Version.parse(VERSION)
+        except ValueError:
+            return str(last_version_opened) != VERSION
+
+    def show_changelog(self):
+        if not hasattr(self, "changelog_modal"):
+            self.changelog_modal = Modal(
+                ChangelogModal(),
+                window_title=Translations["changelog.window_title"],
+                inline_title=False,
+            )
+        self.changelog_modal.show()
 
     def dismiss_update(self, version: str):
         """Dismiss an update notification for a specific new version of TagStudio."""

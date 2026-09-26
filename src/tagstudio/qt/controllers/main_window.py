@@ -94,6 +94,7 @@ class MainMenuBar(QMenuBar):
     folders_to_tags_action: QAction
 
     help_menu: QMenu
+    changelog_action: QAction
     about_action: QAction
 
     def __init__(self, parent: QWidget | None = None):
@@ -401,6 +402,9 @@ class MainMenuBar(QMenuBar):
 
     def setup_help_menu(self):
         self.help_menu = QMenu(Translations["menu.help"], self)
+
+        self.changelog_action = QAction(Translations["menu.help.changelog"], self)
+        self.help_menu.addAction(self.changelog_action)
 
         self.about_action = QAction(Translations["menu.help.about"], self)
         self.help_menu.addAction(self.about_action)

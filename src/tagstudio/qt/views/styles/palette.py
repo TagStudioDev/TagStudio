@@ -15,6 +15,12 @@ from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger(__name__)
 
+# TODO: Completely rework the color palette system, including this file.
+
+# A translucent purple for de-emphasized text and lines, like the copyright and version dates
+MUTED_PURPLE = "#809782ff"
+MUTED_PURPLE_OPAQUE = "#9782ff"
+
 
 class Palette(metaclass=Singleton):
     _palette: QPalette | None = None

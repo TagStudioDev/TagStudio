@@ -11,6 +11,7 @@ class AppCacheItems(enum.StrEnum):
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
     DISMISSED_UPDATE = "dismissed_update"
+    LAST_VERSION_OPENED = "last_version_opened"
 
 
 class ShowFilepathOption(enum.IntEnum):
