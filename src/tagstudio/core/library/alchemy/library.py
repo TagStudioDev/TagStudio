@@ -65,10 +65,10 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DEFAULT_FIELD_TEMPLATES,
     JSON_FILENAME,
     SQL_FILENAME,
     TAG_CHILDREN_QUERY,
+    default_field_templates,
 )
 from tagstudio.core.library.alchemy.db import Base as ModelBase
 from tagstudio.core.library.alchemy.enums import MAX_SQL_VARIABLES, BrowsingState, SortingModeEnum
@@ -461,7 +461,7 @@ class Library:
             session.flush()
 
             # Add default field templates
-            for template in DEFAULT_FIELD_TEMPLATES:
+            for template in default_field_templates():
                 session.add(template)
             session.flush()
 
