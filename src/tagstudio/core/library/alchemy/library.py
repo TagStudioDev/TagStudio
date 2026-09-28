@@ -475,7 +475,7 @@ class Library:
                 ts_ignore_template = (
                     Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
                 )
-                shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+                shutil.copyfile(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
             except Exception as e:
                 logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
 
@@ -1453,7 +1453,7 @@ class Library:
 
         target_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
-        shutil.copy2(
+        shutil.copyfile(
             library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
