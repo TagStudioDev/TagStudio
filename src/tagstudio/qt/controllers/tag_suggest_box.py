@@ -15,11 +15,11 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
+from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_widget import TagWidget
 
 logger = structlog.get_logger(__name__)
@@ -74,12 +74,12 @@ class TagSuggestBox(SuggestBox[Tag]):
         query: str = self.layout().search_field.text()
 
         if self._settings.edit_tag_on_create:
-            panel: BuildTagPanel = BuildTagPanel(self._lib)
+            panel: EditTagPanel = EditTagPanel(self._lib)
             modal: Modal = Modal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True
             )
             if query.strip():
-                panel.name_field.setText(query)
+                panel.set_name(query)
 
             modal.saved.connect(lambda: self._create_item_from_modal(panel))
             modal.show()
@@ -91,15 +91,15 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _on_item_edit(self, item: Tag) -> None:
-        edit_tag_panel: BuildTagPanel = BuildTagPanel(self._lib, tag=item)
-        edit_tag_modal: Modal = Modal(
+        edit_tag_panel: EditTagPanel = EditTagPanel(self._lib, tag=item)
+        modal: Modal = Modal(
             edit_tag_panel,
             self._lib.tag_display_name(item),
             Translations["tag.edit"],
             is_savable=True,
         )
-        edit_tag_modal.saved.connect(lambda: self._edit_item(edit_tag_panel))
-        edit_tag_modal.show()
+        modal.saved.connect(lambda: self._edit_item(edit_tag_panel))
+        modal.show()
 
     @override
     def _on_item_chosen(self, item: Tag) -> None:
@@ -173,7 +173,7 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:
-        if isinstance(edit_item_panel, BuildTagPanel):
+        if isinstance(edit_item_panel, EditTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
                 tag,
@@ -188,7 +188,7 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _edit_item(self, edit_item_panel: ModalContent) -> None:
-        if not isinstance(edit_item_panel, BuildTagPanel):
+        if not isinstance(edit_item_panel, EditTagPanel):
             return
 
         self._lib.update_tag(

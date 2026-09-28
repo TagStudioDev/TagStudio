@@ -14,6 +14,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers import edit_tag_panel  # Module import due to circular import
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
@@ -55,11 +56,8 @@ class TagSearchPanel(SearchPanel[Tag]):
         Args:
             add_to_entry (bool): Should this item be added to currently selected entries?
         """
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
         query: str = self.get_search_query()
-        panel: BuildTagPanel = BuildTagPanel(self._lib)
+        panel = edit_tag_panel.EditTagPanel(self._lib)
         modal: Modal = Modal(
             panel,
             Translations["tag.new"],
@@ -68,25 +66,22 @@ class TagSearchPanel(SearchPanel[Tag]):
         )
 
         if query.strip():
-            panel.name_field.setText(query)
+            panel.set_name(query)
 
         modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
         modal.show()
 
     @override
     def on_item_edit(self, item: Tag) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        edit_tag_panel: BuildTagPanel = BuildTagPanel(self._lib, tag=item)
-        edit_tag_modal: Modal = Modal(
-            edit_tag_panel,
+        panel = edit_tag_panel.EditTagPanel(self._lib, tag=item)
+        modal: Modal = Modal(
+            panel,
             self._lib.tag_display_name(item),
             Translations["tag.edit"],
             is_savable=True,
         )
-        edit_tag_modal.saved.connect(lambda: self.edit_item(edit_tag_panel))
-        edit_tag_modal.show()
+        modal.saved.connect(lambda: self.edit_item(panel))
+        modal.show()
 
     @override
     def _on_item_remove(self, item: Tag) -> None:
@@ -161,10 +156,7 @@ class TagSearchPanel(SearchPanel[Tag]):
 
     @override
     def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        if isinstance(edit_item_panel, BuildTagPanel):
+        if isinstance(edit_item_panel, edit_tag_panel.EditTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
                 tag,
@@ -182,10 +174,7 @@ class TagSearchPanel(SearchPanel[Tag]):
 
     @override
     def edit_item(self, edit_item_panel: ModalContent) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        if not isinstance(edit_item_panel, BuildTagPanel):
+        if not isinstance(edit_item_panel, edit_tag_panel.EditTagPanel):
             return
 
         self._lib.update_tag(
