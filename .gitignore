@@ -282,12 +282,14 @@ compile_commands.json
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 
 # TagStudio
-.TagStudio
-!*/tests/**/.TagStudio
-tagstudio/tests/fixtures/library/*
-tagstudio/tests/fixtures/json_library/.TagStudio/*.sqlite
+/.TagStudio/
 TagStudio.ini
 *.sqlite-journal
+# Leftovers from tests
+tests/**/.TagStudio/backups/
+tests/**/.TagStudio/.ts_ignore
+tests/fixtures/json_library/.TagStudio/*.sqlite
+tests/fixtures/empty_libraries/DB_VERSION_TEMP/
 
 .envrc
 .direnv
