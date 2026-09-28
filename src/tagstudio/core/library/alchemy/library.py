@@ -193,14 +193,14 @@ class SearchResult:
 
 
 @dataclass
-class LibraryStatus:
-    """Keep status of library opening operation."""
+class OpenLibraryResult:
+    """The result of an attempt to open a TagStudio library."""
 
     success: bool
     library_path: Path | None = None
-    message: str | None = None
-    msg_description: str | None = None
-    json_migration_req: bool = False
+    error_title: str | None = None
+    error_description: str | None = None
+    needs_json_migration: bool = False
 
 
 class Library:
@@ -351,7 +351,7 @@ class Library:
         else:
             return tag.name
 
-    def open_library(self, library_dir: Path, in_memory: bool = False) -> LibraryStatus:
+    def open_library(self, library_dir: Path, in_memory: bool = False) -> OpenLibraryResult:
         """Wrapper for open_sqlite_library and create_sqlite_library.
 
         Handles in-memory storage and checks whether a JSON-migration is necessary.
@@ -365,11 +365,11 @@ class Library:
         if not in_memory:
             self.verify_ts_folder(library_dir)  # ensure .TagStudio directory exists
             if is_new and json_path.exists():
-                return LibraryStatus(
+                return OpenLibraryResult(
                     success=False,
                     library_path=library_dir,
-                    message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
-                    json_migration_req=True,
+                    error_description="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                    needs_json_migration=True,
                 )
 
         if is_new:
@@ -405,7 +405,7 @@ class Library:
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
-    ) -> LibraryStatus:
+    ) -> OpenLibraryResult:
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
 
         logger.info(
@@ -497,11 +497,11 @@ class Library:
 
         # everything is fine, set the library path
         self.library_dir = library_dir
-        return LibraryStatus(success=True, library_path=library_dir)
+        return OpenLibraryResult(success=True, library_path=library_dir)
 
     def open_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
-    ) -> LibraryStatus:
+    ) -> OpenLibraryResult:
         logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
         # migrate if necessary
@@ -513,12 +513,12 @@ class Library:
 
                 migrations.run()
         except MigrationError as e:
-            return LibraryStatus(success=False, message=e.args[0])
+            return OpenLibraryResult(success=False, error_description=e.args[0])
 
         # open up-to-date library
         self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
         self.library_dir = library_dir
-        return LibraryStatus(success=True, library_path=library_dir)
+        return OpenLibraryResult(success=True, library_path=library_dir)
 
     @property
     def field_templates(self) -> Sequence[BaseFieldTemplate]:

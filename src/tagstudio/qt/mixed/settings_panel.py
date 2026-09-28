@@ -149,7 +149,7 @@ class SettingsPanel(ModalContent):
         form_layout = QFormLayout(self.global_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
-        # Open Last Library on Start
+        # Reopen Library on Start
         self.open_last_lib_checkbox = QCheckBox()
         self.open_last_lib_checkbox.setChecked(self.driver.settings.open_last_loaded_on_startup)
         form_layout.addRow(
