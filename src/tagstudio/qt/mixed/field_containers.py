@@ -29,7 +29,7 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tag_box import TagBoxWidget
@@ -294,7 +294,7 @@ class FieldContainers(QWidget):
             if not is_mixed:
                 edit_modal = Modal(
                     EditText(field.name, field.value, field.is_multiline),
-                    window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                    window_title=f"{Translations['field.edit']} ({field_type})",
                     is_savable=True,
                     inline_title=False,
                 )
@@ -332,7 +332,7 @@ class FieldContainers(QWidget):
             if not is_mixed:
                 edit_modal = Modal(
                     DatetimePicker(self.driver, field.name, field.value or dt.now()),
-                    window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                    window_title=f"{Translations['field.edit']} ({field_type})",
                     is_savable=True,
                     inline_title=False,
                 )
@@ -375,8 +375,8 @@ class FieldContainers(QWidget):
             container = self._containers[index]
 
         # Set field title
-        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
-        title = f"{field.name} ({Translations[field_name_key]})"
+        field_type = field_type_name(field.class_name)
+        title = f"{field.name} ({field_type})"
 
         # Write containers
         if type(field) is TextField:

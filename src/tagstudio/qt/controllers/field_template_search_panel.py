@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
-from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
 from tagstudio.qt.controllers.modal import Modal
@@ -124,8 +124,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         if item is None:
             return
 
-        type_key = FIELD_TYPE_KEYS.get(item.class_name, "field_type.unknown")
-        capsule.set_text(f"{item.name} ({Translations[type_key]})")
+        capsule.set_text(f"{item.name} ({field_type_name(item.class_name)})")
         capsule.has_remove = not self._is_chooser
 
         # Disconnect previous callbacks
