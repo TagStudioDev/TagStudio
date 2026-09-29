@@ -366,7 +366,7 @@ def tag_style(
     highlight_color: QColor,
     border_style: str = "solid",
 ) -> str:
-    """Style used for TagWidgets."""
+    """Style used for Capsules."""
     return f"""
     QPushButton{{
         background: rgba{primary_color.toTuple()};
@@ -399,7 +399,7 @@ def tag_style(
 def tag_remove_button_style(
     primary_color: QColor, text_color: QColor, border_color: QColor, highlight_color: QColor
 ) -> str:
-    """Style used for "Remove" buttons on TagWidgets [-]."""
+    """Style used for "Remove" buttons on Capsules [-]."""
     return f"""
     QPushButton{{
         color: rgba{primary_color.toTuple()};

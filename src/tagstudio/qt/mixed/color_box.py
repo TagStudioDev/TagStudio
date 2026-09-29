@@ -6,17 +6,17 @@ import typing
 from collections.abc import Iterable
 
 import structlog
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.mixed.field_widget import FieldWidget
-from tagstudio.qt.mixed.tag_color_label import TagColorLabel
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.styles.stylesheets import add_button_style
 
@@ -57,29 +57,30 @@ class ColorBoxWidget(FieldWidget):
         )
         is_mutable = not self.namespace.startswith(RESERVED_NAMESPACE_PREFIX)
         max_width = 60
-        color_widgets: list[TagColorLabel] = []
+        capsules: list[Capsule] = []
 
         while self.base_layout.itemAt(0):
             unwrap(self.base_layout.takeAt(0)).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         for color in colors_:
-            color_widget = TagColorLabel(
-                color=color,
-                has_edit=is_mutable,
-                has_remove=is_mutable,
-                library=self.lib,
-            )
-            hint = color_widget.sizeHint().width()
+            capsule = Capsule(has_edit=is_mutable, has_remove=is_mutable)
+            capsule.set_text(color.name)
+            capsule.set_color_group(color)
+            hint = capsule.sizeHint().width()
             if hint > max_width:
                 max_width = hint
-            color_widget.on_click.connect(lambda c=color: self.edit_color(c))
-            color_widget.on_remove.connect(lambda c=color: self.delete_color(c))
+            if is_mutable:
+                capsule.on_click.connect(lambda c=color: self.edit_color(c))
+                capsule.on_edit.connect(lambda c=color: self.edit_color(c))
+                capsule.on_remove.connect(lambda c=color: self.delete_color(c))
+            else:
+                capsule.setCursor(Qt.CursorShape.ArrowCursor)
 
-            color_widgets.append(color_widget)
-            self.base_layout.addWidget(color_widget)
+            capsules.append(capsule)
+            self.base_layout.addWidget(capsule)
 
-        for color_widget in color_widgets:
-            color_widget.setFixedWidth(max_width)
+        for capsule in capsules:
+            capsule.setFixedWidth(max_width)
 
         if is_mutable:
             add_button = QPushButton()

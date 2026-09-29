@@ -3,7 +3,6 @@
 
 # pyright: reportOptionalMemberAccess=false
 
-import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
@@ -23,13 +22,12 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
-from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
 from tagstudio.qt.views.styles.stylesheets import header
 
 if TYPE_CHECKING:
@@ -276,9 +274,11 @@ class TreeItem(QWidget):
 
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
-        self.tag_widget = ModifiedTagWidget(unwrap(data.tag), parent_tag)
-        self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
-        self.tag_layout.addWidget(self.tag_widget)
+        tag = unwrap(data.tag)
+        self.capsule = Capsule()
+        self.capsule.set_text(f"{tag.name} ({parent_tag.name})" if parent_tag else tag.name)
+        self.capsule.on_click.connect(self.hide_show)
+        self.tag_layout.addWidget(self.capsule)
 
         self.children_widget = QWidget()
         self.children_layout = QVBoxLayout(self.children_widget)
@@ -312,50 +312,3 @@ class TreeItem(QWidget):
 
         self.children_widget.setHidden(hidden)
         self.label.setText(">" if self.children_widget.isHidden() else "v")
-
-
-class ModifiedTagWidget(QWidget):
-    """Modified TagWidget that does not search for the Tag's display name in the Library."""
-
-    def __init__(self, tag: Tag, parent_tag: Tag | None) -> None:
-        super().__init__()
-        self.tag = tag
-
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.base_layout = QVBoxLayout(self)
-        self.base_layout.setObjectName("baseLayout")
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.bg_button = QPushButton(self)
-        self.bg_button.setFlat(True)
-        text = (f"{tag.name} ({parent_tag.name})" if parent_tag else tag.name).replace("&", "&&")
-        self.bg_button.setText(text)
-        self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-
-        self.inner_layout = QHBoxLayout()
-        self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(2, 2, 2, 2)
-        self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(math.ceil(22 * 1.5), 22)
-
-        self.bg_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
-            f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
-            f"border-radius: 6px;"
-            f"border-style:inset;"
-            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
-            f"padding-right: 4px;"
-            f"padding-bottom: 1px;"
-            f"padding-left: 4px;"
-            f"font-size: 13px"
-            f"}}"
-            f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-            f"}}"
-        )
-
-        self.base_layout.addWidget(self.bg_button)
-        self.setMinimumSize(50, 20)
