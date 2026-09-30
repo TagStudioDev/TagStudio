@@ -279,7 +279,6 @@
     "status.library_search_query": "Haetaan kirjastoa...",
     "status.library_version_expected": "Odotettu:",
     "status.library_version_found": "Löytyi:",
-    "status.library_version_mismatch": "Kirjasto versio ei vastaa!",
     "status.results": "Tulokset",
     "tag.add": "Lisää tunniste",
     "tag.add.plural": "Lisää tunnisteet",
