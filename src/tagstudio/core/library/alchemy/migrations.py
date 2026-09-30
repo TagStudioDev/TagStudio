@@ -448,15 +448,17 @@ class MigrationTo200(DBMigration):
         """)
 
         # Add field templates tables
+        # NOTE: v9.6.0-9.6.2 created these empty tables before migrating, so backup library files
+        # or libraries that failed mid-migration may already have them.
         conn.execute("""
-            CREATE TABLE text_field_templates (
+            CREATE TABLE IF NOT EXISTS text_field_templates (
                 id INTEGER NOT NULL PRIMARY KEY,
                 is_multiline BOOLEAN NOT NULL,
                 name VARCHAR NOT NULL
             )
         """)
         conn.execute("""
-            CREATE TABLE datetime_field_templates (
+            CREATE TABLE IF NOT EXISTS datetime_field_templates (
                 id INTEGER NOT NULL PRIMARY KEY,
                 name VARCHAR NOT NULL
             )
