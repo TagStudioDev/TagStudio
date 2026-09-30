@@ -8,7 +8,7 @@ from typing import cast, override
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QKeyEvent
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -35,11 +35,8 @@ from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.styles.stylesheets import (
     colored_checkbox_style,
     colored_radio_button_style,
-    get_tag_border_color,
-    get_tag_highlight_color,
-    get_tag_primary_color,
-    get_tag_text_color,
     line_edit_style,
+    tag_colors,
 )
 
 logger = structlog.get_logger(__name__)
@@ -82,7 +79,7 @@ class EditTagPanel(ModalContent):
         self.exclusion_ids: set[int] = set()
         self.aliases: list[TagAlias] = []
 
-        self.setMinimumSize(300, 640)
+        self.setMinimumWidth(600)
         self.setLayout(EditTagPanelView())
 
         self._disam_button_group = QButtonGroup(self)
@@ -93,7 +90,7 @@ class EditTagPanel(ModalContent):
             self._lib, exclude=[tag.id] if tag else [], view=tsp_view
         )
         tsp.item_chosen.connect(self._add_parent_tag_callback)
-        self._add_parent_tag_modal = Modal(tsp, title=Translations["tag.add.plural"])
+        self._add_parent_tag_modal = Modal(tsp, title=Translations["tag.parent_tags.add"])
 
         self._color_selection = TagColorSelection(self._lib)
         choose_color_title = Translations["tag.choose_color"]
@@ -278,7 +275,7 @@ class EditTagPanel(ModalContent):
         include_checkbox = QCheckBox()
         include_checkbox.setFixedSize(22, 22)
         include_checkbox.setToolTip(Translations["tag.categories.tooltip"])
-        include_checkbox.setStyleSheet(colored_checkbox_style(*self._tag_colors(category)))
+        include_checkbox.setStyleSheet(colored_checkbox_style(*tag_colors(category.color)))
 
         if category.id not in self.exclusion_ids:
             include_checkbox.setChecked(True)
@@ -287,29 +284,6 @@ class EditTagPanel(ModalContent):
         row.addWidget(include_checkbox)
 
         return capsule.layout().button, include_checkbox, container
-
-    def _tag_colors(self, tag: Tag) -> tuple[QColor, QColor, QColor, QColor]:
-        primary_color = get_tag_primary_color(tag)
-
-        border_color = (
-            get_tag_border_color(primary_color)
-            if not (tag.color and tag.color.secondary and tag.color.color_border)
-            else (QColor(tag.color.secondary))
-        )
-
-        highlight_color = get_tag_highlight_color(
-            primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
-        )
-
-        text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
-        else:
-            text_color = get_tag_text_color(primary_color, highlight_color)
-
-        return primary_color, border_color, highlight_color, text_color
 
     def _set_parent_tags(self):
         view = self.layout()
@@ -357,7 +331,7 @@ class EditTagPanel(ModalContent):
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
-        disam_button.setStyleSheet(colored_radio_button_style(*self._tag_colors(tag)))
+        disam_button.setStyleSheet(colored_radio_button_style(*tag_colors(tag.color)))
 
         self._disam_button_group.addButton(disam_button)
         if is_disambiguation:

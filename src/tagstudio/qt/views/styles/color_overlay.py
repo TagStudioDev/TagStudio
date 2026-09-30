@@ -3,8 +3,9 @@
 
 
 from PIL import Image
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 
 from tagstudio.previews.gradients import linear_gradient
 
@@ -14,6 +15,32 @@ _THEME_DARK_FG: str = "#FFFFFF77"
 _THEME_LIGHT_FG: str = "#000000DD"
 _THEME_DARK_BG: str = "#000000DD"
 _THEME_LIGHT_BG: str = "#FFFFFF55"
+
+
+def theme_foreground_color() -> QColor:
+    """Return a translucent foreground color for icons and hint text in the current theme."""
+    if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+        return QColor(255, 255, 255, 0x77)
+    return QColor(0, 0, 0, 0x77)
+
+
+def svg_to_pixmap(
+    svg: bytes, color: QColor, device_pixel_ratio: float, size: QSize | None = None
+) -> QPixmap:
+    """Render an SVG with a color and size to a QPixmap."""
+    renderer = QSvgRenderer(QByteArray(svg))
+    size = size if size is not None else renderer.defaultSize()
+    bounds = QRectF(0, 0, size.width(), size.height())
+
+    pixmap = QPixmap(size * device_pixel_ratio)
+    pixmap.setDevicePixelRatio(device_pixel_ratio)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter, bounds)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(bounds, color)
+    painter.end()
+    return pixmap
 
 
 def auto_theme_overlay(

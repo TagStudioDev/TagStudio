@@ -24,6 +24,8 @@ class ResourceManager:
     affinity_photo: Image.Image
     alert: QPixmap
     archive: Image.Image
+    arrow_right: bytes
+    arrow_right_bottom: bytes
     audio: Image.Image
     broken_link_icon: Image.Image
     bxs_left_arrow: Image.Image
@@ -48,10 +50,13 @@ class ResourceManager:
     ignored: Image.Image
     image_vector: Image.Image
     image: Image.Image
+    info_outline: bytes
+    info_solid: bytes
     material: Image.Image
     model: Image.Image
     mute_icon: Image.Image
     pause_icon: Image.Image
+    plaintext: Image.Image
     presentation: Image.Image
     program: Image.Image
     shader: Image.Image
@@ -61,7 +66,6 @@ class ResourceManager:
     splash_classic: QPixmap
     splash_goo_gears: QPixmap
     spreadsheet: Image.Image
-    text: Image.Image
     thumb_loading: Image.Image
     trash: Image.Image
     ts_logo_text_color: Image.Image

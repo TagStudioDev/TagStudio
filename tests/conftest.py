@@ -179,8 +179,12 @@ def qt_driver(library: Library, library_dir: Path):
         open = library_dir
         ci = True
 
-    # NOTE: What the heck is this
-    with patch("tagstudio.qt.qt_driver.Consumer"), patch("tagstudio.qt.qt_driver.CustomRunnable"):
+    with (
+        patch("tagstudio.qt.qt_driver.Consumer"),
+        patch("tagstudio.qt.qt_driver.CustomRunnable"),
+        # NOTE: Patching the QThreadPool stops Python's garbage collector from causing segfaults
+        patch("tagstudio.qt.qt_driver.QThreadPool"),
+    ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
 
         driver.app = Mock()

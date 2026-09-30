@@ -46,16 +46,36 @@ SPDX-License-Identifier = "MIT"
 
 [[annotations]]
 path = [
-    "src/tagstudio/resources/qt/images/dupe_file_stat.png",
     "src/tagstudio/resources/qt/images/hint_field_add.png",
+    "src/tagstudio/resources/qt/images/hint_tag_add.png",
+]
+SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/alert.png",
+    "src/tagstudio/resources/qt/images/pause.png",
+]
+SPDX-FileCopyrightText = [
+    "(c) github:google/material-design-icons Contributors",
+    "(c) TagStudio Contributors",
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/arrow-right-bottom-bold.svg",
+    "src/tagstudio/resources/qt/images/dupe_file_stat.png",
     "src/tagstudio/resources/qt/images/hint_field_create.png",
     "src/tagstudio/resources/qt/images/hint_field_issue.png",
-    "src/tagstudio/resources/qt/images/hint_tag_add.png",
     "src/tagstudio/resources/qt/images/hint_tag_added.png",
     "src/tagstudio/resources/qt/images/hint_tag_create.png",
     "src/tagstudio/resources/qt/images/hint_tag_issue.png",
+    "src/tagstudio/resources/qt/images/information-slab-circle-outline.svg",
+    "src/tagstudio/resources/qt/images/information-slab-circle.svg",
 ]
-SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
+SPDX-FileCopyrightText = "(c) github:Templarian/MaterialDesign Contributors"
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
