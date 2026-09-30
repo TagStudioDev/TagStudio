@@ -59,8 +59,8 @@ This update includes some critical library bugfixes along with a handful QoL twe
 
 The tagging workflow has gotten a major overhaul! Clicking the "Add Tag" button or pressing <kbd>Ctrl</kbd>+<kbd>T</kbd> will now activate an inline tag search bar that you can also use to quickly create and apply new or existing tags! Creating new tags in an empty library is now as simple as clicking the "Add Tag" button, typing in the name of a tag you wish to create, and hitting <kbd>Enter</kbd>! The whole workflow was redone with both casual and power users in mind, and is entirely keyboard friendly. And fields have also gotten the same treatment!
 
-![Empty File Entry](assets/tag_field_bars/add_buttons_normal.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/tag_bar_empty.png){ width=45% }
-![Empty File Entry](assets/tag_field_bars/tag_bar_search_match.png){ width=45% } ![Empty File Entry](assets/tag_field_bars/field_bar_search.png){ width=45% }
+<img width="270" alt="add_buttons_normal" src="https://github.com/user-attachments/assets/95c9b89a-4d1a-4be1-87db-f9842488da08" /> <img width="270" alt="tag_bar_empty" src="https://github.com/user-attachments/assets/e0e8501f-93f6-4ac3-a717-2881faec0b89" />
+<img width="270" alt="tag_bar_search_match" src="https://github.com/user-attachments/assets/c0bdafb1-5115-4dda-b584-890efae53221" /> <img width="270" alt="field_bar_search" src="https://github.com/user-attachments/assets/4ca9a223-5406-44b5-9596-7e570a4bf7e2" />
 
 You can read the brief feature overview below or read the updated [documentation](https://docs.tagstud.io/usage/#tagging) to see the full changes and features:
 
@@ -146,7 +146,7 @@ You can read the brief feature overview below or read the updated [documentation
 
 #### Customizable Fields
 
-[Fields](fields.md) are now fully customizable!
+[Fields](https://docs.tagstud.io/fields/) are now fully customizable!
 
 - The built-in list of fields (now referred to as "field templates") has been reduced to a list of handy essential templates that can be fully modified or deleted
 - "Text Line" and "Text Box" field types have been combined into a single "Text" type with a "Multiline" option that can be configured on templates or toggled dynamically on existing text fields

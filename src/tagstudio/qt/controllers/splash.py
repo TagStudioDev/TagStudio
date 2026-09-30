@@ -14,6 +14,7 @@ from tagstudio.core.constants import BUILD_TYPE, COPYRIGHT, COPYRIGHT_COMPACT, V
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import Splash
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.views.styles.palette import MUTED_PURPLE
 
 logger = structlog.get_logger(__name__)
 
@@ -74,7 +75,7 @@ class SplashScreen:
                 font = painter.font()
                 font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
-                pen = QPen(QColor("#809782ff"))
+                pen = QPen(QColor(MUTED_PURPLE))
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(0, -25, 960, 540),
@@ -95,7 +96,7 @@ class SplashScreen:
                 font = painter.font()
                 font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
-                pen = QPen(QColor("#809782ff"))
+                pen = QPen(QColor(MUTED_PURPLE))
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(40, 450, 960, 540),

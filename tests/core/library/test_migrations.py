@@ -56,3 +56,37 @@ def test_library_migrations(path: str):
         raise (e)
     finally:
         shutil.rmtree(temp_path)
+
+
+def test_migration_with_existing_field_template_tables(tmp_path: Path):
+    """DB_VERSION 104 library that already has the (empty) field template tables.
+
+    v9.6.0-9.6.2 created these empty tables before migrating, so backup library files
+    or libraries that failed mid-migration may already have them.
+
+    This tests for a specific scenario where a backup library file from a
+    v9.5.6 (DB102) -> v9.6.2 (DB300) migration is opened in a newer version.
+    Historically this would cause breakage in v9.6.3 (see issue #1500).
+    """
+    fixture = CWD.parents[2] / FIXTURES / "issue-1500" / TS_FOLDER_NAME / SQL_FILENAME
+    (tmp_path / TS_FOLDER_NAME).mkdir()
+    shutil.copy(fixture, tmp_path / TS_FOLDER_NAME / SQL_FILENAME)
+
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+        expected = ["Title", "Author", "Artist", "URL", "Description", "Notes", "Comments", "Date"]
+        assert [t.name for t in library.field_templates] == expected
+
+        assert library.entries_count == 2
+        entry = library.get_entry_full(entry_id=2)
+        assert entry
+        assert {f.name: f.value for f in entry.text_fields} == {
+            "Title": "Mario",
+            "Description": "This is a cat.",
+        }
+        assert {f.name: f.value for f in entry.datetime_fields} == {
+            "Date": None,
+        }
+    finally:
+        library.close()
