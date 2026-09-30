@@ -63,6 +63,7 @@ from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
+from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal import IgnoreModal
@@ -74,7 +75,6 @@ from tagstudio.qt.controllers.splash import SplashScreen
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.mixed.about_modal import AboutModal
-from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
@@ -899,7 +899,7 @@ class QtDriver(DriverMixin, QObject):
             self.favorite_updated.emit(False)  # noqa: FBT003
 
     def add_tag_action_callback(self):
-        panel = BuildTagPanel(self.lib)
+        panel = EditTagPanel(self.lib)
         self.modal = Modal(
             panel,
             Translations["tag.new"],
