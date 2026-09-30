@@ -9,8 +9,9 @@ import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.mixed.field_widget import FieldWidget
-from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 if TYPE_CHECKING:
@@ -39,14 +40,16 @@ class TagBoxWidgetView(FieldWidget):
             self.__root_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         for tag in tags_:
-            tag_widget = TagWidget(tag, library=self.__lib, has_edit=True, has_remove=True)
-            tag_widget.on_click.connect(lambda t=tag: self._on_click(t))
-            tag_widget.on_remove.connect(lambda t=tag: self._on_remove(t))
-            tag_widget.on_edit.connect(lambda t=tag: self._on_edit(t))
-            tag_widget.search_for_tag_action.triggered.connect(
-                lambda checked=False, t=tag: self._on_search(t)
+            capsule = Capsule(
+                has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
             )
-            self.__root_layout.addWidget(tag_widget)
+            capsule.set_text(self.__lib.tag_display_name(tag))
+            capsule.set_color_group(tag.color)
+            capsule.on_click.connect(lambda t=tag: self._on_click(t))
+            capsule.on_remove.connect(lambda t=tag: self._on_remove(t))
+            capsule.on_edit.connect(lambda t=tag: self._on_edit(t))
+            capsule.on_search.connect(lambda t=tag: self._on_search(t))
+            self.__root_layout.addWidget(capsule)
 
     def _on_click(self, tag: Tag) -> None:
         raise NotImplementedError

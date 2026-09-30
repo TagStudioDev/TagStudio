@@ -12,9 +12,9 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
-from tagstudio.i18n.translations import Translations
+from tagstudio.i18n.translations import Translations, field_type_name
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
-from tagstudio.qt.controllers.field_template_widget import FieldTemplateWidget
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
@@ -117,28 +117,26 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
     @override
     def set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
-        """Set the field template of a field template widget at a specific index."""
-        field_template_widget: FieldTemplateWidget = self.get_item_widget(index, self.__lib)
-        field_template_widget.set_field_template(item)
-        field_template_widget.setHidden(item is None)
+        """Set the field template for a capsule widget at a specific index."""
+        capsule = self.get_item_widget(index, self.__lib)
+        capsule.setHidden(item is None)
 
         if item is None:
             return
 
-        field_template_widget.has_remove = not self._is_chooser
+        capsule.set_text(f"{item.name} ({field_type_name(item.class_name)})")
+        capsule.has_remove = not self._is_chooser
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
-            field_template_widget.on_edit.disconnect()
-            field_template_widget.on_remove.disconnect()
-            field_template_widget.on_click.disconnect()
+            capsule.on_edit.disconnect()
+            capsule.on_remove.disconnect()
+            capsule.on_click.disconnect()
 
         # Connect callbacks
-        field_template_widget.on_edit.connect(lambda item_=item: self.on_item_edit(item_))
-        field_template_widget.on_remove.connect(lambda item_=item: self._on_item_remove(item_))
-        field_template_widget.on_click.connect(
-            lambda checked=False, item_=item: self._on_item_chosen(item_)
-        )
+        capsule.on_edit.connect(lambda item_=item: self.on_item_edit(item_))
+        capsule.on_remove.connect(lambda item_=item: self._on_item_remove(item_))
+        capsule.on_click.connect(lambda item_=item: self._on_item_chosen(item_))
 
     @override
     def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
@@ -165,16 +163,16 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.update_items(self.layout().search_field.text())
 
     @override
-    def get_item_widget(self, index: int, library: Library | None) -> FieldTemplateWidget:
+    def get_item_widget(self, index: int, library: Library | None) -> Capsule:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
         if self.layout().scroll_layout.count() <= index:
             while self.layout().scroll_layout.count() <= index:
-                pad_field_template_widget = FieldTemplateWidget()
-                pad_field_template_widget.setHidden(True)
-                self.layout().scroll_layout.addWidget(pad_field_template_widget)
+                pad_capsule = Capsule(has_edit=True)
+                pad_capsule.setHidden(True)
+                self.layout().scroll_layout.addWidget(pad_capsule)
 
         item = unwrap(self.layout().scroll_layout.itemAt(index))
-        field_template_widget: QWidget = unwrap(item.widget())
-        assert isinstance(field_template_widget, FieldTemplateWidget)
-        return field_template_widget
+        capsule: QWidget = unwrap(item.widget())
+        assert isinstance(capsule, Capsule)
+        return capsule

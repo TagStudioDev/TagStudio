@@ -14,8 +14,8 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import CustomTableItem, EditTagPanel
-from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -210,9 +210,9 @@ def test_edit_tag_panel_show_category_from_parent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == parent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == parent.name
 
 
 def test_edit_tag_panel_show_category_from_grandparent(
@@ -225,9 +225,9 @@ def test_edit_tag_panel_show_category_from_grandparent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == grandparent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == grandparent.name
 
 
 def test_edit_tag_panel_add_category_through_parent(
@@ -239,14 +239,14 @@ def test_edit_tag_panel_add_category_through_parent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    assert __find_category_tag_widget(panel) is None
+    assert _find_category_capsule(panel) is None
 
     child.parent_tags.add(parent)
 
     panel._add_parent_tag_callback(parent.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == parent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == parent.name
 
 
 def test_edit_tag_panel_add_category_through_grandparent(
@@ -259,14 +259,14 @@ def test_edit_tag_panel_add_category_through_grandparent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    assert __find_category_tag_widget(panel) is None
+    assert _find_category_capsule(panel) is None
 
     child.parent_tags.add(parent)
 
     panel._add_parent_tag_callback(parent.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == grandparent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == grandparent.name
 
 
 def test_edit_tag_panel_remove_category_through_parent(
@@ -278,13 +278,13 @@ def test_edit_tag_panel_remove_category_through_parent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == parent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == parent.name
 
     panel._remove_parent_tag_callback(parent.id)
 
-    assert __find_category_tag_widget(panel) is None
+    assert _find_category_capsule(panel) is None
 
 
 def test_edit_tag_panel_remove_category_through_grandparent(
@@ -297,13 +297,13 @@ def test_edit_tag_panel_remove_category_through_grandparent(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == grandparent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == grandparent.name
 
     panel._remove_parent_tag_callback(parent.id)
 
-    assert __find_category_tag_widget(panel) is None
+    assert _find_category_capsule(panel) is None
 
 
 def test_edit_tag_panel_exclude_from_category(
@@ -317,10 +317,10 @@ def test_edit_tag_panel_exclude_from_category(
 
     assert len(panel.exclusion_ids) == 0
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
-    checkbox = __find_include_checkbox(tag_widget)
+    checkbox = _find_include_checkbox(capsule)
     assert checkbox.isChecked()
 
     checkbox.click()
@@ -343,10 +343,10 @@ def test_edit_tag_panel_include_in_category(
 
     assert parent.id in panel.exclusion_ids
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
-    checkbox = __find_include_checkbox(tag_widget)
+    checkbox = _find_include_checkbox(capsule)
     assert not checkbox.isChecked()
 
     checkbox.click()
@@ -369,15 +369,15 @@ def test_edit_tag_panel_remove_duplicate_category_retained(
     panel: EditTagPanel = EditTagPanel(library, child)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == grandparent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == grandparent.name
 
     panel._remove_parent_tag_callback(parent.id)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == grandparent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == grandparent.name
 
 
 def test_edit_tag_panel_new_tag_multiple_categories(
@@ -389,20 +389,20 @@ def test_edit_tag_panel_new_tag_multiple_categories(
     panel: EditTagPanel = EditTagPanel(library)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
     panel._add_parent_tag_callback(parent.id)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
-    assert tag_widget.tag == parent
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == parent.name
 
     panel._add_parent_tag_callback(other_parent.id)
 
-    tag_widget = __find_category_tag_widget(panel, 1)
-    assert tag_widget is not None
-    assert tag_widget.tag == other_parent
+    capsule = _find_category_capsule(panel, 1)
+    assert capsule is not None
+    assert capsule.layout().button.text() == other_parent.name
 
 
 def test_edit_tag_panel_category_not_shown_for_self(
@@ -413,8 +413,8 @@ def test_edit_tag_panel_category_not_shown_for_self(
     panel: EditTagPanel = EditTagPanel(library)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
 
 def test_edit_tag_panel_remove_inherited_from_multiple_parents_during_tag_creation(
@@ -430,16 +430,16 @@ def test_edit_tag_panel_remove_inherited_from_multiple_parents_during_tag_creati
     panel._add_parent_tag_callback(124)
     panel._add_parent_tag_callback(125)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
     panel._remove_parent_tag_callback(child1.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
     panel._remove_parent_tag_callback(child2.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
 
 def test_edit_tag_panel_add_different_category_after_removing_other_category(
@@ -452,16 +452,16 @@ def test_edit_tag_panel_add_different_category_after_removing_other_category(
     panel: EditTagPanel = EditTagPanel(library, tag)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
     panel._remove_parent_tag_callback(category.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
     panel._add_parent_tag_callback(other.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
 
 def test_edit_tag_panel_remove_category_inherited_directly_and_indirectly(
@@ -476,32 +476,32 @@ def test_edit_tag_panel_remove_category_inherited_directly_and_indirectly(
     panel: EditTagPanel = EditTagPanel(library, grandchild)
     qtbot.addWidget(panel)
 
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
     panel._remove_parent_tag_callback(parent.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is not None
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
 
     panel._remove_parent_tag_callback(child.id)
-    tag_widget = __find_category_tag_widget(panel)
-    assert tag_widget is None
+    capsule = _find_category_capsule(panel)
+    assert capsule is None
 
 
-def __find_category_tag_widget(panel: EditTagPanel, index: int = 0) -> TagWidget | None:
+def _find_category_capsule(panel: EditTagPanel, index: int = 0) -> Capsule | None:
     item = panel.layout().category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
     while item is not None:
-        if isinstance(item.widget(), TagWidget):
+        if isinstance(item.widget(), Capsule):
             break
         item = item.widget().layout().itemAt(0)
 
     if item is not None:
-        return cast(TagWidget, item.widget())
+        return cast(Capsule, item.widget())
     return None
 
 
-def __find_include_checkbox(tag_widget: TagWidget) -> QCheckBox:
-    layout_item = tag_widget.parentWidget().layout().itemAt(1)
+def _find_include_checkbox(capsule: Capsule) -> QCheckBox:
+    layout_item = capsule.parentWidget().layout().itemAt(1)
     assert layout_item is not None
 
     widget = layout_item.widget()

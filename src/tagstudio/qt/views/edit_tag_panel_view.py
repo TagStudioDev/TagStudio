@@ -17,14 +17,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.library import Library
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.views.styles.stylesheets import checkbox_style, header
 
 
 class EditTagPanelView(QVBoxLayout):
-    def __init__(self, library: Library) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.setContentsMargins(6, 0, 6, 0)
         self.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -109,7 +108,7 @@ class EditTagPanelView(QVBoxLayout):
         color_layout.setSpacing(6)
         color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         color_layout.addWidget(QLabel(header(Translations["tag.color"], 3)))
-        self.color_button = TagColorPreview(library, None)
+        self.color_button = Capsule(padded=True)
         color_layout.addWidget(self.color_button)
 
         # Properties -----------------------------------------------------------
