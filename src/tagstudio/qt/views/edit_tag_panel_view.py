@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -19,14 +20,17 @@ from PySide6.QtWidgets import (
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
+from tagstudio.qt.controllers.info_button import InfoButton
+from tagstudio.qt.views.info_popovers.categories_info_view import CategoriesInfoView
+from tagstudio.qt.views.info_popovers.parent_tags_info_view import ParentTagsInfoView
 from tagstudio.qt.views.styles.stylesheets import checkbox_style, header
 
 
-class EditTagPanelView(QVBoxLayout):
+class EditTagPanelView(QHBoxLayout):
     def __init__(self) -> None:
         super().__init__()
         self.setContentsMargins(6, 0, 6, 0)
-        self.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.setSpacing(6)
 
         # Name -----------------------------------------------------------------
         name_widget = QWidget()
@@ -69,7 +73,9 @@ class EditTagPanelView(QVBoxLayout):
         parent_tags_layout.setContentsMargins(0, 0, 0, 0)
         parent_tags_layout.setSpacing(0)
         parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        parent_tags_layout.addWidget(QLabel(header(Translations["tag.parent_tags"], 3)))
+        parent_tags_layout.addWidget(
+            self._title_row(Translations["tag.parent_tags"], ParentTagsInfoView())
+        )
 
         parent_tags_scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(parent_tags_scroll_contents)
@@ -87,13 +93,10 @@ class EditTagPanelView(QVBoxLayout):
         category_layout.setContentsMargins(0, 0, 0, 0)
         category_layout.setSpacing(0)
         category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        category_layout.addWidget(QLabel(header(Translations["tag.categories"], 3)))
-
-        category_subtitle = QLabel(Translations["tag.categories.subtitle"])
-        opacity_effect = QGraphicsOpacityEffect(category_subtitle)
-        opacity_effect.setOpacity(0.5)
-        category_subtitle.setGraphicsEffect(opacity_effect)
-        category_layout.addWidget(category_subtitle)
+        category_layout.addWidget(
+            self._title_row(Translations["tag.categories"], CategoriesInfoView())
+        )
+        category_layout.addWidget(self._subtitle(Translations["tag.categories.subtitle"]))
 
         category_scroll_contents = QWidget()
         self.category_scroll_layout = QVBoxLayout(category_scroll_contents)
@@ -121,22 +124,35 @@ class EditTagPanelView(QVBoxLayout):
             self.is_hidden_checkbox, Translations["tag.is_hidden"]
         )
 
-        # Add Widgets to Layout ================================================
-        self.addWidget(name_widget)
-        self.addWidget(shorthand_widget)
-        self.addWidget(aliases_title)
-        self.addWidget(self.aliases_table, stretch=1)
-        self.addWidget(self.aliases_add_button)
-        self._add_spaced_separator()
-        self.addWidget(parent_tags_widget, stretch=1)
-        self._add_spaced_separator()
-        self.addWidget(category_widget)
-        self._add_spaced_separator()
-        self.addWidget(color_widget)
-        self._add_spaced_separator()
-        self.addWidget(QLabel(header(Translations["tag.properties"], 3)))
-        self.addWidget(is_category_widget)
-        self.addWidget(is_hidden_widget)
+        # ----------------------------------------------------------------------
+
+        # Left Column (Tag Attributes)
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.addWidget(name_widget)
+        left_layout.addWidget(shorthand_widget)
+        left_layout.addWidget(aliases_title)
+        left_layout.addWidget(self.aliases_table, stretch=1)
+        left_layout.addWidget(self.aliases_add_button)
+        self._add_spaced_separator(left_layout)
+        left_layout.addWidget(color_widget)
+        self._add_spaced_separator(left_layout)
+        left_layout.addWidget(QLabel(header(Translations["tag.properties"], 3)))
+        left_layout.addWidget(is_category_widget)
+        left_layout.addWidget(is_hidden_widget)
+
+        # Right Column (Tag Relationships)
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.addWidget(parent_tags_widget, stretch=1)
+        self._add_spaced_separator(right_layout)
+        right_layout.addWidget(category_widget, stretch=1)
+
+        self.addWidget(left_widget, stretch=1)
+        self.addWidget(self._separator(QFrame.Shape.VLine))
+        self.addWidget(right_widget, stretch=1)
 
     def _scroll_area(self, contents: QWidget) -> QScrollArea:
         scroll_area = QScrollArea()
@@ -146,6 +162,23 @@ class EditTagPanelView(QVBoxLayout):
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         scroll_area.setWidget(contents)
         return scroll_area
+
+    def _title_row(self, title: str, info: QLayout) -> QWidget:
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel(header(title, 3)))
+        layout.addStretch(1)
+        layout.addWidget(InfoButton(info, title))
+        return widget
+
+    def _subtitle(self, text: str) -> QLabel:
+        subtitle = QLabel(text)
+        subtitle.setWordWrap(True)
+        opacity_effect = QGraphicsOpacityEffect(subtitle)
+        opacity_effect.setOpacity(0.5)
+        subtitle.setGraphicsEffect(opacity_effect)
+        return subtitle
 
     def _checkbox_row(self, checkbox: QCheckBox, title: str) -> QWidget:
         widget = QWidget()
@@ -159,14 +192,16 @@ class EditTagPanelView(QVBoxLayout):
         layout.addWidget(QLabel(title))
         return widget
 
-    def _add_spaced_separator(self) -> None:
+    def _separator(self, shape: QFrame.Shape) -> QFrame:
         sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShape(shape)
         sep.setFrameShadow(QFrame.Shadow.Plain)
         opacity_effect = QGraphicsOpacityEffect(sep)
         opacity_effect.setOpacity(0.1)
         sep.setGraphicsEffect(opacity_effect)
+        return sep
 
-        self.addSpacing(6)
-        self.addWidget(sep)
-        self.addSpacing(6)
+    def _add_spaced_separator(self, layout: QVBoxLayout) -> None:
+        layout.addSpacing(6)
+        layout.addWidget(self._separator(QFrame.Shape.HLine))
+        layout.addSpacing(6)

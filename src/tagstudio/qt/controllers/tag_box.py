@@ -12,6 +12,7 @@ from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.views.tag_box_view import TagBoxWidgetView
@@ -78,7 +79,7 @@ class TagBoxWidget(TagBoxWidgetView):
         edit_modal = Modal(
             edit_tag_panel,
             self.__driver.lib.tag_display_name(tag),
-            "Edit Tag",
+            Translations["tag.edit"],
             is_savable=True,
         )
         edit_modal.saved.connect(partial(self._update_tag_callback, edit_tag_panel))

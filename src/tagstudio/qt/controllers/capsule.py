@@ -5,20 +5,14 @@
 from typing import override
 
 from PySide6.QtCore import QEvent, Qt, Signal, SignalInstance
-from PySide6.QtGui import QAction, QColor, QEnterEvent
+from PySide6.QtGui import QAction, QEnterEvent
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.views.capsule_view import CapsuleView
-from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
-from tagstudio.qt.views.styles.stylesheets import (
-    get_tag_border_color,
-    get_tag_highlight_color,
-    get_tag_text_color,
-)
+from tagstudio.qt.views.styles.stylesheets import tag_colors
 
 
 class Capsule(QWidget):
@@ -67,23 +61,7 @@ class Capsule(QWidget):
 
     def set_color_group(self, color_group: TagColorGroup | None) -> None:
         """Set the colors from a tag color group, or the default tag colors if `None`."""
-        primary_color = QColor(
-            color_group.primary
-            if color_group
-            else get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-        )
-        border_color = get_tag_border_color(primary_color)
-        highlight_color = get_tag_highlight_color(primary_color)
-        text_color = get_tag_text_color(primary_color, highlight_color)
-
-        if color_group and color_group.secondary:
-            secondary_color = QColor(color_group.secondary)
-            highlight_color = get_tag_highlight_color(secondary_color)
-            text_color = secondary_color
-            if color_group.color_border:
-                border_color = secondary_color
-
-        self.layout().set_colors(primary_color, text_color, border_color, highlight_color)
+        self.layout().set_colors(*tag_colors(color_group))
 
     @override
     def layout(self) -> CapsuleView:

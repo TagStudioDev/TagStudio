@@ -35,9 +35,9 @@ class CapsuleView(QVBoxLayout):
     def set_colors(
         self,
         primary_color: QColor,
-        text_color: QColor,
         border_color: QColor,
         highlight_color: QColor,
+        text_color: QColor,
     ) -> None:
         self.button.setStyleSheet(
             tag_style(primary_color, text_color, border_color, highlight_color)
