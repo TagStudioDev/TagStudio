@@ -5,7 +5,7 @@
 from typing import Any, override
 
 import structlog
-from PySide6 import QtCore, QtGui
+from PySide6 import QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton, QWidget
 
@@ -33,12 +33,8 @@ class ModalContent(QWidget):
 
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        if event.key() == QtCore.Qt.Key.Key_Escape:
-            if self.cancel_button:
-                self.cancel_button.click()
-            elif self.done_button:
-                self.done_button.click()
-        elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+        # NOTE: Esc key handling is done by the Modal class
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             if self.save_button:
                 self.save_button.click()
             elif self.done_button:

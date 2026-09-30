@@ -86,6 +86,9 @@ ruff = ["ruff==0.15.17"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/tagstudio"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"docs/changelog.md" = "tagstudio/resources/changelog/changelog.md"
+
 [tool.pytest]
 qt_api = "pyside6"
 pythonpath = ["src"]
