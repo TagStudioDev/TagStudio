@@ -50,11 +50,14 @@ class PreviewThumbView(QStackedLayout):
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*_DEFAULT_PREVIEW_SIZE)
+        self.preview_gif.setScaledContents(True)
         self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
         self.preview_gif.addAction(self.delete_action)
+
+        self.preview_gif.setGraphicsEffect(CornerRadiusEffect(self.preview_gif, RADIUS))
 
         self.preview_gif_page = QWidget()
         self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
@@ -63,6 +66,7 @@ class PreviewThumbView(QStackedLayout):
         self.media_player.addAction(self.open_file_action)
         self.media_player.addAction(self.open_explorer_action)
         self.media_player.addAction(self.delete_action)
+        self.media_player.setGraphicsEffect(CornerRadiusEffect(self.media_player, RADIUS))
 
         self.media_player_page = QWidget()
         self._stacked_page_setup(self.media_player_page, self.media_player)
@@ -77,5 +81,4 @@ class PreviewThumbView(QStackedLayout):
         layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         widget.setCursor(Qt.CursorShape.PointingHandCursor)
-        widget.setGraphicsEffect(CornerRadiusEffect(widget, RADIUS))
         page.setLayout(layout)

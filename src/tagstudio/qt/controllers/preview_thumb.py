@@ -14,19 +14,21 @@ import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
-from PySide6.QtGui import QMovie, QPixmap, QResizeEvent
+from PySide6.QtCore import QBuffer, QByteArray, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QBrush, QMovie, QPainter, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QWidget
 from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.video_tester import is_readable_video
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 from tagstudio.qt.utils.file_opener import open_file
 from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
+from tagstudio.qt.views.styles.stylesheets import RADIUS
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -61,6 +63,7 @@ class PreviewThumb(QWidget):
 
         self._current_file: Path | None = None
         self._gif_buffer: QBuffer = QBuffer()
+        self._gif_size: QSize = QSize()
         self._image_ratio: float = 1.0
         self._preview_size: tuple[int, int] = _DEFAULT_PREVIEW_SIZE
         self._rendered_res: tuple[int, int] = (0, 0)
@@ -133,24 +136,36 @@ class PreviewThumb(QWidget):
         self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
     ) -> None:
         self._source_pixmap = img
-        self._update_icon()
+        self._update_image_size((self.size().width(), self.size().height()), refresh_icon=True)
 
     def _update_icon(self) -> None:
         button = self.layout().button_wrapper
+        if self._source_pixmap.isNull():
+            button.setIcon(self._source_pixmap)
+            return
+
         ratio = self.devicePixelRatio()
-        pixmap = self._source_pixmap.scaled(
+        scaled = self._source_pixmap.scaled(
             button.iconSize() * ratio,
             Qt.AspectRatioMode.IgnoreAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
+        scaled.setDevicePixelRatio(1)
+        pixmap = QPixmap(scaled.size())
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(scaled))
+        painter.drawRoundedRect(QRectF(pixmap.rect()), RADIUS * ratio, RADIUS * ratio)
+        painter.end()
         pixmap.setDevicePixelRatio(ratio)
         button.setIcon(pixmap)
 
     def _thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
         self._image_ratio = ratio
-        self._update_image_size((self.size().width(), self.size().height()))
 
-    def _update_image_size(self, size: tuple[int, int]) -> None:
+    def _update_image_size(self, size: tuple[int, int], refresh_icon: bool = False) -> None:
         view = self.layout()
         scaled_width: float = size[0]
         scaled_height: float = size[1]
@@ -173,17 +188,24 @@ class PreviewThumb(QWidget):
         self._preview_size = (int(scaled_width), int(scaled_height))
         view.button_wrapper.setMaximumSize(scaled_size)
         view.button_wrapper.setMinimumSize(scaled_size)
-        view.button_wrapper.setIconSize(scaled_size)
-        self._update_icon()
+        if refresh_icon or view.button_wrapper.iconSize() != scaled_size:
+            view.button_wrapper.setIconSize(scaled_size)
+            self._update_icon()
         view.preview_gif.setMaximumSize(scaled_size)
         view.preview_gif.setMinimumSize(scaled_size)
 
         view.media_player.setMaximumSize(scaled_size)
         view.media_player.setMinimumSize(scaled_size)
 
+        for page in (view.preview_img_page, view.preview_gif_page, view.media_player_page):
+            unwrap(page.layout()).activate()
+
         movie = view.preview_gif.movie()
         if movie:
-            movie.setScaledSize(scaled_size)
+            gif_max = max(self._gif_size.width(), self._gif_size.height())
+            display_max = max(scaled_size.width(), scaled_size.height()) * self.devicePixelRatio()
+            is_upscaling = gif_max < display_max
+            movie.setScaledSize(QSize() if is_upscaling else scaled_size)
 
     def _switch_preview(self, preview: _PreviewType | None) -> None:
         view = self.layout()
@@ -281,6 +303,7 @@ class PreviewThumb(QWidget):
         stats.height = size[1]
 
         self._image_ratio = stats.width / stats.height
+        self._gif_size = QSize(*size)
 
         self._gif_buffer.setData(gif_data)
         movie = QMovie(self._gif_buffer, QByteArray())
