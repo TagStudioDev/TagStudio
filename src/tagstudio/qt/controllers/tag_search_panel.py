@@ -44,10 +44,6 @@ class TagSearchPanel(SearchPanel[Tag]):
         self._create_and_add_button_key = "tag.create_add"
 
     @override
-    def _get_max_limit(self) -> int:
-        return len(self._lib.tags)
-
-    @override
     def on_item_create(self, add_to_entry: bool = False) -> None:
         """Opens panel to create a new tag and optionally add it to an entry.
 

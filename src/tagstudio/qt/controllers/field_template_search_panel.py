@@ -44,10 +44,6 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self._create_and_add_button_key = "field_template.create_add"
 
     @override
-    def _get_max_limit(self) -> int:
-        return len(self.__lib.field_templates)
-
-    @override
     def on_item_create(self, add_to_entry: bool = False) -> None:
         """Opens panel to create a new field template and optionally add it to an entry.
 
