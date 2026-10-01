@@ -21,7 +21,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
 from queue import Queue
-from typing import Literal, TypeVar
+from typing import TypeVar
 from warnings import catch_warnings
 
 import semver
@@ -72,6 +72,7 @@ from tagstudio.qt.controllers.library_info_window import LibraryInfoWindow
 from tagstudio.qt.controllers.main_window import MainWindow
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.splash import SplashScreen
+from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.mixed.about_modal import AboutModal
@@ -107,8 +108,6 @@ else:
 
 logger = structlog.get_logger(__name__)
 T = TypeVar("T")
-# Used to track the context state of the banner widget.
-_BannerContext = Literal["new_files", "unlinked", "relinked", "sync_disabled", "sync_finished"]
 
 
 def clamp(value, lower_bound, upper_bound):
@@ -204,7 +203,6 @@ class QtDriver(DriverMixin, QObject):
         self._selected: OrderedDict[int, None] = OrderedDict()
         self._sync_session_id: int = 0  # Prevent current sync from affecting subsequent libraries.
         self._sync_disabled_notice_shown: bool = False
-        self._banner_context: _BannerContext | None = None
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -641,7 +639,6 @@ class QtDriver(DriverMixin, QObject):
         self.init_library_window()
         self.migration_modal: JsonMigrationModal | None = None
 
-        self.main_window.banner.request_extra_duration()
         startup_path: str | None = self.args.open.strip() if self.args.open else None
         if not startup_path and self.settings.open_last_loaded_on_startup:
             last_library = self.cached_values.value(AppCacheItems.LAST_LIBRARY)
@@ -695,8 +692,9 @@ class QtDriver(DriverMixin, QObject):
 
         def _update_browsing_state():
             # Clear any banner asking for a manual refresh of the view
-            if self._banner_context == "new_files":
-                self._clear_notice()
+            sync_banner = self._sync_banner
+            if sync_banner is not None and sync_banner.is_awaiting_refresh:
+                sync_banner.hide_banner()
             try:
                 self.update_browsing_state(
                     BrowsingState.from_search_query(self.main_window.search_field.text())
@@ -743,10 +741,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
         self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
-
-        # Banner
-        self.main_window.banner.notice_action_clicked.connect(self._on_notice_action_clicked)
-        self.main_window.banner.cancel_requested.connect(self._on_sync_cancel_requested)
 
         # NOTE: Putting this too early will result in a non-responsive white window on start.
         self.main_window.show()
@@ -810,8 +804,8 @@ class QtDriver(DriverMixin, QObject):
         self.sync_engine.cancelled = True
         self.file_scan_lock = False
         self._new_sync_session()  # Invalidate any sync still active for the old library
-        self._banner_context = None
-        self.main_window.banner.hide_banner(force=True)
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
 
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
@@ -1128,9 +1122,8 @@ class QtDriver(DriverMixin, QObject):
 
         engine = self.sync_engine
         library_dir = unwrap(self.lib.library_dir)
-        self.main_window.banner.show_progress(
-            Translations["library.sync.preparing"], phase="preparing"
-        )
+        sync_banner = self._create_sync_banner()
+        sync_banner.set_preparing()
 
         def on_progress(progress: tuple[int, int]) -> None:
             if engine.cancelled:
@@ -1138,18 +1131,9 @@ class QtDriver(DriverMixin, QObject):
             searched_count, found_count = progress
             if searched_count < 0:
                 # Scan finished, duplicate entry merging/relinking is running before the next yield
-                self.main_window.banner.show_progress(
-                    Translations["library.sync.repairing"], phase="repairing"
-                )
+                sync_banner.set_repairing()
                 return
-            self.main_window.banner.show_progress(
-                Translations.format(
-                    "library.sync.scanning",
-                    searched_count=f"{searched_count + 1:n}",
-                    found_count=f"{found_count:n}",
-                ),
-                phase="scanning",
-            )
+            sync_banner.set_scanning(searched_count + 1, found_count)
 
         def _start_scan() -> None:
             self._run_sync_step(
@@ -1158,7 +1142,7 @@ class QtDriver(DriverMixin, QObject):
                 lambda: self.save_new_entries_runnable(engine, session_id=session_id),
             )
 
-        self.main_window.banner.call_when_open(_start_scan)
+        sync_banner.call_when_open(_start_scan)
 
     def _finish_sync(
         self,
@@ -1167,7 +1151,7 @@ class QtDriver(DriverMixin, QObject):
         relinked_count: int = 0,
         session_id: int = 0,
     ):
-        """Reset the banner once the sync is completed.
+        """Show the sync banner's result notice stage once the sync is completed.
 
         Args:
             new_count (int): New files count.
@@ -1189,47 +1173,27 @@ class QtDriver(DriverMixin, QObject):
         if self.sync_engine.cancelled:
             return
 
-        # Show fleeting count of any new files added with button to refresh view
-        if new_count:
-            text = Translations.format(
-                "library.sync.new_files_banner.plural"
-                if new_count != 1
-                else "library.sync.new_files_banner.singular",
-                count=f"{new_count:n}",
-            )
-            text += self._count_suffix(relinked_count, "library.sync.relinked_suffix")
-            if relinked_count:
-                text += self._count_suffix(unlinked_count, "library.sync.remaining_unlinked_suffix")
-            self._show_notice("new_files", text, Translations["entries.generic.refresh_alt"])
-        # Show persistent count of any remaining unlinked files and button to manually review
-        elif unlinked_count:
-            text = Translations.format(
-                "library.sync.unlinked_banner.plural"
-                if unlinked_count != 1
-                else "library.sync.unlinked_banner.singular",
-                count=f"{unlinked_count:n}",
-            )
-            text += self._count_suffix(relinked_count, "library.sync.relinked_suffix")
-            self._show_notice("unlinked", text, Translations["entries.unlinked.review"])
-        # Show fleeting notice number of entries automatically relinked
-        elif relinked_count:
-            text = Translations.format(
-                "library.sync.relinked_banner.plural"
-                if relinked_count != 1
-                else "library.sync.relinked_banner.singular",
-                count=f"{relinked_count:n}",
-            )
-            text += self._count_suffix(unlinked_count, "library.sync.remaining_unlinked_suffix")
-            self._show_notice("relinked", text, Translations["entries.generic.refresh_alt"])
-        # Show a fleeting "Library Synced" message
-        else:
-            self._show_notice("sync_finished", Translations["library.sync.complete"])
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.finish(new_count, unlinked_count, relinked_count)
 
-    def _count_suffix(self, count: int, key: str) -> str:
-        """Build a count suffix suffix, or "" if count is 0."""
-        if not count:
-            return ""
-        return " " + Translations.format(key, count=f"{count:n}")
+    @property
+    def _sync_banner(self) -> SyncBanner | None:
+        """Get the sync banner, if there currently is one."""
+        return self.main_window.banners.get(SyncBanner.KEY, SyncBanner)
+
+    def _create_sync_banner(self) -> SyncBanner:
+        banner = SyncBanner()
+        banner.refresh_requested.connect(self._on_new_files_banner_refresh)
+        banner.review_requested.connect(self._on_unlinked_banner_review)
+        banner.settings_requested.connect(self._on_sync_disabled_open_settings)
+        banner.progress_cancelled.connect(self._on_sync_cancel_requested)
+        self.main_window.banners.push(banner, key=SyncBanner.KEY)
+        return banner
+
+    def _on_sync_cancel_requested(self) -> None:
+        """Stop the current sync at its next opportunity."""
+        self.sync_engine.cancelled = True
+        logger.info("[QtDriver] Sync cancelled")
 
     def _new_sync_session(self) -> int:
         """Increment the sync session, invalidating any active sync's callbacks."""
@@ -1240,63 +1204,26 @@ class QtDriver(DriverMixin, QObject):
         """Whether `session_id` belongs to an older sync session and should be invalidated."""
         return session_id != self._sync_session_id
 
-    def _show_notice(
-        self, context: _BannerContext, message: str, button_text: str | None = None
-    ) -> None:
-        """Show a "notice" banner and keep track of its context type.
-
-        Args:
-            context (_BannerContext): The subtype of banner notice.
-                Used to keep track of the context state currently used for the banner.
-                This could be for a startup message, sync progress, an entry relink prompt, etc.
-            message (str): The notice message text.
-            button_text (str): The action button text.
-        """
-        self._banner_context = context
-        if button_text is not None:
-            self.main_window.banner.show_notice(message, button_text)
-        else:
-            self.main_window.banner.show_fleeting_notice(message)
-
-    def _clear_notice(self, force: bool = False) -> None:
-        self._banner_context = None
-        self.main_window.banner.hide_banner(force=force)
-
-    def _on_notice_action_clicked(self) -> None:
-        if self._banner_context == "unlinked":
-            self._on_unlinked_banner_review()
-        elif self._banner_context == "sync_disabled":
-            self._on_sync_disabled_open_settings()
-        else:  # "new_files" or "relinked"
-            self._on_new_files_banner_refresh()
-
     def _on_new_files_banner_refresh(self):
         self.update_browsing_state()
         # If there are still unlinked entries after the automatic relinking step, show a notice.
+        sync_banner = self._sync_banner
+        if sync_banner is None:
+            return
         if self.lib.unlinked_entries_count > 0:
-            count = self.lib.unlinked_entries_count
-            text = Translations.format(
-                "library.sync.unlinked_banner.plural"
-                if count != 1
-                else "library.sync.unlinked_banner.singular",
-                count=f"{count:n}",
-            )
-            self._show_notice("unlinked", text, Translations["entries.unlinked.review"])
+            sync_banner.set_unlinked(self.lib.unlinked_entries_count)
         else:
-            self._clear_notice(force=True)
+            sync_banner.hide_banner(force=True)
 
     def _on_unlinked_banner_review(self):
-        self._clear_notice(force=True)
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
         self.open_fix_unlinked_entries_modal()
 
     def _on_sync_disabled_open_settings(self):
-        self._clear_notice(force=True)
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
         self.open_settings_modal()
-
-    def _on_sync_cancel_requested(self):
-        """Stop the in-progress sync at its next opportunity."""
-        self.sync_engine.cancelled = True
-        logger.info("[QtDriver] Sync cancelled")
 
     def open_fix_unlinked_entries_modal(self):
         if not hasattr(self, "unlinked_modal"):
@@ -1320,16 +1247,10 @@ class QtDriver(DriverMixin, QObject):
         restat_count = engine.restat_count
 
         def on_progress(idx: int) -> None:
-            if engine.cancelled:
+            sync_banner = self._sync_banner
+            if engine.cancelled or sync_banner is None:
                 return
-            self.main_window.banner.show_progress(
-                Translations.format(
-                    "library.sync.updating.label", idx=f"{idx:n}", total=f"{restat_count:n}"
-                ),
-                idx,
-                restat_count,
-                phase="updating",
-            )
+            sync_banner.set_updating(idx, restat_count)
 
         on_progress(0)
         self._run_sync_step(
@@ -1350,14 +1271,10 @@ class QtDriver(DriverMixin, QObject):
         relinked_count = engine.relinked_entries_count
 
         def on_progress(idx: int) -> None:
-            if engine.cancelled:
+            sync_banner = self._sync_banner
+            if engine.cancelled or sync_banner is None:
                 return
-            self.main_window.banner.show_progress(
-                Translations.format("entries.running.dialog.new_entries", total=f"{new_count:n}"),
-                idx,
-                new_count,
-                phase="new_entries",
-            )
+            sync_banner.set_saving_new_entries(idx, new_count)
 
         on_progress(0)
         self._run_sync_step(
@@ -1926,14 +1843,7 @@ class QtDriver(DriverMixin, QObject):
             self._sync_disabled_notice_shown = True
             # Show that the setting for opening a library on start is turned off,
             # with a prompt to open the settings to change that (encouraged but not required).
-            self._show_notice(
-                "sync_disabled",
-                Translations.format(
-                    "library.sync.disabled_notice",
-                    sync_setting=Translations["settings.scan_files_on_open"],
-                ),
-                Translations["library.sync.open_settings"],
-            )
+            self._create_sync_banner().set_disabled_notice()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
             library_dir_display = self.lib.library_dir

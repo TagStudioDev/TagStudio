@@ -3,7 +3,8 @@
 
 
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
+from enum import Enum
 from typing import Literal, override
 
 from PySide6.QtCore import (
@@ -14,6 +15,7 @@ from PySide6.QtCore import (
     QTimer,
     QVariantAnimation,
     Signal,
+    SignalInstance,
 )
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPaintEvent
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -58,7 +60,10 @@ class _BannerBackground(QWidget):
 
 
 class Banner(QWidget):
-    """A notification banner with an optional progress bar, action button, and close button."""
+    """The base class for a notification banner.
+
+    Can include text, a determinate or indeterminate progress bar, action button, and close button.
+    """
 
     CONTENT_HEIGHT = 36
     GAP = 6
@@ -66,11 +71,9 @@ class Banner(QWidget):
     ANIMATION_MS = 250
     COLOR_ANIMATION_MS = 250
     MIN_VISIBLE_MS = 3000
-    STARTUP_EXTRA_HOLD_MS = 500  # Starting up may eat into time shown, so add extra time.
 
-    notice_action_clicked = Signal()
-    cancel_requested = Signal()
-    dismissed = Signal()
+    progress_cancelled = Signal()
+    closed = Signal()
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
@@ -87,8 +90,14 @@ class Banner(QWidget):
         self._background.setLayout(self.view)
         outer_layout.addWidget(self._background)
 
+        # The stack key is used to identify this particular banner in a BannerStack.
+        # Subclasses should use a static key (like "sync") if new stages are meant to replace
+        # the same banner instead of spawning new ones entirely.
+        # If a subclass is intended to spawn multiple parallel banners, use uniquely generated keys.
+        self.stack_key: Hashable | None = None
+        self._stage: Enum | None = None
+        self._action_signal: SignalInstance | None = None
         self._mode: BannerMode = "progress"
-        self._progress_phase: object = None
         self._notice_style = banner_notice_style()
         self._progress_style = banner_progress_style()
         self._notice_bg_color = banner_notice_bg_color()
@@ -110,22 +119,21 @@ class Banner(QWidget):
         self._height_anim.setDuration(self.ANIMATION_MS)
         self._height_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._height_anim.valueChanged.connect(self.setMinimumHeight)
+        self._height_anim.finished.connect(self._on_height_anim_finished)
 
         self._shown_at: float | None = None
-        self._extra_hold_ms = 0
         self._hide_timer = QTimer(self)
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(lambda: self._start_height_animation(0))
 
-    def request_extra_duration(self) -> None:
-        """Add STARTUP_EXTRA_HOLD_MS to the next automatic hide's minimum-visible window."""
-        self._extra_hold_ms = self.STARTUP_EXTRA_HOLD_MS
+    @property
+    def stage(self) -> Enum | None:
+        """The banner stage currently being shown, or None while hidden."""
+        return self._stage
 
     def call_when_open(self, callback: Callable[[], None]) -> None:
         """Call `callback` if/when the banner is fully open."""
-        if self.maximumHeight() == self.HEIGHT and self._height_anim.state() != (
-            QPropertyAnimation.State.Running
-        ):
+        if self._is_fully_open():
             callback()
             return
 
@@ -135,12 +143,71 @@ class Banner(QWidget):
 
         self._height_anim.finished.connect(_on_finished)
 
+    def hide_banner(self, force: bool = False):
+        """Hide the banner (if shown).
+
+        Args:
+            force (bool): Bypass the minimum visible duration and hide immediately.
+        """
+        self._animate_to(0, force=force)
+
+    def _show_progress(self, stage: Enum, text: str, value: int = 0, maximum: int = 0) -> None:
+        """A progress bar with text. A `maximum` of 0 is shown as indeterminate."""
+        self._action_signal = None
+        self._set_mode("progress")
+        self._enter_stage(stage)
+        self.view.label.setText(text)
+        self.view.progress_bar.set_range(0, maximum)
+        self.view.progress_bar.set_value(value)
+        self._animate_to(self.HEIGHT)
+
+    def _show_notice(
+        self, stage: Enum, text: str, action_text: str, action: SignalInstance
+    ) -> None:
+        """A dismissible notice whose button emits `action`."""
+        self._action_signal = action
+        self._set_mode("notice")
+        self._enter_stage(stage)
+        self.view.action_button.setText(action_text)
+        self.view.label.setText(text)
+        self._animate_to(self.HEIGHT)
+
+    def _show_fleeting_notice(self, stage: Enum, text: str) -> None:
+        """A non-interactable text notice that hides itself automatically after a few seconds."""
+        self._action_signal = None
+        self._set_mode("fleeting_notice")
+        self._enter_stage(stage)
+        self.view.label.setText(text)
+        self._animate_to(self.HEIGHT)
+        self._animate_to(0)
+
+    def _enter_stage(self, stage: Enum) -> None:
+        if stage is self._stage:
+            return
+        self._stage = stage
+        self.view.label.reset_width()
+
+    def _is_fully_open(self) -> bool:
+        return (
+            self.maximumHeight() == self.HEIGHT
+            and self._height_anim.state() != QPropertyAnimation.State.Running
+        )
+
     def _connect_callbacks(self) -> None:
         self.view.close_button.clicked.connect(self._on_dismiss)
         self.view.action_button.clicked.connect(self._on_action_clicked)
 
     def _on_action_clicked(self) -> None:
-        self.notice_action_clicked.emit()
+        if self._action_signal is not None:
+            self._action_signal.emit()
+
+    def _on_height_anim_finished(self) -> None:
+        if self.maximumHeight() == 0:
+            self._stage = None
+            self._shown_at = None
+            self.closed.emit()
+        else:
+            self._shown_at = time.monotonic()
 
     def _start_height_animation(self, target_height: int) -> None:
         if self.maximumHeight() == target_height and self._height_anim.state() != (
@@ -155,19 +222,23 @@ class Banner(QWidget):
     def _animate_to(self, target_height: int, force: bool = False) -> None:
         self._hide_timer.stop()
         if target_height > 0:
-            self._shown_at = time.monotonic()
+            if self._is_fully_open():
+                self._shown_at = time.monotonic()
             self._start_height_animation(target_height)
             return
 
-        extra_hold_ms = self._extra_hold_ms
-        self._extra_hold_ms = 0
-        if not force and self._shown_at is not None:
-            elapsed_ms = (time.monotonic() - self._shown_at) * 1000
-            remaining_ms = (self.MIN_VISIBLE_MS + extra_hold_ms) - elapsed_ms
-            if remaining_ms > 0:
-                self._hide_timer.start(int(remaining_ms))
-                return
-        self._shown_at = None
+        if force:
+            self._start_height_animation(0)
+            return
+
+        if self._shown_at is None:  # Still opening
+            self.call_when_open(lambda: self._animate_to(0))
+            return
+
+        remaining_ms = self.MIN_VISIBLE_MS - (time.monotonic() - self._shown_at) * 1000
+        if remaining_ms > 0:
+            self._hide_timer.start(int(remaining_ms))
+            return
         self._start_height_animation(0)
 
     def _set_mode(self, mode: BannerMode):
@@ -175,7 +246,6 @@ class Banner(QWidget):
             return
 
         self._mode = mode
-        self._progress_phase = None
         self.view.label.reset_width()
         self.view.close_button.setVisible(mode != "fleeting_notice")
         self.view.action_button.setVisible(mode == "notice")
@@ -191,57 +261,8 @@ class Banner(QWidget):
         self._card_color_anim.setEndValue(target_color)
         self._card_color_anim.start()
 
-    def _present(self, mode: BannerMode, button_text: str, message: str) -> None:
-        """Applies the banner mode and any label + button text, then animates the banner open."""
-        self._set_mode(mode)
-        self.view.label.reset_width()
-        self.view.action_button.setText(button_text)
-        self.view.label.setText(message)
-        self._animate_to(self.HEIGHT)
-
     def _on_dismiss(self):
         if self._mode == "progress":
-            self.cancel_requested.emit()
+            self.progress_cancelled.emit()
         # Explicit dismiss, apply immediately
         self._animate_to(0, force=True)
-        self.dismissed.emit()
-
-    def show_notice(self, message: str, action_text: str) -> None:
-        """Show a dismissible notice with an action button, until dismissed or replaced."""
-        self._present("notice", action_text, message)
-
-    def show_fleeting_notice(self, message: str) -> None:
-        """Show a brief notice with no action button that dismisses itself automatically."""
-        self._set_mode("fleeting_notice")
-        self.view.label.reset_width()
-        self.view.label.setText(message)
-        self._animate_to(self.HEIGHT)
-        # Deferred by the existing MIN_VISIBLE_MS guard, same as an unforced hide_banner().
-        self._animate_to(0)
-
-    def show_progress(self, text: str, value: int = 0, maximum: int = 0, phase: str | None = None):
-        """Show the progress banner.
-
-        Args:
-            text (str): The status text shown in the banner body.
-            value (int): The current progress value.
-            maximum (int): The maximum progress value. If 0, shown as indeterminate.
-            phase (str | None): An identifier for the current sub-phase of progress.
-                Helps inform widgets that need to update between phases, like the StableLabel.
-        """
-        self._set_mode("progress")
-        if phase != self._progress_phase:
-            self._progress_phase = phase
-            self.view.label.reset_width()
-        self.view.label.setText(text)
-        self.view.progress_bar.set_range(0, maximum)
-        self.view.progress_bar.set_value(value)
-        self._animate_to(self.HEIGHT)
-
-    def hide_banner(self, force: bool = False):
-        """Hide the banner (if shown).
-
-        Args:
-            force (bool): Bypass the minimum visible duration and hide immediately.
-        """
-        self._animate_to(0, force=force)
