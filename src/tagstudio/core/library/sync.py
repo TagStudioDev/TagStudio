@@ -30,11 +30,11 @@ class LibrarySyncEngine:
     """Keeps a Library's entries in sync with its content directories on disk."""
 
     library: Library
+    cancelled: bool = False
     new_paths: list[Path] = field(default_factory=list)
     paths_to_restat: list[tuple[int, Path]] = field(default_factory=list)
-    unlinked_entries: list[Entry] = field(default_factory=list)
     relinked_entries: list[Entry] = field(default_factory=list)
-    cancelled: bool = False
+    unlinked_entries: list[Entry] = field(default_factory=list)
 
     @property
     def new_file_count(self) -> int:

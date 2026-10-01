@@ -139,7 +139,8 @@ class Banner(QWidget):
 
         def _on_finished() -> None:
             self._height_anim.finished.disconnect(_on_finished)
-            callback()
+            if self._is_fully_open():
+                callback()
 
         self._height_anim.finished.connect(_on_finished)
 

@@ -193,27 +193,30 @@ class QtDriver(DriverMixin, QObject):
 
     def __init__(self, args: Namespace):
         super().__init__()
-        self.lib = Library()
-        self.sync_engine = LibrarySyncEngine(self.lib)
-        self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.frame_content: list[int] = []  # List of Entry IDs for the current query
-        self.badge_update_lock = False
-        self.file_scan_lock: bool = False  # Prevent multiple file scanning operations at once
-        self._selected: OrderedDict[int, None] = OrderedDict()
-        self._sync_session_id: int = 0  # Prevent current sync from affecting subsequent libraries.
-        self._sync_disabled_notice_shown: bool = False
-        self.pages_count = 0
+        self.lib = Library()
+        self.rm: ResourceManager = ResourceManager()
 
+        # Thumbnail Grid
+        self._selected: OrderedDict[int, None] = OrderedDict()
+        self.badge_update_lock = False
+        self.frame_content: list[int] = []  # List of Entry IDs for the current query
         self.scrollbar_pos = 0
         self.spacing = None
+        self.thumb_job_queue: Queue = Queue()
+        self.thumb_threads: list[Consumer] = []
+
+        # Sync Engine
+        self._sync_disabled_notice_shown: bool = False
+        self._sync_session_id: int = 0  # Prevent current sync from affecting subsequent libraries.
+        self._sync_pool = QThreadPool(self)
+        self._sync_pool.setMaxThreadCount(1)
+        self.file_scan_lock: bool = False  # Prevent multiple file scanning operations at once
+        self.pages_count = 0
+        self.sync_engine = LibrarySyncEngine(self.lib)
 
         self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
-        # self.title_text: str = self.base_title
-        # self.buffer = {}
-        self.thumb_job_queue: Queue = Queue()
-        self.thumb_threads: list[Consumer] = []
 
         self.SIGTERM.connect(self.handle_sigterm)
 
@@ -801,9 +804,12 @@ class QtDriver(DriverMixin, QObject):
             return
         logger.info("Closing Library...")
 
+        # Invalidate any sync still active for the old library,
+        # and wait for the sync to stop before releasing the lock.
         self.sync_engine.cancelled = True
+        self._new_sync_session()
+        self._wait_for_sync_stop()
         self.file_scan_lock = False
-        self._new_sync_session()  # Invalidate any sync still active for the old library
         if (sync_banner := self._sync_banner) is not None:
             sync_banner.hide_banner(force=True)
 
@@ -1107,7 +1113,11 @@ class QtDriver(DriverMixin, QObject):
         iterator.value.connect(on_progress)
         runnable = CustomRunnable(iterator.run)
         runnable.done.connect(on_done)
-        QThreadPool.globalInstance().start(runnable)
+        self._sync_pool.start(runnable)
+
+    def _wait_for_sync_stop(self) -> None:
+        """Block until a currently running sync is stopped, if any."""
+        self._sync_pool.waitForDone()
 
     def sync_library_callback(self):
         """Run when syncing a Library is initiated."""
@@ -1126,7 +1136,8 @@ class QtDriver(DriverMixin, QObject):
         sync_banner.set_preparing()
 
         def on_progress(progress: tuple[int, int]) -> None:
-            if engine.cancelled:
+            sync_banner = self._sync_banner
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
                 return
             searched_count, found_count = progress
             if searched_count < 0:
@@ -1146,10 +1157,10 @@ class QtDriver(DriverMixin, QObject):
 
     def _finish_sync(
         self,
-        new_count: int = 0,
-        unlinked_count: int = 0,
-        relinked_count: int = 0,
-        session_id: int = 0,
+        new_count: int,
+        unlinked_count: int,
+        relinked_count: int,
+        session_id: int,
     ):
         """Show the sync banner's result notice stage once the sync is completed.
 
@@ -1157,7 +1168,7 @@ class QtDriver(DriverMixin, QObject):
             new_count (int): New files count.
             unlinked_count (int): Unlinked entries count.
             relinked_count (int): Automatically relinked files count.
-            session_id (int): The sync_session_id this sync started with.
+            session_id (int): The sync session this sync started with.
         """
         if self._is_sync_stale(session_id):
             return
@@ -1206,6 +1217,7 @@ class QtDriver(DriverMixin, QObject):
 
     def _on_new_files_banner_refresh(self):
         self.update_browsing_state()
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=True)
         # If there are still unlinked entries after the automatic relinking step, show a notice.
         sync_banner = self._sync_banner
         if sync_banner is None:
@@ -1233,10 +1245,10 @@ class QtDriver(DriverMixin, QObject):
     def sync_entry_stats_runnable(
         self,
         engine: LibrarySyncEngine,
-        new_count: int = 0,
-        unlinked_count: int = 0,
-        relinked_count: int = 0,
-        session_id: int = 0,
+        new_count: int,
+        unlinked_count: int,
+        relinked_count: int,
+        session_id: int,
     ):
         """Refresh cached stat() data for files already known to the library.
 
@@ -1248,7 +1260,7 @@ class QtDriver(DriverMixin, QObject):
 
         def on_progress(idx: int) -> None:
             sync_banner = self._sync_banner
-            if engine.cancelled or sync_banner is None:
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
                 return
             sync_banner.set_updating(idx, restat_count)
 
@@ -1259,7 +1271,7 @@ class QtDriver(DriverMixin, QObject):
             lambda: self._finish_sync(new_count, unlinked_count, relinked_count, session_id),
         )
 
-    def save_new_entries_runnable(self, engine: LibrarySyncEngine, session_id: int = 0):
+    def save_new_entries_runnable(self, engine: LibrarySyncEngine, session_id: int):
         """Adds any known new files to the library and run default macros on them.
 
         Threaded method.
@@ -1272,7 +1284,7 @@ class QtDriver(DriverMixin, QObject):
 
         def on_progress(idx: int) -> None:
             sync_banner = self._sync_banner
-            if engine.cancelled or sync_banner is None:
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
                 return
             sync_banner.set_saving_new_entries(idx, new_count)
 
