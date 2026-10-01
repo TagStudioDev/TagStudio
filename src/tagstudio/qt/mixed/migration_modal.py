@@ -438,7 +438,6 @@ class JsonMigrationModal(QObject):
         self.update_parity_value(self.aliases_row, self.alias_parity)
         self.update_parity_value(self.colors_row, self.color_parity)
         self.update_parity_value(self.ext_row, self.ext_parity)
-        self.sql_lib.close()
 
     def update_sql_value_ui(self, show_msg_box: bool = True):
         """Update the SQL value count UI."""
@@ -469,6 +468,7 @@ class JsonMigrationModal(QObject):
 
     def finish_migration(self):
         """Finish the migration upon user approval."""
+        self.sql_lib.close()
         final_name = self.json_lib.library_dir / TS_FOLDER_NAME / SQL_FILENAME
         if self.temp_path.exists():
             self.temp_path.rename(final_name)

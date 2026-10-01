@@ -4,10 +4,12 @@
 
 import re
 import shutil
+import sqlite3
 import sys
 import time
 import unicodedata
 from collections.abc import Iterable, Iterator, Sequence
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -20,7 +22,6 @@ from sqlalchemy import (
     URL,
     ColumnExpressionArgument,
     Engine,
-    NullPool,
     ScalarResult,
     Update,
     and_,
@@ -379,29 +380,21 @@ class Library:
 
     @staticmethod
     def __get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
+        db_path = library_dir / TS_FOLDER_NAME / sql_filename
         connection_string = URL.create(
             drivername="sqlite",
-            database=(
-                ":memory:" if in_memory else str(library_dir / TS_FOLDER_NAME / sql_filename)
-            ),
+            database=":memory:" if in_memory else str(db_path),
         )
-        # NOTE: File-based databases should use NullPool to create new DB connection in order to
-        # keep connections on separate threads, which prevents the DB files from being locked
-        # even after a connection has been closed.
-        # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
-        # More info can be found on the SQLAlchemy docs:
-        # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
-        # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if in_memory else NullPool
 
-        logger.info(
-            "[Library] Creating SQLAlchemy Engine",
-            connection_string=connection_string,
-            poolclass=poolclass,
-        )
-        return create_engine(
-            connection_string, poolclass=poolclass, connect_args={"autocommit": False}
-        )
+        if not in_memory:
+            try:
+                with closing(sqlite3.connect(db_path, autocommit=True)) as conn:
+                    conn.execute("PRAGMA journal_mode=WAL")
+            except sqlite3.OperationalError as e:
+                logger.warning("[Library] Could not set journal mode", error=e)
+
+        logger.info("[Library] Creating SQLAlchemy Engine", connection_string=connection_string)
+        return create_engine(connection_string, connect_args={"autocommit": False})
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
@@ -1450,17 +1443,18 @@ class Library:
         makedirs(str(library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
         filename = f"ts_library_backup_{datetime.now(UTC).strftime('%Y_%m_%d_%H%M%S')}.sqlite"
+        library_backup_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
-        target_path = library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
+        with (
+            closing(sqlite3.connect(library_dir / TS_FOLDER_NAME / SQL_FILENAME)) as library,
+            closing(sqlite3.connect(library_backup_path)) as library_backup,
+        ):
+            library.backup(library_backup)
+            library_backup.execute("PRAGMA journal_mode=DELETE")  # Don't use WAL for backups
 
-        shutil.copyfile(
-            library_dir / TS_FOLDER_NAME / SQL_FILENAME,
-            target_path,
-        )
+        logger.info("[Library] Library backup saved to disk", path=library_backup_path)
 
-        logger.info("Library backup saved to disk.", path=target_path)
-
-        return target_path
+        return library_backup_path
 
     def get_tag(self, tag_id: int) -> Tag | None:
         with Session(self.engine) as session:
