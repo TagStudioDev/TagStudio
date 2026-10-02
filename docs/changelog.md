@@ -9,6 +9,71 @@ toc_depth: 2
 
 # :material-script-text: Changelog
 
+## 9.6.4 <small>October 2nd, 2026</small>
+
+This update includes a way to selectively hide tags from appearing under any inherited categories, new ⓘ info buttons in the tag editor with explanations and examples of complex features, more QoL settings for the tag and field bars, a new changelog window (hello!), and several internal changes and bugfixes.
+
+This will likely be the last small update before 9.7.0 (unless critical bugfixes are needed), which has been developed simultaneously and will include several major improvements and changes when it releases in a few weeks.
+
+_Thank you for continuing to use and support TagStudio!_
+
+### Added
+
+- feat: add per-tag category display options by @Sola-ris in #1470
+    - fix(ui): show a tag that's a category under its own visibility section by @CyanVoxel in #1526
+- feat(ui): relayout tag editor and add info popover buttons by @CyanVoxel in #1521
+
+<img width="250" alt="edit_tags" src="https://github.com/user-attachments/assets/347376f0-ae55-4ac2-98b2-d6916c701466" /> <img width="250" alt="edit_tags_popover_parent" src="https://github.com/user-attachments/assets/24abfe9b-c9a5-4b9d-b7f1-bafe34f5518d" /> <img width="250" alt="edit_tags_popover_category" src="https://github.com/user-attachments/assets/ddea9612-9422-443c-9dc4-fff1d9011dce" />
+
+- feat(ui): add more qol settings to tag and field bars by @CyanVoxel in #1513
+
+<img width="350"  alt="new_tag_bar_settings" src="https://github.com/user-attachments/assets/ef4d3799-e504-43b5-80cb-c63f42f46d3c" />
+
+- feat(ui): add changelog window by @CyanVoxel in #1517
+
+### Changed
+
+- feat(ui): improve library opening error messages and correct behavior by @CyanVoxel in #1516
+
+#### Internal Changes
+
+- refactor(migrations): better library decoupling by @Computerdores in #1482
+- refactor!: organize project layout by @CyanVoxel in #1483
+- build: bump python version to 3.14 by @CyanVoxel in #1485
+- refactor: media types rework, dynamically load preview renderers by @CyanVoxel in #1498
+    - fix: include renderers in pyinstaller build by @TrigamDev in #1504
+    - fix: make archive and ebook thumbnail renderers case-insensitive by @Sola-ris in #1510
+    - fix(nix/package): update build and Python versions by @Xarvex in 33199f5b2613659fe121c8a09446f0a0e9b70654
+- refactor(migrations): sqlalchemy be gone by @Computerdores in #1499
+- refactor(ui): refactor BuildTagPanel to use MVC (now EditTagPanel) by @CyanVoxel in #1519
+- refactor(ui): merge various tag/tag-like widgets into single Capsule widget by @CyanVoxel in #1520
+    - fix(ui): adjust tag text baseline for different systems by @CyanVoxel in b69b46916df6f0c6760c902ba047adbf42a18795
+- fix(dev): add reuse linter by @Xarvex in c33455b7a067078bcf217813eabf531c037c667e
+- fix(nix/package): update package and dependencies, temporarily ignore tests by @Xarvex in 55b033eca4d03f5e635dc5148f9afaeea5fb570a
+
+#### Translations
+
+- **Dutch** updated by @FlannyH, @Pheubel
+- **French** updated by @kitsumed
+- **Hungarian** updated by @smileyhead
+
+### Fixed
+
+- fix: fix json migration UI and tests by @CyanVoxel in #1484
+- fix(ui): only update inspector once per thumbnail click by @CyanVoxel in #1487
+- fix: prevent segfaults after progress bar tasks by @CyanVoxel in #1490
+- fix: escape filename in glob matching while relinking entries by @CyanVoxel in #1492
+- fix: fix exceptions in folders to tags by @Huluk in #1497
+- fix: update blender_thumbnailer.py to read Blender 5.x files by @050011-code in #1481
+- fix(ui): don't refresh page after cancelling file deletion by @CyanVoxel in #1512
+- fix(ui): shrink selection to normally clicked item by @CyanVoxel in #1515
+- fix: unblock migrations of v9.5.6 libraries that somehow got v9.6.2 tables by @CyanVoxel in #1518
+- fix(ui): use correct max count for search panels by @CyanVoxel in #1524
+- fix: use copyfile() instead of copy2() by @CyanVoxel in 6a06e3e7c851587b6e41e0cd218346a5abbcb9d0
+    - Fixes an issue with the `.ts_ignore` file on Nix
+
+---
+
 ## 9.6.3 <small>August 15th, 2026</small>
 
 This update includes some critical library bugfixes along with a handful QoL tweaks and additions to the tag/field search bars. The [documentation](https://docs.tagstud.io/usage/#tagging) on this feature has been updated to include the new improvements.
