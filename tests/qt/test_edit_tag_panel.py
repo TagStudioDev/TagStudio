@@ -354,6 +354,91 @@ def test_edit_tag_panel_include_in_category(
     assert len(panel.exclusion_ids) == 0
 
 
+def test_edit_tag_panel_show_self_category(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    parent = unwrap(library.add_tag(generate_tag("parent", id=123, is_category=True)))
+    library.add_tag(generate_tag("tag", id=124, is_category=True, parent_tags={parent}))
+    tag = unwrap(library.get_tag(124))
+
+    panel: EditTagPanel = EditTagPanel(library, tag)
+    qtbot.addWidget(panel)
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == tag.name
+    assert not unwrap(capsule._edit_action).isEnabled()  # This tag is not editable
+
+    capsule = _find_category_capsule(panel, 1)
+    assert capsule is not None
+    assert capsule.layout().button.text() == parent.name
+    assert unwrap(capsule._edit_action).isEnabled()  # Other parent tags are editable
+
+
+def test_edit_tag_panel_exclude_self_from_category(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    library.add_tag(generate_tag("tag", id=123, is_category=True))
+    tag = unwrap(library.get_tag(123))
+
+    panel: EditTagPanel = EditTagPanel(library, tag)
+    qtbot.addWidget(panel)
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+
+    checkbox = _find_include_checkbox(capsule)
+    assert checkbox.isChecked()
+
+    checkbox.click()
+
+    assert tag.id in panel.exclusion_ids
+
+
+def test_edit_tag_panel_include_self_in_category(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    library.add_tag(generate_tag("tag", id=123, is_category=True), exclusion_ids={123})
+    tag = unwrap(library.get_tag(123))
+
+    panel: EditTagPanel = EditTagPanel(library, tag)
+    qtbot.addWidget(panel)
+
+    assert tag.id in panel.exclusion_ids
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+
+    checkbox = _find_include_checkbox(capsule)
+    assert not checkbox.isChecked()
+
+    checkbox.click()
+
+    assert len(panel.exclusion_ids) == 0
+
+
+def test_edit_tag_panel_toggle_self_category(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    library.add_tag(generate_tag("tag", id=123))
+    tag = unwrap(library.get_tag(123))
+
+    panel: EditTagPanel = EditTagPanel(library, tag)
+    qtbot.addWidget(panel)
+
+    assert _find_category_capsule(panel) is None
+
+    panel.layout().is_category_checkbox.setChecked(True)
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == tag.name
+
+    panel.layout().is_category_checkbox.setChecked(False)
+
+    assert _find_category_capsule(panel) is None
+
+
 def test_edit_tag_panel_remove_duplicate_category_retained(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):

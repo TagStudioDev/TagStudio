@@ -38,8 +38,9 @@ class Capsule(QWidget):
         self.setLayout(CapsuleView(padded))
 
         self.layout().button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self._edit_action: QAction | None = None
         if has_edit:
-            self._add_action(Translations["generic.edit"], self.on_edit)
+            self._edit_action = self._add_action(Translations["generic.edit"], self.on_edit)
         if search_label:
             self._add_action(search_label, self.on_search)
 
@@ -51,10 +52,15 @@ class Capsule(QWidget):
         view.button.clicked.connect(self.on_click.emit)
         view.remove_button.clicked.connect(self.on_remove.emit)
 
-    def _add_action(self, text: str, signal: SignalInstance) -> None:
+    def _add_action(self, text: str, signal: SignalInstance) -> QAction:
         action = QAction(text, self)
         action.triggered.connect(signal.emit)
         self.layout().button.addAction(action)
+        return action
+
+    def set_edit_enabled(self, enabled: bool) -> None:
+        if self._edit_action is not None:
+            self._edit_action.setEnabled(enabled)
 
     def set_text(self, text: str) -> None:
         self.layout().button.setText(escape_text(text))

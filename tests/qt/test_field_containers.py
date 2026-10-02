@@ -208,3 +208,46 @@ def test_exclude_tag_category(
 
     assert len(panel.containers._containers) == 1
     assert panel.containers._containers[0].title == "<h4>Tags</h4>"
+
+
+def test_exclude_self_from_tag_category(
+    qt_driver: QtDriver, library: Library, generate_tag: Callable[..., Tag]
+):
+    panel = Inspector(qt_driver)
+
+    category_parent = generate_tag("category_parent", id=123, is_category=True)
+    library.add_tag(category_parent)
+
+    tag = generate_tag("tag", id=124, is_category=True)
+    library.add_tag(tag, parent_ids={category_parent.id}, exclusion_ids={tag.id})
+
+    entry = Entry(id=777, path=Path("test.txt"), fields=[])
+
+    library.add_entries([entry])
+    library.add_tags_to_entries(entry.id, tag.id)
+
+    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
+    panel.set_selection(qt_driver.selected)
+
+    assert len(panel.containers._containers) == 1
+    assert panel.containers._containers[0].title == f"<h4>{category_parent.name}</h4>"
+
+
+def test_exclude_self_from_tag_category_without_parent(
+    qt_driver: QtDriver, library: Library, generate_tag: Callable[..., Tag]
+):
+    panel = Inspector(qt_driver)
+
+    tag = generate_tag("tag", id=124, is_category=True)
+    library.add_tag(tag, exclusion_ids={tag.id})
+
+    entry = Entry(id=777, path=Path("test.txt"), fields=[])
+
+    library.add_entries([entry])
+    library.add_tags_to_entries(entry.id, tag.id)
+
+    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
+    panel.set_selection(qt_driver.selected)
+
+    assert len(panel.containers._containers) == 1
+    assert panel.containers._containers[0].title == "<h4>Tags</h4>"
