@@ -149,12 +149,6 @@ class SearchPanel[T](ModalContent):
     def _get_limit(self) -> tuple[str, int]:
         return self._limit_items[self.get_limit_index()]
 
-    def _get_previous_limit(self) -> tuple[str, int]:
-        return self._limit_items[self._previous_limit_index]
-
-    def _get_max_limit(self) -> int:
-        raise NotImplementedError()
-
     def on_search_query_changed(self, query: str) -> None:
         self.layout().create_and_add_button.setText(
             Translations.format(self._create_and_add_button_key, query=query)
@@ -230,14 +224,7 @@ class SearchPanel[T](ModalContent):
         logger.info("[SearchPanel] Search results", results=self._search_results)
 
         # Update every item widget with the new search result data
-        previous_limit: int = (
-            self._get_previous_limit()[1] > 0 and self._get_previous_limit()[1]
-        ) or self._get_max_limit()
-        current_limit: int = (
-            self._get_limit()[1] > 0 and self._get_limit()[1]
-        ) or self._get_max_limit()
-
-        for i in range(0, max(previous_limit, current_limit)):
+        for i in range(max(len(all_results), self.layout().scroll_layout.count())):
             item: T | None = all_results[i] if i < len(all_results) else None
             self.set_item_widget(item=item, index=i)
 
