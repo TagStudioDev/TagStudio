@@ -110,6 +110,7 @@ class EditTagPanel(ModalContent):
         view.name_field.textChanged.connect(self._on_name_change)
         view.aliases_add_button.clicked.connect(self._create_alias_callback)
         view.parent_tags_add_button.clicked.connect(self._add_parent_tag_modal.show)
+        view.is_category_checkbox.toggled.connect(lambda: self._set_categories())
         view.color_button.on_click.connect(self._choose_color_modal.show)
         self._choose_color_modal.done.connect(
             lambda: self._choose_color_callback(self._color_selection.selected_color)
@@ -214,10 +215,16 @@ class EditTagPanel(ModalContent):
         while category_scroll_layout.itemAt(0):
             category_scroll_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
-        c = QWidget()
-        layout = QVBoxLayout(c)
+        container = QWidget()
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
+
+        # BUG: Since a new tag doesn't have an ID yet, it can't show itself in the categories.
+        if self.tag.id is not None and self.layout().is_category_checkbox.isChecked():  # pyright: ignore[reportUnnecessaryComparison]
+            last_tab, next_tab, row = self._build_category_row_widget(self.tag)
+            layout.addWidget(row)
+            self.setTabOrder(last_tab, next_tab)
 
         if removed_parent:
             tags_by_category: dict[Tag, set[Tag]] = {}
@@ -236,8 +243,8 @@ class EditTagPanel(ModalContent):
                 if len(tags) == 0:
                     continue
 
-                last_tab, next_tab, container = self._build_category_row_widget(category)
-                layout.addWidget(container)
+                last_tab, next_tab, row = self._build_category_row_widget(category)
+                layout.addWidget(row)
                 self.setTabOrder(last_tab, next_tab)
         else:
             tag_ids = set(self.parent_ids)
@@ -247,10 +254,10 @@ class EditTagPanel(ModalContent):
             for tag in self._lib.get_tag_hierarchy(tag_ids).values():
                 if not tag.is_category or tag == self.tag:
                     continue
-                last_tab, next_tab, container = self._build_category_row_widget(tag)
-                layout.addWidget(container)
+                last_tab, next_tab, row = self._build_category_row_widget(tag)
+                layout.addWidget(row)
                 self.setTabOrder(last_tab, next_tab)
-        category_scroll_layout.addWidget(c)
+        category_scroll_layout.addWidget(container)
 
     def _build_category_row_widget(self, category: Tag) -> tuple[QPushButton, QCheckBox, QWidget]:
         container = QWidget()
@@ -266,6 +273,7 @@ class EditTagPanel(ModalContent):
 
         # Add Tag Capsule
         capsule = Capsule(has_edit=True)
+        capsule.set_edit_enabled(category != self.tag)  # Disable edit menu if it's THIS tag
         capsule.set_text(self._lib.tag_display_name(category))
         capsule.set_color_group(category.color)
         capsule.on_edit.connect(partial(self._edit_tag, category, self._set_categories))

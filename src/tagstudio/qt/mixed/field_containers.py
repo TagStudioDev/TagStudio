@@ -192,7 +192,7 @@ class FieldContainers(QWidget):
                     grandparent_tags.update(parent_tag.parent_tags)
                 parent_tags = grandparent_tags
 
-            if tag.is_category:
+            if tag.is_category and tag.id not in tag.exclusion_ids:
                 categories[tag].add(tag)
             elif not has_category_parent:
                 categories[None].add(tag)
