@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import platform
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
 
@@ -377,6 +379,7 @@ def tag_style(
         font-size: 13px;
         padding-right: 4px;
         padding-left: 4px;
+        padding-bottom: {2 if platform.system() == "Windows" else 1}px;
     }}
     QPushButton::hover{{
         border-color: rgba{highlight_color.toTuple()};
