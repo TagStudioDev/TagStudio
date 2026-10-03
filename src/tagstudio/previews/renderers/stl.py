@@ -191,16 +191,9 @@ def _load_binary_stl_triangles(
     if triangle_count > max_triangles:
         raise STLRenderError("STL file contains too many triangles")
 
-    records = np.memmap(
-        filepath,
-        dtype=_BINARY_STL_DTYPE,
-        mode="r",
-        offset=_BINARY_STL_HEADER_SIZE,
-        shape=(triangle_count,),
-    )
-    triangles = records["vertices"].astype(np.float32, copy=True)
-    del records
-    return triangles
+    return np.fromfile(
+        filepath, dtype=_BINARY_STL_DTYPE, count=triangle_count, offset=_BINARY_STL_HEADER_SIZE
+    )["vertices"]
 
 
 def _split_on_vertex_marker(data: bytes) -> list[bytes]:
