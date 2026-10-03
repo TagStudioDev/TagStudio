@@ -6,7 +6,7 @@ from typing import override
 
 from PySide6.QtCore import QEvent, Qt, Signal, SignalInstance
 from PySide6.QtGui import QAction, QEnterEvent
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
@@ -68,6 +68,15 @@ class Capsule(QWidget):
     def set_color_group(self, color_group: TagColorGroup | None) -> None:
         """Set the colors from a tag color group, or the default tag colors if `None`."""
         self.layout().set_colors(*tag_colors(color_group))
+
+    def set_partial(self, partial: bool) -> None:
+        """Visually dim tags that are only present on part of the selection."""
+        if partial:
+            effect = QGraphicsOpacityEffect(self)
+            effect.setOpacity(0.55)
+            self.setGraphicsEffect(effect)
+        else:
+            self.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
     @override
     def layout(self) -> CapsuleView:

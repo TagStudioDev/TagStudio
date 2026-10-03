@@ -33,7 +33,7 @@ class TagBoxWidgetView(FieldWidget):
         self.__root_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.__root_layout)
 
-    def set_tags(self, tags: Iterable[Tag]) -> None:
+    def set_tags(self, tags: Iterable[Tag], partial_tag_ids: set[int] | None = None) -> None:
         tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.__root_layout.itemAt(0):
@@ -45,6 +45,7 @@ class TagBoxWidgetView(FieldWidget):
             )
             capsule.set_text(self.__lib.tag_display_name(tag))
             capsule.set_color_group(tag.color)
+            capsule.set_partial(bool(partial_tag_ids and tag.id in partial_tag_ids))
             capsule.on_click.connect(lambda t=tag: self._on_click(t))
             capsule.on_remove.connect(lambda t=tag: self._on_remove(t))
             capsule.on_edit.connect(lambda t=tag: self._on_edit(t))
