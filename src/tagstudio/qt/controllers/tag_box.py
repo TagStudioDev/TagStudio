@@ -12,8 +12,9 @@ from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.views.tag_box_view import TagBoxWidgetView
 
 if TYPE_CHECKING:
@@ -96,23 +97,23 @@ class TagBoxWidget(TagBoxWidgetView):
 
     @override
     def _on_edit(self, tag: Tag) -> None:
-        build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
+        edit_tag_panel = EditTagPanel(self.__driver.lib, tag=tag)
 
         edit_modal = Modal(
-            build_tag_panel,
+            edit_tag_panel,
             self.__driver.lib.tag_display_name(tag),
-            "Edit Tag",
+            Translations["tag.edit"],
             is_savable=True,
         )
-        edit_modal.saved.connect(partial(self._update_tag_callback, build_tag_panel))
+        edit_modal.saved.connect(partial(self._update_tag_callback, edit_tag_panel))
         edit_modal.show()
 
-    def _update_tag_callback(self, build_tag_panel: BuildTagPanel):
+    def _update_tag_callback(self, edit_tag_panel: EditTagPanel):
         self.__driver.lib.update_tag(
-            build_tag_panel.build_tag(),
-            parent_ids=set(build_tag_panel.parent_ids),
-            aliases=set(build_tag_panel.aliases),
-            exclusion_ids=set(build_tag_panel.exclusion_ids),
+            edit_tag_panel.build_tag(),
+            parent_ids=set(edit_tag_panel.parent_ids),
+            aliases=set(edit_tag_panel.aliases),
+            exclusion_ids=set(edit_tag_panel.exclusion_ids),
         )
         self.on_update.emit()
 

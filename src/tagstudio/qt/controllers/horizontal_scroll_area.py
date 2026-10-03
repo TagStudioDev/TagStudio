@@ -14,16 +14,23 @@ logger = structlog.get_logger(__name__)
 class HorizontalScrollArea(QScrollArea):
     """A QScrollArea that translates vertical scrolling to horizontal movement."""
 
+    _is_inverted = False
+
+    def set_inverted(self, is_inverted: bool) -> None:
+        """Set the scroll direction's inversion state."""
+        self._is_inverted = is_inverted
+
     @override
     def wheelEvent(self, arg__1: QtGui.QWheelEvent) -> None:
         angle_y = arg__1.angleDelta().y()
         pixel_y = arg__1.pixelDelta().y()
         if angle_y != 0 or pixel_y != 0:
+            direction = -1 if self._is_inverted else 1
             translated_event = QtGui.QWheelEvent(
                 arg__1.position(),
                 arg__1.globalPosition(),
-                QtCore.QPoint(pixel_y * -1, 0),
-                QtCore.QPoint(angle_y * -1, 0),
+                QtCore.QPoint(pixel_y * direction, 0),
+                QtCore.QPoint(angle_y * direction, 0),
                 arg__1.buttons(),
                 arg__1.modifiers(),
                 arg__1.phase(),

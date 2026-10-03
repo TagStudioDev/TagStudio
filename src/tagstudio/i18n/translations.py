@@ -109,3 +109,8 @@ class Translator:
 
 
 Translations = Translator()
+
+
+def field_type_name(class_name: str) -> str:
+    """Return the translated name of a field type, given its class name."""
+    return Translations[FIELD_TYPE_KEYS.get(class_name, "field_type.unknown")]

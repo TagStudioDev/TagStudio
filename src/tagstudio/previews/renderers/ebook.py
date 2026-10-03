@@ -102,7 +102,7 @@ def cover_from_comic_info(archive: Archive, comic_info: Element, cover_type: str
     if cover is not None:
         pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]  # pyright: ignore[reportUnknownVariableType]
         page_name = pages[int(unwrap(cover.get("Image")))]  # pyright: ignore[reportUnknownVariableType]
-        ext = Path(page_name).suffix
+        ext = Path(page_name).suffix.lower()
         if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(page_name)  # pyright: ignore[reportUnknownVariableType]
             im = image_from_bytes(BytesIO(image_data))

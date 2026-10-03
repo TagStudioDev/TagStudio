@@ -28,7 +28,8 @@ class AutofillLineEdit(QLineEdit):
 
     @override
     def focusOutEvent(self, arg__1: QtGui.QFocusEvent) -> None:
-        self._popup.setStyleSheet(autofill_scroll_top_style("container"))
+        if arg__1.reason() != QtCore.Qt.FocusReason.PopupFocusReason:
+            self._popup.setStyleSheet(autofill_scroll_top_style("container"))
         return super().focusOutEvent(arg__1)
 
     @override

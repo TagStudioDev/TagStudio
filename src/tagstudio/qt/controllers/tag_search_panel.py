@@ -14,10 +14,11 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers import edit_tag_panel  # Module import due to circular import
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
-from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 logger = structlog.get_logger(__name__)
@@ -43,10 +44,6 @@ class TagSearchPanel(SearchPanel[Tag]):
         self._create_and_add_button_key = "tag.create_add"
 
     @override
-    def _get_max_limit(self) -> int:
-        return len(self._lib.tags)
-
-    @override
     def on_item_create(self, add_to_entry: bool = False) -> None:
         """Opens panel to create a new tag and optionally add it to an entry.
 
@@ -55,11 +52,8 @@ class TagSearchPanel(SearchPanel[Tag]):
         Args:
             add_to_entry (bool): Should this item be added to currently selected entries?
         """
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
         query: str = self.get_search_query()
-        panel: BuildTagPanel = BuildTagPanel(self._lib)
+        panel = edit_tag_panel.EditTagPanel(self._lib)
         modal: Modal = Modal(
             panel,
             Translations["tag.new"],
@@ -68,25 +62,22 @@ class TagSearchPanel(SearchPanel[Tag]):
         )
 
         if query.strip():
-            panel.name_field.setText(query)
+            panel.set_name(query)
 
         modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
         modal.show()
 
     @override
     def on_item_edit(self, item: Tag) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        edit_tag_panel: BuildTagPanel = BuildTagPanel(self._lib, tag=item)
-        edit_tag_modal: Modal = Modal(
-            edit_tag_panel,
+        panel = edit_tag_panel.EditTagPanel(self._lib, tag=item)
+        modal: Modal = Modal(
+            panel,
             self._lib.tag_display_name(item),
             Translations["tag.edit"],
             is_savable=True,
         )
-        edit_tag_modal.saved.connect(lambda: self.edit_item(edit_tag_panel))
-        edit_tag_modal.show()
+        modal.saved.connect(lambda: self.edit_item(panel))
+        modal.show()
 
     @override
     def _on_item_remove(self, item: Tag) -> None:
@@ -121,50 +112,38 @@ class TagSearchPanel(SearchPanel[Tag]):
 
     @override
     def set_item_widget(self, item: Tag | None, index: int) -> None:
-        """Set the tag of a tag widget at a specific index."""
-        tag_widget: TagWidget = self.get_item_widget(index, self._lib)
-        tag_widget.set_tag(item)
-        tag_widget.setHidden(item is None)
+        """Set the tag for a capsule widget at a specific index."""
+        capsule = self.get_item_widget(index, self._lib)
+        capsule.setHidden(item is None)
 
         if item is None:
             return
-        assert item is not None
 
-        tag_widget.has_remove = not self._is_chooser and item.id not in range(
+        capsule.set_text(self._lib.tag_display_name(item))
+        capsule.set_color_group(item.color)
+        capsule.has_remove = not self._is_chooser and item.id not in range(
             RESERVED_TAG_START, RESERVED_TAG_END
         )
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
-            tag_widget.on_edit.disconnect()
-            tag_widget.on_remove.disconnect()
-            tag_widget.bg_button.clicked.disconnect()
-            tag_widget.search_for_tag_action.triggered.disconnect()
+            capsule.on_click.disconnect()
+            capsule.on_edit.disconnect()
+            capsule.on_remove.disconnect()
+            capsule.on_search.disconnect()
 
         # Connect callbacks
-        tag_widget.on_edit.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
-        tag_widget.on_remove.connect(lambda remove_tag=item: self._on_item_remove(remove_tag))
+        capsule.on_edit.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
+        capsule.on_remove.connect(lambda remove_tag=item: self._on_item_remove(remove_tag))
         if self._is_chooser:
-            tag_widget.bg_button.clicked.connect(
-                lambda checked=False, tag=item: self._on_item_chosen(tag)
-            )
+            capsule.on_click.connect(lambda tag=item: self._on_item_chosen(tag))
         else:
-            tag_widget.bg_button.clicked.connect(
-                lambda checked=False, edit_tag=item: self.on_item_edit(edit_tag)
-            )
-
-        # Connect search action
-        tag_widget.search_for_tag_action.triggered.connect(
-            lambda checked=False, tag_id=item.id: self.search_for_tag.emit(tag_id)
-        )
-        tag_widget.search_for_tag_action.setEnabled(True)
+            capsule.on_click.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
+        capsule.on_search.connect(lambda tag_id=item.id: self.search_for_tag.emit(tag_id))
 
     @override
     def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        if isinstance(edit_item_panel, BuildTagPanel):
+        if isinstance(edit_item_panel, edit_tag_panel.EditTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
                 tag,
@@ -182,10 +161,7 @@ class TagSearchPanel(SearchPanel[Tag]):
 
     @override
     def edit_item(self, edit_item_panel: ModalContent) -> None:
-        # TODO: Move this to a top-level import
-        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
-
-        if not isinstance(edit_item_panel, BuildTagPanel):
+        if not isinstance(edit_item_panel, edit_tag_panel.EditTagPanel):
             return
 
         self._lib.update_tag(
@@ -197,18 +173,18 @@ class TagSearchPanel(SearchPanel[Tag]):
         self.update_items(self.layout().search_field.text())
 
     @override
-    def get_item_widget(self, index: int, library: Library | None) -> TagWidget:
+    def get_item_widget(self, index: int, library: Library | None) -> Capsule:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
         if self.layout().scroll_layout.count() <= index:
             while self.layout().scroll_layout.count() <= index:
-                pad_tag_widget = TagWidget(
-                    tag=None, has_edit=True, has_remove=True, library=library
+                pad_capsule = Capsule(
+                    has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
                 )
-                pad_tag_widget.setHidden(True)
-                self.layout().scroll_layout.addWidget(pad_tag_widget)
+                pad_capsule.setHidden(True)
+                self.layout().scroll_layout.addWidget(pad_capsule)
 
         item = unwrap(self.layout().scroll_layout.itemAt(index))
-        tag_widget: QWidget = unwrap(item.widget())
-        assert isinstance(tag_widget, TagWidget)
-        return tag_widget
+        capsule: QWidget = unwrap(item.widget())
+        assert isinstance(capsule, Capsule)
+        return capsule

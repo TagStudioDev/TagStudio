@@ -279,7 +279,6 @@
     "status.library_search_query": "A Procurar na Biblioteca...",
     "status.library_version_expected": "Esperado:",
     "status.library_version_found": "Encontrado:",
-    "status.library_version_mismatch": "Incompatibilidade de versão da biblioteca!",
     "status.results": "Resultados",
     "status.results.invalid_syntax": "Sintaxe de Pesquisa Inválida:",
     "status.results_found": "{count} Resultados Encontrados ({time_span})",

@@ -23,10 +23,9 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
 from tagstudio.qt.views.styles.stylesheets import (
     checkbox_style,
@@ -68,7 +67,7 @@ class BuildColorPanel(ModalContent):
         self.preview_layout.setStretch(1, 1)
         self.preview_layout.setContentsMargins(0, 0, 0, 6)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_button = TagColorPreview(self.lib, None)
+        self.preview_button = Capsule(padded=True)
         self.preview_button.setEnabled(False)
         self.preview_layout.addWidget(self.preview_button)
 
@@ -128,8 +127,8 @@ class BuildColorPanel(ModalContent):
         self.border_checkbox.setFixedSize(22, 22)
         self.border_checkbox.clicked.connect(
             lambda checked: self.update_secondary(
-                color=QColor(unwrap(self.preview_button.tag_color_group).secondary)
-                if unwrap(self.preview_button.tag_color_group).secondary
+                color=QColor(self.secondary_button.text())
+                if self.secondary_button.text().startswith("#")
                 else None,
             )
         )
@@ -152,7 +151,7 @@ class BuildColorPanel(ModalContent):
         logger.info("[BuildColorPanel] Setting Color", color=color_group)
         self.color_group = color_group
 
-        self.preview_button.set_tag_color_group(color_group)
+        self.preview_button.set_color_group(color_group)
         self.name_field.setText(color_group.name)
         self.primary_button.setText(color_group.primary)
         self.edit_primary_modal.setCurrentColor(color_group.primary)
@@ -173,7 +172,7 @@ class BuildColorPanel(ModalContent):
         color = self.edit_primary_modal.getColor(initial=initial)
         if color.isValid():
             self.update_primary(color)
-            self.preview_button.set_tag_color_group(self.build_color()[1])
+            self.preview_button.set_color_group(self.build_color()[1])
         else:
             logger.info("[BuildColorPanel] Primary color selection was cancelled!")
 
@@ -186,7 +185,7 @@ class BuildColorPanel(ModalContent):
         color = self.edit_secondary_modal.getColor(initial=initial)
         if color.isValid():
             self.update_secondary(color)
-            self.preview_button.set_tag_color_group(self.build_color()[1])
+            self.preview_button.set_color_group(self.build_color()[1])
         else:
             logger.info("[BuildColorPanel] Secondary color selection was cancelled!")
 
@@ -197,7 +196,7 @@ class BuildColorPanel(ModalContent):
 
         self.primary_button.setText(hex_code)
         self.primary_button.setStyleSheet(list_button_style(color))
-        self.preview_button.set_tag_color_group(self.build_color()[1])
+        self.preview_button.set_color_group(self.build_color()[1])
 
     def update_secondary(self, color: QColor | None = None):
         logger.info("[BuildColorPanel] Updating Secondary", color=color)
@@ -207,7 +206,7 @@ class BuildColorPanel(ModalContent):
 
         self.secondary_button.setText(hex_code if color else Translations["color.title.no_color"])
         self.secondary_button.setStyleSheet(list_button_style(color_))
-        self.preview_button.set_tag_color_group(self.build_color()[1])
+        self.preview_button.set_color_group(self.build_color()[1])
 
     def update_known_colors(self):
         groups = self.lib.tag_color_groups
@@ -217,11 +216,10 @@ class BuildColorPanel(ModalContent):
             self.known_colors.remove(self.color_group.slug)
 
     def update_preview_text(self):
-        self.preview_button.button.setText(
+        self.preview_button.set_text(
             f"{self.name_field.text().strip() or Translations['color.placeholder']} "
             f"({self.lib.get_namespace_name(self.color_group.namespace)})"
         )
-        self.preview_button.button.setMaximumWidth(self.preview_button.button.sizeHint().width())
 
     def no_collide(self, slug: str) -> str:
         """Return a slug name that's verified not to collide with other known color slugs."""

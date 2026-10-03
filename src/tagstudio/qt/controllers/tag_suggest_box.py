@@ -7,7 +7,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QShowEvent
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -15,12 +15,12 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
+from tagstudio.qt.controllers.capsule import Capsule
+from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
-from tagstudio.qt.mixed.build_tag import BuildTagPanel
-from tagstudio.qt.mixed.tag_widget import TagWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -32,20 +32,37 @@ class TagSuggestBox(SuggestBox[Tag]):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
-
-        edit_tag_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
-        edit_tag_on_create_action.setCheckable(True)
-        self.addAction(edit_tag_on_create_action)
-        self.layout().search_field.addAction(edit_tag_on_create_action)
-        edit_tag_on_create_action.setChecked(self._settings.edit_tag_on_create)
-        edit_tag_on_create_action.triggered.connect(
+        self._edit_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
+        self._edit_on_create_action.setCheckable(True)
+        self.addAction(self._edit_on_create_action)
+        self.layout().search_field.addAction(self._edit_on_create_action)
+        self._edit_on_create_action.triggered.connect(
             lambda checked: self._toggle_edit_on_tag_create(checked)
+        )
+
+        self._sort_added_last_action = QAction(Translations["settings.sort_added_tags_last"], self)
+        self._sort_added_last_action.setCheckable(True)
+        self.addAction(self._sort_added_last_action)
+        self.layout().search_field.addAction(self._sort_added_last_action)
+        self._sort_added_last_action.triggered.connect(
+            lambda checked: self._toggle_sort_added_last(checked)
         )
 
     def _toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""
         self._settings.edit_tag_on_create = checked
         self._settings.save()
+
+    def _toggle_sort_added_last(self, checked: bool) -> None:
+        self._settings.sort_added_tags_last = checked
+        self._settings.save()
+        self._on_search_query_changed(self.layout().search_field.text())
+
+    @override
+    def showEvent(self, event: QShowEvent) -> None:
+        self._edit_on_create_action.setChecked(self._settings.edit_tag_on_create)
+        self._sort_added_last_action.setChecked(self._settings.sort_added_tags_last)
+        return super().showEvent(event)
 
     @override
     def _on_item_create(self) -> None:
@@ -57,12 +74,12 @@ class TagSuggestBox(SuggestBox[Tag]):
         query: str = self.layout().search_field.text()
 
         if self._settings.edit_tag_on_create:
-            panel: BuildTagPanel = BuildTagPanel(self._lib)
+            panel: EditTagPanel = EditTagPanel(self._lib)
             modal: Modal = Modal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True
             )
             if query.strip():
-                panel.name_field.setText(query)
+                panel.set_name(query)
 
             modal.saved.connect(lambda: self._create_item_from_modal(panel))
             modal.show()
@@ -74,15 +91,15 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _on_item_edit(self, item: Tag) -> None:
-        edit_tag_panel: BuildTagPanel = BuildTagPanel(self._lib, tag=item)
-        edit_tag_modal: Modal = Modal(
+        edit_tag_panel: EditTagPanel = EditTagPanel(self._lib, tag=item)
+        modal: Modal = Modal(
             edit_tag_panel,
             self._lib.tag_display_name(item),
             Translations["tag.edit"],
             is_savable=True,
         )
-        edit_tag_modal.saved.connect(lambda: self._edit_item(edit_tag_panel))
-        edit_tag_modal.show()
+        modal.saved.connect(lambda: self._edit_item(edit_tag_panel))
+        modal.show()
 
     @override
     def _on_item_chosen(self, item: Tag) -> None:
@@ -102,6 +119,8 @@ class TagSuggestBox(SuggestBox[Tag]):
             self.set_hint_icon(self._rm.hint_tag_added)
         elif results:
             self.set_hint_icon(self._rm.hint_tag_add)
+        elif self._is_query_invalid():
+            self.set_hint_icon(self._rm.hint_tag_issue)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_tag_create)
         else:
@@ -118,43 +137,40 @@ class TagSuggestBox(SuggestBox[Tag]):
     def _set_item_widget(self, item: Tag | None, index: int) -> None:
         """Set the tag of a tag widget at a specific index."""
         underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
-        tag_widget = underlined_widget.widget
-        assert isinstance(tag_widget, TagWidget)
-        tag_widget.has_remove = False
-        tag_widget.set_tag(item)
+        capsule = underlined_widget.widget
+        assert isinstance(capsule, Capsule)
+        capsule.has_remove = False
         underlined_widget.setHidden(item is None)
-        opacity_effect = QGraphicsOpacityEffect(self)
-        opacity_effect.setOpacity(0.3)
         if item and item.id in self.added:
-            tag_widget.setGraphicsEffect(opacity_effect)
+            opacity_effect = QGraphicsOpacityEffect(self)
+            opacity_effect.setOpacity(0.3)
+            capsule.setGraphicsEffect(opacity_effect)
         else:
-            tag_widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
+            capsule.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
 
         if item is None:
             return
+
+        capsule.set_text(self._lib.tag_display_name(item))
+        capsule.set_color_group(item.color)
 
         # Select first item
         underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
-            tag_widget.on_edit.disconnect()
-            tag_widget.bg_button.clicked.disconnect()
-            tag_widget.search_for_tag_action.triggered.disconnect()
+            capsule.on_click.disconnect()
+            capsule.on_edit.disconnect()
+            capsule.on_search.disconnect()
 
         # Connect callbacks
-        tag_widget.on_edit.connect(lambda edit_tag=item: self._on_item_edit(edit_tag))
-        tag_widget.bg_button.clicked.connect(
-            lambda checked=False, tag=item: self._on_item_chosen(tag)
-        )
-        tag_widget.search_for_tag_action.triggered.connect(
-            lambda checked=False, tag_id=item.id: self.search_for_tag.emit(tag_id)
-        )
-        tag_widget.search_for_tag_action.setEnabled(True)
+        capsule.on_edit.connect(lambda edit_tag=item: self._on_item_edit(edit_tag))
+        capsule.on_click.connect(lambda tag=item: self._on_item_chosen(tag))
+        capsule.on_search.connect(lambda tag_id=item.id: self.search_for_tag.emit(tag_id))
 
     @override
     def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:
-        if isinstance(edit_item_panel, BuildTagPanel):
+        if isinstance(edit_item_panel, EditTagPanel):
             tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
                 tag,
@@ -169,7 +185,7 @@ class TagSuggestBox(SuggestBox[Tag]):
 
     @override
     def _edit_item(self, edit_item_panel: ModalContent) -> None:
-        if not isinstance(edit_item_panel, BuildTagPanel):
+        if not isinstance(edit_item_panel, EditTagPanel):
             return
 
         self._lib.update_tag(
@@ -186,9 +202,11 @@ class TagSuggestBox(SuggestBox[Tag]):
         # Create any new item widgets needed up to the given index
         if self.layout().content_layout.count() <= index:
             while self.layout().content_layout.count() <= index:
-                tag_widget = TagWidget(tag=None, has_edit=True, has_remove=True, library=library)
-                tag_widget.on_remove.connect(self._update_items)
-                widget = UnderlinedWidget(tag_widget)
+                capsule = Capsule(
+                    has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
+                )
+                capsule.on_remove.connect(self._update_items)
+                widget = UnderlinedWidget(capsule)
                 widget.setHidden(True)
                 self.layout().content_layout.addWidget(widget)
 

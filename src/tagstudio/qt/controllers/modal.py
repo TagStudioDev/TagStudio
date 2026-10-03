@@ -30,6 +30,7 @@ class Modal(QWidget):
         window_title: str | None = None,
         is_savable: bool = False,
         inline_title: bool = True,
+        inline_title_level: int = 3,
     ):
         super().__init__()
         self.setWindowTitle(title if window_title is None else window_title)
@@ -40,6 +41,7 @@ class Modal(QWidget):
                 title=title,
                 is_savable=is_savable,
                 inline_title=inline_title,
+                inline_title_level=inline_title_level,
             )
         )
 
@@ -78,6 +80,17 @@ class Modal(QWidget):
             if done_button:
                 done_button.click()
         event.accept()
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Escape:
+            content_widget = self.layout().content_widget
+            if content_widget.cancel_button:
+                content_widget.cancel_button.click()
+            elif content_widget.done_button:
+                content_widget.done_button.click()
+        else:
+            super().keyPressEvent(event)
 
     @override
     def layout(self) -> ModalView:

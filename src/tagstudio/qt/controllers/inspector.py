@@ -25,7 +25,7 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
-from tagstudio.i18n.translations import FIELD_TYPE_KEYS, Translations
+from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
@@ -189,12 +189,12 @@ class Inspector(QWidget):
     def _edit_field(self, entry_id: int, field: BaseField) -> None:
         # TODO: A lot of this code is similar to or straight up shared with FieldContainers.
         # It's possible to reuse it later, after a FieldContainers refactor.
-        field_name_key: str = FIELD_TYPE_KEYS.get(field.class_name, "field_type.unknown")
+        field_type = field_type_name(field.class_name)
 
         if type(field) is TextField:
             edit_modal = Modal(
                 EditText(field.name, field.value, field.is_multiline),
-                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                window_title=f"{Translations['field.edit']} ({field_type})",
                 is_savable=True,
                 inline_title=False,
             )
@@ -205,7 +205,7 @@ class Inspector(QWidget):
         elif type(field) is DatetimeField:
             edit_modal = Modal(
                 DatetimePicker(self._driver, field.name, field.value or dt.now()),
-                window_title=f"{Translations['field.edit']} ({Translations[field_name_key]})",
+                window_title=f"{Translations['field.edit']} ({field_type})",
                 is_savable=True,
                 inline_title=False,
             )

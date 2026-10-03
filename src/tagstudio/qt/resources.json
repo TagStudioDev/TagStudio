@@ -23,6 +23,14 @@
         "mode": "pil",
         "path": "qt/images/file_icons/archive.png"
     },
+    "arrow_right": {
+        "mode": "rb",
+        "path": "qt/images/arrow-right.svg"
+    },
+    "arrow_right_bottom": {
+        "mode": "rb",
+        "path": "qt/images/arrow-right-bottom-bold.svg"
+    },
     "audio": {
         "mode": "pil",
         "path": "qt/images/file_icons/audio.png"
@@ -79,6 +87,10 @@
         "mode": "pil",
         "path": "qt/images/hint_field_create.png"
     },
+    "hint_field_issue": {
+        "mode": "pil",
+        "path": "qt/images/hint_field_issue.png"
+    },
     "hint_tag_add": {
         "mode": "pil",
         "path": "qt/images/hint_tag_add.png"
@@ -90,6 +102,10 @@
     "hint_tag_create": {
         "mode": "pil",
         "path": "qt/images/hint_tag_create.png"
+    },
+    "hint_tag_issue": {
+        "mode": "pil",
+        "path": "qt/images/hint_tag_issue.png"
     },
     "icon": {
         "mode": "pil",
@@ -110,6 +126,14 @@
     "image_vector": {
         "mode": "pil",
         "path": "qt/images/file_icons/image_vector.png"
+    },
+    "info_outline": {
+        "mode": "rb",
+        "path": "qt/images/information-slab-circle-outline.svg"
+    },
+    "info_solid": {
+        "mode": "rb",
+        "path": "qt/images/information-slab-circle.svg"
     },
     "material": {
         "mode": "pil",

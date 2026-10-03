@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import platform
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
 
 from tagstudio.core.enums import ThemePalette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.views.styles.palette import (
     ColorType,
     Palette,
@@ -125,14 +127,12 @@ def line_edit_style_main() -> str:
 
 def checkbox_style() -> str:
     """Style used for common QCheckBoxes."""
-    primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-    highlight_color = get_tag_highlight_color(primary_color)
-    return colored_checkbox_style(
-        primary_color,
-        get_tag_border_color(primary_color),
-        highlight_color,
-        get_tag_text_color(primary_color, highlight_color),
-    )
+    return colored_checkbox_style(*tag_colors(None))
+
+
+def radio_button_style() -> str:
+    """Style used for common QRadioButtons."""
+    return colored_radio_button_style(*tag_colors(None))
 
 
 def colored_checkbox_style(
@@ -366,7 +366,7 @@ def tag_style(
     highlight_color: QColor,
     border_style: str = "solid",
 ) -> str:
-    """Style used for TagWidgets."""
+    """Style used for Capsules."""
     return f"""
     QPushButton{{
         background: rgba{primary_color.toTuple()};
@@ -379,6 +379,7 @@ def tag_style(
         font-size: 13px;
         padding-right: 4px;
         padding-left: 4px;
+        padding-bottom: {2 if platform.system() == "Windows" else 1}px;
     }}
     QPushButton::hover{{
         border-color: rgba{highlight_color.toTuple()};
@@ -399,7 +400,7 @@ def tag_style(
 def tag_remove_button_style(
     primary_color: QColor, text_color: QColor, border_color: QColor, highlight_color: QColor
 ) -> str:
-    """Style used for "Remove" buttons on TagWidgets [-]."""
+    """Style used for "Remove" buttons on Capsules [-]."""
     return f"""
     QPushButton{{
         color: rgba{primary_color.toTuple()};
@@ -499,13 +500,18 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
     """
 
 
-def autofill_line_edit_style() -> str:
+def autofill_line_edit_style(is_invalid: bool = False) -> str:
     """Used for QLineEdits."""
-    bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    )
+    if is_invalid:
+        bg_color = ThemePalette.COLOR_FORBIDDEN_BG.value
+        focus_border_color = get_ui_color(ColorType.PRIMARY, UiColor.RED)
+    else:
+        bg_color = (
+            ThemePalette.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else ThemePalette.COLOR_BG_LIGHT.value
+        )
+        focus_border_color = f"rgba{Palette.accent().toTuple()}"
 
     return f"""
     QLineEdit{{
@@ -517,7 +523,7 @@ def autofill_line_edit_style() -> str:
         padding: 4px 4px;
         border: solid;
         border-width: 2px;
-        border-color: rgba{Palette.accent().toTuple()};
+        border-color: {focus_border_color};
         }}
     """
 
@@ -557,6 +563,38 @@ def preview_warning_style() -> str:
     """
 
 
+def info_popover_style() -> str:
+    """Style used for popovers shown by info buttons."""
+    border_color = (
+        "#404040"
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        else "#808080"
+    )
+    return f"""
+    #info_popover{{
+        background: palette(window);
+        border: 1px solid {border_color};
+        border-radius: 6px;
+        padding: 9px;
+    }}
+    """
+
+
+def info_popover_text_style() -> str:
+    """Style used for headers inside info popovers, given as a CSS `<style>` tag.
+
+    Used in cases where QSS doesn't work, like for rich text inside QLabels.
+    """
+    return """
+    <style>
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+    </style>
+    """
+
+
 def header(string: str, level: int, color: str | None = None) -> str:
     """Wrap a string in HTML header tags.
 
@@ -578,14 +616,24 @@ def header(string: str, level: int, color: str | None = None) -> str:
     return f"<h{level}{style_tag}>{string}</h{level}>"
 
 
-def get_tag_primary_color(tag: Tag) -> QColor:
-    primary_color = QColor(
-        get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-        if not tag.color
-        else tag.color.primary
+def tag_colors(color_group: TagColorGroup | None) -> tuple[QColor, QColor, QColor, QColor]:
+    """Return the primary, border, highlight, and text colors for a tag color group."""
+    primary = QColor(
+        color_group.primary
+        if color_group
+        else get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
     )
+    border = get_tag_border_color(primary)
+    highlight = get_tag_highlight_color(primary)
+    text = get_tag_text_color(primary, highlight)
 
-    return primary_color
+    if color_group and color_group.secondary:
+        secondary = QColor(color_group.secondary)
+        highlight, text = get_tag_highlight_color(secondary), secondary
+        if color_group.color_border:
+            border = secondary
+
+    return primary, border, highlight, text
 
 
 def get_tag_border_color(primary_color: QColor) -> QColor:

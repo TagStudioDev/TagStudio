@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import ImageQt
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QPalette, QPixmap
+from PySide6.QtGui import QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -36,7 +36,7 @@ from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.palette import MUTED_PURPLE, ColorType, UiColor, get_ui_color
 from tagstudio.qt.views.styles.stylesheets import form_content_style, header
 
 
@@ -64,7 +64,7 @@ class AboutModal(QWidget):
         self.setMinimumHeight(600)
         self.setMaximumHeight(900)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(0, 100, 0, 0)
+        self.root_layout.setContentsMargins(0, 60, 0, 0)
         self.root_layout.setSpacing(0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
 
@@ -89,13 +89,13 @@ class AboutModal(QWidget):
         self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Version --------------------------------------------------------------
-        self.version_label = QLabel(header(AboutModal.VERSION_STR, 3))
+        self.version_label = QLabel(header(AboutModal.VERSION_STR, 2))
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Copyright ------------------------------------------------------------
         self.copyright_label = QLabel(COPYRIGHT)
         self.copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.copyright_label.setStyleSheet("QLabel {color: #809782ff}")
+        self.copyright_label.setStyleSheet(f"QLabel {{color: {MUTED_PURPLE}}}")
 
         # Description ----------------------------------------------------------
         self.desc_label = QLabel(Translations["about.description"])
@@ -231,7 +231,7 @@ class AboutModal(QWidget):
             f'<a href="{DOCS_URL}">{Translations["about.documentation"]}</a> | '
             f'<a href="{DISCORD_URL}">Discord</a></p>'
         )
-        self.links_label.setStyleSheet("QLabel {color: #809782ff}")
+        self.links_label.setStyleSheet(f"QLabel {{color: {MUTED_PURPLE}}}")
         self.links_label.setWordWrap(True)
         self.links_label.setOpenExternalLinks(True)
         self.links_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -262,13 +262,22 @@ class AboutModal(QWidget):
         self.bg_image = self.bg_image.scaled(
             QSize(
                 math.floor(self.width() * pixel_ratio),
-                math.floor(self.maximumHeight() * pixel_ratio),
+                math.floor(self.maximumHeight() * pixel_ratio * 0.8),
             ),
             Qt.AspectRatioMode.IgnoreAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
+
+        # NOTE: This stops the bg image from tiling and fills in the rest with a black background.
+        canvas = QPixmap(self.bg_image.width(), math.floor(self.maximumHeight() * pixel_ratio))
+        canvas.setDevicePixelRatio(pixel_ratio)
+        canvas.fill(Qt.GlobalColor.black)
+        painter = QPainter(canvas)
+        painter.drawPixmap(0, 0, self.bg_image)
+        painter.end()
+
         palette = QPalette()
-        palette.setBrush(QPalette.ColorRole.Window, self.bg_image)
+        palette.setBrush(QPalette.ColorRole.Window, canvas)
         self.setPalette(palette)
 
         self.root_layout.addWidget(self.content_widget)

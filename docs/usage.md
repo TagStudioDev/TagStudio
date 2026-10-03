@@ -47,7 +47,7 @@ Every step is keyboard-friendly, allowing for an efficient tagging "flow state" 
 
 ### :material-tag-plus: Tag Bar: Creating Tags
 
-Type to search for an existing tag, or use that search term to quickly create and apply a new tag to your selection. Pressing <kbd>Enter</kbd> with **no results** will **create** :material-tag-plus-outline: a tag from your search query and apply it to the selected entries.
+Type to search for an existing tag, or use that search term to quickly create and apply a new tag to your selection. By default, pressing <kbd>Enter</kbd> with **no results** will **create** :material-tag-plus-outline: a tag from your search query and apply it to the selected entries. This behavior can be toggled off through the right-click menu on the tag bar or by going to the **Settings**.
 
 After applying a tag, the "Add Tag" button is now focused, allowing you to press <kbd>Enter</kbd> or <kbd>Space</kbd> to quickly reactivate the bar. Alternatively, you may edit your new tag by right-clicking the tag and selecting **"Edit"**.
 

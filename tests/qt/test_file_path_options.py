@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QMenu, QMenuBar
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.library.alchemy.library import Library, LibraryStatus
+from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.inspector import Inspector
@@ -120,11 +120,11 @@ def test_title_update(
 ):
     base_title = qt_driver.base_title
 
-    open_status = LibraryStatus(
+    open_status = OpenLibraryResult(
         success=True,
         library_path=library_dir,
-        message="",
-        msg_description="",
+        error_title="",
+        error_description="",
     )
     # Set the file path option
     qt_driver.settings.show_filepath = filepath_option

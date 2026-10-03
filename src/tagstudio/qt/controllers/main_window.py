@@ -94,6 +94,7 @@ class MainMenuBar(QMenuBar):
     folders_to_tags_action: QAction
 
     help_menu: QMenu
+    changelog_action: QAction
     about_action: QAction
 
     def __init__(self, parent: QWidget | None = None):
@@ -404,6 +405,9 @@ class MainMenuBar(QMenuBar):
 
         self.about_action = QAction(Translations["menu.help.about"], self)
         self.help_menu.addAction(self.about_action)
+
+        self.changelog_action = QAction(Translations["menu.help.changelog"], self)
+        self.help_menu.addAction(self.changelog_action)
 
         assign_mnemonics(self.help_menu)
         self.addMenu(self.help_menu)
@@ -725,7 +729,6 @@ class MainWindow(QMainWindow):
         if enabled:
             self.entry_scroll_area.setHidden(True)
             self.landing_widget.setHidden(False)
-            self.landing_widget.animate_logo_in()
         else:
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")

@@ -23,6 +23,7 @@ from queue import Queue
 from typing import TypeVar
 from warnings import catch_warnings
 
+import semver
 import structlog
 from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
@@ -44,7 +45,7 @@ from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VER
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
-from tagstudio.core.library.alchemy.library import Library, LibraryStatus
+from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
@@ -61,6 +62,8 @@ from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controllers.changelog_modal import ChangelogModal
+from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal import IgnoreModal
@@ -72,7 +75,6 @@ from tagstudio.qt.controllers.splash import SplashScreen
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.mixed.about_modal import AboutModal
-from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
@@ -441,7 +443,7 @@ class QtDriver(DriverMixin, QObject):
         # Settings
         self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
 
-        # Open Library on Start
+        # Reopen Library on Start
         self.main_window.menu_bar.open_on_start_action.setChecked(
             self.settings.open_last_loaded_on_startup
         )
@@ -603,6 +605,7 @@ class QtDriver(DriverMixin, QObject):
             self.about_modal.show()
 
         self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
+        self.main_window.menu_bar.changelog_action.triggered.connect(self.show_changelog)
 
         # endregion
 
@@ -635,18 +638,31 @@ class QtDriver(DriverMixin, QObject):
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
+        show_changelog = self._record_program_version()
         self.init_library_window()
         self.migration_modal: JsonMigrationModal | None = None
 
-        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
-        if path_result.success and path_result.library_path:
-            self.open_library(path_result.library_path)
-        elif self.settings.open_last_loaded_on_startup:
-            # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
-            path_result = self.evaluate_path(None)
-            if path_result.success and path_result.library_path:
-                self.open_library(path_result.library_path)
+        startup_path: str | None = self.args.open.strip() if self.args.open else None
+        if not startup_path and self.settings.open_last_loaded_on_startup:
+            last_library = self.cached_values.value(AppCacheItems.LAST_LIBRARY)
+            if last_library:
+                startup_path = str(last_library)
 
+        if not startup_path:
+            self.main_window.landing_widget.animate_logo_in()
+        else:
+            startup_result = self.verify_library_path(startup_path, allow_creation=False)
+            if startup_result.success and startup_result.library_path:
+                self.open_library(startup_result.library_path)
+            else:
+                self.show_error_message(
+                    error_name=startup_result.error_title
+                    or Translations["window.message.error_opening_library"],
+                    error_desc=startup_result.error_description,
+                )
+
+        if show_changelog:
+            self.show_changelog()
         self.main_window.search_field.setFocus()
 
         self.check_for_update()
@@ -789,8 +805,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
-        self.cached_values.sync()
+        if not is_shutdown:
+            self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
+            self.cached_values.sync()
 
         # Reset library state
         self.main_window.preview_panel.set_selection(self.selected)
@@ -801,14 +818,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
         self.cache_manager = None
-
         self.thumb_job_queue.queue.clear()
+
         if is_shutdown:
-            # no need to do other things on shutdown
             return
 
         self.main_window.setWindowTitle(self.base_title)
-
         self.frame_content.clear()
         self._selected.clear()
         if self.color_manager_panel:
@@ -823,6 +838,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.thumb_layout.set_entries([])
         self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.landing_widget.animate_logo_in()
         self.main_window.pagination.setHidden(True)
         try:
             self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
@@ -883,7 +899,7 @@ class QtDriver(DriverMixin, QObject):
             self.favorite_updated.emit(False)  # noqa: FBT003
 
     def add_tag_action_callback(self):
-        panel = BuildTagPanel(self.lib)
+        panel = EditTagPanel(self.lib)
         self.modal = Modal(
             panel,
             Translations["tag.new"],
@@ -995,20 +1011,20 @@ class QtDriver(DriverMixin, QObject):
                     if delete_file(library_dir / f):
                         deleted_count += 1
 
-        self.clear_select_action_callback()
-        self.update_browsing_state()
+                self.clear_select_action_callback()
+                self.update_browsing_state()
 
-        if deleted_count > 0 and deleted_count != len(pending):
-            msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
-        else:
-            index = min(deleted_count, 2)
-            msg = (
-                Translations["status.deleted_none"],
-                Translations["status.deleted_file_singular"],
-                Translations.format("status.deleted_file_plural", count=deleted_count),
-            )[index]
-        self.main_window.status_bar.showMessage(msg)
-        self.main_window.status_bar.repaint()
+                if deleted_count > 0 and deleted_count != len(pending):
+                    msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
+                else:
+                    index = min(deleted_count, 2)
+                    msg = (
+                        Translations["status.deleted_none"],
+                        Translations["status.deleted_file_singular"],
+                        Translations.format("status.deleted_file_plural", count=deleted_count),
+                    )[index]
+                self.main_window.status_bar.showMessage(msg)
+                self.main_window.status_bar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
         """A confirmation dialogue box for deleting files.
@@ -1595,6 +1611,37 @@ class QtDriver(DriverMixin, QObject):
             )
             update_box.exec()
 
+    def _record_program_version(self) -> bool:
+        """Record the version of the program to the cache file.
+
+        Returns:
+            bool: True if the current version is newer than the previously recorded one.
+                Will be False on first time runs of the program, and True if it's not the first run
+                but there's no existing record of the last version used.
+        """
+        is_first_run = not self.cached_values.allKeys()  # No cache keys means this is a first run
+        last_version_opened = self.cached_values.value(AppCacheItems.LAST_VERSION_OPENED)
+        self.cached_values.setValue(AppCacheItems.LAST_VERSION_OPENED, VERSION)
+        self.cached_values.sync()
+
+        if is_first_run:
+            return False
+        if not last_version_opened:
+            return True
+        try:
+            return semver.Version.parse(str(last_version_opened)) < semver.Version.parse(VERSION)
+        except ValueError:
+            return str(last_version_opened) != VERSION
+
+    def show_changelog(self):
+        if not hasattr(self, "changelog_modal"):
+            self.changelog_modal = Modal(
+                ChangelogModal(),
+                window_title=Translations["changelog.window_title"],
+                inline_title=False,
+            )
+        self.changelog_modal.show()
+
     def dismiss_update(self, version: str):
         """Dismiss an update notification for a specific new version of TagStudio."""
         self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
@@ -1612,23 +1659,23 @@ class QtDriver(DriverMixin, QObject):
         if self.lib.library_dir:
             self.close_library()
 
-        open_status: LibraryStatus | None = None
+        open_status: OpenLibraryResult | None = None
         try:
             open_status = self.lib.open_library(path)
         except ValueError as e:
             logger.warning(e)
-            open_status = LibraryStatus(
+            open_status = OpenLibraryResult(
                 success=False,
                 library_path=path,
-                message=Translations["menu.file.missing_library.title"],
-                msg_description=Translations.format(
+                error_title=Translations["menu.file.missing_library.title"],
+                error_description=Translations.format(
                     "menu.file.missing_library.message", library=library_dir_display
                 ),
             )
         except Exception as e:
             logger.error(e)
-            open_status = LibraryStatus(
-                success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
+            open_status = OpenLibraryResult(
+                success=False, library_path=path, error_description=f"{type(e).__name__}: {e}"
             )
         self.cache_manager = CacheManager(
             path,
@@ -1641,7 +1688,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Migration is required
-        if open_status.json_migration_req:
+        if open_status.needs_json_migration:
             self.migration_modal = JsonMigrationModal(path)
             self.migration_modal.migration_finished.connect(
                 lambda: self._init_library(path, self.lib.open_library(path))
@@ -1651,12 +1698,12 @@ class QtDriver(DriverMixin, QObject):
         else:
             self._init_library(path, open_status)
 
-    def _init_library(self, path: Path, open_status: LibraryStatus):
+    def _init_library(self, path: Path, open_status: OpenLibraryResult):
         if not open_status.success:
             self.show_error_message(
-                error_name=open_status.message
+                error_name=open_status.error_title
                 or Translations["window.message.error_opening_library"],
-                error_desc=open_status.msg_description,
+                error_desc=open_status.error_description,
             )
             return open_status
 
@@ -1674,6 +1721,8 @@ class QtDriver(DriverMixin, QObject):
             library_dir_display = self.lib.library_dir.name
 
         self.update_libs_list(path)
+        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.sync()
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",

@@ -74,9 +74,39 @@ class SuggestBox[T](QWidget):
             lambda checked: self._toggle_keep_open(checked)
         )
 
+        self._dont_create_on_enter_action = QAction(
+            Translations["settings.dont_create_items_on_enter"], self
+        )
+        self._dont_create_on_enter_action.setCheckable(True)
+        self.addAction(self._dont_create_on_enter_action)
+        self.layout().search_field.addAction(self._dont_create_on_enter_action)
+        self._dont_create_on_enter_action.triggered.connect(
+            lambda checked: self._toggle_dont_create_on_enter(checked)
+        )
+
+        self._invert_scroll_action = QAction(
+            Translations["settings.invert_suggest_box_scroll"], self
+        )
+        self._invert_scroll_action.setCheckable(True)
+        self.addAction(self._invert_scroll_action)
+        self.layout().search_field.addAction(self._invert_scroll_action)
+        self._invert_scroll_action.triggered.connect(
+            lambda checked: self._toggle_invert_scroll(checked)
+        )
+
     def _toggle_keep_open(self, checked: bool) -> None:
         self._settings.keep_suggest_boxes_open = checked
         self._settings.save()
+
+    def _toggle_dont_create_on_enter(self, checked: bool) -> None:
+        self._settings.dont_create_items_on_enter = checked
+        self._settings.save()
+        self._on_search_query_changed(self.layout().search_field.text())
+
+    def _toggle_invert_scroll(self, checked: bool) -> None:
+        self._settings.invert_suggest_box_scroll = checked
+        self._settings.save()
+        self.layout().scroll_area.set_inverted(checked)
 
     def set_placeholder_text(self, text: str) -> None:
         self.layout().search_field.setPlaceholderText(text)
@@ -124,6 +154,7 @@ class SuggestBox[T](QWidget):
             ):
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
         self._update_hint_icon()
+        self._update_search_field_style()
 
     def _on_index_updated(self, delta: int) -> None:
         # Initialize the widget count (non-hidden)
@@ -132,6 +163,8 @@ class SuggestBox[T](QWidget):
             widget = unwrap(self.layout().content_layout.itemAt(i).widget())  # pyright: ignore
             if not widget.isHidden():
                 widget_count += 1
+        if widget_count == 0:
+            return
 
         # Update the index
         old_idx = self._selection_index
@@ -181,11 +214,14 @@ class SuggestBox[T](QWidget):
         elif not self.isHidden():
             self.layout().search_field.setFocus()
 
-        # Create and add item if no search results
-        if (len(self._search_results) <= 0) or always_create:
+        if always_create:
+            self._on_item_create()
+        elif self._search_results:
+            self._on_item_chosen(self._search_results[self._selection_index])
+        elif not self._settings.dont_create_items_on_enter:
             self._on_item_create()
         else:
-            self._on_item_chosen(self._search_results[self._selection_index])
+            return
 
         self._clear_search_query()
         self._update_items()
@@ -206,6 +242,15 @@ class SuggestBox[T](QWidget):
         return bool(
             len(self._search_results) > self._selection_index
             and _item_id(self._search_results[self._selection_index]) in self.added
+        )
+
+    def _is_query_invalid(self) -> bool:
+        """If the query is invalid, for example if "Item Creation on Enter" is toggled off."""
+        return bool(
+            self._settings.dont_create_items_on_enter
+            and not self._is_shift_held
+            and not self._search_results
+            and self.layout().search_field.text()
         )
 
     def _update_hint_icon(self) -> None:
@@ -246,11 +291,12 @@ class SuggestBox[T](QWidget):
         ]
 
         # Target items already added to a selection and move them to the end of the list
-        already_added: list[T] = [i for i in all_results if _item_id(i) in self.added]
-        for item in already_added:
-            if item in all_results:
-                all_results.remove(item)
-        all_results = all_results + already_added
+        if self._settings.sort_added_tags_last:
+            already_added: list[T] = [i for i in all_results if _item_id(i) in self.added]
+            for item in already_added:
+                if item in all_results:
+                    all_results.remove(item)
+            all_results = all_results + already_added
 
         if self._limit > 0:
             all_results = all_results[: self._limit]
@@ -265,11 +311,19 @@ class SuggestBox[T](QWidget):
         if self.layout().content_layout.isEmpty():
             self.layout().scroll_area.setHidden(True)
             self.layout().content_layout.setContentsMargins(0, 0, 0, 0)
-            self.layout().search_field.setStyleSheet(autofill_line_edit_style())
         else:
             self.layout().scroll_area.setHidden(False)
             self.layout().content_layout.setContentsMargins(4, 6, 4, 6)
-            self.layout().search_field.setStyleSheet(autofill_line_edit_top_style())
+        self._update_search_field_style()
+
+    def _update_search_field_style(self) -> None:
+        if self.layout().content_layout.isEmpty():
+            style = autofill_line_edit_style(is_invalid=self._is_query_invalid())
+        else:
+            style = autofill_line_edit_top_style()
+
+        if style != self.layout().search_field.styleSheet():
+            self.layout().search_field.setStyleSheet(style)
 
     def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
@@ -296,6 +350,9 @@ class SuggestBox[T](QWidget):
         self.layout().search_field.setDisabled(False)
         self._clear_search_query()
         self._keep_box_open_action.setChecked(self._settings.keep_suggest_boxes_open)
+        self._dont_create_on_enter_action.setChecked(self._settings.dont_create_items_on_enter)
+        self._invert_scroll_action.setChecked(self._settings.invert_suggest_box_scroll)
+        self.layout().scroll_area.set_inverted(self._settings.invert_suggest_box_scroll)
         return super().showEvent(event)
 
     @override

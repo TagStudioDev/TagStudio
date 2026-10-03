@@ -34,7 +34,7 @@ dependencies = [
     "requests~=2.31.0",
     "semver~=3.0.4",
     "Send2Trash>=1.8,<3",
-    "SQLAlchemy~=2.0",
+    "SQLAlchemy~=2.0.0",
     "srctools~=2.6",
     "structlog~=25.3",
     "toml~=0.10",
@@ -85,6 +85,9 @@ ruff = ["ruff==0.15.17"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tagstudio"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"docs/changelog.md" = "tagstudio/resources/changelog/changelog.md"
 
 [tool.pytest]
 qt_api = "pyside6"

@@ -9,7 +9,13 @@ import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QGraphicsOpacityEffect,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
@@ -52,6 +58,14 @@ class LandingWidget(QWidget):
         self.logo_pos_anim = QPropertyAnimation(self.logo_label, b"pos")
         self.logo_pos_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.logo_pos_anim.setDuration(1000)
+
+        self.logo_opacity_effect = QGraphicsOpacityEffect(self.logo_label)
+        self.logo_label.setGraphicsEffect(self.logo_opacity_effect)
+        self.logo_opacity_anim = QPropertyAnimation(self.logo_opacity_effect, b"opacity")
+        self.logo_opacity_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.logo_opacity_anim.setDuration(1000)
+        self.logo_opacity_anim.setStartValue(0.0)
+        self.logo_opacity_anim.setEndValue(1.0)
 
         self.logo_special_anim = QPropertyAnimation(self.logo_label, b"pos")
         self.logo_special_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -129,11 +143,11 @@ class LandingWidget(QWidget):
                 self._special_click_count = -1
 
     def animate_logo_in(self):
-        """Animate the TagStudio logo in, if not opening a library on start."""
-        if not self.driver.settings.open_last_loaded_on_startup and not self.driver.args.open:
-            self.logo_pos_anim.setStartValue(QPoint(self.logo_label.x(), self.logo_label.y() - 100))
-            self.logo_pos_anim.setEndValue(self.logo_label.pos())
-            self.logo_pos_anim.start()
+        """Animate the TagStudio logo in."""
+        self.logo_pos_anim.setStartValue(QPoint(self.logo_label.x(), self.logo_label.y() - 100))
+        self.logo_pos_anim.setEndValue(self.logo_label.pos())
+        self.logo_pos_anim.start()
+        self.logo_opacity_anim.start()
 
     def animate_logo_pop(self):
         """Special pop animation for the TagStudio logo."""

@@ -6,8 +6,8 @@ from PySide6.QtCore import SIGNAL
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
-from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 
 
@@ -21,19 +21,39 @@ def test_update_tags(qtbot: QtBot, library: Library):
     panel.update_items()
 
 
-def test_tag_widget_actions_replaced_correctly(qtbot: QtBot, library: Library):
+def test_removed_tag_capsules_hidden(qtbot: QtBot, library: Library):
+    """Regression test for #1523."""
+    panel = TagSearchPanel(library, is_chooser=False)
+    qtbot.addWidget(panel)
+
+    # 1. Set view limit to "All Items"
+    panel.set_limit_index(panel.layout().limit_combobox.count() - 1)
+    panel.update_items()
+
+    # 2. Delete a tag
+    library.remove_tag(library.tags[-1].id)
+    panel.update_items()
+
+    # 3. Assert that there's the correct number of visible capsules and no duplicates
+    visible_capsules = [
+        i
+        for i in range(panel.layout().scroll_layout.count())
+        if not panel.get_item_widget(i, library).isHidden()
+    ]
+    assert len(visible_capsules) == len(library.tags)
+
+
+def test_capsule_actions_replaced_correctly(qtbot: QtBot, library: Library):
     panel = TagSearchPanel(library, view=SearchPanelView(""))
     qtbot.addWidget(panel)
 
     # Set the widget
     tags = library.tags
     panel.set_item_widget(tags[0], 0)
-    tag_widget: TagWidget = panel.get_item_widget(0, library)
+    capsule: Capsule = panel.get_item_widget(0, library)
 
     should_replace_actions = {
-        tag_widget: ["on_edit()", "on_remove()"],
-        tag_widget.bg_button: ["clicked()"],
-        tag_widget.search_for_tag_action: ["triggered()"],
+        capsule: ["on_click()", "on_edit()", "on_remove()", "on_search()"],
     }
 
     # Ensure each action has been set

@@ -6,16 +6,16 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QShowEvent
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
-from tagstudio.i18n.translations import Translations
+from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.app_settings import AppSettings
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_field_template_modal import EditFieldTemplateModal
-from tagstudio.qt.controllers.field_template_widget import FieldTemplateWidget
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
@@ -29,12 +29,11 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         super().__init__(library, settings, placeholder_text)
 
         # Context Menu Actions
-        edit_field_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
-        edit_field_on_add_action.setCheckable(True)
-        self.addAction(edit_field_on_add_action)
-        self.layout().search_field.addAction(edit_field_on_add_action)
-        edit_field_on_add_action.setChecked(self._settings.edit_field_on_add)
-        edit_field_on_add_action.triggered.connect(
+        self._edit_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
+        self._edit_on_add_action.setCheckable(True)
+        self.addAction(self._edit_on_add_action)
+        self.layout().search_field.addAction(self._edit_on_add_action)
+        self._edit_on_add_action.triggered.connect(
             lambda checked: self._toggle_edit_on_field_add(checked)
         )
 
@@ -42,6 +41,11 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         """Toggle the setting for opening the edit window after adding a field."""
         self._settings.edit_field_on_add = checked
         self._settings.save()
+
+    @override
+    def showEvent(self, event: QShowEvent) -> None:
+        self._edit_on_add_action.setChecked(self._settings.edit_field_on_add)
+        return super().showEvent(event)
 
     @override
     def _on_item_create(self) -> None:
@@ -91,6 +95,8 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
             self.set_hint_icon(self._rm.hint_field_create)
         elif self.layout().search_field.text() and len(self._search_results) > 0:
             self.set_hint_icon(self._rm.hint_field_add)
+        elif self._is_query_invalid():
+            self.set_hint_icon(self._rm.hint_field_issue)
         elif self.layout().search_field.text():
             self.set_hint_icon(self._rm.hint_field_create)
         else:
@@ -98,31 +104,30 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
 
     @override
     def _set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
-        """Set the field template of a field template widget at a specific index."""
+        """Set the field template of a field template capsule at a specific index."""
         underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
-        field_template_widget = underlined_widget.widget
-        assert isinstance(field_template_widget, FieldTemplateWidget)
-        field_template_widget.has_remove = False
-        field_template_widget.set_field_template(item)
+        capsule = underlined_widget.widget
+        assert isinstance(capsule, Capsule)
+        capsule.has_remove = False
         underlined_widget.setHidden(item is None)
 
         if item is None:
             return
+
+        capsule.set_text(f"{item.name} ({field_type_name(item.class_name)})")
 
         # TODO: Add tabbing to different items, and use underline to indicate which will be added
         underlined_widget.toggle_underline(index != 0)
 
         # Disconnect previous callbacks
         with catch_warnings(record=True):
-            field_template_widget.on_edit.disconnect()
-            field_template_widget.on_remove.disconnect()
-            field_template_widget.on_click.disconnect()
+            capsule.on_edit.disconnect()
+            capsule.on_remove.disconnect()
+            capsule.on_click.disconnect()
 
         # Connect callbacks
-        field_template_widget.on_edit.connect(lambda item_=item: self._on_item_edit(item_))
-        field_template_widget.on_click.connect(
-            lambda checked=False, item_=item: self._on_item_chosen(item_)
-        )
+        capsule.on_edit.connect(lambda item_=item: self._on_item_edit(item_))
+        capsule.on_click.connect(lambda item_=item: self._on_item_chosen(item_))
 
     @override
     def _create_item_from_modal(self, edit_item_panel: ModalContent) -> None:
@@ -151,8 +156,8 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         # Create any new item widgets needed up to the given index
         if self.layout().content_layout.count() <= index:
             while self.layout().content_layout.count() <= index:
-                field_template_widget = FieldTemplateWidget()
-                widget = UnderlinedWidget(field_template_widget)
+                capsule = Capsule(has_edit=True)
+                widget = UnderlinedWidget(capsule)
                 widget.setHidden(True)
                 self.layout().content_layout.addWidget(widget)
 
