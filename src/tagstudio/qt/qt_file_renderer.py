@@ -49,6 +49,7 @@ class QtFileRenderer(QObject):
             is_loading=is_loading,
             is_thumb=is_thumb,
         )
+
         qim = ImageQt.ImageQt(image)
         pixmap = QPixmap.fromImage(qim)
         pixmap.setDevicePixelRatio(pixel_ratio)
