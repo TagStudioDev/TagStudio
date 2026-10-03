@@ -11,7 +11,7 @@ from typing import override
 
 import numpy as np
 import structlog
-from PIL import Image, ImageColor
+from PIL import Image
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
@@ -80,13 +80,13 @@ def _stl_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image.Ima
         theme (Theme): The system color theme.
         size (tuple[int, int]): The target size of the thumbnail.
     """
-    bg_color: str = "#1e1e1e" if theme == Theme.DARK else "#FFFFFF"
+    bg_rgb: tuple[int, int, int] = (30, 30, 30) if theme == Theme.DARK else (255, 255, 255)
     im: Image.Image | None = None
     try:
         im = _render_stl_thumbnail(
             filepath=filepath,
             size=max(size),
-            bg_color=bg_color,
+            bg_rgb=bg_rgb,
             max_file_size=_MAX_STL_FILE_SIZE,
             max_triangles=_MAX_STL_TRIANGLES,
         )
@@ -97,28 +97,14 @@ def _stl_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image.Ima
     return im
 
 
-def _parse_bg_color(bg_color: str) -> tuple[int, int, int]:
-    """Parses `bg_color` into an RGB triple.
-
-    Raises ValueError rather than STLRenderError: an invalid color is a
-    caller argument mistake, not a problem with the STL file being rendered.
-    """
-    rgb = ImageColor.getrgb(bg_color)
-    if len(rgb) != 3:
-        raise ValueError(f"bg_color must resolve to an RGB triple, got {bg_color!r}")
-    return rgb
-
-
 def _render_stl_thumbnail(
     filepath: Path,
     size: int,
-    bg_color: str,
+    bg_rgb: tuple[int, int, int],
     max_file_size: int,
     max_triangles: int,
 ) -> Image.Image:
     """Render an STL file to a square thumbnail image, with orthographic projection."""
-    bg_rgb = _parse_bg_color(bg_color)
-
     file_size = filepath.stat().st_size
     if file_size > max_file_size:
         raise STLRenderError("STL file is too large")
