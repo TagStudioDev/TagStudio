@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
+from tagstudio.core.library.sync import LibrarySyncEngine
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.progress_bar import ProgressWidget
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
 
-# TODO: Split to use MVC guidelines.
+# TODO: Split to use MVC guidelines or completely redo.
 class RemoveUnlinkedEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: QtDriver, tracker: UnlinkedRegistry):
+    def __init__(self, driver: QtDriver, tracker: LibrarySyncEngine):
         super().__init__()
         self.driver = driver
         self.tracker = tracker

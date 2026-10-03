@@ -17,6 +17,7 @@ import sys
 import time
 from argparse import Namespace
 from collections import OrderedDict
+from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
 from queue import Queue
@@ -48,7 +49,7 @@ from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.library.refresh import RefreshTracker
+from tagstudio.core.library.sync import LibrarySyncEngine
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.query_lang.util import ParsingError
@@ -70,8 +71,8 @@ from tagstudio.qt.controllers.ignore_modal import IgnoreModal
 from tagstudio.qt.controllers.library_info_window import LibraryInfoWindow
 from tagstudio.qt.controllers.main_window import MainWindow
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.progress_bar import ProgressWidget
 from tagstudio.qt.controllers.splash import SplashScreen
+from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.mixed.about_modal import AboutModal
@@ -106,6 +107,7 @@ else:
     from signal import SIGINT, SIGQUIT, SIGTERM, signal  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
+T = TypeVar("T")
 
 
 def clamp(value, lower_bound, upper_bound):
@@ -128,9 +130,6 @@ class Consumer(QThread):
                 job[0](*job[1])
             except RuntimeError:
                 pass
-
-
-T = TypeVar("T")
 
 
 # Ex. User visits | A ->[B]     |
@@ -194,24 +193,30 @@ class QtDriver(DriverMixin, QObject):
 
     def __init__(self, args: Namespace):
         super().__init__()
-        # prevent recursive badges update when multiple items selected
-        self.badge_update_lock = False
+        self.args = args
         self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
-        self.args = args
-        self.frame_content: list[int] = []  # List of Entry IDs for the current query
-        self._selected: OrderedDict[int, None] = OrderedDict()
-        self.pages_count = 0
 
+        # Thumbnail Grid
+        self._selected: OrderedDict[int, None] = OrderedDict()
+        self.badge_update_lock = False
+        self.frame_content: list[int] = []  # List of Entry IDs for the current query
         self.scrollbar_pos = 0
         self.spacing = None
+        self.thumb_job_queue: Queue = Queue()
+        self.thumb_threads: list[Consumer] = []
+
+        # Sync Engine
+        self._sync_disabled_notice_shown: bool = False
+        self._sync_session_id: int = 0  # Prevent current sync from affecting subsequent libraries.
+        self._sync_pool = QThreadPool(self)
+        self._sync_pool.setMaxThreadCount(1)
+        self.file_scan_lock: bool = False  # Prevent multiple file scanning operations at once
+        self.pages_count = 0
+        self.sync_engine = LibrarySyncEngine(self.lib)
 
         self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
-        # self.title_text: str = self.base_title
-        # self.buffer = {}
-        self.thumb_job_queue: Queue = Queue()
-        self.thumb_threads: list[Consumer] = []
 
         self.SIGTERM.connect(self.handle_sigterm)
 
@@ -456,9 +461,9 @@ class QtDriver(DriverMixin, QObject):
             set_open_last_loaded_on_startup
         )
 
-        # Refresh Directories
-        self.main_window.menu_bar.refresh_dir_action.triggered.connect(
-            lambda: self.call_if_library_open(self.add_new_files_callback)
+        # Sync Library
+        self.main_window.menu_bar.sync_library_action.triggered.connect(
+            lambda: self.call_if_library_open(self.sync_library_callback)
         )
 
         # Close Library
@@ -554,13 +559,8 @@ class QtDriver(DriverMixin, QObject):
 
         # region Tools Menu ===========================================================
 
-        def create_fix_unlinked_entries_modal():
-            if not hasattr(self, "unlinked_modal"):
-                self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
-            self.unlinked_modal.show()
-
         self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
-            create_fix_unlinked_entries_modal
+            self.open_fix_unlinked_entries_modal
         )
 
         def create_ignored_entries_modal():
@@ -579,7 +579,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.menu_bar.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
 
-        # TODO: Move this to a settings screen.
+        # TODO: Make this accessible somewhere more sensible too, like "Library Information"
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
             lambda: unwrap(self.cache_manager).clear_cache()
         )
@@ -694,6 +694,10 @@ class QtDriver(DriverMixin, QObject):
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
 
         def _update_browsing_state():
+            # Clear any banner asking for a manual refresh of the view
+            sync_banner = self._sync_banner
+            if sync_banner is not None and sync_banner.is_awaiting_refresh:
+                sync_banner.hide_banner()
             try:
                 self.update_browsing_state(
                     BrowsingState.from_search_query(self.main_window.search_field.text())
@@ -741,9 +745,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
         self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
 
-        # NOTE: Putting this early will result in a white non-responsive
-        # window until everything is loaded. Consider adding a splash screen
-        # or implementing some clever loading tricks.
+        # NOTE: Putting this too early will result in a non-responsive white window on start.
         self.main_window.show()
         self.main_window.activateWindow()
         self.main_window.toggle_landing_page(enabled=True)
@@ -800,8 +802,17 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("No Library to Close")
             return
-
         logger.info("Closing Library...")
+
+        # Invalidate any sync still active for the old library,
+        # and wait for the sync to stop before releasing the lock.
+        self.sync_engine.cancelled = True
+        self._new_sync_session()
+        self._wait_for_sync_stop()
+        self.file_scan_lock = False
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
+
         self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
@@ -817,6 +828,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.sync_engine.reset()
         self.cache_manager = None
         self.thumb_job_queue.queue.clear()
 
@@ -843,7 +855,7 @@ class QtDriver(DriverMixin, QObject):
         try:
             self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
             self.main_window.menu_bar.close_library_action.setEnabled(False)
-            self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
+            self.main_window.menu_bar.sync_library_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
             self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
@@ -1083,82 +1095,207 @@ class QtDriver(DriverMixin, QObject):
 
         return msg.exec()
 
-    def add_new_files_callback(self):
-        """Run when user initiates adding new files to the Library."""
-        tracker = RefreshTracker(self.lib)
+    def _run_sync_step(
+        self,
+        generator: Callable[[], Iterator[T]],
+        on_progress: Callable[[T], None],
+        on_done: Callable[[], None],
+    ) -> None:
+        """Run a generator function on a background thread with signals for progress and completion.
 
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=0,
-        )
-        pw.setWindowTitle(Translations["library.refresh.title"])
-        pw.update_label(Translations["library.refresh.scanning_preparing"])
-        pw.show()
+        Args:
+            generator (Callable[[], Iterator[T]]): Zero-argument callable returning the
+                generator to iterate.
+            on_progress (Callable[[T], None]): Called on the main thread with each yielded value.
+            on_done (Callable[[], None]): Called on the main thread once `generator` is finished.
+        """
+        iterator = FunctionIterator(generator)
+        iterator.value.connect(on_progress)
+        runnable = CustomRunnable(iterator.run)
+        runnable.done.connect(on_done)
+        self._sync_pool.start(runnable)
 
-        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
-        iterator.value.connect(
-            lambda x: (
-                pw.update_progress(x + 1),
-                pw.update_label(
-                    Translations.format(
-                        "library.refresh.scanning.plural"
-                        if x + 1 != 1
-                        else "library.refresh.scanning.singular",
-                        searched_count=f"{x + 1:n}",
-                        found_count=f"{tracker.files_count:n}",
-                    )
-                ),
+    def _wait_for_sync_stop(self) -> None:
+        """Block until a currently running sync is stopped, if any."""
+        self._sync_pool.waitForDone()
+
+    def sync_library_callback(self):
+        """Run when syncing a Library is initiated."""
+        if self.file_scan_lock:
+            logger.info("[QtDriver] Sync already in progress, ignoring request")
+            return
+        self.file_scan_lock = True
+        session_id = self._new_sync_session()
+        # Disable the "Fix Unlinked Entries" modal's relink/remove actions during the sync
+        if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
+            self.unlinked_modal.update_unlinked_count()
+
+        engine = self.sync_engine
+        library_dir = unwrap(self.lib.library_dir)
+        sync_banner = self._create_sync_banner()
+        sync_banner.set_preparing()
+
+        def on_progress(progress: tuple[int, int]) -> None:
+            sync_banner = self._sync_banner
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
+                return
+            searched_count, found_count = progress
+            if searched_count < 0:
+                # Scan finished, duplicate entry merging/relinking is running before the next yield
+                sync_banner.set_repairing()
+                return
+            sync_banner.set_scanning(searched_count + 1, found_count)
+
+        def _start_scan() -> None:
+            self._run_sync_step(
+                lambda lib=library_dir: engine.sync_dir(lib),
+                on_progress,
+                lambda: self.save_new_entries_runnable(engine, session_id=session_id),
             )
-        )
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.add_new_files_runnable(tracker),
-            )
-        )
-        QThreadPool.globalInstance().start(r)
 
-    def add_new_files_runnable(self, tracker: RefreshTracker):
+        sync_banner.call_when_open(_start_scan)
+
+    def _finish_sync(
+        self,
+        new_count: int,
+        unlinked_count: int,
+        relinked_count: int,
+        session_id: int,
+    ):
+        """Show the sync banner's result notice stage once the sync is completed.
+
+        Args:
+            new_count (int): New files count.
+            unlinked_count (int): Unlinked entries count.
+            relinked_count (int): Automatically relinked files count.
+            session_id (int): The sync session this sync started with.
+        """
+        if self._is_sync_stale(session_id):
+            return
+
+        self.file_scan_lock = False
+        self.lib.unlinked_entries_count = unlinked_count
+        if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
+            self.unlinked_modal.update_unlinked_count()
+            self.unlinked_modal.remove_modal.refresh_list()
+        if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
+            self.library_info_window.update_cleanup()
+
+        if self.sync_engine.cancelled:
+            return
+
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.finish(new_count, unlinked_count, relinked_count)
+
+    @property
+    def _sync_banner(self) -> SyncBanner | None:
+        """Get the sync banner, if there currently is one."""
+        return self.main_window.banners.get(SyncBanner.KEY, SyncBanner)
+
+    def _create_sync_banner(self) -> SyncBanner:
+        banner = SyncBanner()
+        banner.refresh_requested.connect(self._on_new_files_banner_refresh)
+        banner.review_requested.connect(self._on_unlinked_banner_review)
+        banner.settings_requested.connect(self._on_sync_disabled_open_settings)
+        banner.progress_cancelled.connect(self._on_sync_cancel_requested)
+        self.main_window.banners.push(banner, key=SyncBanner.KEY)
+        return banner
+
+    def _on_sync_cancel_requested(self) -> None:
+        """Stop the current sync at its next opportunity."""
+        self.sync_engine.cancelled = True
+        logger.info("[QtDriver] Sync cancelled")
+
+    def _new_sync_session(self) -> int:
+        """Increment the sync session, invalidating any active sync's callbacks."""
+        self._sync_session_id += 1
+        return self._sync_session_id
+
+    def _is_sync_stale(self, session_id: int) -> bool:
+        """Whether `session_id` belongs to an older sync session and should be invalidated."""
+        return session_id != self._sync_session_id
+
+    def _on_new_files_banner_refresh(self):
+        self.update_browsing_state()
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=True)
+        # If there are still unlinked entries after the automatic relinking step, show a notice.
+        sync_banner = self._sync_banner
+        if sync_banner is None:
+            return
+        if self.lib.unlinked_entries_count > 0:
+            sync_banner.set_unlinked(self.lib.unlinked_entries_count)
+        else:
+            sync_banner.hide_banner(force=True)
+
+    def _on_unlinked_banner_review(self):
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
+        self.open_fix_unlinked_entries_modal()
+
+    def _on_sync_disabled_open_settings(self):
+        if (sync_banner := self._sync_banner) is not None:
+            sync_banner.hide_banner(force=True)
+        self.open_settings_modal()
+
+    def open_fix_unlinked_entries_modal(self):
+        if not hasattr(self, "unlinked_modal"):
+            self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
+        self.unlinked_modal.show()
+
+    def sync_entry_stats_runnable(
+        self,
+        engine: LibrarySyncEngine,
+        new_count: int,
+        unlinked_count: int,
+        relinked_count: int,
+        session_id: int,
+    ):
+        """Refresh cached stat() data for files already known to the library.
+
+        Threaded method.
+        """
+        if self._is_sync_stale(session_id):
+            return
+        restat_count = engine.restat_count
+
+        def on_progress(idx: int) -> None:
+            sync_banner = self._sync_banner
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
+                return
+            sync_banner.set_updating(idx, restat_count)
+
+        on_progress(0)
+        self._run_sync_step(
+            engine.sync_entry_stats,
+            on_progress,
+            lambda: self._finish_sync(new_count, unlinked_count, relinked_count, session_id),
+        )
+
+    def save_new_entries_runnable(self, engine: LibrarySyncEngine, session_id: int):
         """Adds any known new files to the library and run default macros on them.
 
         Threaded method.
         """
-        files_count = tracker.files_count
+        if self._is_sync_stale(session_id):
+            return
+        new_count = engine.new_file_count
+        unlinked_count = engine.unlinked_entries_count
+        relinked_count = engine.relinked_entries_count
 
-        iterator = FunctionIterator(tracker.save_new_files)
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=0,
-        )
-        pw.setWindowTitle(Translations["entries.running.dialog.title"])
-        pw.update_label(
-            Translations.format("entries.running.dialog.new_entries", total=f"{files_count:n}")
-        )
-        pw.show()
+        def on_progress(idx: int) -> None:
+            sync_banner = self._sync_banner
+            if engine.cancelled or self._is_sync_stale(session_id) or sync_banner is None:
+                return
+            sync_banner.set_saving_new_entries(idx, new_count)
 
-        iterator.value.connect(
-            lambda _count: (
-                pw.update_label(
-                    Translations.format(
-                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
-                    )
-                ),
-            )
+        on_progress(0)
+        self._run_sync_step(
+            engine.save_new_entries,
+            on_progress,
+            lambda: self.sync_entry_stats_runnable(
+                engine, new_count, unlinked_count, relinked_count, session_id
+            ),
         )
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                # refresh the library only when new items are added
-                files_count and self.update_browsing_state(),
-            )
-        )
-        QThreadPool.globalInstance().start(r)
 
     def new_file_macros_runnable(self, new_ids):
         """Threaded method that runs macros on a set of Entry IDs."""
@@ -1713,7 +1850,12 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         if self.settings.scan_files_on_open:
-            self.add_new_files_callback()
+            self.sync_library_callback()
+        elif not self._sync_disabled_notice_shown:
+            self._sync_disabled_notice_shown = True
+            # Show that the setting for opening a library on start is turned off,
+            # with a prompt to open the settings to change that (encouraged but not required).
+            self._create_sync_banner().set_disabled_notice()
 
         if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
             library_dir_display = self.lib.library_dir
@@ -1737,7 +1879,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_select_actions_visibility()
         self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
         self.main_window.menu_bar.close_library_action.setEnabled(True)
-        self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
+        self.main_window.menu_bar.sync_library_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
         self.main_window.menu_bar.field_template_manager_action.setEnabled(True)

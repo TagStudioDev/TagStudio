@@ -158,7 +158,8 @@ class Inspector(QWidget):
         if stats.duration is not None:
             self._current_stats.duration = stats.duration
 
-        self.layout().file_attrs.update_stats(filepath, self._current_stats)
+        entry = unwrap(self._lib.get_entry(self._selected[0]))
+        self.layout().file_attrs.update_stats(filepath, self._current_stats, entry)
 
     def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
@@ -257,8 +258,8 @@ class Inspector(QWidget):
                 if update_preview:
                     stats: FileAttributeData = self.layout().preview_thumb.display_file(filepath)
                     self._current_stats = stats
-                    self.layout().file_attrs.update_stats(filepath, stats)
-                self.layout().file_attrs.update_date_label(filepath)
+                    self.layout().file_attrs.update_stats(filepath, stats, entry)
+                self.layout().file_attrs.update_date_label(entry)
                 self.layout().containers.update_from_entry(entry_id)
                 self._set_selection_callback()
 
