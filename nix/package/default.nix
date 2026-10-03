@@ -55,6 +55,7 @@ python3Packages.buildPythonApplication {
       py7zr
       pydantic
       pydub
+      pygments
       pyside6
       rarfile
       rawpy
