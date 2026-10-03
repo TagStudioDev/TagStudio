@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-import threading
 from pathlib import Path
 
 from PIL import ImageQt
@@ -12,10 +11,6 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.previews.file_renderer import FileRenderer
 from tagstudio.qt.app_settings import AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
-
-# QPixmap creation isn't safe to run concurrently across threads; rendering runs on a
-# pool of worker threads, so this serializes just that conversion step.
-_pixmap_conversion_lock = threading.Lock()
 
 
 class QtFileRenderer(QObject):
@@ -54,10 +49,10 @@ class QtFileRenderer(QObject):
             is_loading=is_loading,
             is_thumb=is_thumb,
         )
-        with _pixmap_conversion_lock:
-            qim = ImageQt.ImageQt(image)
-            pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixel_ratio)
+
+        qim = ImageQt.ImageQt(image)
+        pixmap = QPixmap.fromImage(qim)
+        pixmap.setDevicePixelRatio(pixel_ratio)
 
         self.updated_ratio.emit(image.size[0] / image.size[1])
         if pixmap:
