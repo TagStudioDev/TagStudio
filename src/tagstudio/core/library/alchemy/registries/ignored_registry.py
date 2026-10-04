@@ -36,10 +36,7 @@ class IgnoredRegistry:
 
         for i, entry in enumerate(self.lib.all_entries()):
             yield i
-            if not Ignore.compiled_patterns:
-                # If the compiled_patterns has malfunctioned, don't consider that a false positive
-                yield i
-            elif Ignore.compiled_patterns.match(entry.path):
+            if Ignore.matcher.is_ignored(entry.path):
                 self.ignored_entries.append(entry)
 
     def remove_ignored_entries(self) -> None:

@@ -656,12 +656,8 @@ class FileRenderer:
 
             # Check if the file is supposed to be ignored and render an overlay if needed
             try:
-                if (
-                    image
-                    and Ignore.compiled_patterns
-                    and Ignore.compiled_patterns.match(
-                        filepath.relative_to(unwrap(self.lib.library_dir))
-                    )
+                if image and Ignore.matcher.is_ignored(
+                    filepath.relative_to(unwrap(self.lib.library_dir))
                 ):
                     image = render_ignored((scaled_size, scaled_size), image)
             except TypeError:

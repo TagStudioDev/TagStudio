@@ -10,10 +10,9 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import structlog
-from wcmatch import glob
 
 from tagstudio.core.constants import TS_FOLDER_NAME
-from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, ignore_to_glob
+from tagstudio.core.library.ignore import IgnoreMatcher
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.silent_subprocess import silent_popen  # pyright: ignore
 
@@ -99,7 +98,7 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
 def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[Path]:
     """Scan for files with the internal scanner."""
     logger.info("[Scanners] Using internal scanner for scanning", path=scan_dir)
-    matcher = glob.compile(patterns=ignore_to_glob(ignore_patterns), flags=PATH_GLOB_FLAGS)
+    matcher = IgnoreMatcher(ignore_patterns)
 
     def walk(dir_path: Path, ancestors: frozenset[str]) -> Iterator[Path]:
         try:
@@ -110,9 +109,9 @@ def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> I
 
         for item in dir_items:
             rel = Path(item.path).relative_to(scan_dir)
-            if matcher.match(rel.as_posix()):
-                continue
             try:
+                if matcher.match(rel.as_posix(), is_dir=item.is_dir()):
+                    continue
                 item_stat = item.stat(follow_symlinks=True)
             except OSError:
                 continue

@@ -662,3 +662,27 @@ class MigrationTo500(DBMigration):
             "suffix = :suffix WHERE id = :id",
             updates,
         )
+
+        logger.info(fmt_log("Repairing 'reinclude folders' pattern in the .ts_ignore file..."))
+        cls._repair_reinclude_folders_pattern(library_dir)
+
+    @classmethod
+    def _repair_reinclude_folders_pattern(cls, library_dir: Path):
+        """Add "!*/" following "*" lines in the `.ts_ignore` if one isn't already present.
+
+        Under wcmatch's rules paths could be reincluded after a "*" without requiring a
+        "!*/" after it, unlike the desired `.gitignore`-type behavior.
+        """
+        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
+        if not ts_ignore.exists():
+            return
+
+        # If "!*/" already follows "*", do nothing and return
+        lines = ts_ignore.read_text(encoding="utf8").splitlines()
+        patterns = [line.rstrip() for line in lines]
+        if "*" not in patterns or "!*/" in patterns:
+            return
+
+        # Add "!*/" after the first "*" found, if any
+        lines.insert(patterns.index("*") + 1, "!*/")
+        ts_ignore.write_text("\n".join(lines) + "\n", encoding="utf8")

@@ -105,16 +105,21 @@ class LibrarySyncEngine:
                 sleep(0)
                 start_time_loop = time()
 
+        # NOTE: Ignored files are skipped during the scan.
+        if not self.cancelled:
+            for entry in self.library.get_entries([cache[key] for key in unvisited]):
+                if self.cancelled:
+                    break
+                if not (library_dir / entry.path).is_file():
+                    self.unlinked_entries.append(entry)
+
         if self.cancelled:
             yield count, len(self.new_paths)
             logger.info("[Sync] Directory scan cancelled", path=library_dir, files_scanned=count)
             return
 
-        unlinked_ids = {cache[key] for key in unvisited}
         if self.library.duplicate_path_entry_ids:
-            unlinked_ids.update(self.library.duplicate_path_entry_ids)
-        if unlinked_ids:
-            self.unlinked_entries = self.library.get_entries(list(unlinked_ids))
+            self.unlinked_entries += self.library.get_entries(self.library.duplicate_path_entry_ids)
 
         if self.unlinked_entries:
             yield -1, -1  # Signals the UI that repair work is starting
