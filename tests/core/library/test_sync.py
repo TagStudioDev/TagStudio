@@ -276,6 +276,46 @@ def test_sync_auto_relink_deleted_file(library: Library):
     assert Path("gone.txt") in {e.path for e in engine.unlinked_entries}
 
 
+def add_tracked_files(library: Library, paths: list[Path], ts_ignore: str) -> list[int]:
+    """Create `paths` on disk with entries for them, then write the given .ts_ignore content."""
+    library_dir = unwrap(library.library_dir)
+    for path in paths:
+        (library_dir / path).parent.mkdir(parents=True, exist_ok=True)
+        (library_dir / path).touch()
+    ts_ignore_path = library_dir / TS_FOLDER_NAME / IGNORE_NAME
+    ts_ignore_path.parent.mkdir(parents=True, exist_ok=True)
+    ts_ignore_path.write_text(ts_ignore)
+    return library.add_entries([Entry(path=path, fields=[]) for path in paths])
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_files_skipped_by_ignore_rules_are_not_unlinked(library: Library):
+    """Existing files the scan skips because of ignore rules must never be unlinked or relinked."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    tracked = [Path("a.png"), Path("sub/b.png"), Path("sub/deep/c.png")]
+    tracked_ids = add_tracked_files(library, tracked, "*\n!*.png\n")
+    (library_dir / "c.png").touch()  # A new file that could be mistaken for "sub/deep/c.png"
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    assert not {e.id for e in engine.unlinked_entries} & set(tracked_ids)
+    assert not {e.id for e in engine.relinked_entries} & set(tracked_ids)
+    assert [e.path for e in library.get_entries(tracked_ids)] == tracked
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_missing_file_in_ignored_folder_is_unlinked(library: Library):
+    """A file that's actually gone must still be unlinked, even if its folder is ignored."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    tracked_ids = add_tracked_files(library, [Path("sub/kept.png"), Path("sub/gone.png")], "sub/\n")
+    (library_dir / "sub" / "gone.png").unlink()
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    unlinked = {e.path for e in engine.unlinked_entries if e.id in tracked_ids}
+    assert unlinked == {Path("sub/gone.png")}
+
+
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_auto_relink_moved_and_renamed_file_modified(library: Library):
     """[Case #2] A moved, renamed, and modified file must not auto-relink."""

@@ -49,10 +49,6 @@ Minecraft/Website
 !!! note ""
     _This section sourced and adapted from Git's[^1] `.gitignore` [documentation](https://git-scm.com/docs/gitignore)._
 
-### Internal Processes
-
-When scanning your library directories, the `.ts_ignore` file is read by either the [`wcmatch`](https://facelessuser.github.io/wcmatch/glob/) library or [`ripgrep`](https://github.com/BurntSushi/ripgrep) in glob mode depending if you have the later installed on your system and it's detected by TagStudio. Ripgrep is the preferred method for scanning directories due to its improved performance and identical pattern matching to `.gitignore`. This mixture of tools may lead to slight inconsistencies if not using `ripgrep`.
-
 ---
 
 ### Comments ( `#` )
@@ -141,10 +137,6 @@ A `!` prefix before a pattern negates the pattern, allowing any files matched ma
     \!wowee.jpg
     ```
 <!-- prettier-ignore-end -->
-
-<!-- prettier-ignore -->
-!!! bug "Directory Exclusion Negation"
-    TagStudio attempts to match the behavior of a `.gitignore` file 1:1, however if you don't have `ripgrep` installed on your system and TagStudio falls back to its internal pattern matcher, excluded directories can be overwritten by further negations, unlike `.gitignore` behavior. Be wary that this is **not officially supported**, and this behavior may be removed at any time.
 
 ---
 
@@ -275,18 +267,22 @@ Character sets and ranges are specific and powerful forms of wildcards that use 
     ```
 === "Ignore all files EXCEPT .jpg files"
     ```toml
+    # Ignore everything to start,
+    # reinclude subfolders,
+    # then reinclude .jpg files located anywhere
     *
+    !*/
     !*.jpg
     ```
 === "Ignore all .jpg files in specific folders"
     ```toml
-    ./Photos/Worst Vacation/*.jpg
+    Photos/Worst Vacation/*.jpg
     Music/Artwork Art/*.jpg
     ```
 
 <!-- prettier-ignore -->
 !!! tip "Ensuring Complete Extension Matches"
-    For some filetypes, it may be nessisary to specify different casing and alternative spellings in order to match with all possible variations of an extension in your library.
+    For some filetypes, it may be necessary to specify different casing and alternative spellings in order to match with all possible variations of an extension in your library.
 
     ```toml title="Ignore (Most) Possible JPEG File Extensions"
     # The JPEG Cinematic Universe
@@ -305,7 +301,8 @@ Character sets and ranges are specific and powerful forms of wildcards that use 
 <!-- prettier-ignore -->
 === "Ignore all "Cache" folders"
     ```toml
-    # Matches any folder called "Cache" no matter where it is in your library.
+    # Matches any folder called "cache"/"Cache" no matter where it is in your library.
+    Cache/
     cache/
     ```
 === "Ignore a "Downloads" folder"

@@ -26,6 +26,7 @@ sys.path.insert(0, str(CWD.parent))
 from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
 from tagstudio.qt.qt_driver import QtDriver
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 
@@ -176,6 +177,15 @@ def _reset_media_types():
     if pre_snapshop != post_snapshop:
         MediaTypes._restore(pre_snapshop)
         assert pre_snapshop == MediaTypes._snapshot(), "The MediaTypes state was not restored!"
+
+
+@pytest.fixture(autouse=True)
+def _reset_ignore():
+    """Reset the Ignore state after each test."""
+    yield
+    Ignore._last_loaded = None
+    Ignore._patterns = [*GLOBAL_IGNORE, TS_FOLDER_NAME]
+    Ignore.matcher = IgnoreMatcher(Ignore._patterns)
 
 
 @pytest.fixture

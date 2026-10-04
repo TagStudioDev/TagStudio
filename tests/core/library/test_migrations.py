@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.constants import (
     SQL_FILENAME,
 )
@@ -90,3 +90,30 @@ def test_migration_with_existing_field_template_tables(tmp_path: Path):
         }
     finally:
         library.close()
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("# Comment\n*\n!*.png\n*\n", "# Comment\n*\n!*/\n!*.png\n*\n"),
+        ("*\n!*/\n!*.png\n", "*\n!*/\n!*.png\n"),
+        ("*.jpg\n", "*.jpg\n"),
+    ],
+)
+def test_migration_to_500_reincludes_ts_ignore_folders(tmp_path: Path, before: str, after: str):
+    """A .ts_ignore that ignores everything with "*" must get "!*/" after the first occurrence
+
+    If there's more than one occurrence... *why...*
+    """
+    fixture = CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_202" / TS_FOLDER_NAME
+    (tmp_path / TS_FOLDER_NAME).mkdir()
+    shutil.copy(fixture / SQL_FILENAME, tmp_path / TS_FOLDER_NAME / SQL_FILENAME)
+    ts_ignore = tmp_path / TS_FOLDER_NAME / IGNORE_NAME
+    ts_ignore.write_text(before)
+
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+    finally:
+        library.close()
+    assert ts_ignore.read_text() == after

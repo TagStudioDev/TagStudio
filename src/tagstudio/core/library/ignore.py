@@ -3,6 +3,7 @@
 
 
 from pathlib import Path
+from typing import NamedTuple
 
 import structlog
 from wcmatch import glob
@@ -12,12 +13,10 @@ from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
-PATH_GLOB_FLAGS: int = glob.GLOBSTARLONG | glob.DOTGLOB | glob.NEGATE
+_RULE_FLAGS: int = glob.GLOBSTAR | glob.DOTGLOB
 
 
 GLOBAL_IGNORE = [
-    # TagStudio -------------------
-    f"{TS_FOLDER_NAME}",
     # Trash -----------------------
     ".Trash-*",
     ".Trash",
@@ -35,65 +34,52 @@ GLOBAL_IGNORE = [
 ]
 
 
-def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
-    """Convert .gitignore-like patterns to Unix-like glob syntax.
+class _Rule(NamedTuple):
+    matcher: glob.WcMatcher
+    negated: bool
+    dir_only: bool
+    name_only: bool
 
-    Args:
-        ignore_patterns (list[str]): The .gitignore-like patterns to convert.
-    """
-    glob_patterns: list[str] = list(ignore_patterns)
-    glob_patterns_remove: list[str] = []
-    additional_patterns: list[str] = []
-    root_patterns: list[str] = []
 
-    # Expand .gitignore patterns to mimic the same behavior with unix-like glob patterns.
-    for pattern in glob_patterns:
-        # Temporarily remove any exclusion character before processing
-        exclusion_char = ""
-        gp = pattern
-        if pattern.startswith("!"):
-            gp = pattern[1:]
-            exclusion_char = "!"
+def _parse_rule(pattern: str) -> _Rule | None:
+    negated = pattern.startswith("!")
+    pattern = pattern.removeprefix("!")
+    dir_only = pattern.endswith("/")
+    pattern = pattern.rstrip("/")
+    if not pattern:
+        return None
+    # A slashed pattern is relative to the root, otherwise it matches any name
+    name_only = "/" not in pattern
+    pattern = pattern.removeprefix("/")
+    return _Rule(glob.compile(pattern, flags=_RULE_FLAGS), negated, dir_only, name_only)
 
-        if not gp.startswith("**/") and not gp.startswith("*/") and not gp.startswith("/"):
-            # Create a version of a prefix-less pattern that starts with "**/"
-            gp = "**/" + gp
-            additional_patterns.append(exclusion_char + gp)
 
-            gp = gp.removeprefix("**/").removeprefix("*/")
-            additional_patterns.append(exclusion_char + gp)
+class IgnoreMatcher:
+    """Matches paths relative to the library against .gitignore-style patterns."""
 
-        elif gp.startswith("/"):
-            # Matches "/file" case for .gitignore behavior where it should only match
-            # a file or folder in the root directory and nowhere else.
-            glob_patterns_remove.append(pattern)
-            gp = gp.lstrip("/")
-            root_patterns.append(exclusion_char + gp)
+    def __init__(self, patterns: list[str]) -> None:
+        self._rules = [rule for pattern in patterns if (rule := _parse_rule(pattern))]
+        self._folder_verdicts: dict[str, bool] = {}
 
-    remove_set = set(glob_patterns_remove)
-    glob_patterns = [p for p in glob_patterns if p not in remove_set]
-    # root_patterns must be merged in before the "/**" suffix pass below, otherwise a rooted
-    # directory pattern (e.g. "/Downloads/") never gets a "/**" variant and matches nothing.
-    glob_patterns = glob_patterns + additional_patterns + root_patterns
+    def match(self, path: str, is_dir: bool) -> bool:
+        """Whether `path` is ignored, without checking its parent folders."""
+        name = path.rpartition("/")[2]
+        for rule in reversed(self._rules):
+            target = name if rule.name_only else path
+            if (is_dir or not rule.dir_only) and rule.matcher.match(target):
+                return not rule.negated
+        return False
 
-    # Add "/**" suffix to suffix-less patterns to match implicit .gitignore behavior.
-    for pattern in list(glob_patterns):
-        if pattern.endswith("/**"):
-            continue
-
-        glob_patterns.append(pattern.removesuffix("/*").removesuffix("/") + "/**")
-
-    # Fix wcmatch interpreting "**" as "one or more" to be a .gitignore style "zero or more".
-    # Otherwise "**/foo" won't match a root "foo" and "a/**/b" won't match match "a/b".
-    for pattern in list(glob_patterns):
-        collapsed = pattern.removeprefix("**/").replace("/**/", "/")
-        if collapsed != pattern:
-            glob_patterns.append(collapsed)
-
-    glob_patterns = list(dict.fromkeys(glob_patterns))  # Ordered deduplication
-
-    logger.info("[Ignore]", glob_patterns=glob_patterns)
-    return glob_patterns
+    def is_ignored(self, path: Path | str) -> bool:
+        """Whether the file at `path` is ignored, including by any ignored parent folder."""
+        parts = Path(path).as_posix().split("/")
+        for depth in range(1, len(parts)):
+            folder = "/".join(parts[:depth])
+            if folder not in self._folder_verdicts:
+                self._folder_verdicts[folder] = self.match(folder, is_dir=True)
+            if self._folder_verdicts[folder]:
+                return True
+        return self.match("/".join(parts), is_dir=False)
 
 
 def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
@@ -108,7 +94,7 @@ def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
     prefix = ""
     if not is_exclude_list:
         prefix = "!"
-        out += "*\n"
+        out += "*\n!*/\n"
     out += "\n".join([f"{prefix}*.{x.lstrip('.')}\n" for x in exts])
     return out
 
@@ -129,8 +115,8 @@ class Ignore(metaclass=Singleton):
     """Class for processing and managing glob-like file ignore file patterns."""
 
     _last_loaded: tuple[Path, float] | None = None
-    _patterns: list[str] = []
-    compiled_patterns: glob.WcMatcher | None = None
+    _patterns: list[str] = [*GLOBAL_IGNORE, TS_FOLDER_NAME]
+    matcher: IgnoreMatcher = IgnoreMatcher(_patterns)
 
     @staticmethod
     def read_ignore_file(library_dir: Path) -> list[str]:
@@ -165,46 +151,57 @@ class Ignore(metaclass=Singleton):
             f.writelines(lines)
 
     @staticmethod
-    def get_patterns(library_dir: Path, include_global: bool = True) -> list[str]:
+    def get_patterns(
+        library_dir: Path,
+        include_global: bool = True,
+        update_state: bool = True,
+    ) -> list[str]:
         """Get the ignore patterns for the given library directory.
+
+        The library's .TagStudio folder always comes last so it doesn't get reincluded.
 
         Args:
             library_dir (Path): The path of the library to load patterns from.
-            include_global (bool): Flag for including the global ignore set.
-                In most scenarios, this should be True.
+            include_global (bool): Flag for including the global ignore list.
+            update_state (bool): Flag for also loading the patterns into the class's state.
+                Should be True outside of exceptions that may include tests, migrations, etc.
         """
-        patterns = GLOBAL_IGNORE if include_global else []
+        global_patterns = GLOBAL_IGNORE if include_global else []
         ts_ignore_path = Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME)
 
+        # Return computed patterns if the state of the Ignore singleton shouldn't be updated.
+        if not update_state:
+            return [*global_patterns, *Ignore._load_ignore_file(ts_ignore_path), TS_FOLDER_NAME]
+
+        # Return default internal patterns if no .ts_ignore exists.
         if not ts_ignore_path.exists():
             logger.info(
                 "[Ignore] No .ts_ignore file found",
                 path=ts_ignore_path,
             )
             Ignore._last_loaded = None
-            Ignore._patterns = patterns
+            Ignore._patterns = [*global_patterns, TS_FOLDER_NAME]
+            Ignore.matcher = IgnoreMatcher(Ignore._patterns)
 
             return Ignore._patterns
 
         # Process the .ts_ignore file if the previous result is non-existent or outdated.
         loaded = (ts_ignore_path, ts_ignore_path.stat().st_mtime)
-        if not Ignore._last_loaded or (Ignore._last_loaded and Ignore._last_loaded != loaded):
+        if Ignore._last_loaded != loaded:
             logger.info(
                 "[Ignore] Processing the .ts_ignore file...",
                 library=library_dir,
                 last_mtime=Ignore._last_loaded[1] if Ignore._last_loaded else None,
                 new_mtime=loaded[1],
             )
-            Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
-            Ignore.compiled_patterns = glob.compile(
-                patterns=ignore_to_glob(Ignore._patterns),
-                flags=PATH_GLOB_FLAGS,
-            )
+            user_patterns = Ignore._load_ignore_file(ts_ignore_path)
+            Ignore._patterns = [*global_patterns, *user_patterns, TS_FOLDER_NAME]
+            Ignore.matcher = IgnoreMatcher(Ignore._patterns)
         else:
             logger.info(
                 "[Ignore] No updates to the .ts_ignore detected",
                 library=library_dir,
-                last_mtime=Ignore._last_loaded[1],
+                last_mtime=loaded[1],
                 new_mtime=loaded[1],
             )
         Ignore._last_loaded = loaded

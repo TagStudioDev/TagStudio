@@ -23,10 +23,8 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from wcmatch import glob
 
 from tagstudio.core.constants import (
-    IGNORE_NAME,
     LEGACY_TAG_FIELD_IDS,
     TAG_ARCHIVED,
     TAG_FAVORITE,
@@ -39,7 +37,7 @@ from tagstudio.core.library.alchemy.fields import LEGACY_FIELD_MAP
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
-from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
+from tagstudio.core.library.ignore import Ignore, IgnoreMatcher
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
 from tagstudio.core.utils.types import unwrap
@@ -512,18 +510,14 @@ class JsonMigrationModal(QObject):
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
     def assert_ignore_parity(self) -> None:
-        compiled_pats = glob.compile(
-            ignore_to_glob(
-                Ignore._load_ignore_file(  # pyright: ignore[reportPrivateUsage]
-                    unwrap(self.json_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
-                )
-            ),
-            flags=PATH_GLOB_FLAGS,
-        )  # copied from Ignore.get_patterns since that method modifies singleton state
-        path = self.json_lib.library_dir / "filename"
+        library_dir = unwrap(self.json_lib.library_dir)
+        matcher = IgnoreMatcher(Ignore.get_patterns(library_dir, update_state=False))
+        is_exclude_list = self.json_lib.is_exclude_list
         for ext in self.json_lib.ext_list:
-            assert compiled_pats.match(str(path / ext)) == self.json_lib.is_exclude_list
-        assert compiled_pats.match(str(path / ".not_a_real_ext")) != self.json_lib.is_exclude_list
+            filename = f"file.{ext.lstrip('.')}"
+            assert matcher.is_ignored(filename) == is_exclude_list
+            assert matcher.is_ignored(f"folder/{filename}") == is_exclude_list
+        assert matcher.is_ignored("folder/file.not_a_real_ext") != is_exclude_list
 
     def check_ignore_parity(self) -> bool:
         try:
