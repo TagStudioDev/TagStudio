@@ -33,13 +33,68 @@ To create or open a [library](libraries.md), go to **File -> Open/Create Library
 !!! info "Legacy Library Migration"
     If you open a library created with TagStudio **v9.4.2 or earlier** in **[v9.5.0](changelog.md#950-march-3rd-2025) or later**, you'll be walked through a migration process that converts the old `ts_library.json` save file to the new `ts_library.sqlite` format. The original JSON file is preserved and can be easily deleted from the **View -> Library Information** panel once you're satisfied with the migration.
 
-## :material-database-refresh: Refreshing Directories
+## :material-database-sync: Library Syncing
 
-TagStudio automatically scans for new or updated files when opening a library by default. This behavior can be toggled in the settings if your library is very large and/or located on a slow drive.
+A TagStudio library gets synced with the files found in your chosen content folders and certain metadata attributes (e.g. stats) found on those files. This is a **non-destructive, read-only** process and none of your content files are moved, modified, or deleted. Syncing is indicated by a temporary progress bar, and you can continue to use TagStudio normally while syncing occurs.
 
-![Settings -> Automatically Load New Files](assets/settings_refresh_library_on_open.png)
+Syncing automatically occurs when you open a library by default, and you can manually sync a library at any time by going to **File -> Sync Library** in the menubar to by pressing <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘ Command </kbd>+<kbd>R</kbd> on macOS). If you do not wish for your library to be synced when opened, you can disable this behavior in the settings.
 
-To manually refresh your library at any time, use **File -> Refresh Directories** from the menu or by using <kbd>Ctrl</kbd>+<kbd>R</kbd> (<kbd>⌘ Command </kbd>+<kbd>R</kbd> on macOS).
+<figure markdown="span">
+  ![Settings -> Sync Library on Open](assets/settings_refresh_library_on_open.png)
+  <figcaption>
+  Settings -> Sync Library on Open
+  </figcaption>
+</figure>
+
+### :material-link-variant: Automatic Relinking
+
+Unlinked entries are file entries in your TagStudio library that have become "unlinked" from their original file on disk, likely as a result of the original file being renamed, moved, or deleted. TagStudio attempts to automatically relink any of these entries as a part of the syncing process, but there are some scenarios where automatic relinking is not possible or too ambiguous and requires a manual review. Below is a complete table of every scenario in which file entries can become unlinked, and whether or not TagStudio can auto-relink them:
+
+|     Case | File Moved? | File Renamed? | File Modified? | Unlinked Entries | Matched Files |             Auto-Relink             |
+| -------: | :---------: | :-----------: | :------------: | :--------------: | :-----------: | :---------------------------------: |
+|  **\#0** |    _No_     |     _No_      |    **Yes**     |        0         |       —       | :material-minus-circle:{.lg .gray}  |
+|  **\#1** |      —      |       —       |       —        |        1         |       0       |  :material-close-circle:{.lg .red}  |
+|  **\#2** |   **Yes**   |    **Yes**    |    **Yes**     |        1         |       0       |  :material-close-circle:{.lg .red}  |
+|  **\#3** |   **Yes**   |    **Yes**    |      _No_      |        1         |       1       | :material-check-circle:{.lg .green} |
+|  **\#4** |   **Yes**   |    **Yes**    |      _No_      |        1         |      2+       |  :material-close-circle:{.lg .red}  |
+|  **\#5** |   **Yes**   |    **Yes**    |      _No_      |        2+        |      Any      |  :material-close-circle:{.lg .red}  |
+|  **\#6** |   **Yes**   |     _No_      |    **Yes**     |        1         |       1       | :material-check-circle:{.lg .green} |
+|  **\#7** |   **Yes**   |     _No_      |      _No_      |        1         |       1       | :material-check-circle:{.lg .green} |
+|  **\#8** |   **Yes**   |     _No_      |      _No_      |        1         |      2+       |  :material-close-circle:{.lg .red}  |
+|  **\#9** |   **Yes**   |     _No_      |      _No_      |        2+        |      Any      |  :material-close-circle:{.lg .red}  |
+| **\#10** |    _No_     |    **Yes**    |    **Yes**     |        1         |       0       |  :material-close-circle:{.lg .red}  |
+| **\#11** |    _No_     |    **Yes**    |      _No_      |        1         |       1       | :material-check-circle:{.lg .green} |
+| **\#12** |    _No_     |    **Yes**    |      _No_      |        1         |      2+       |  :material-close-circle:{.lg .red}  |
+| **\#13** |    _No_     |    **Yes**    |      _No_      |        2+        |      Any      |  :material-close-circle:{.lg .red}  |
+
+#### Explanations
+
+- **Case \#0**: _Modifying file content alone does not create unlinked entries._
+- **Case \#1**: If the original file was deleted, no matches will be found. TagStudio leaves the decision to delete entries up to the user.
+- **Case \#2**: If the original file bears no similarities to the unlinked entry anymore, it is indistinguishable from a deleted or new file.
+- **Case \#3**: The file has been moved and renamed with a high degree of confidence.
+- **Case \#4**: If more than one file is matched with the same stats, the case is too ambiguous.
+- **Case \#5**: If two or more entries share the same stats, it's not clear which entry a matched file belongs to.
+- **Case \#6**: The file has been moved and modified, but since no other file shares its filename, it is assumed to be the same file with a decent degree of confidence.
+- **Case \#7**: The original file has been moved with a high degree of confidence.
+- **Case \#8**: If multiple copies of the same moved file are matched in different locations, the case is ambiguous.
+- **Case \#9**: _Similar to **\#5**._ If two or more entries share the same filename and stats, it's not clear which entry a matched file belongs to.
+- **Case \#10**: _Same as **\#2**._
+- **Case \#11**: The file has been renamed with a high degree of confidence.
+- **Case \#12**: _Same as **\#4**._
+- **Case \#13**: _Same as **\#5**._
+
+Every numbered case above assumes the entry has saved file metadata attributes to help match against (added in **v9.7**), in which case the **file modification date** combined with the **file size** is used as a soft file signature to aid in scenarios such as renames or moves. If no file metadata is stored with the file entry, or if this soft file signature doesn't lead to a confident match, TagStudio falls back to matching by filename alone: a single file found with that name is automatically relinked, while zero or multiple filename matches leave the entry unlinked for manual review.
+
+<!-- prettier-ignore -->
+!!! warning
+    There's currently no way to manually specify which remaining unlinked entries should be linked with which files, only to delete the entries from the library. Manual relinking is a high priority feature for future releases.
+
+<!-- prettier-ignore -->
+!!! warning "Switching from a Case-Sensitive to Case-Insensitive Filesystem (i.e. Windows)"
+    If you switch from using TagStudio on a computer with a case-sensitive filesystem to one with a *case-insensitive* one, TagStudio will treat any entries added up to this point with the same filepath + name under case-insensitivity as duplicate entries and merge them. The automatic relinking process will also take case-insensitivity into account when relinking entries.
+
+    Currently, TagStudio only uses this case-insensitivity mode when running on Windows. Future versions will be more precise about this distinction, with the aim of determining the case sensitivity on a per-drive basis.
 
 ## :material-database-cog: Library Information Panel
 
