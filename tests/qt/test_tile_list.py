@@ -20,7 +20,7 @@ def test_update_selection_empty(qt_driver: QtDriver):
     qt_driver.toggle_item_selection(1, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
+    # TileList should hide all tiles
     for container in panel.containers._tiles:
         assert container.isHidden()
 
@@ -32,7 +32,7 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show all applicable tags and field containers
+    # TileList should show all applicable tag and field tiles
     for container in panel.containers._tiles:
         assert not container.isHidden()
 
@@ -47,7 +47,7 @@ def test_update_selection_multiple(qt_driver: QtDriver):
     qt_driver.toggle_item_selection(2, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show mixed field editing
+    # TileList should show mixed field editing
     for container in panel.containers._tiles:
         assert container.isHidden()
 
@@ -136,7 +136,7 @@ def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
+    # TileList should hide all tiles
     assert len(panel.containers._tiles) == 3
     for i, container in enumerate(panel.containers._tiles):
         match i:
@@ -169,7 +169,7 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should hide all containers
+    # TileList should hide all tiles
     assert len(panel.containers._tiles) == 3
     for i, container in enumerate(panel.containers._tiles):
         match i:
