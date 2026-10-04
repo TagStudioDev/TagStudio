@@ -69,7 +69,7 @@ Tags currently consist of the following attributes:
 - **Parent Tags**: Other tags in which this tag inherits from. In practice, this means that this tag can be substituted in searches for any listed parent tags.
     - Parent tags checked with the "disambiguation" checkbox next to them will be used to help disambiguate tag names that may not be unique.
     - For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
-- **Is Category**: A property that when checked, treats this tag as a category in the preview panel.
+- **Is Category**: A property that when checked, treats this tag as a category in the Inspector panel.
 
 Fields, like tags, are additional pieces of custom metadata that you can add to your file entries. Fields currently have several hardcoded names (e.g. "Title", "Author", "Series") but custom field names are planned for an upcoming update.
 
@@ -108,7 +108,7 @@ You can manage your library of tags from opening the "Tag Manager" panel from Ed
 
 ### Editing Tags
 
-To edit a tag, click on it inside the preview panel or right-click the tag and select "Edit Tag" from the context menu.
+To edit a tag, click on it inside the Inspector or right-click the tag and select "Edit Tag" from the context menu.
 
 ### Adding Tags to File Entries
 
@@ -116,11 +116,11 @@ Access the "Add Tag" search box by either clicking on the "Add Tag" button at th
 
 From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the top-most tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
-To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
+To remove a tag from a file entry, hover over the tag in the Inspector and click on the "-" icon that appears.
 
 ### Adding Fields to File Entries
 
-To add a metadata field to a file entry, start by clicking the "Add Field" button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
+To add a metadata field to a file entry, start by clicking the "Add Field" button at the bottom of the Inspector. From the dropdown menu, select the type of metadata field you’d like to add to the entry
 
 ### Editing Fields
 

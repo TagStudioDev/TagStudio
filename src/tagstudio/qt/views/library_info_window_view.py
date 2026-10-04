@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 from tagstudio.i18n.platform_strings import open_file_str
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
-from tagstudio.qt.views.styles.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import PAD, header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -42,7 +42,7 @@ class LibraryInfoWindowView(QWidget):
         self.setWindowTitle("Library Information")
         self.setMinimumSize(800, 480)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.root_layout.setContentsMargins(PAD, PAD, PAD, PAD)
 
         row_height: int = 22
         icon_margin: int = 4
@@ -58,7 +58,7 @@ class LibraryInfoWindowView(QWidget):
         self.body_widget = QWidget()
         self.body_layout = QHBoxLayout(self.body_widget)
         self.body_layout.setContentsMargins(0, 0, 0, 0)
-        self.body_layout.setSpacing(6)
+        self.body_layout.setSpacing(PAD)
 
         # Statistics -----------------------------------------------------------
         self.stats_widget = QWidget()
@@ -440,7 +440,7 @@ class LibraryInfoWindowView(QWidget):
         # Details --------------------------------------------------------------
         self.details_container = QWidget()
         self.details_layout = QHBoxLayout(self.details_container)
-        self.details_layout.setContentsMargins(6, 0, 6, 0)
+        self.details_layout.setContentsMargins(PAD, 0, PAD, 0)
         opacity_effect_details = QGraphicsOpacityEffect(self)
         opacity_effect_details.setOpacity(0.5)
 
@@ -451,7 +451,7 @@ class LibraryInfoWindowView(QWidget):
         # Buttons --------------------------------------------------------------
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
-        self.button_layout.setContentsMargins(6, 6, 6, 6)
+        self.button_layout.setContentsMargins(PAD, PAD, PAD, PAD)
         self.button_layout.addStretch(1)
 
         self.close_button = QPushButton(Translations["generic.close"])

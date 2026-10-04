@@ -6,19 +6,11 @@ import typing
 from collections.abc import Callable
 from datetime import datetime as dt
 from functools import partial
-from warnings import catch_warnings
+from typing import override
 
 import structlog
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QMessageBox,
-    QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
@@ -32,11 +24,11 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.tag_box import TagBoxWidget
+from tagstudio.qt.controllers.tiles.tag_data import TagData
+from tagstudio.qt.controllers.tiles.text_data import TextData
+from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.field_widget import FieldContainer
-from tagstudio.qt.mixed.text_field import TextContainerWidget
-from tagstudio.qt.views.styles.stylesheets import inset_container_style
+from tagstudio.qt.views.tiles.tile_list_view import TileListView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -44,9 +36,8 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-# TODO: Split to use MVC guidelines.
-class FieldContainers(QWidget):
-    """Widget for the tag and field containers displayed inside the Preview Panel."""
+class TileList(QWidget):
+    """A styled list of Tile widgets."""
 
     on_tags_update = Signal()
 
@@ -55,45 +46,16 @@ class FieldContainers(QWidget):
 
         self.lib = library
         self.driver: QtDriver = driver
-        self.initialized = False
-        self.is_open: bool = False
-        self.common_fields: list = []
-        self.mixed_fields: list = []
         self.cached_entries: list[Entry] = []
-        self._containers: list[FieldContainer] = []
+        self._tiles: list[Tile] = []
 
-        self.scroll_layout = QVBoxLayout()
-        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(3, 3, 3, 3)
-        self.scroll_layout.setSpacing(6)
+        # TODO: Reimplement mixed entry editing
 
-        scroll_container: QWidget = QWidget()
-        scroll_container.setObjectName("entryScrollContainer")
-        scroll_container.setLayout(self.scroll_layout)
+        self.setLayout(TileListView())
 
-        info_section = QWidget()
-        info_layout = QVBoxLayout(info_section)
-        info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setObjectName("entryScrollArea")
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-
-        # NOTE: I would rather have this style applied to the scroll_area
-        # background and NOT the scroll container background, so that the
-        # rounded corners are maintained when scrolling. I was unable to
-        # find the right trick to only select that particular element.
-        self.scroll_area.setStyleSheet(inset_container_style("entryScrollContainer"))
-        self.scroll_area.setWidget(scroll_container)
-
-        root_layout = QHBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.addWidget(self.scroll_area)
+    @override
+    def layout(self) -> TileListView:
+        return super().layout()  # pyright: ignore[reportReturnType]
 
     @property
     def top_entry_id(self) -> int:
@@ -102,7 +64,7 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
         """Update tags and fields from a single Entry source."""
-        logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
+        logger.warning("[TileList] Updating Selection", entry_id=entry_id)
 
         entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
@@ -118,9 +80,7 @@ class FieldContainers(QWidget):
         if entry_tags:
             categories = self.get_tag_categories(entry_tags)
             for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
-                self.write_tag_container(
-                    container_index, tags=tags, category_tag=cat, is_mixed=False
-                )
+                self.write_tag_tile(container_index, tags=tags, category_tag=cat, is_mixed=False)
                 container_index += 1
                 container_len += 1
         if update_badges:
@@ -128,11 +88,11 @@ class FieldContainers(QWidget):
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
-            self.write_field_container(index, field, is_mixed=False)
+            self.write_field_tile(index, field, is_mixed=False)
 
         # Hide leftover container(s)
-        if len(self._containers) > container_len:
-            for i, c in enumerate(self._containers):
+        if len(self._tiles) > container_len:
+            for i, c in enumerate(self._tiles):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
@@ -151,7 +111,7 @@ class FieldContainers(QWidget):
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
-        for c in self._containers:
+        for c in self._tiles:
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
@@ -215,7 +175,7 @@ class FieldContainers(QWidget):
         assert isinstance(field_templates, list)
 
         logger.info(
-            "[FieldContainers][add_field_to_selected]",
+            "[TileList][add_field_to_selected]",
             selected=self.driver.selected,
             fields=[
                 (field_template.class_name, field_template.id) for field_template in field_templates
@@ -225,7 +185,7 @@ class FieldContainers(QWidget):
         for entry_id in self.driver.selected:
             for field_template in field_templates:
                 logger.info(
-                    "[FieldContainers][add_field_to_selected] Adding field",
+                    "[TileList][add_field_to_selected] Adding field",
                     name=field_template.name,
                     type=field_template.class_name,
                 )
@@ -239,7 +199,7 @@ class FieldContainers(QWidget):
         if isinstance(tag_ids, int):
             tag_ids = [tag_ids]
         logger.info(
-            "[FieldContainers][add_tags_to_selected]",
+            "[TileList][add_tags_to_selected]",
             selected=self.driver.selected,
             tag_ids=tag_ids,
         )
@@ -266,8 +226,8 @@ class FieldContainers(QWidget):
         self._remove_field(field)
         self.update_from_entry(entry_id)
 
-    def write_field_container(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
-        """Update/Create data for a field FieldContainer.
+    def write_field_tile(self, index: int, field: BaseField, is_mixed: bool = False) -> None:
+        """Update/Create data for a field Tile.
 
         Args:
             index(int): The container index.
@@ -276,9 +236,7 @@ class FieldContainers(QWidget):
                 If True, field is not present in all selected items.
         """
 
-        def write_text_container(
-            container: FieldContainer, field: TextField, title: str, is_mixed: bool
-        ):
+        def write_text_tile(container: Tile, field: TextField, title: str, is_mixed: bool):
             container.set_title(field.name)
 
             # Normalize line endings in any text content.
@@ -288,7 +246,7 @@ class FieldContainers(QWidget):
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"
 
-            inner_widget = TextContainerWidget(title, text)
+            inner_widget = TextData(title, text)
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
@@ -311,7 +269,7 @@ class FieldContainers(QWidget):
                 )
 
         def write_datetime_container(
-            container: FieldContainer, field: DatetimeField, title: str, is_mixed: bool
+            container: Tile, field: DatetimeField, title: str, is_mixed: bool
         ):
             container.set_title(field.name)
 
@@ -326,7 +284,7 @@ class FieldContainers(QWidget):
             else:
                 text = f"<i>{Translations['field.mixed_data']}</i>"
 
-            inner_widget = TextContainerWidget(title, text)
+            inner_widget = TextData(title, text)
             container.set_inner_widget(inner_widget)
 
             if not is_mixed:
@@ -350,7 +308,7 @@ class FieldContainers(QWidget):
 
         def write_unknown_container():
             container.set_title(field.name)
-            inner_widget = TextContainerWidget(title, field.name)
+            inner_widget = TextData(title, field.name)
             container.set_inner_widget(inner_widget)
             container.set_remove_callback(
                 lambda: self.remove_message_box(
@@ -360,19 +318,19 @@ class FieldContainers(QWidget):
             )
 
         logger.info(
-            "[FieldContainers][write_container]",
+            "[TileList][write_container]",
             index=index,
             name=field.name,
             type=field.class_name,
         )
 
         # Create new containers if necessary
-        if len(self._containers) < (index + 1):
-            container = FieldContainer()
-            self._containers.append(container)
-            self.scroll_layout.addWidget(container)
+        if len(self._tiles) < (index + 1):
+            container = Tile()
+            self._tiles.append(container)
+            self.layout().scroll_layout.addWidget(container)
         else:
-            container = self._containers[index]
+            container = self._tiles[index]
 
         # Set field title
         field_type = field_type_name(field.class_name)
@@ -380,7 +338,7 @@ class FieldContainers(QWidget):
 
         # Write containers
         if type(field) is TextField:
-            write_text_container(container, field, title, is_mixed)
+            write_text_tile(container, field, title, is_mixed)
         elif type(field) is DatetimeField:
             write_datetime_container(container, field, title, is_mixed)
         else:
@@ -388,10 +346,10 @@ class FieldContainers(QWidget):
 
         container.setHidden(False)
 
-    def write_tag_container(
+    def write_tag_tile(
         self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
     ) -> None:
-        """Update/Create tag data for a tag FieldContainer.
+        """Update/Create tag data for a tag Tile.
 
         Args:
             index(int): The container index.
@@ -400,38 +358,33 @@ class FieldContainers(QWidget):
             is_mixed(bool): Relevant when multiple items are selected.
                 If True, field is not present in all selected items.
         """
-        logger.info("[FieldContainers][write_tag_container]", index=index)
-        if len(self._containers) < (index + 1):
-            container = FieldContainer()
-            self._containers.append(container)
-            self.scroll_layout.addWidget(container)
+        logger.info("[TileList][write_tag_tile]", index=index)
+        if len(self._tiles) < (index + 1):
+            container = Tile()
+            self._tiles.append(container)
+            self.layout().scroll_layout.addWidget(container)
         else:
-            container = self._containers[index]
+            container = self._tiles[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
 
         if not is_mixed:
             inner_widget = container.get_inner_widget()
 
-            if isinstance(inner_widget, TagBoxWidget):
-                with catch_warnings(record=True):
-                    inner_widget.on_update.disconnect()
-
-            else:
-                inner_widget = TagBoxWidget(Translations["entries.tags"], self.driver)
+            if not isinstance(inner_widget, TagData):
+                inner_widget = TagData(Translations["entries.tags"], self.driver)
                 container.set_inner_widget(inner_widget)
+                inner_widget.on_update.connect(
+                    lambda: (
+                        self.update_from_entry(self.cached_entries[0].id, update_badges=True),
+                        self.on_tags_update.emit(),
+                    )
+                )
             inner_widget.set_entries([e.id for e in self.cached_entries])
             inner_widget.set_tags(tags)
-
-            inner_widget.on_update.connect(
-                lambda: (
-                    self.update_from_entry(self.cached_entries[0].id, update_badges=True),
-                    self.on_tags_update.emit(),
-                )
-            )
         else:
             text = f"<i>{Translations['field.mixed_data']}</i>"
-            inner_widget = TextContainerWidget("Mixed Tags", text)  # NOTE: Unlocalized but unused
+            inner_widget = TextData("Mixed Tags", text)  # NOTE: Unlocalized but unused
             container.set_inner_widget(inner_widget)
 
         container.set_edit_callback()
@@ -441,7 +394,7 @@ class FieldContainers(QWidget):
     def _remove_field(self, field: BaseField) -> None:
         """Remove a field from all selected Entries."""
         logger.info(
-            "[FieldContainers] Removing Field",
+            "[TileList] Removing Field",
             field=field,
             selected=[x.path for x in self.cached_entries],
         )
@@ -470,9 +423,9 @@ class FieldContainers(QWidget):
         remove_mb.setWindowTitle(Translations["Remove Field"])
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
+        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.DestructiveRole)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:

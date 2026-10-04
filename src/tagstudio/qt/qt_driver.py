@@ -390,7 +390,7 @@ class QtDriver(DriverMixin, QObject):
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
         self.tag_manager.done.connect(
-            lambda checked=False: self.main_window.preview_panel.set_selection(
+            lambda checked=False: self.main_window.inspector.set_selection(
                 self.selected, update_preview=False
             )
         )
@@ -409,7 +409,7 @@ class QtDriver(DriverMixin, QObject):
             is_savable=False,
         )
         self.field_template_manager.done.connect(
-            lambda checked=False: self.main_window.preview_panel.set_selection(
+            lambda checked=False: self.main_window.inspector.set_selection(
                 self.selected, update_preview=False
             )
         )
@@ -425,7 +425,7 @@ class QtDriver(DriverMixin, QObject):
         add_tag_tsp.item_chosen.connect(
             lambda chosen_tag: (
                 self.add_tags_to_selected_callback([chosen_tag]),
-                self.main_window.preview_panel.set_selection(self.selected, update_preview=False),
+                self.main_window.inspector.set_selection(self.selected, update_preview=False),
             )
         )
 
@@ -670,7 +670,6 @@ class QtDriver(DriverMixin, QObject):
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
-        self.main_window.status_bar.showMessage(error_name, Qt.AlignmentFlag.AlignLeft)
         self.main_window.landing_widget.set_status_label(error_name)
         self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
 
@@ -706,7 +705,7 @@ class QtDriver(DriverMixin, QObject):
                     .with_show_hidden_entries(self.main_window.show_hidden_entries)
                 )
             except ParsingError as e:
-                self.main_window.status_bar.showMessage(
+                self.main_window.results_label.setText(
                     f"{Translations['status.results.invalid_syntax']} "
                     f'"{self.main_window.search_field.text()}"'
                 )
@@ -813,16 +812,14 @@ class QtDriver(DriverMixin, QObject):
         if (sync_banner := self._sync_banner) is not None:
             sync_banner.hide_banner(force=True)
 
-        self.main_window.status_bar.showMessage(Translations["status.library_closing"])
-        start_time = time.time()
-
         if not is_shutdown:
             self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
             self.cached_values.sync()
 
         # Reset library state
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
         self.main_window.search_field.setText("")
+        self.main_window.results_label.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
         self.__reset_navigation()
@@ -848,7 +845,7 @@ class QtDriver(DriverMixin, QObject):
             self.library_info_window.close()
 
         self.main_window.thumb_layout.set_entries([])
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.landing_widget.animate_logo_in()
         self.main_window.pagination.setHidden(True)
@@ -876,26 +873,9 @@ class QtDriver(DriverMixin, QObject):
         if self.main_window.menu_bar.add_tag_to_selected_action:
             self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
 
-        end_time = time.time()
-        self.main_window.status_bar.showMessage(
-            Translations.format(
-                "status.library_closed", time_span=format_timespan(end_time - start_time)
-            )
-        )
-
     def backup_library(self):
         logger.info("Backing Up Library...")
-        self.main_window.status_bar.showMessage(Translations["status.library_backup_in_progress"])
-        start_time = time.time()
-        target_path = Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
-        end_time = time.time()
-        self.main_window.status_bar.showMessage(
-            Translations.format(
-                "status.library_backup_success",
-                path=target_path,
-                time_span=format_timespan(end_time - start_time),
-            )
-        )
+        Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
 
     def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
         """Emit any connected signals for updating badge icons."""
@@ -944,7 +924,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+        self.main_window.inspector.set_selection(self.selected, update_preview=False)
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
@@ -953,14 +933,14 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+        self.main_window.inspector.set_selection(self.selected, update_preview=False)
 
     def clear_select_action_callback(self):
         self.clear_selected()
 
         self.set_select_actions_visibility()
         self.set_clipboard_menu_viability()
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         selected: list[int] = self.selected
@@ -983,7 +963,6 @@ class QtDriver(DriverMixin, QObject):
         """
         entry: Entry | None = None
         pending: list[tuple[int | None, Path]] = []
-        deleted_count: int = 0
 
         selected = self.selected
         library_dir = unwrap(self.lib.library_dir)
@@ -1007,36 +986,16 @@ class QtDriver(DriverMixin, QObject):
                 return_code == QMessageBox.ButtonRole.DestructiveRole.value
                 and return_code != QMessageBox.ButtonRole.ActionRole.value
             ):
-                for i, tup in enumerate(pending):
-                    e_id, f = tup
+                for e_id, f in pending:
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.stop_media_playback()
-
-                    msg = Translations.format(
-                        "status.deleting_file", i=i, count=len(pending), path=f
-                    )
-                    self.main_window.status_bar.showMessage(msg)
-                    self.main_window.status_bar.repaint()
+                        self.main_window.inspector.stop_media_playback()
 
                     if e_id is not None:
                         self.lib.remove_entries([e_id])
-                    if delete_file(library_dir / f):
-                        deleted_count += 1
+                    delete_file(library_dir / f)
 
                 self.clear_select_action_callback()
                 self.update_browsing_state()
-
-                if deleted_count > 0 and deleted_count != len(pending):
-                    msg = Translations.format("status.deleted_partial_warning", count=deleted_count)
-                else:
-                    index = min(deleted_count, 2)
-                    msg = (
-                        Translations["status.deleted_none"],
-                        Translations["status.deleted_file_singular"],
-                        Translations.format("status.deleted_file_plural", count=deleted_count),
-                    )[index]
-                self.main_window.status_bar.showMessage(msg)
-                self.main_window.status_bar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
         """A confirmation dialogue box for deleting files.
@@ -1217,7 +1176,7 @@ class QtDriver(DriverMixin, QObject):
 
     def _on_new_files_banner_refresh(self):
         self.update_browsing_state()
-        self.main_window.preview_panel.set_selection(self.selected, update_preview=True)
+        self.main_window.inspector.set_selection(self.selected, update_preview=True)
         # If there are still unlinked entries after the automatic relinking step, show a notice.
         sync_banner = self._sync_banner
         if sync_banner is None:
@@ -1343,9 +1302,6 @@ class QtDriver(DriverMixin, QObject):
 
     def thumb_size_callback(self, size: int):
         """Perform actions needed when the thumbnail size selection is changed."""
-        spacing_divisor: int = 10
-        min_spacing: int = 12
-
         self.update_thumbs()
         blank_icon: QIcon = QIcon()
         for it in self.main_window.thumb_layout._item_thumbs:
@@ -1355,9 +1311,6 @@ class QtDriver(DriverMixin, QObject):
             it.setFixedSize(self.main_window.thumb_size, self.main_window.thumb_size)
             it.thumb_button.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
             it.set_filename_visibility(it.show_filename_label)
-        self.main_window.thumb_layout.setSpacing(
-            min(self.main_window.thumb_size // spacing_divisor, min_spacing)
-        )
 
     def show_hidden_entries_callback(self):
         logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
@@ -1428,7 +1381,7 @@ class QtDriver(DriverMixin, QObject):
             if TAG_FAVORITE in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
         else:
-            self.main_window.preview_panel.set_selection(self.selected)
+            self.main_window.inspector.set_selection(self.selected)
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1457,7 +1410,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
@@ -1625,10 +1578,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.setText(self.browsing_history.current.query or "")
 
-        # inform user about running search
-        self.main_window.status_bar.showMessage(Translations["status.library_search_query"])
-        self.main_window.status_bar.repaint()
-
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
@@ -1637,11 +1586,14 @@ class QtDriver(DriverMixin, QObject):
         end_time = time.time()
 
         # inform user about completed search
-        self.main_window.status_bar.showMessage(
+        time_span = f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
+        count = f"<b>{results.total_count:,}</b>"
+        self.main_window.results_label.setText(
             Translations.format(
-                "status.results_found",
-                count=results.total_count,
-                time_span=format_timespan(end_time - start_time),
+                # Show "X Results" on query, "X Items" on none
+                "status.results_found" if state and state.query else "status.items",
+                count=count,
+                time_span=time_span,
             )
         )
 
@@ -1790,7 +1742,6 @@ class QtDriver(DriverMixin, QObject):
         )
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
-        self.main_window.status_bar.showMessage(message, 3)
         self.main_window.repaint()
 
         if self.lib.library_dir:
@@ -1892,7 +1843,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
-        self.main_window.preview_panel.set_selection(self.selected)
+        self.main_window.inspector.set_selection(self.selected)
 
         # page (re)rendering, extract eventually
         initial_state = BrowsingState(

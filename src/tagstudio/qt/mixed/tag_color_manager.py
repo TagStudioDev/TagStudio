@@ -26,9 +26,9 @@ from tagstudio.core.enums import ThemePalette
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.tiles.color_data import ColorData
+from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
-from tagstudio.qt.mixed.color_box import ColorBoxWidget
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.views.styles.stylesheets import header
 
 logger = structlog.get_logger(__name__)
@@ -119,22 +119,22 @@ class TagColorManager(QWidget):
             for group, colors in self.driver.lib.tag_color_groups.items():
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
-                color_box = ColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_data = ColorData(group, colors, self.driver.lib)
+                color_data.updated.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
+                        else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
                             self.driver.selected[0], update_badges=False
                         ),
                     )
                 )
-                field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
-                field_container.set_inner_widget(color_box)
+                tile = Tile(self.driver.lib.get_namespace_name(group))
+                tile.set_inner_widget(color_data)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
-                    field_container.set_remove_callback(
+                    tile.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
@@ -143,14 +143,14 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.main_window.preview_panel.containers.update_from_entry(  # noqa: E501
+                                else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
                         )
                     )
 
-                self.scroll_layout.addWidget(field_container)
+                self.scroll_layout.addWidget(tile)
 
             if all_default:
                 ns_container = QWidget()
