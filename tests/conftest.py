@@ -5,6 +5,7 @@
 # pyright: reportUnusedFunction=false
 
 
+import shutil
 import sys
 from collections.abc import Callable, Generator
 from pathlib import Path
@@ -22,7 +23,7 @@ CWD = Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
-from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
+from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.qt.qt_driver import QtDriver
@@ -134,11 +135,17 @@ def library(request, library_dir: Path):  # pyright: ignore
 
 
 @pytest.fixture
-def search_library() -> Library:
+def search_library(tmp_path: Path) -> Generator[Library]:
+    shutil.copytree(
+        CWD / "fixtures" / "search_library" / TS_FOLDER_NAME,
+        tmp_path / TS_FOLDER_NAME,
+        ignore=shutil.ignore_patterns(BACKUP_FOLDER_NAME),
+    )
     lib = Library()
-    status = lib.open_library(Path(CWD / "fixtures" / "search_library"))
+    status = lib.open_library(tmp_path)
     assert status.success
-    return lib
+    yield lib
+    lib.close()
 
 
 @pytest.fixture
