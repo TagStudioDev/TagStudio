@@ -108,7 +108,7 @@ class ColorData(TileData):
 
         self.edit_modal = Modal(
             build_color_panel,
-            "Edit Color",
+            Translations["color.edit"],
             is_savable=True,
         )
 

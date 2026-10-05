@@ -39,7 +39,7 @@ class LibraryInfoWindowView(QWidget):
         self.lib = library
         self.driver = driver
 
-        self.setWindowTitle("Library Information")
+        self.setWindowTitle(Translations["library_info.window_title"])
         self.setMinimumSize(800, 480)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(PAD, PAD, PAD, PAD)
