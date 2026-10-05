@@ -24,6 +24,7 @@ from PySide6.QtGui import (
     QTextFormat,
 )
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+from PySide6.QtWidgets import QDialogButtonBox
 
 from tagstudio.core.constants import DOCS_URL, GITHUB_REPO_URL
 from tagstudio.core.utils.types import unwrap
@@ -313,8 +314,8 @@ class ChangelogModal(ModalContent):
         assert isinstance(modal_view, ModalView)
         close_button = unwrap(self.done_button)
         close_button.setText(Translations["generic.close"])
-        modal_view.button_layout.insertWidget(
-            modal_view.button_layout.indexOf(close_button), self.layout().view_more_button
+        modal_view.button_box.addButton(
+            self.layout().view_more_button, QDialogButtonBox.ButtonRole.ActionRole
         )
 
         # NOTE: A lot of the styling is similar to the "About" window, which eventually needs to be
