@@ -54,6 +54,7 @@ class UpdateAvailableMessageBox(QMessageBox):
             partial(QDesktopServices.openUrl, GITHUB_RELEASE_URL)
         )
         self.button(QMessageBox.StandardButton.Ignore).setText(Translations["generic.dont_remind"])
+        self.button(QMessageBox.StandardButton.Close).setText(Translations["generic.close"])
 
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)

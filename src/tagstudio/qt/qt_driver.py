@@ -979,25 +979,19 @@ class QtDriver(DriverMixin, QObject):
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
-        if pending:
-            return_code = self.delete_file_confirmation(len(pending), pending[0][1])
-            # If there was a confirmation and not a cancellation
-            if (
-                return_code == QMessageBox.ButtonRole.DestructiveRole.value
-                and return_code != QMessageBox.ButtonRole.ActionRole.value
-            ):
-                for e_id, f in pending:
-                    if (origin_path == f) or (not origin_path):
-                        self.main_window.inspector.stop_media_playback()
+        if pending and self.delete_file_confirmation(len(pending), pending[0][1]):
+            for e_id, f in pending:
+                if (origin_path == f) or (not origin_path):
+                    self.main_window.inspector.stop_media_playback()
 
-                    if e_id is not None:
-                        self.lib.remove_entries([e_id])
-                    delete_file(library_dir / f)
+                if e_id is not None:
+                    self.lib.remove_entries([e_id])
+                delete_file(library_dir / f)
 
-                self.clear_select_action_callback()
-                self.update_browsing_state()
+            self.clear_select_action_callback()
+            self.update_browsing_state()
 
-    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> bool:
         """A confirmation dialogue box for deleting files.
 
         Args:
@@ -1048,13 +1042,23 @@ class QtDriver(DriverMixin, QObject):
                 f"{perm_warning}<br>"
             )
 
-        yes_button: QPushButton = msg.addButton(
-            Translations["generic.yes"], QMessageBox.ButtonRole.YesRole
+        move_key = (
+            "menu.delete_selected_files_singular"
+            if count <= 1
+            else "menu.delete_selected_files_plural"
         )
-        msg.addButton(Translations["generic.no"], QMessageBox.ButtonRole.NoRole)
-        msg.setDefaultButton(yes_button)
+        cancel_button = msg.addButton(
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+        )
+        move_button: QPushButton = msg.addButton(
+            Translations.format(move_key, trash_term=trash_term()),
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        msg.setEscapeButton(cancel_button)
+        msg.setDefaultButton(cancel_button)
 
-        return msg.exec()
+        msg.exec()
+        return msg.clickedButton() == move_button
 
     def _run_sync_step(
         self,

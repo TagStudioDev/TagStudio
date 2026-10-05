@@ -63,6 +63,10 @@ class DropImportModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
+        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
+        self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
+        self.button_layout.addWidget(self.cancel_button)
+
         self.skip_button = QPushButton(Translations["generic.skip_alt"])
         self.skip_button.setDefault(True)
         self.skip_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.SKIP))
@@ -77,10 +81,6 @@ class DropImportModal(QWidget):
         self.rename_button = QPushButton(Translations["generic.rename_alt"])
         self.rename_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.RENAME))
         self.button_layout.addWidget(self.rename_button)
-
-        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
-        self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
-        self.button_layout.addWidget(self.cancel_button)
 
         # Layout =====================
         self.root_layout.addWidget(self.desc_widget)

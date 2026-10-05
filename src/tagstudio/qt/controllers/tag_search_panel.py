@@ -99,6 +99,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         unwrap(message_box.button(QMessageBox.StandardButton.Cancel)).setText(
             Translations["generic.cancel_alt"]
         )
+        message_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
         result = message_box.exec()
 

@@ -418,19 +418,20 @@ class TileList(QWidget):
         self.lib.update_datetime_field(entry_ids, field, name, dt.fromisoformat(value))
 
     def remove_message_box(self, prompt: str, callback: Callable[..., None]) -> None:
-        remove_mb = QMessageBox()
-        remove_mb.setText(prompt)
-        remove_mb.setWindowTitle(Translations["field.remove"])
-        remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton(
+        message_box = QMessageBox()
+        message_box.setText(prompt)
+        message_box.setWindowTitle(Translations["field.remove"])
+        message_box.setIcon(QMessageBox.Icon.Warning)
+        cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        remove_mb.addButton(
-            Translations["generic.remove_alt"], QMessageBox.ButtonRole.DestructiveRole
+        remove_button = message_box.addButton(
+            Translations["generic.remove_alt"], QMessageBox.ButtonRole.AcceptRole
         )
-        remove_mb.setEscapeButton(cancel_button)
-        result = remove_mb.exec_()
-        if result == QMessageBox.ButtonRole.ActionRole.value:
+        message_box.setEscapeButton(cancel_button)
+        message_box.setDefaultButton(cancel_button)
+        message_box.exec()
+        if message_box.clickedButton() == remove_button:
             callback()
 
     @property

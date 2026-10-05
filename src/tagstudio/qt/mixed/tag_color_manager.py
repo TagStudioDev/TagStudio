@@ -200,12 +200,13 @@ class TagColorManager(QWidget):
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        message_box.addButton(
-            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+        delete_button = message_box.addButton(
+            Translations["generic.delete_alt"], QMessageBox.ButtonRole.AcceptRole
         )
         message_box.setEscapeButton(cancel_button)
-        result = message_box.exec_()
-        if result != QMessageBox.ButtonRole.ActionRole.value:
+        message_box.setDefaultButton(cancel_button)
+        message_box.exec()
+        if message_box.clickedButton() != delete_button:
             return
         callback()
 
