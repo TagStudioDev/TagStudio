@@ -462,6 +462,7 @@ class JsonMigrationModal(QObject):
                 Translations["json_migration.discrepancies_found.description"],
             )
             msg_box.setDetailedText("\n".join(self.discrepancies))
+            msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
             msg_box.exec()
 
     def finish_migration(self):

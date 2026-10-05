@@ -95,7 +95,7 @@ class ColorData(TileData):
                     TagColorGroup(
                         slug="slug",
                         namespace=self.namespace,
-                        name="Color",
+                        name=Translations["color.placeholder"],
                         primary="#FFFFFF",
                         secondary=None,
                     )
@@ -108,7 +108,7 @@ class ColorData(TileData):
 
         self.edit_modal = Modal(
             build_color_panel,
-            "Edit Color",
+            Translations["color.edit"],
             is_savable=True,
         )
 
@@ -126,13 +126,13 @@ class ColorData(TileData):
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        message_box.addButton(
-            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+        delete_button = message_box.addButton(
+            Translations["generic.delete_alt"], QMessageBox.ButtonRole.AcceptRole
         )
         message_box.setEscapeButton(cancel_button)
-        result = message_box.exec_()
-        logger.info(QMessageBox.ButtonRole.DestructiveRole.value)
-        if result != QMessageBox.ButtonRole.ActionRole.value:
+        message_box.setDefaultButton(cancel_button)
+        message_box.exec()
+        if message_box.clickedButton() != delete_button:
             return
 
         logger.info("[ColorData] Removing color", color=color_group)

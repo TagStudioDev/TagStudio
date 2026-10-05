@@ -88,11 +88,18 @@ class TagSearchPanel(SearchPanel[Tag]):
             return
 
         message_box = QMessageBox(
-            QMessageBox.Icon.Question,
+            QMessageBox.Icon.Warning,
             Translations["tag.remove"],
             Translations.format("tag.confirm_delete", tag_name=self._lib.tag_display_name(item)),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
+        unwrap(message_box.button(QMessageBox.StandardButton.Ok)).setText(
+            Translations["generic.delete_alt"]
+        )
+        unwrap(message_box.button(QMessageBox.StandardButton.Cancel)).setText(
+            Translations["generic.cancel_alt"]
+        )
+        message_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
         result = message_box.exec()
 

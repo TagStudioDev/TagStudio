@@ -4,7 +4,7 @@
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialogButtonBox, QLabel, QVBoxLayout
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
@@ -28,28 +28,26 @@ class ModalView(QVBoxLayout):
         self.content_widget = content_widget
         self.setContentsMargins(PAD, PAD if inline_title else PAD * 2, PAD, PAD)
 
-        self.button_container = QWidget()
-        self.button_layout = QHBoxLayout(self.button_container)
-        self.button_layout.setContentsMargins(PAD, PAD, PAD, PAD)
-        self.button_layout.addStretch(1)
+        self.button_box = QDialogButtonBox()
+        self.button_box.setContentsMargins(PAD, PAD, PAD, PAD)
 
-        # [Done]
-        # - OR -
-        # [Cancel] [Save]
         if not is_savable:
-            done_button = QPushButton(Translations["generic.done"])
+            done_button = self.button_box.addButton(
+                Translations["generic.done"], QDialogButtonBox.ButtonRole.AcceptRole
+            )
             done_button.setAutoDefault(True)
             self.content_widget.done_button = done_button
-            self.button_layout.addWidget(done_button)
         else:
-            cancel_button = QPushButton(Translations["generic.cancel"])
+            cancel_button = self.button_box.addButton(
+                Translations["generic.cancel"], QDialogButtonBox.ButtonRole.RejectRole
+            )
             self.content_widget.cancel_button = cancel_button
-            self.button_layout.addWidget(cancel_button)
 
-            save_button = QPushButton(Translations["generic.save"])
+            save_button = self.button_box.addButton(
+                Translations["generic.save"], QDialogButtonBox.ButtonRole.AcceptRole
+            )
             save_button.setAutoDefault(True)
             self.content_widget.save_button = save_button
-            self.button_layout.addWidget(save_button)
 
         if inline_title:
             self.title_label = QLabel()
@@ -61,4 +59,4 @@ class ModalView(QVBoxLayout):
 
         self.addWidget(content_widget)
         self.setStretch(1, 2)
-        self.addWidget(self.button_container)
+        self.addWidget(self.button_box)

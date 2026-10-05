@@ -89,11 +89,18 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
             return
 
         message_box = QMessageBox(
-            QMessageBox.Icon.Question,
+            QMessageBox.Icon.Warning,
             Translations["field_template.delete"],
             Translations.format("field_template.confirm_delete", field_template_name=item.name),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
+        unwrap(message_box.button(QMessageBox.StandardButton.Ok)).setText(
+            Translations["generic.delete_alt"]
+        )
+        unwrap(message_box.button(QMessageBox.StandardButton.Cancel)).setText(
+            Translations["generic.cancel_alt"]
+        )
+        message_box.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
         result = message_box.exec()
 
