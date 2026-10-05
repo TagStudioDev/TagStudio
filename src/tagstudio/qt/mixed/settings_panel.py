@@ -43,30 +43,30 @@ class SettingsPanel(ModalContent):
     driver: QtDriver
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
-        ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
-        ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
-        ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+        ShowFilepathOption.SHOW_FULL_PATHS: "settings.filepath.option.full",
+        ShowFilepathOption.SHOW_RELATIVE_PATHS: "settings.filepath.option.relative",
+        ShowFilepathOption.SHOW_FILENAMES_ONLY: "settings.filepath.option.name",
     }
 
     theme_map: dict[Theme, str] = {
-        Theme.SYSTEM: Translations["settings.theme.system"],
-        Theme.DARK: Translations["settings.theme.dark"],
-        Theme.LIGHT: Translations["settings.theme.light"],
+        Theme.SYSTEM: "settings.theme.system",
+        Theme.DARK: "settings.theme.dark",
+        Theme.LIGHT: "settings.theme.light",
     }
 
     splash_map: dict[Splash, str] = {
-        Splash.DEFAULT: Translations["settings.splash.option.default"],
-        Splash.RANDOM: Translations["settings.splash.option.random"],
-        Splash.CLASSIC: Translations["settings.splash.option.classic"],
-        Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
-        Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
-        Splash.AURORA: Translations["settings.splash.option.aurora"],
+        Splash.DEFAULT: "settings.splash.option.default",
+        Splash.RANDOM: "settings.splash.option.random",
+        Splash.CLASSIC: "settings.splash.option.classic",
+        Splash.GOO_GEARS: "settings.splash.option.goo_gears",
+        Splash.NINETY_FIVE: "settings.splash.option.ninety_five",
+        Splash.AURORA: "settings.splash.option.aurora",
     }
 
     tag_click_action_map: dict[TagClickActionOption, str] = {
-        TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
-        TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
-        TagClickActionOption.ADD_TO_SEARCH: Translations["settings.tag_click_action.add_to_search"],
+        TagClickActionOption.OPEN_EDIT: "settings.tag_click_action.open_edit",
+        TagClickActionOption.SET_SEARCH: "settings.tag_click_action.set_search",
+        TagClickActionOption.ADD_TO_SEARCH: "settings.tag_click_action.add_to_search",
     }
 
     date_format_map: dict[str, str] = {
@@ -194,7 +194,7 @@ class SettingsPanel(ModalContent):
         # Show Filepath
         self.filepath_combobox = QComboBox()
         for k in SettingsPanel.filepath_option_map:
-            self.filepath_combobox.addItem(SettingsPanel.filepath_option_map[k], k)
+            self.filepath_combobox.addItem(Translations[SettingsPanel.filepath_option_map[k]], k)
         filepath_option: ShowFilepathOption = self.driver.settings.show_filepath
         if filepath_option not in SettingsPanel.filepath_option_map:
             filepath_option = ShowFilepathOption.DEFAULT
@@ -206,7 +206,9 @@ class SettingsPanel(ModalContent):
         # Tag Click Action
         self.tag_click_action_combobox = QComboBox()
         for k in SettingsPanel.tag_click_action_map:
-            self.tag_click_action_combobox.addItem(SettingsPanel.tag_click_action_map[k], k)
+            self.tag_click_action_combobox.addItem(
+                Translations[SettingsPanel.tag_click_action_map[k]], k
+            )
         tag_click_action = self.driver.settings.tag_click_action
         if tag_click_action not in SettingsPanel.tag_click_action_map:
             tag_click_action = TagClickActionOption.DEFAULT
@@ -375,7 +377,7 @@ class SettingsPanel(ModalContent):
         # Dark Mode
         self.theme_combobox = QComboBox()
         for k in SettingsPanel.theme_map:
-            self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
+            self.theme_combobox.addItem(Translations[SettingsPanel.theme_map[k]], k)
         theme = self.driver.settings.theme
         if theme not in SettingsPanel.theme_map:
             theme = Theme.DEFAULT
@@ -386,7 +388,7 @@ class SettingsPanel(ModalContent):
         # Splash Screen
         self.splash_combobox = QComboBox()
         for k in SettingsPanel.splash_map:
-            self.splash_combobox.addItem(SettingsPanel.splash_map[k], k)
+            self.splash_combobox.addItem(Translations[SettingsPanel.splash_map[k]], k)
         splash = self.driver.settings.splash
         if splash not in SettingsPanel.splash_map:
             splash = Splash.DEFAULT

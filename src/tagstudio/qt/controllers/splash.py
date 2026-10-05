@@ -23,12 +23,6 @@ logger = structlog.get_logger(__name__)
 class SplashScreen:
     """The custom splash screen widget for TagStudio."""
 
-    VERSION_STR: str = " ".join(
-        [
-            f"{Translations['about.version']}",
-            f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
-        ]
-    )
     DEFAULT_SPLASH = Splash.AURORA
 
     def __init__(
@@ -68,6 +62,13 @@ class SplashScreen:
             case _:
                 pass
 
+        version_str = " ".join(
+            [
+                f"{Translations['about.version']}",
+                f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
+            ]
+        )
+
         # TODO: Store any differing data elsewhere and load dynamically instead of hardcoding.
         match self.splash_name:
             case Splash.CLASSIC:
@@ -88,7 +89,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(0, -50, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    SplashScreen.VERSION_STR,
+                    version_str,
                 )
 
             case Splash.GOO_GEARS:
@@ -110,7 +111,7 @@ class SplashScreen:
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(40, 420, 960, 540),
-                    SplashScreen.VERSION_STR,
+                    version_str,
                 )
 
             case Splash.NINETY_FIVE:
@@ -136,7 +137,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(-30, 25, 960, 540),
                     int(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight),
-                    SplashScreen.VERSION_STR,
+                    version_str,
                 )
 
             case Splash.AURORA:
@@ -157,7 +158,7 @@ class SplashScreen:
                 painter.drawText(
                     QRect(0, -50, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    SplashScreen.VERSION_STR,
+                    version_str,
                 )
 
             case _:

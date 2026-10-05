@@ -44,13 +44,6 @@ from tagstudio.qt.views.styles.stylesheets import form_content_style, header
 class AboutModal(QWidget):
     """Modal window showing information about the TagStudio application."""
 
-    VERSION_STR: str = " ".join(
-        [
-            f"{Translations['about.version']}",
-            f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
-        ]
-    )
-
     def __init__(self, config_path: Path | str):
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
@@ -89,7 +82,13 @@ class AboutModal(QWidget):
         self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Version --------------------------------------------------------------
-        self.version_label = QLabel(header(AboutModal.VERSION_STR, 2))
+        version_str = " ".join(
+            [
+                f"{Translations['about.version']}",
+                f"{VERSION} {(' (' + Translations[BUILD_TYPE] + ')') if BUILD_TYPE else ''}",
+            ]
+        )
+        self.version_label = QLabel(header(version_str, 2))
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Copyright ------------------------------------------------------------

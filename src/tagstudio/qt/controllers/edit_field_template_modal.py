@@ -19,8 +19,8 @@ logger = structlog.get_logger(__name__)
 # TODO: Use newer MVC style guidelines
 class EditFieldTemplateModal(EditFieldTemplateModalView):
     field_type_map: dict[str, str] = {
-        "TextFieldTemplate": Translations["field_type.text"],
-        "DatetimeFieldTemplate": Translations["field_type.datetime"],
+        "TextFieldTemplate": "field_type.text",
+        "DatetimeFieldTemplate": "field_type.datetime",
     }
     DEFAULT_TYPE_INDEX = 0
 
@@ -32,7 +32,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
         self.old_field_type: str = ""
 
         for k, v in EditFieldTemplateModal.field_type_map.items():
-            self._type_combobox.addItem(v, k)
+            self._type_combobox.addItem(Translations[v], k)
 
         self.__connect_callbacks()
         self.set_field_template(field_template)

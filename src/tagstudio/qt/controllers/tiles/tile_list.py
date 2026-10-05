@@ -420,12 +420,14 @@ class TileList(QWidget):
     def remove_message_box(self, prompt: str, callback: Callable[..., None]) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
-        remove_mb.setWindowTitle(Translations["Remove Field"])
+        remove_mb.setWindowTitle(Translations["field.remove"])
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.DestructiveRole)
+        remove_mb.addButton(
+            Translations["generic.remove_alt"], QMessageBox.ButtonRole.DestructiveRole
+        )
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
