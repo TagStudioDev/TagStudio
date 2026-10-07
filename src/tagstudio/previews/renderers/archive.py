@@ -99,7 +99,6 @@ def open_archive(filepath: Path) -> Archive:
 
     Args:
         filepath (Path): The path to the archive.
-        ext (str): The file extension.
 
     Returns:
         Archive: The opened archive.
