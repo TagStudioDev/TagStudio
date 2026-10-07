@@ -37,7 +37,12 @@ class ArchivePreview(BasePreview):
         MediaTypes.register("archive", ".s7z", RENDER)
         MediaTypes.register("archive", ".tar", RENDER)
         MediaTypes.register("archive", ".zip", RENDER)
+        MediaTypes.register("archive", ".tar.bz", RENDER)
+        MediaTypes.register("archive", ".tar.bz2", RENDER)
         MediaTypes.register("archive", ".tar.gz", RENDER)
+        MediaTypes.register("archive", ".tar.lzma", RENDER)
+        MediaTypes.register("archive", ".tar.xz", RENDER)
+        MediaTypes.register("archive", ".tar.zst", RENDER)
 
     @override
     @classmethod
@@ -105,7 +110,16 @@ def open_archive(filepath: Path) -> Archive:
         archiver = SevenZipFile
     elif exts & {".cbr", ".rar"}:
         archiver = rarfile.RarFile
-    elif exts & {".cbt", ".tar", ".tar.gz"}:
+    elif exts & {
+        ".cbt",
+        ".tar",
+        ".tar.bz",
+        ".tar.bz2",
+        ".tar.gz",
+        ".tar.lzma",
+        ".tar.xz",
+        ".tar.zst",
+    }:
         archiver = TarFile
     return archiver(filepath, "r")
 
