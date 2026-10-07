@@ -105,12 +105,12 @@ Preview support for office documents or well-known project file formats varies b
 
 Archive thumbnails will display the first image from the archive within the Preview Panel.
 
-| Filetype | Extensions     |
-| -------- | -------------- |
-| 7-Zip    | `.7z`, `.s7z`  |
-| RAR      | `.rar`         |
-| Tar      | `.tar`, `.tgz` |
-| Zip      | `.zip`         |
+| Filetype | Extensions                        |
+| -------- | --------------------------------- |
+| 7-Zip    | `.7z`, `.s7z`                     |
+| RAR      | `.rar`                            |
+| Tar      | `.tar`, `.tar.gz`, `.taz`, `.tgz` |
+| Zip      | `.zip`                            |
 
 ### :material-book: eBooks
 

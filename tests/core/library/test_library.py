@@ -480,3 +480,54 @@ def test_filetype_return_one_filetype(
 def test_mediatype_search(library: Library, mediatype: str, num_of_mediatype: int):
     results = library.search_library(BrowsingState.from_mediatype(mediatype), page_size=500)
     assert len(results.ids) == num_of_mediatype
+
+
+@pytest.mark.parametrize(
+    ["query", "paths"],
+    [
+        ("filetype:tar.gz", {"backup.tar.gz", "photos.tgz"}),
+        ("filetype:TAR.GZ", {"backup.tar.gz", "photos.tgz"}),
+        ("filetype:tgz", {"backup.tar.gz", "photos.tgz"}),
+        ("filetype:tar.xz", {"my.cool.archive.tar.xz", "CAPITAL.TAR.XZ"}),
+        (
+            "filetype:tar",
+            {
+                "plain.tar",
+                "backup.tar.gz",
+                "photos.tgz",
+                "my.cool.archive.tar.xz",
+                "CAPITAL.TAR.XZ",
+            },
+        ),
+        (
+            "mediatype:archive",
+            {
+                "plain.tar",
+                "backup.tar.gz",
+                "photos.tgz",
+                "my.cool.archive.tar.xz",
+                "CAPITAL.TAR.XZ",
+            },
+        ),
+        (
+            "mediatype:compressed",
+            {"backup.tar.gz", "my.cool.archive.tar.xz", "CAPITAL.TAR.XZ", "log.gz"},
+        ),
+    ],
+)
+def test_compound_ext_search(query: str, paths: set[str]):
+    lib = Library()
+    assert lib.open_library(Path(""), in_memory=True).success
+    names = [
+        "plain.tar",
+        "backup.tar.gz",
+        "photos.tgz",
+        "my.cool.archive.tar.xz",
+        "CAPITAL.TAR.XZ",
+        "log.gz",
+        "notes.txt",
+    ]
+    assert lib.add_entries([Entry(path=Path(name), fields=[]) for name in names])
+
+    results = lib.search_library(BrowsingState.from_search_query(query), page_size=500)
+    assert {str(unwrap(lib.get_entry(entry_id)).path) for entry_id in results.ids} == paths

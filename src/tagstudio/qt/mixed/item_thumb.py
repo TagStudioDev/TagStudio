@@ -17,6 +17,7 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.decompression import get_display_ext
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
@@ -365,7 +366,7 @@ class ItemThumb(FlowWidget):
         show_ext_badge = False
         show_count_badge = False
 
-        ext = filename.suffix.lower()
+        ext = get_display_ext(filename)
         if ext and ext.startswith(".") is False:
             ext = "." + ext
         if (

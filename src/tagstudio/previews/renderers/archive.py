@@ -33,7 +33,6 @@ class ArchivePreview(BasePreview):
     def register_types(cls) -> None:
         # NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
         MediaTypes.register("archive", ".7z", RENDER)
-        MediaTypes.register("archive", ".gz", RENDER)
         MediaTypes.register("archive", ".rar", RENDER)
         MediaTypes.register("archive", ".s7z", RENDER)
         MediaTypes.register("archive", ".tar", RENDER)
@@ -100,13 +99,13 @@ def open_archive(filepath: Path) -> Archive:
     Returns:
         Archive: The opened archive.
     """
-    ext = filepath.suffix.lower()
+    exts = MediaTypes.get_equivalent_exts(MediaTypes.get_ext(filepath))
     archiver: type[Archive] = zipfile.ZipFile
-    if ext in {".7z", ".cb7", ".s7z"}:
+    if exts & {".7z", ".cb7", ".s7z"}:
         archiver = SevenZipFile
-    elif ext in {".cbr", ".rar"}:
+    elif exts & {".cbr", ".rar"}:
         archiver = rarfile.RarFile
-    elif ext in {".cbt", ".tar", ".tgz"}:
+    elif exts & {".cbt", ".tar", ".tar.gz"}:
         archiver = TarFile
     return archiver(filepath, "r")
 
