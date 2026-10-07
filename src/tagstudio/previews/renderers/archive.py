@@ -33,12 +33,16 @@ class ArchivePreview(BasePreview):
     def register_types(cls) -> None:
         # NOTE: Filetype equivalents (i.e. ".tar.gz" == ".tgz") are already declared internally.
         MediaTypes.register("archive", ".7z", RENDER)
-        MediaTypes.register("archive", ".gz", RENDER)
         MediaTypes.register("archive", ".rar", RENDER)
         MediaTypes.register("archive", ".s7z", RENDER)
         MediaTypes.register("archive", ".tar", RENDER)
         MediaTypes.register("archive", ".zip", RENDER)
+        MediaTypes.register("archive", ".tar.bz", RENDER)
+        MediaTypes.register("archive", ".tar.bz2", RENDER)
         MediaTypes.register("archive", ".tar.gz", RENDER)
+        MediaTypes.register("archive", ".tar.lzma", RENDER)
+        MediaTypes.register("archive", ".tar.xz", RENDER)
+        MediaTypes.register("archive", ".tar.zst", RENDER)
 
     @override
     @classmethod
@@ -95,18 +99,26 @@ def open_archive(filepath: Path) -> Archive:
 
     Args:
         filepath (Path): The path to the archive.
-        ext (str): The file extension.
 
     Returns:
         Archive: The opened archive.
     """
-    ext = filepath.suffix.lower()
+    exts = MediaTypes.get_equivalent_exts(MediaTypes.get_ext(filepath))
     archiver: type[Archive] = zipfile.ZipFile
-    if ext in {".7z", ".cb7", ".s7z"}:
+    if exts & {".7z", ".cb7", ".s7z"}:
         archiver = SevenZipFile
-    elif ext in {".cbr", ".rar"}:
+    elif exts & {".cbr", ".rar"}:
         archiver = rarfile.RarFile
-    elif ext in {".cbt", ".tar", ".tgz"}:
+    elif exts & {
+        ".cbt",
+        ".tar",
+        ".tar.bz",
+        ".tar.bz2",
+        ".tar.gz",
+        ".tar.lzma",
+        ".tar.xz",
+        ".tar.zst",
+    }:
         archiver = TarFile
     return archiver(filepath, "r")
 

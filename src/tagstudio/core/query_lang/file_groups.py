@@ -346,7 +346,7 @@ def register_types() -> None:
     MediaTypes.register("model", ".stl", SEARCH)
 
     # Archives -----------------------------------------------------------------
-    MediaTypes.add_name_aliases("archive", ["Archive", "Compressed"])
+    MediaTypes.add_name_aliases("archive", "Archive")
     MediaTypes.register("archive", ".cba", SEARCH)  # Also under "ebook.comic"
 
     # RAR
@@ -374,7 +374,9 @@ def register_types() -> None:
         ],
     )
     MediaTypes.register("archive.tar", ".tar", SEARCH)
-    MediaTypes.register("archive.tar", [".tar.bz", ".tb2", ".tbz", ".tbz2", ".tz2"], SEARCH)
+    MediaTypes.register(
+        "archive.tar", [".tar.bz", ".tar.bz2", ".tb2", ".tbz", ".tbz2", ".tz2"], SEARCH
+    )
     MediaTypes.register("archive.tar", [".tar.gz", ".taz", ".tgz"], SEARCH)
     MediaTypes.register("archive.tar", [".tar.lzma", ".tlz"], SEARCH)
     MediaTypes.register("archive.tar", [".tar.xz", ".txz"], SEARCH)
@@ -433,6 +435,16 @@ def register_types() -> None:
     MediaTypes.register("binary", ".pyc", SEARCH)
     MediaTypes.register("binary", ".pyd", SEARCH)
     MediaTypes.register("binary", ".pyo", SEARCH)
+
+    # Compressed ---------------------------------------------------------------
+    # NOTE: These are single-file compression formats that wrap other files (e.g. ".tar.gz").
+    MediaTypes.add_name_aliases("compressed", "Compressed")
+    MediaTypes.register("compressed", ".bz", SEARCH)
+    MediaTypes.register("compressed", ".bz2", SEARCH)
+    MediaTypes.register("compressed", ".gz", SEARCH)
+    MediaTypes.register("compressed", ".lzma", SEARCH)
+    MediaTypes.register("compressed", ".xz", SEARCH)
+    MediaTypes.register("compressed", ".zst", SEARCH)
 
     # Databases ----------------------------------------------------------------
     MediaTypes.add_name_aliases("database", ["Database", "DB"])

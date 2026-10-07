@@ -20,6 +20,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.decompression import get_display_ext
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -139,7 +140,7 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText("")
             self.dimensions_label.setHidden(True)
         else:
-            ext = filepath.suffix.lower()
+            ext = get_display_ext(filepath)
             display_path = filepath
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath

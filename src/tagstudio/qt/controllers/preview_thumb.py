@@ -17,6 +17,7 @@ from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.decompression import decompressed
 from tagstudio.previews.video_tester import is_readable_video
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.utils.file_opener import open_file
@@ -39,37 +40,43 @@ class PreviewThumb(PreviewThumbView):
     def __get_image_stats(self, filepath: Path) -> FileAttributeData:
         """Get width and height of an image as dict."""
         stats = FileAttributeData()
-        ext = filepath.suffix.lower()
 
-        if filepath.is_dir():
-            pass
-        elif MediaTypes.contains("image.raster.raw", ext, SEARCH):
-            try:
-                with rawpy.imread(str(filepath)) as raw:
-                    rgb = raw.postprocess()
-                    image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                    stats.width = image.width
-                    stats.height = image.height
-            except (
-                LibRawIOError,
-                LibRawFileUnsupportedError,
-                FileNotFoundError,
-            ):
+        with decompressed(filepath) as image_path:
+            if image_path is None:
+                return stats
+            ext = image_path.suffix.lower()
+
+            if image_path.is_dir():
                 pass
-        elif MediaTypes.contains("image.raster", ext, SEARCH):
-            try:
-                image = Image.open(str(filepath))
-                stats.width = image.width
-                stats.height = image.height
-            except (
-                DecompressionBombError,
-                FileNotFoundError,
-                NotImplementedError,
-                UnidentifiedImageError,
-            ) as e:
-                logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
-        elif MediaTypes.contains("image.vector", ext, SEARCH):
-            pass  # TODO
+            elif MediaTypes.contains("image.raster.raw", ext, SEARCH):
+                try:
+                    with rawpy.imread(str(image_path)) as raw:
+                        rgb = raw.postprocess()
+                        image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
+                        stats.width = image.width
+                        stats.height = image.height
+                except (
+                    LibRawIOError,
+                    LibRawFileUnsupportedError,
+                    FileNotFoundError,
+                ):
+                    pass
+            elif MediaTypes.contains("image.raster", ext, SEARCH):
+                try:
+                    with Image.open(str(image_path)) as image:
+                        stats.width = image.width
+                        stats.height = image.height
+                except (
+                    DecompressionBombError,
+                    FileNotFoundError,
+                    NotImplementedError,
+                    UnidentifiedImageError,
+                ) as e:
+                    logger.error(
+                        "[PreviewThumb] Could not get image stats", filepath=filepath, error=e
+                    )
+            elif MediaTypes.contains("image.vector", ext, SEARCH):
+                pass  # TODO
 
         return stats
 

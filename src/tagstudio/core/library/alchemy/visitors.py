@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select
+from sqlalchemy import ColumnElement, and_, distinct, false, func, literal, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
@@ -100,17 +100,16 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             extensions: set[str] = (
                 media_type.context_sets.get(SEARCH, set()) if media_type else set()
             )
-            return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
+            return self._entry_has_any_ext(extensions)
 
         elif node.type == ConstraintType.FileType:
-            # NOTE: Entries store their suffix without a leading dot, the MediaTypes system includes
-            # the leading dot (if any), and this search system should take in either variant.
-            return or_(
-                *[
-                    Entry.suffix.ilike(ft.removeprefix("."))
-                    for ft in MediaTypes.get_equivalent_exts(f".{node.value.removeprefix('.')}")
-                ]
-            )
+            # NOTE: The MediaTypes system includes the leading dot (if any), and this search system
+            # should take in either variant.
+            ext = f".{node.value.removeprefix('.').lower()}"
+            extensions = MediaTypes.get_equivalent_exts(ext).copy()
+            for compound_ext in MediaTypes.get_compound_exts(ext):
+                extensions |= MediaTypes.get_equivalent_exts(compound_ext)
+            return self._entry_has_any_ext(extensions)
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
                 return ~Entry.id.in_(select(Entry.id).join(TagEntry))
@@ -125,6 +124,30 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
     @override
     def visit_not(self, node: Not) -> ColumnElement[bool]:
         return ~self.visit(node.child)
+
+    def _entry_has_any_ext(self, extensions: set[str]) -> ColumnElement[bool]:
+        """Returns a Boolean Expression that is true if the Entry has any of the extensions."""
+        # NOTE: Entries only store their last suffix (lowercase and without a leading dot), so
+        # compound extensions also match the end of the path.
+        suffixes: set[str] = set()
+        last_suffixes_by_prefix: dict[str, set[str]] = {}
+        for ext in extensions:
+            prefix, _, last_suffix = ext.rpartition(".")
+            if prefix:
+                last_suffixes_by_prefix.setdefault(prefix, set()).add(last_suffix)
+            else:
+                suffixes.add(last_suffix)
+
+        return or_(
+            Entry.suffix.in_(suffixes),
+            *[
+                and_(
+                    Entry.suffix.in_(last_suffixes),
+                    Entry.path.like(literal(f"%{prefix}.") + Entry.suffix),
+                )
+                for prefix, last_suffixes in last_suffixes_by_prefix.items()
+            ],
+        )
 
     def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
         """Given a tag name find the ids of all tags that this name could refer to."""
