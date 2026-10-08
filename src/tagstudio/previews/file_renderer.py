@@ -19,6 +19,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypeGroup, MediaTypes, slugify
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
@@ -104,15 +105,15 @@ class FileRenderer:
         # Key: ("name", UiColor, 512, 512, 1.25)
         self.icons: dict[tuple[str, UiColor, int, int, float], Image.Image] = {}
 
-    def _get_resource_id(self, url: Path) -> str:
+    def _get_resource_id(self, path: Path) -> str:
         """Return the name of the icon resource to use for a file type.
 
         Special terms will return special resources.
 
         Args:
-            url (Path): The file url to assess. "$LOADING" will return the loading graphic.
+            path (Path): The file path to assess. "$LOADING" will return the loading graphic.
         """
-        ext = url.suffix.lower()
+        ext = get_inner_ext(path) or MediaTypes.get_ext(path)
         groups = MediaTypes.find(ext, SEARCH)  # Fallback icons use the SEARCH context
         groups.sort(  # Sort by priority and most specific dot-separated subgroup.
             key=lambda g: (
@@ -712,27 +713,19 @@ class FileRenderer:
 
         if filepath and filepath.is_file():
             try:
-                ext = filepath.suffix.lower() if filepath.suffix else filepath.stem.lower()
-                for preview in FileRenderer._preview_renderers:
-                    media_type: MediaTypeGroup | None = getattr(
-                        MediaTypes, preview.media_type_name, None
+                preview = FileRenderer._find_preview(filepath)
+                if preview:
+                    image = preview.render(
+                        filepath=filepath,
+                        is_small=is_small,
+                        theme=theme,
+                        size=(scaled_size, scaled_size),
+                        dpi_scale=dpi_scale,
                     )
-                    if media_type is None:
-                        logger.error(
-                            f"[FileRenderer] "
-                            f"Attribute '{preview.media_type_name}' not registered with MediaTypes",
-                        )
-                        break
-
-                    if media_type.contains(ext, RENDER):
-                        image = preview.render(
-                            filepath=filepath,
-                            is_small=is_small,
-                            theme=theme,
-                            size=(scaled_size, scaled_size),
-                            dpi_scale=dpi_scale,
-                        )
-                        break
+                elif is_compressed(filepath):
+                    image = FileRenderer._render_decompressed(
+                        filepath, is_small, theme, (scaled_size, scaled_size), dpi_scale
+                    )
 
                 if image:
                     image = self._resize_image(image, (scaled_size, scaled_size))
@@ -743,6 +736,44 @@ class FileRenderer:
                 image = None
 
         return image
+
+    @staticmethod
+    def _find_preview(filepath: Path) -> type[BasePreview] | None:
+        """Return the highest priority preview renderer for a file's extension, if any."""
+        ext = MediaTypes.get_ext(filepath) if filepath.suffix else filepath.stem.lower()
+        for preview in FileRenderer._preview_renderers:
+            media_type: MediaTypeGroup | None = getattr(MediaTypes, preview.media_type_name, None)
+            if media_type is None:
+                logger.error(
+                    f"[FileRenderer] "
+                    f"Attribute '{preview.media_type_name}' not registered with MediaTypes",
+                )
+                return None
+
+            if media_type.contains(ext, RENDER):
+                return preview
+
+        return None
+
+    @staticmethod
+    def _render_decompressed(
+        filepath: Path, is_small: bool, theme: Theme, size: tuple[int, int], dpi_scale: float
+    ) -> Image.Image | None:
+        """Render a compressed file with the preview renderer for the uncompressed file."""
+        preview = FileRenderer._find_preview(Path(filepath.stem))
+        if preview is None:
+            return None
+
+        with decompressed(filepath) as inner_path:
+            if inner_path is None:
+                return None
+
+            image = preview.render(
+                filepath=inner_path, is_small=is_small, theme=theme, size=size, dpi_scale=dpi_scale
+            )
+            if image:
+                image.load()  # Read the image data before the temporary file is deleted
+            return image
 
     def _resize_image(self, image: Image.Image, size: tuple[int, int]) -> Image.Image:
         orig_x, orig_y = image.size

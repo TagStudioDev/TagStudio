@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 
+from pathlib import Path
+
 from pytestqt.exceptions import pytest
 
 from tagstudio.core.media_types import MediaTypes
@@ -53,6 +55,22 @@ def test_equivalent_extensions():
 
 def test_get_equivalent_exts_defaults_to_itself():
     assert MediaTypes.get_equivalent_exts(".zzzunregistered") == {".zzzunregistered"}
+
+
+@pytest.mark.parametrize(
+    ["filename", "ext"],
+    [
+        ("pack.zzzinner.zzzouter", ".zzzinner.zzzouter"),
+        ("my.dotted.name.ZZZINNER.ZZZOUTER", ".zzzinner.zzzouter"),
+        ("pack.zzzouter", ".zzzouter"),
+        ("pack.other.zzzouter", ".zzzouter"),
+        ("README", ""),
+    ],
+)
+def test_get_ext(filename: str, ext: str):
+    MediaTypes.register("zzztest.compound", ".zzzinner.zzzouter", "SEARCH")
+
+    assert MediaTypes.get_ext(Path(filename)) == ext
 
 
 def test_find():

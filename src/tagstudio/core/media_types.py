@@ -3,6 +3,7 @@
 
 
 import re
+from pathlib import PurePath
 from typing import Any
 
 import structlog
@@ -105,6 +106,7 @@ class MediaTypes(metaclass=SanitizedAttr):
     """A singleton class that manages registered media types and their relationships."""
 
     _chained_groups: dict[str, set[str]] = {}
+    _compound_exts_by_last_suffix: dict[str, list[str]] = {}
     _name_to_key_map: dict[str, str] = {}
     all_groups: list[MediaTypeGroup] = []
     equivalent_exts: dict[str, set[str]] = {}
@@ -275,6 +277,16 @@ class MediaTypes(metaclass=SanitizedAttr):
             for e in ext:
                 cls.equivalent_exts.setdefault(e, set(ext))
 
+        # Index compound extensions (e.g. ".tar.gz") by their last suffix (.gz -> .tar.gz)
+        for e in ext:
+            if e.count(".") > 1:
+                compound_exts = cls._compound_exts_by_last_suffix.setdefault(
+                    f".{e.rsplit('.', 1)[1]}", []
+                )
+                if e not in compound_exts:
+                    compound_exts.append(e)
+                    compound_exts.sort(key=len, reverse=True)
+
         # Create any chained groups from dot notations (e.g. "adobe.photoshop")
         name_parts = group_key.split(".")
         for i in range(1, len(name_parts)):
@@ -300,6 +312,34 @@ class MediaTypes(metaclass=SanitizedAttr):
             ext (str): The file extension, including a leading dot (if there is one).
         """
         return cls.equivalent_exts.get(ext, {ext})
+
+    @classmethod
+    def get_ext(cls, path: PurePath) -> str:
+        """Return the longest registered extension a path ends with, or else its last suffix.
+
+        For example, `my.archive.tar.gz` returns `.tar.gz` and `v1.2.zip` returns `.zip`.
+        """
+        last_suffix = path.suffix.lower()
+        compound_exts = cls._compound_exts_by_last_suffix.get(last_suffix)
+        if compound_exts:
+            name = path.name.lower()
+            for ext in compound_exts:
+                if name.endswith(ext):
+                    return ext
+        return last_suffix
+
+    @classmethod
+    def get_compound_exts(cls, ext: str) -> set[str]:
+        """Return the registered compound extensions that start with an extension.
+
+        For example, `.tar` returns `.tar.gz`, `.tar.xz`, etc. (but not `.tar` itself).
+        """
+        return {
+            compound_ext
+            for compound_exts in cls._compound_exts_by_last_suffix.values()
+            for compound_ext in compound_exts
+            if compound_ext.startswith(f"{ext}.")
+        }
 
 
 _FORBIDDEN_NAMES = set(dir(MediaTypes))

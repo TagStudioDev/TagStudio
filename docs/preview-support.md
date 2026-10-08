@@ -105,12 +105,17 @@ Preview support for office documents or well-known project file formats varies b
 
 Archive thumbnails will display the first image from the archive within the Inspector.
 
-| Filetype | Extensions     |
-| -------- | -------------- |
-| 7-Zip    | `.7z`, `.s7z`  |
-| RAR      | `.rar`         |
-| Tar      | `.tar`, `.tgz` |
-| Zip      | `.zip`         |
+| Filetype        | Extensions                                             |
+| --------------- | ------------------------------------------------------ |
+| 7-Zip           | `.7z`, `.s7z`                                          |
+| RAR             | `.rar`                                                 |
+| Tar             | `.tar`                                                 |
+| Tar (bzip2)     | `.tar.bz2`, `.tar.bz`, `.tbz2`, `.tbz`, `.tb2`, `.tz2` |
+| Tar (gzip)      | `.tar.gz`, `.tgz`, `.taz`                              |
+| Tar (LZMA)      | `.tar.lzma`, `.tlz`                                    |
+| Tar (XZ)        | `.tar.xz`, `.txz`                                      |
+| Tar (Zstandard) | `.tar.zst`, `.tzst`                                    |
+| Zip             | `.zip`                                                 |
 
 ### :material-book: eBooks
 
