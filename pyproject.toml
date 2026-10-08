@@ -107,6 +107,7 @@ include = ["src/tagstudio", "tests"]
 # Reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
 # Some rules exclusive to basedpyright: https://docs.basedpyright.com/latest/benefits-over-pyright/new-diagnostic-rules/
 reportAny = false
+reportExplicitAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
 reportImportCycles = false

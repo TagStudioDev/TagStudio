@@ -313,6 +313,7 @@ class ThumbGridLayout(QLayout):
                                 ratio,
                                 False,
                                 True,
+                                entry.date_modified,
                             ),
                         )
                     )

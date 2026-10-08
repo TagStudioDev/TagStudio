@@ -129,22 +129,24 @@ class CacheManager:
 
     def save_image(self, image: Image.Image, file_name: Path, mode: str = "RGBA"):
         """Save an image to the cache."""
-        with self._lock as _lock:
-            cache_folder: CacheFolder = self._get_current_folder()
-            file_path = cache_folder.path / file_name
-            try:
-                image.save(file_path, mode=mode, quality=self.img_quality)
+        cache_folder: CacheFolder = self._get_current_folder()
+        file_path = cache_folder.path / file_name
+        try:
+            # Encoding happens outside the lock so cache lookups aren't blocked by it.
+            image.save(file_path, mode=mode, quality=self.img_quality)
 
-                size = file_path.stat().st_size
+            size = file_path.stat().st_size
+            with self._lock as _lock:
                 cache_folder.size += size
                 self.current_size += size
                 self._cull_folders()
-            except FileNotFoundError:
-                logger.warn(
-                    "[CacheManager] Failed to save cached image, was the folder deleted on disk?",
-                    folder=file_path,
-                )
-                if not cache_folder.path.exists():
+        except FileNotFoundError:
+            logger.warn(
+                "[CacheManager] Failed to save cached image, was the folder deleted on disk?",
+                folder=file_path,
+            )
+            with self._lock as _lock:
+                if not cache_folder.path.exists() and cache_folder in self.folders:
                     self.folders.remove(cache_folder)
 
     def _create_folder(self) -> CacheFolder:

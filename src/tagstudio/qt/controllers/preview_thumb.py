@@ -6,16 +6,17 @@ import io
 import math
 import time
 from enum import Enum, auto
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
-import cv2
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QRectF, QSize, Qt, QThreadPool, Signal
 from PySide6.QtGui import QBrush, QMovie, QPainter, QPixmap, QResizeEvent
+from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import QWidget
 from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 
@@ -23,7 +24,12 @@ from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed
 from tagstudio.core.utils.types import unwrap
-from tagstudio.previews.video_tester import is_readable_video
+from tagstudio.previews.media_probe import (
+    get_duration,
+    get_video_stream,
+    has_audio_stream,
+    is_readable_video,
+)
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
@@ -54,19 +60,25 @@ class _PreviewType(Enum):
 class PreviewThumb(QWidget):
     """The file preview thumbnail widget."""
 
+    _animation_loaded = Signal(Path, object)
+    _video_probed = Signal(Path, object, object)
     check_ffmpeg = Signal(bool)
     stats_updated = Signal(Path, FileAttributeData)
 
     def __init__(self, driver: QtDriver):
         super().__init__()
         self._driver = driver
-        self._thumb_renderer = QtFileRenderer(driver.lib, driver.settings)
+        self._file_renderer = QtFileRenderer(driver.lib, driver.settings)
+        self._render_pool = QThreadPool(self)
+        self._render_pool.setMaxThreadCount(1)
 
+        self._animation_buffer: QBuffer = QBuffer()
+        self._animation_size: QSize = QSize()
         self._current_file: Path | None = None
-        self._gif_buffer: QBuffer = QBuffer()
-        self._gif_size: QSize = QSize()
+        self._date_modified: float | None = None
         self._image_ratio: float = 1.0
         self._preview_size: tuple[int, int] = _DEFAULT_PREVIEW_SIZE
+        self._render_timestamp: float = 0.0
         self._rendered_res: tuple[int, int] = (0, 0)
         self._should_render_on_resize: bool = False
         self._source_pixmap: QPixmap = QPixmap()
@@ -88,15 +100,13 @@ class PreviewThumb(QWidget):
         view.delete_action.triggered.connect(self._delete_action_callback)
         view.button_wrapper.clicked.connect(self._button_wrapper_callback)
 
-        # QMediaPlayer loads duration asynchronously after setSource().
-        view.media_player.player.durationChanged.connect(
-            self._media_player_duration_changed_callback
-        )
+        view.media_player.player.errorOccurred.connect(self._media_player_error_callback)
         # Need to watch for this to resize the player appropriately.
         view.media_player.player.hasVideoChanged.connect(self._media_player_video_changed_callback)
 
-        self._thumb_renderer.updated.connect(self._thumb_renderer_updated_callback)
-        self._thumb_renderer.updated_ratio.connect(self._thumb_renderer_updated_ratio_callback)
+        self._file_renderer.updated.connect(self._file_renderer_updated_callback)
+        self._animation_loaded.connect(self._animation_loaded_callback)
+        self._video_probed.connect(self._video_probed_callback)
 
     def _open_file_action_callback(self) -> None:
         if self._current_file:
@@ -123,20 +133,56 @@ class PreviewThumb(QWidget):
     def _media_player_video_changed_callback(self) -> None:
         self._update_image_size((self.size().width(), self.size().height()))
 
-    def _media_player_duration_changed_callback(self, duration_ms: int) -> None:
+    def _media_player_error_callback(self, _error: QMediaPlayer.Error, _message: str) -> None:
+        """Callback that fires when the media player encounters an error and can't play.
+
+        Used to display a fallback image for videos if they can't play.
+        """
         filepath = self.layout().media_player.filepath
-        if filepath is None or duration_ms <= 0:
+        if (
+            filepath is not None
+            and filepath == self._current_file
+            and MediaTypes.contains("video", filepath.suffix.lower(), SEARCH)
+        ):
+            self._display_image(filepath, is_new_file=True)
+
+    def _video_probed_callback(
+        self, filepath: Path, preview: _PreviewType | None, stats: FileAttributeData | None
+    ) -> None:
+        """Callback that fires once a video's probe results are back."""
+        if filepath != self._current_file:
             return
 
-        self.stats_updated.emit(
-            filepath,
-            FileAttributeData(duration=duration_ms // 1000),
-        )
+        if preview == _PreviewType.VIDEO and stats is not None:
+            # Display the video's size and duration
+            if stats.width and stats.height:
+                self._image_ratio = stats.width / stats.height
+                self._update_image_size((self.size().width(), self.size().height()))
+            self.stats_updated.emit(filepath, stats)
+        elif preview == _PreviewType.AUDIO and stats is not None:
+            # Display the album art/waveform and duration
+            self._show_audio_art(filepath, is_new_file=True)
+            self.stats_updated.emit(filepath, stats)
+        else:
+            self._display_image(filepath, is_new_file=True)
 
-    def _thumb_renderer_updated_callback(
-        self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
+    def _animation_loaded_callback(
+        self, filepath: Path, data: tuple[bytes, tuple[int, int]] | None
     ) -> None:
+        if filepath != self._current_file:
+            return
+
+        if not (data and self._display_animation(*data)):
+            self._display_image(filepath, is_new_file=False)
+
+    def _file_renderer_updated_callback(
+        self, timestamp: float, img: QPixmap, _size: QSize, path: Path
+    ) -> None:
+        if path != self._current_file or timestamp < self._render_timestamp:
+            return
+
         self._source_pixmap = img
+        self._image_ratio = img.width() / img.height()
         self._update_image_size((self.size().width(), self.size().height()), refresh_icon=True)
 
     def _update_icon(self) -> None:
@@ -162,9 +208,6 @@ class PreviewThumb(QWidget):
         painter.end()
         pixmap.setDevicePixelRatio(ratio)
         button.setIcon(pixmap)
-
-    def _thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
-        self._image_ratio = ratio
 
     def _update_image_size(self, size: tuple[int, int], refresh_icon: bool = False) -> None:
         view = self.layout()
@@ -192,20 +235,20 @@ class PreviewThumb(QWidget):
         if refresh_icon or view.button_wrapper.iconSize() != scaled_size:
             view.button_wrapper.setIconSize(scaled_size)
             self._update_icon()
-        view.preview_gif.setMaximumSize(scaled_size)
-        view.preview_gif.setMinimumSize(scaled_size)
+        view.preview_animation.setMaximumSize(scaled_size)
+        view.preview_animation.setMinimumSize(scaled_size)
 
         view.media_player.setMaximumSize(scaled_size)
         view.media_player.setMinimumSize(scaled_size)
 
-        for page in (view.preview_img_page, view.preview_gif_page, view.media_player_page):
+        for page in (view.preview_img_page, view.preview_animation_page, view.media_player_page):
             unwrap(page.layout()).activate()
 
-        movie = view.preview_gif.movie()
+        movie = view.preview_animation.movie()
         if movie:
-            gif_max = max(self._gif_size.width(), self._gif_size.height())
+            max_side = max(self._animation_size.width(), self._animation_size.height())
             display_max = max(scaled_size.width(), scaled_size.height()) * self.devicePixelRatio()
-            is_upscaling = gif_max < display_max
+            is_upscaling = max_side < display_max
             movie.setScaledSize(QSize() if is_upscaling else scaled_size)
 
     def _switch_preview(self, preview: _PreviewType | None) -> None:
@@ -231,109 +274,153 @@ class PreviewThumb(QWidget):
             view.button_wrapper.hide()
 
         if preview == _PreviewType.ANIMATED:
-            view.preview_gif.show()
-            view.setCurrentWidget(view.preview_gif_page)
-            view.preview_gif_page.raise_()
+            view.preview_animation.show()
+            view.setCurrentWidget(view.preview_animation_page)
+            view.preview_animation_page.raise_()
         else:
-            if view.preview_gif.movie():
-                view.preview_gif.movie().stop()
-                self._gif_buffer.close()
-            view.preview_gif.hide()
+            if view.preview_animation.movie():
+                view.preview_animation.movie().stop()
+                self._animation_buffer.close()
+            view.preview_animation.hide()
 
-    def _render_thumb(self, filepath: Path) -> None:
+    def _render_preview(self, filepath: Path) -> None:
         self._should_render_on_resize = True
 
+        screen_size = self.screen().size()
         self._rendered_res = (
-            math.ceil(self._preview_size[0] * _THUMB_SIZE_FACTOR),
-            math.ceil(self._preview_size[1] * _THUMB_SIZE_FACTOR),
+            min(math.ceil(self._preview_size[0] * _THUMB_SIZE_FACTOR), screen_size.width()),
+            min(math.ceil(self._preview_size[1] * _THUMB_SIZE_FACTOR), screen_size.height()),
         )
+        self._render_timestamp = time.time()
 
         # TODO: Make driver update the cache manager reference here instead of passing the driver.
-        self._thumb_renderer.render(
+        self._render_pool.start(
+            partial(
+                self._file_renderer.render,
+                self._driver.cache_manager,
+                self._render_timestamp,
+                filepath,
+                self._rendered_res,
+                self.devicePixelRatio(),
+                date_modified=self._date_modified,
+            )
+        )
+
+    def _render_placeholder(self, filepath: Path) -> None:
+        """Show the file's cached thumbnail, or a loading graphic if it has none.
+
+        If a file is already known to not be renderable, it'll display the default icon for it
+        right away instead of a loading graphic.
+        Some filetypes shouldn't display a loading graphic ever, like fonts.
+        """
+        self._file_renderer.render(
             self._driver.cache_manager,
             time.time(),
             filepath,
-            self._rendered_res,
+            _DEFAULT_PREVIEW_SIZE,
             self.devicePixelRatio(),
+            is_loading=True,
+            date_modified=self._date_modified,
         )
 
     def _update_media_player(self, filepath: Path) -> None:
         """Display either audio or video."""
         self.layout().media_player.play(filepath)
 
-    def _display_video(self, filepath: Path, size: QSize | None) -> FileAttributeData:
+    def _display_video(self, filepath: Path) -> None:
+        """Play a video, loading its stats in the background."""
         self._should_render_on_resize = False
 
         self._switch_preview(_PreviewType.VIDEO)
         self._update_media_player(filepath)
-        stats = FileAttributeData()
+        self._render_pool.start(lambda: self._probe_video(filepath))
 
-        if size is not None:
-            stats.width = size.width()
-            stats.height = size.height()
-
-            self._image_ratio = stats.width / stats.height
-            self.resizeEvent(
-                QResizeEvent(
-                    QSize(stats.width, stats.height),
-                    QSize(stats.width, stats.height),
-                )
+    def _probe_video(self, filepath: Path) -> None:
+        """Send whether a video should show as a video, as audio, or as an image, with its stats."""
+        if is_readable_video(filepath):
+            self._video_probed.emit(filepath, _PreviewType.VIDEO, self._get_video_stats(filepath))
+        elif has_audio_stream(filepath):
+            self._video_probed.emit(
+                filepath, _PreviewType.AUDIO, self._get_duration_stats(filepath)
             )
+        else:
+            self._video_probed.emit(filepath, None, None)
 
-        return stats
-
-    def _display_audio(self, filepath: Path) -> FileAttributeData:
-        self._switch_preview(_PreviewType.AUDIO)
-        self._render_thumb(filepath)
+    def _display_audio(self, filepath: Path, is_new_file: bool) -> None:
+        self._render_pool.start(
+            lambda: self.stats_updated.emit(filepath, self._get_duration_stats(filepath))
+        )
+        self._show_audio_art(filepath, is_new_file)
         self._update_media_player(filepath)
-        return FileAttributeData()
 
-    def _display_gif(self, gif_data: bytes, size: tuple[int, int]) -> FileAttributeData | None:
-        """Update the animated image preview from a filepath."""
+    def _show_audio_art(self, filepath: Path, is_new_file: bool) -> None:
+        """Show an audio file's album art or waveform in the media player."""
+        self._switch_preview(_PreviewType.AUDIO)
+        if is_new_file:
+            self._render_placeholder(filepath)
+        self._render_preview(filepath)
+
+    def _display_animation(self, data: bytes, size: tuple[int, int]) -> bool:
+        """Show an animated image, returning `False` if it's not actually animated."""
         self._should_render_on_resize = False
 
         view = self.layout()
-        stats = FileAttributeData()
 
         # Ensure that any movie and buffer from previous animations are cleared.
-        if view.preview_gif.movie():
-            view.preview_gif.movie().stop()
-            self._gif_buffer.close()
+        if view.preview_animation.movie():
+            view.preview_animation.movie().stop()
+            self._animation_buffer.close()
 
-        stats.width = size[0]
-        stats.height = size[1]
+        self._animation_size = QSize(*size)
+        self._image_ratio = self._animation_size.width() / self._animation_size.height()
 
-        self._image_ratio = stats.width / stats.height
-        self._gif_size = QSize(*size)
-
-        self._gif_buffer.setData(gif_data)
-        movie = QMovie(self._gif_buffer, QByteArray())
-        view.preview_gif.setMovie(movie)
+        self._animation_buffer.setData(data)
+        movie = QMovie(self._animation_buffer, QByteArray())
+        view.preview_animation.setMovie(movie)
 
         # If the animation only has 1 frame, it isn't animated and shouldn't be treated as such
         if movie.frameCount() <= 1:
-            return None
+            return False
 
         # The animation has more than 1 frame, continue displaying it as an animation
         self._switch_preview(_PreviewType.ANIMATED)
-        self.resizeEvent(
-            QResizeEvent(
-                QSize(stats.width, stats.height),
-                QSize(stats.width, stats.height),
-            )
-        )
+        self.resizeEvent(QResizeEvent(self._animation_size, self._animation_size))
         movie.start()
-        stats.duration = movie.frameCount() // 60
+        return True
 
-        return stats
+    def _display_animated(self, filepath: Path, is_new_file: bool) -> None:
+        """Show a placeholder image while its animation loads, falling back to a still image mode.
 
-    def _display_image(self, filepath: Path):
+        The placeholder will be the cached first frame if it exists, or else a loading icon.
+        """
+        self._should_render_on_resize = False
+        if is_new_file:
+            self._switch_preview(_PreviewType.IMAGE)
+            self._render_placeholder(filepath)
+        self._render_pool.start(lambda: self._load_animation(filepath))
+
+    def _load_animation(self, filepath: Path) -> None:
+        """Send an animated image to be shown, then its stats once its duration is known."""
+        animation_data = self._get_animation_data(filepath)
+        self._animation_loaded.emit(filepath, animation_data)
+        if animation_data is not None:
+            stats = self._get_duration_stats(filepath)
+            stats.width, stats.height = animation_data[1]
+            self.stats_updated.emit(filepath, stats)
+
+    def _display_image(self, filepath: Path, is_new_file: bool) -> None:
         """Renders the given file as an image, no matter its media type."""
         self._switch_preview(_PreviewType.IMAGE)
-        self._render_thumb(filepath)
+        if is_new_file:
+            self._render_placeholder(filepath)
+        self._render_pool.start(
+            lambda: self.stats_updated.emit(filepath, self._get_image_stats(filepath))
+        )
+        self._render_preview(filepath)
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
+        self._render_pool.clear()
         self._switch_preview(None)
         self._current_file = None
         self._should_render_on_resize = False
@@ -347,7 +434,7 @@ class PreviewThumb(QWidget):
             and self._should_render_on_resize
             and self._rendered_res < self._preview_size
         ):
-            self._render_thumb(self._current_file)
+            self._render_preview(self._current_file)
 
         return super().resizeEvent(event)
 
@@ -360,7 +447,7 @@ class PreviewThumb(QWidget):
         return self._current_file
 
     def _get_image_stats(self, filepath: Path) -> FileAttributeData:
-        """Get width and height of an image as dict."""
+        """Get the width and height of an image."""
         stats = FileAttributeData()
 
         with decompressed(filepath) as image_path:
@@ -373,10 +460,10 @@ class PreviewThumb(QWidget):
             elif MediaTypes.contains("image.raster.raw", ext, SEARCH):
                 try:
                     with rawpy.imread(str(image_path)) as raw:
-                        rgb = raw.postprocess()
-                        image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                        stats.width = image.width
-                        stats.height = image.height
+                        sizes = raw.sizes
+                        is_rotated = bool(sizes.flip & 4)
+                        stats.width = sizes.height if is_rotated else sizes.width
+                        stats.height = sizes.width if is_rotated else sizes.height
                 except (
                     LibRawIOError,
                     LibRawFileUnsupportedError,
@@ -402,70 +489,76 @@ class PreviewThumb(QWidget):
 
         return stats
 
-    def _get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
-        """Loads an animated image and returns gif data and size, if successful."""
+    def _get_animation_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
+        """Return an animated image's data and size, or `None` if it isn't animated."""
         ext = filepath.suffix.lower()
 
         try:
-            image: Image.Image = Image.open(filepath)
-            if ext == ".apng":
-                image_bytes_io = io.BytesIO()
-                image.save(
-                    image_bytes_io,
-                    "GIF",
-                    lossless=True,
-                    save_all=True,
-                    loop=0,
-                    disposal=2,
-                )
-                image.close()
-                image_bytes_io.seek(0)
-                return (image_bytes_io.read(), (image.width, image.height))
-            else:
-                image.close()
-                with open(filepath, "rb") as f:
-                    return (f.read(), (image.width, image.height))
+            with Image.open(filepath) as image:
+                if not getattr(image, "is_animated", False):
+                    return None
+
+                size = (image.width, image.height)
+
+                # QMovie can't play APNGs, so convert them to the fastest lossless WebP
+                if ext == ".apng":
+                    image_bytes_io = io.BytesIO()
+                    image.save(
+                        image_bytes_io,
+                        "WEBP",
+                        lossless=True,
+                        quality=0,
+                        method=0,
+                        save_all=True,
+                        loop=0,
+                    )
+                    return (image_bytes_io.getvalue(), size)
+
+            with open(filepath, "rb") as f:
+                return (f.read(), size)
 
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
             return None
 
-    def _get_video_res(self, filepath: str) -> tuple[bool, QSize]:
-        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
-        success, frame = video.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(frame)
-        return (success, QSize(image.width, image.height))
+    def _get_duration_stats(self, filepath: Path) -> FileAttributeData:
+        """Get the duration of a media file."""
+        duration = get_duration(filepath)
+        return FileAttributeData(duration=None if duration is None else int(duration))
 
-    def display_file(self, filepath: Path) -> FileAttributeData:
-        """Render a single file preview."""
+    def _get_video_stats(self, filepath: Path) -> FileAttributeData:
+        """Get a video's dimensions and duration."""
+        stats = self._get_duration_stats(filepath)
+        video = get_video_stream(filepath)
+        if video and video.get("width") and video.get("height"):
+            rotation = int(video.get("tags", {}).get("rotate", 0))
+            for side_data in video.get("side_data_list", []):
+                rotation = int(side_data.get("rotation", rotation))
+            is_sideways = rotation % 180 != 0
+            stats.width = video["height"] if is_sideways else video["width"]
+            stats.height = video["width"] if is_sideways else video["height"]
+        return stats
+
+    def display_file(self, filepath: Path, date_modified: float | None = None) -> None:
+        """Render a single file preview, sending its stats through `stats_updated`.
+
+        `date_modified` is used to find unlinked files' cached thumbnails.
+        """
+        is_new_file = filepath != self._current_file
         self._current_file = filepath
+        self._date_modified = date_modified
+        self._render_pool.clear()
         ext = filepath.suffix.lower()
 
         # Video
-        if MediaTypes.contains("video", ext, SEARCH) and is_readable_video(filepath):
-            size: QSize | None = None
-            try:
-                success, size = self._get_video_res(str(filepath))
-                if not success:
-                    size = None
-            except cv2.error as e:
-                logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
-
-            return self._display_video(filepath, size)
+        if MediaTypes.contains("video", ext, SEARCH):
+            self._display_video(filepath)
         # Audio
         elif MediaTypes.contains("audio", ext, SEARCH):
-            return self._display_audio(filepath)
+            self._display_audio(filepath, is_new_file)
         # Animated Images
         elif MediaTypes.contains("image.animated", ext, SEARCH):
-            if (ret := self._get_gif_data(filepath)) and (
-                stats := self._display_gif(ret[0], ret[1])
-            ) is not None:
-                return stats
-            else:
-                self._display_image(filepath)
-                return self._get_image_stats(filepath)
+            self._display_animated(filepath, is_new_file)
         # Other Types (Including Images)
         else:
-            self._display_image(filepath)
-            return self._get_image_stats(filepath)
+            self._display_image(filepath, is_new_file)

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 
-import contextlib
 import hashlib
 import importlib
 import inspect
@@ -71,6 +70,7 @@ class FileRenderer:
 
     _rm: ResourceManager = ResourceManager()
     _cached_img_ext: str = ".webp"
+    _failed_render_filenames: set[Path] = set()  # Used to skip loading icon for default icon files
     _preview_renderers: list[type[BasePreview]] = _get_preview_renderers()
 
     # Map of media group keys to preview renderer priorities.
@@ -500,6 +500,19 @@ class FileRenderer:
 
         return im
 
+    @staticmethod
+    def _cached_thumb_name(filepath: Path, date_modified: float | None = None) -> Path:
+        """Return the cache filename for a file's thumbnail.
+
+        Args:
+            filepath (Path): The path of the file to check for a cached image of.
+            date_modified (float | None): The file's stored date modified timestamp, if it has one.
+        """
+        mod_time: str = "" if date_modified is None else str(date_modified)
+        hashable_str: str = f"{str(filepath)}{mod_time}"
+        hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
+        return Path(f"{hash_value}{FileRenderer._cached_img_ext}")
+
     def render(
         self,
         cache: CacheManager | None,
@@ -510,6 +523,7 @@ class FileRenderer:
         theme: Theme = Theme.DARK,
         is_loading: bool = False,
         is_thumb: bool = False,
+        date_modified: float | None = None,
     ):
         """Render a thumbnail or preview image.
 
@@ -522,6 +536,7 @@ class FileRenderer:
             theme (Theme): A theme enum to determine the light/dark theme.
             is_loading (bool): Is this a loading graphic?
             is_thumb (bool): Is this specifically a thumbnail? Use for specifying small variants.
+            date_modified (float | None): The date modified timestamp of the file. Used for caches.
             update_on_ratio_change (bool): Should an updated ratio signal be sent?
         """
         render_mask_and_edge: bool = True
@@ -555,12 +570,13 @@ class FileRenderer:
             )
             return im
 
-        def render_ignored(size: tuple[int, int], im: Image.Image) -> Image.Image:
+        def render_icon_overlay(
+            size: tuple[int, int], im: Image.Image, icon: Image.Image
+        ) -> Image.Image:
             icon_ratio: float = 5
             padding_factor = 18
 
             im_ = im
-            icon: Image.Image = self._rm.ignored
             icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
             im_.paste(
                 im=icon.resize(
@@ -589,16 +605,25 @@ class FileRenderer:
                     )
             return image
 
+        def render_fallback_preview() -> Image.Image:
+            """Render a fallback preview image.
+
+            Will be an existing cached thumbnail if one exists, or the default preview icon, or else
+            the unlinked icon if the file is unlinked and there's no cached thumbnail.
+            """
+            if not filepath.exists():
+                cached_name = FileRenderer._cached_thumb_name(filepath, date_modified)
+                return fetch_cached_image(cached_name) or render_unlinked((512, 512), 2)
+            if filepath.is_dir():
+                return render_unlinked((512, 512), 2)
+            return render_default((512, 512), 2)
+
         image: Image.Image | None = None
         # Try to get a non-loading thumbnail for the grid.
         if not is_loading and is_thumb and filepath and filepath != Path("."):
             # Attempt to retrieve cached image from disk
-            mod_time: str = ""
-            with contextlib.suppress(Exception):
-                mod_time = str(filepath.stat().st_mtime_ns)
-            hashable_str: str = f"{str(filepath)}{mod_time}"
-            hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
-            file_name = Path(f"{hash_value}{FileRenderer._cached_img_ext}")
+            is_unlinked = not filepath.exists()
+            file_name = FileRenderer._cached_thumb_name(filepath, date_modified)
             image = fetch_cached_image(file_name)
 
             if not image and self.settings.generate_thumbs:
@@ -621,13 +646,15 @@ class FileRenderer:
                     is_small=is_thumb,
                     cache_filename=file_name,
                 )
+                if not image:
+                    FileRenderer._failed_render_filenames.add(file_name)
 
             # If the normal renderer failed, fallback the defaults
             # (with native non-cached sizing!)
             if not image:
                 image = (
                     render_unlinked((scaled_size, scaled_size), dpi_scale)
-                    if not filepath.exists() or filepath.is_dir()
+                    if is_unlinked or filepath.is_dir()
                     else render_default((scaled_size, scaled_size), dpi_scale)
                 )
                 render_mask_and_edge = False
@@ -649,29 +676,52 @@ class FileRenderer:
                 if image and Ignore.matcher.is_ignored(
                     filepath.relative_to(unwrap(self.lib.library_dir))
                 ):
-                    image = render_ignored((scaled_size, scaled_size), image)
+                    image = render_icon_overlay((scaled_size, scaled_size), image, self._rm.ignored)
             except TypeError:
                 pass
 
-        # A loading thumbnail (cached in memory)
+            # Cached thumbnails of unlinked files get an unlinked icon overlay
+            if image and render_mask_and_edge and is_unlinked:
+                image = render_icon_overlay(
+                    (scaled_size, scaled_size), image, self._rm.unlinked_stat
+                )
+
+        # A loading graphic, or a placeholder for a preview
         elif is_loading:
-            # Initialize "Loading" thumbnail
-            loading_thumb: Image.Image = self._get_icon(
-                "thumb_loading", theme_color, (scaled_size, scaled_size), theme, dpi_scale
-            )
-            image = loading_thumb.resize(
-                (scaled_size, scaled_size), resample=Image.Resampling.BILINEAR
-            )
+            if not is_thumb:
+                renderer = FileRenderer._find_renderer(filepath)
+                if renderer is None and is_compressed(filepath):
+                    renderer = FileRenderer._find_renderer(Path(filepath.stem))
+                file_name = FileRenderer._cached_thumb_name(filepath, date_modified)
+                if (
+                    not renderer
+                    or not filepath.is_file()
+                    or file_name in FileRenderer._failed_render_filenames
+                ):
+                    image = render_fallback_preview()
+                elif renderer.has_small_variant:
+                    # The thumb uses a different variant, so stay blank until the preview renders
+                    image = Image.new("RGBA", (scaled_size, scaled_size))
+                else:
+                    image = fetch_cached_image(file_name)
+            if not image:
+                # Initialize "Loading" thumbnail
+                loading_thumb: Image.Image = self._get_icon(
+                    "thumb_loading", theme_color, (scaled_size, scaled_size), theme, dpi_scale
+                )
+                image = loading_thumb.resize(
+                    (scaled_size, scaled_size), resample=Image.Resampling.BILINEAR
+                )
 
         # A full preview image (never cached)
         elif not is_thumb:
             image = self._render(cache, filepath, size, dpi_scale, theme)
-            if not image:
-                image = (
-                    render_unlinked((512, 512), 2)
-                    if not filepath.exists() or filepath.is_dir()
-                    else render_default((512, 512), 2)
-                )
+            file_name = FileRenderer._cached_thumb_name(filepath, date_modified)
+            if image:
+                FileRenderer._failed_render_filenames.discard(file_name)
+            else:
+                FileRenderer._failed_render_filenames.add(file_name)
+                image = render_fallback_preview()
             image = image.convert("RGBA")
 
         # If the image couldn't be rendered, use a default media image.
@@ -713,9 +763,9 @@ class FileRenderer:
 
         if filepath and filepath.is_file():
             try:
-                preview = FileRenderer._find_preview(filepath)
-                if preview:
-                    image = preview.render(
+                renderer = FileRenderer._find_renderer(filepath)
+                if renderer:
+                    image = renderer.render(
                         filepath=filepath,
                         is_small=is_small,
                         theme=theme,
@@ -738,20 +788,20 @@ class FileRenderer:
         return image
 
     @staticmethod
-    def _find_preview(filepath: Path) -> type[BasePreview] | None:
+    def _find_renderer(filepath: Path) -> type[BasePreview] | None:
         """Return the highest priority preview renderer for a file's extension, if any."""
         ext = MediaTypes.get_ext(filepath) if filepath.suffix else filepath.stem.lower()
-        for preview in FileRenderer._preview_renderers:
-            media_type: MediaTypeGroup | None = getattr(MediaTypes, preview.media_type_name, None)
+        for renderer in FileRenderer._preview_renderers:
+            media_type: MediaTypeGroup | None = getattr(MediaTypes, renderer.media_type_name, None)
             if media_type is None:
                 logger.error(
                     f"[FileRenderer] "
-                    f"Attribute '{preview.media_type_name}' not registered with MediaTypes",
+                    f"Attribute '{renderer.media_type_name}' not registered with MediaTypes",
                 )
                 return None
 
             if media_type.contains(ext, RENDER):
-                return preview
+                return renderer
 
         return None
 
@@ -760,7 +810,7 @@ class FileRenderer:
         filepath: Path, is_small: bool, theme: Theme, size: tuple[int, int], dpi_scale: float
     ) -> Image.Image | None:
         """Render a compressed file with the preview renderer for the uncompressed file."""
-        preview = FileRenderer._find_preview(Path(filepath.stem))
+        preview = FileRenderer._find_renderer(Path(filepath.stem))
         if preview is None:
             return None
 

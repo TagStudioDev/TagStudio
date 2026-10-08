@@ -15,7 +15,8 @@ from PIL.Image import DecompressionBombError, Image, fromarray
 from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
-from tagstudio.previews.video_tester import is_readable_video
+from tagstudio.previews.media_probe import has_audio_stream, is_readable_video
+from tagstudio.previews.renderers.audio import AudioPreview
 
 logger = structlog.get_logger(__name__)
 
@@ -50,6 +51,8 @@ class VideoPreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
+        if not is_readable_video(filepath) and has_audio_stream(filepath):
+            return AudioPreview.render(filepath, is_small, theme, size, dpi_scale)
         return video_thumb(filepath)
 
 
@@ -64,9 +67,6 @@ def video_thumb(filepath: Path) -> Image | None:
     try:
         if is_readable_video(filepath):
             video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
-            # TODO: Move this check to is_readable_video()
-            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                raise cv2.error("File is invalid or has 0 frames")
             video.set(
                 cv2.CAP_PROP_POS_FRAMES,
                 (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),

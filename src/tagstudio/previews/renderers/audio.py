@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 
-import math
 from io import BytesIO
 from pathlib import Path
 from typing import override
-from warnings import catch_warnings
 
 import numpy as np
 import structlog
@@ -61,9 +59,7 @@ class AudioPreview(BasePreview):
         dpi_scale: float,
     ) -> Image | None:
 
-        return cls.audio_album_thumb(filepath) or cls.audio_waveform_thumb(
-            filepath, theme, size, dpi_scale
-        )
+        return cls.audio_album_thumb(filepath) or cls.audio_waveform_thumb(filepath, theme, size)
 
     @staticmethod
     def audio_album_thumb(filepath: Path) -> Image | None:
@@ -107,62 +103,43 @@ class AudioPreview(BasePreview):
         return image
 
     @staticmethod
-    def audio_waveform_thumb(
-        filepath: Path, theme: Theme, size: tuple[int, int], dpi_scale: float
-    ) -> Image | None:
+    def audio_waveform_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image | None:
         """Render a waveform image from an audio file.
 
         Args:
             filepath (Path): The path of the file.
             theme (Theme): The system color theme.
             size (int): The size of the thumbnail.
-            dpi_scale (float): The screen pixel ratio.
         """
         # BASE_SCALE used for drawing on a larger image and resampling down
         # to provide an antialiased effect.
         base_scale: int = 2
-        samples_per_bar: int = 3
         size_scaled: int = size[0] * base_scale  # TODO: Allow for non-square sizes
         allow_small_min: bool = False
         im: Image | None = None
 
         try:
-            bar_count: int = min(math.floor((size[0] // dpi_scale) / 5), 64)
+            bar_count: int = 32
             audio = AudioSegment.from_file(filepath, filepath.suffix.lower()[1:])  # pyright: ignore[reportUnknownVariableType]
-            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
-            data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
-            bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
-            line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
-            bar_height: float = (size_scaled) - (size_scaled // bar_margin)
+            data = np.frombuffer(buffer=audio._data, dtype=f"<i{audio.sample_width}")
+            # Bars are twice as wide as the gaps between them, with double gaps at the edges
+            bar_margin: float = size_scaled / (bar_count * 3 + 3)
+            line_width: float = bar_margin * 2
+            bar_height: float = size_scaled * 0.7
 
-            count: int = 0
-            maximum_item: int = 0
-            max_array: list[int] = []
-            highest_line: int = 0
-
-            for i in range(-1, len(data_indices)):
-                d = data[math.ceil(data_indices[i]) - 1]
-                if count < samples_per_bar:
-                    count = count + 1
-                    with catch_warnings(record=True):
-                        if abs(d) > maximum_item:
-                            maximum_item = int(abs(d))
-                else:
-                    max_array.append(maximum_item)
-
-                    if maximum_item > highest_line:
-                        highest_line = maximum_item
-
-                    maximum_item = 0
-                    count = 1
-
-            line_ratio = max(highest_line / bar_height, 1)
+            # Each bar shows the RMS-adjusted waveforms of its section of the audio.
+            # RMS waveforms display nicer than raw ones, especially for loud files.
+            chunks = np.array_split(data, bar_count)
+            levels: list[float] = [
+                float(np.sqrt(np.mean(np.square(c, dtype=np.float64)))) for c in chunks
+            ]
+            line_ratio = max(*levels, 1) / bar_height
 
             im = new_image("RGB", (size_scaled, size_scaled), color="#000000")
             draw = ImageDraw.Draw(im)
 
-            current_x = bar_margin
-            for item in max_array:
+            current_x = bar_margin * 2
+            for item in levels:
                 item_height = item / line_ratio
 
                 # If small minimums are not allowed, raise all values
@@ -170,7 +147,7 @@ class AudioPreview(BasePreview):
                 if not allow_small_min:
                     item_height = max(item_height, line_width)
 
-                current_y = (bar_height - item_height + (size_scaled // bar_margin)) // 2
+                current_y = (size_scaled - item_height) // 2
 
                 draw.rounded_rectangle(
                     (
@@ -181,8 +158,6 @@ class AudioPreview(BasePreview):
                     ),
                     radius=100 * base_scale,
                     fill=("#FF0000"),
-                    outline=("#FFFF00"),
-                    width=max(math.ceil(line_width / 6), base_scale),
                 )
 
                 current_x = current_x + line_width + bar_margin

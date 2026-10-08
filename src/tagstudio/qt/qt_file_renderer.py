@@ -17,7 +17,6 @@ class QtFileRenderer(QObject):
     """A Qt-specific wrapper for rendering image previews and thumbnails from files."""
 
     updated = Signal(float, QPixmap, QSize, Path)
-    updated_ratio = Signal(float)
 
     def __init__(self, library: Library, settings: AppSettings) -> None:
         super().__init__()
@@ -37,6 +36,7 @@ class QtFileRenderer(QObject):
         pixel_ratio: float,
         is_loading: bool = False,
         is_thumb: bool = False,
+        date_modified: float | None = None,
     ):
 
         image, size, timestamp = self.renderer.render(
@@ -48,13 +48,13 @@ class QtFileRenderer(QObject):
             theme=self.theme,
             is_loading=is_loading,
             is_thumb=is_thumb,
+            date_modified=date_modified,
         )
 
         qim = ImageQt.ImageQt(image)
         pixmap = QPixmap.fromImage(qim)
         pixmap.setDevicePixelRatio(pixel_ratio)
 
-        self.updated_ratio.emit(image.size[0] / image.size[1])
         if pixmap:
             self.updated.emit(timestamp, pixmap, QSize(size[0], size[1]), filepath)
         else:
