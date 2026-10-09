@@ -66,7 +66,7 @@ def video_thumb(filepath: Path) -> Image | None:
     frame: MatLike | None = None
     try:
         if is_readable_video(filepath):
-            video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+            video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG, [cv2.CAP_PROP_N_THREADS, 1])
             video.set(
                 cv2.CAP_PROP_POS_FRAMES,
                 (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
