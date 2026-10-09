@@ -48,7 +48,7 @@ _THUMB_SIZE_FACTOR = 2
 
 
 class _PreviewType(Enum):
-    """Enum for which of the Inspector's stacked pages should be shown for a file."""
+    """Enum for which of the Inspector's stacked pages should be displayed for a file."""
 
     ANIMATED = auto()
     AUDIO = auto()
@@ -159,10 +159,9 @@ class PreviewThumb(QWidget):
                 self._image_ratio = stats.width / stats.height
                 self._update_image_size((self.size().width(), self.size().height()))
             self.stats_updated.emit(filepath, stats)
-        elif preview == _PreviewType.AUDIO and stats is not None:
+        elif preview == _PreviewType.AUDIO:
             # Display the album art/waveform and duration
-            self._show_audio_art(filepath, is_new_file=True)
-            self.stats_updated.emit(filepath, stats)
+            self._display_audio(filepath, is_new_file=True, start_player=False)
         else:
             self._display_image(filepath, is_new_file=True)
 
@@ -172,7 +171,7 @@ class PreviewThumb(QWidget):
         if filepath != self._current_file:
             return
 
-        if not (data and self._display_animation(*data)):
+        if not (data and self._play_animation(*data)):
             self._display_image(filepath, is_new_file=False)
 
     def _file_renderer_updated_callback(
@@ -307,7 +306,7 @@ class PreviewThumb(QWidget):
         )
 
     def _render_placeholder(self, filepath: Path) -> None:
-        """Show the file's cached thumbnail, or a loading graphic if it has none.
+        """Display the file's cached thumbnail, or a loading graphic if it has none.
 
         If a file is already known to not be renderable, it'll display the default icon for it
         right away instead of a loading graphic.
@@ -336,32 +335,28 @@ class PreviewThumb(QWidget):
         self._render_pool.start(lambda: self._probe_video(filepath))
 
     def _probe_video(self, filepath: Path) -> None:
-        """Send whether a video should show as a video, as audio, or as an image, with its stats."""
+        """Send whether a video should display as a video, as audio, or as an image."""
         if is_readable_video(filepath):
             self._video_probed.emit(filepath, _PreviewType.VIDEO, self._get_video_stats(filepath))
         elif has_audio_stream(filepath):
-            self._video_probed.emit(
-                filepath, _PreviewType.AUDIO, self._get_duration_stats(filepath)
-            )
+            self._video_probed.emit(filepath, _PreviewType.AUDIO, None)
         else:
             self._video_probed.emit(filepath, None, None)
 
-    def _display_audio(self, filepath: Path, is_new_file: bool) -> None:
+    def _display_audio(self, filepath: Path, is_new_file: bool, start_player: bool = True) -> None:
+        """Display an audio file's art and duration, and play it unless `start_player` is False."""
         self._render_pool.start(
             lambda: self.stats_updated.emit(filepath, self._get_duration_stats(filepath))
         )
-        self._show_audio_art(filepath, is_new_file)
-        self._update_media_player(filepath)
-
-    def _show_audio_art(self, filepath: Path, is_new_file: bool) -> None:
-        """Show an audio file's album art or waveform in the media player."""
         self._switch_preview(_PreviewType.AUDIO)
         if is_new_file:
             self._render_placeholder(filepath)
         self._render_preview(filepath)
+        if start_player:
+            self._update_media_player(filepath)
 
-    def _display_animation(self, data: bytes, size: tuple[int, int]) -> bool:
-        """Show an animated image, returning `False` if it's not actually animated."""
+    def _play_animation(self, data: bytes, size: tuple[int, int]) -> bool:
+        """Play an animated image, returning `False` if it's not actually animated."""
         self._should_render_on_resize = False
 
         view = self.layout()
@@ -388,8 +383,8 @@ class PreviewThumb(QWidget):
         movie.start()
         return True
 
-    def _display_animated(self, filepath: Path, is_new_file: bool) -> None:
-        """Show a placeholder image while its animation loads, falling back to a still image mode.
+    def _display_animated_image(self, filepath: Path, is_new_file: bool) -> None:
+        """Display a placeholder while the animation loads, falling back to a still image.
 
         The placeholder will be the cached first frame if it exists, or else a loading icon.
         """
@@ -400,7 +395,7 @@ class PreviewThumb(QWidget):
         self._render_pool.start(lambda: self._load_animation(filepath))
 
     def _load_animation(self, filepath: Path) -> None:
-        """Send an animated image to be shown, then its stats once its duration is known."""
+        """Send an animated image to be played, then its stats once its duration is known."""
         animation_data = self._get_animation_data(filepath)
         self._animation_loaded.emit(filepath, animation_data)
         if animation_data is not None:
@@ -558,7 +553,7 @@ class PreviewThumb(QWidget):
             self._display_audio(filepath, is_new_file)
         # Animated Images
         elif MediaTypes.contains("image.animated", ext, SEARCH):
-            self._display_animated(filepath, is_new_file)
+            self._display_animated_image(filepath, is_new_file)
         # Other Types (Including Images)
         else:
             self._display_image(filepath, is_new_file)
