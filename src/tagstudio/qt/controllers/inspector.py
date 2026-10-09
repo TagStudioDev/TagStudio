@@ -256,9 +256,12 @@ class Inspector(QWidget):
                     self._current_stats = None
 
                 if update_preview:
-                    stats: FileAttributeData = self.layout().preview_thumb.display_file(filepath)
-                    self._current_stats = stats
-                    self.layout().file_attrs.update_stats(filepath, stats, entry)
+                    self.layout().preview_thumb.display_file(filepath, entry.date_modified)
+                    if self._current_stats is None:
+                        self._current_stats = FileAttributeData()
+                    self.layout().file_attrs.update_stats(
+                        filepath, self._current_stats, entry, reserve_stat_space=True
+                    )
                 self.layout().file_attrs.update_date_label(entry)
                 self.layout().containers.update_from_entry(entry_id)
                 self._set_selection_callback()

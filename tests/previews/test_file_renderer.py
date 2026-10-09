@@ -69,7 +69,7 @@ def test_render_compressed_tarball(
     source = tmp_path / filename
     source.write_bytes(compress(_example_tar_bytes()))
 
-    assert FileRenderer._find_preview(source) is ArchivePreview
+    assert FileRenderer._find_renderer(source) is ArchivePreview
     image = ArchivePreview.render(
         source, is_small=True, theme=Theme.DARK, size=(128, 128), dpi_scale=1.0
     )

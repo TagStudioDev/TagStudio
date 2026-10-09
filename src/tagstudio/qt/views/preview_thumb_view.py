@@ -48,19 +48,19 @@ class PreviewThumbView(QStackedLayout):
         self.preview_img_page = QWidget()
         self._stacked_page_setup(self.preview_img_page, self.button_wrapper)
 
-        self.preview_gif = QLabel()
-        self.preview_gif.setMinimumSize(*_DEFAULT_PREVIEW_SIZE)
-        self.preview_gif.setScaledContents(True)
-        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        self.preview_gif.addAction(self.open_file_action)
-        self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
+        self.preview_animation = QLabel()
+        self.preview_animation.setMinimumSize(*_DEFAULT_PREVIEW_SIZE)
+        self.preview_animation.setScaledContents(True)
+        self.preview_animation.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_animation.setCursor(Qt.CursorShape.ArrowCursor)
+        self.preview_animation.addAction(self.open_file_action)
+        self.preview_animation.addAction(self.open_explorer_action)
+        self.preview_animation.addAction(self.delete_action)
 
-        self.preview_gif.setGraphicsEffect(CornerRadiusEffect(self.preview_gif, RADIUS))
+        self.preview_animation.setGraphicsEffect(CornerRadiusEffect(self.preview_animation, RADIUS))
 
-        self.preview_gif_page = QWidget()
-        self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
+        self.preview_animation_page = QWidget()
+        self._stacked_page_setup(self.preview_animation_page, self.preview_animation)
 
         self.media_player = MediaPlayer(driver)
         self.media_player.addAction(self.open_file_action)
@@ -72,7 +72,7 @@ class PreviewThumbView(QStackedLayout):
         self._stacked_page_setup(self.media_player_page, self.media_player)
 
         self.addWidget(self.preview_img_page)
-        self.addWidget(self.preview_gif_page)
+        self.addWidget(self.preview_animation_page)
         self.addWidget(self.media_player_page)
 
     def _stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:

@@ -20,7 +20,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
-from tagstudio.core.utils.decompression import get_display_ext
+from tagstudio.core.utils.decompression import get_display_ext, get_inner_ext
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -121,6 +121,7 @@ class FileAttributes(QWidget):
         filepath: Path | None = None,
         stats: FileAttributeData | None = None,
         entry: Entry | None = None,
+        reserve_stat_space: bool = False,
     ):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
@@ -168,10 +169,11 @@ class FileAttributes(QWidget):
             ext_display: str = ""
             file_size: str = format_size(entry.file_size) if entry and entry.file_size else ""
             font_family: str = ""
+            is_linked = filepath.exists()
 
             # Attempt to populate the stat variables
             ext_display = ext.upper()[1:] or filepath.stem.upper()
-            if filepath and filepath.is_file() and MediaTypes.contains("font", ext, SEARCH):
+            if is_linked and MediaTypes.contains("font", ext, SEARCH):
                 try:
                     font = ImageFont.truetype(filepath)
                     font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
@@ -201,7 +203,7 @@ class FileAttributes(QWidget):
                     )
                 if file_size:
                     stats_label_text += f"  •  {file_size}"
-                if not filepath.exists():
+                if not is_linked:
                     stats_label_text = (
                         f"{stats_label_text}"
                         f"  •  <span style='color:{red}'>"
@@ -211,13 +213,27 @@ class FileAttributes(QWidget):
             elif file_size:
                 stats_label_text += file_size
 
+            # HACK: Reserve space for stat lines that are still loading to prevent size flickering.
+            is_loading_stats = reserve_stat_space and is_linked
+
             if stats.width is not None and stats.height is not None:
                 stats_label_text = add_newline(stats_label_text)
                 stats_label_text += f"{stats.width} x {stats.height} px"
+            elif is_loading_stats and (
+                MediaTypes.contains("image.raster", get_inner_ext(filepath) or ext, SEARCH)
+                or MediaTypes.contains("video", ext, SEARCH)
+            ):
+                stats_label_text = add_newline(stats_label_text) + "&nbsp;"
 
             if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
                 stats_label_text += format_duration(stats.duration)
+            elif is_loading_stats and (
+                MediaTypes.contains("video", ext, SEARCH)
+                or MediaTypes.contains("audio", ext, SEARCH)
+                or ext in {".apng", ".gif"}  # Usually animated, unlike WebP and JPEG XL
+            ):
+                stats_label_text = add_newline(stats_label_text) + "&nbsp;"
 
             if font_family:
                 stats_label_text = add_newline(stats_label_text)
