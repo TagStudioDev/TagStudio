@@ -3,8 +3,6 @@
 # SPDX-FileCopyrightText: (C) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-# pyright: reportOptionalMemberAccess=false
-
 
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
@@ -13,13 +11,7 @@ from typing import Literal, override
 from PySide6.QtCore import QMargins, QPoint, QRect, QSize, Qt
 from PySide6.QtWidgets import QLayout, QLayoutItem, QSizePolicy, QWidget
 
-IGNORE_SIZE = "ignore_size"
-
-
-class FlowWidget(QWidget):
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setProperty(IGNORE_SIZE, False)  # noqa: FBT003
+from tagstudio.core.utils.types import unwrap
 
 
 class FlowLayout(QLayout):
@@ -31,11 +23,6 @@ class FlowLayout(QLayout):
 
         self._item_list: list[QLayoutItem] = []
         self.grid_efficiency = False
-
-    def __del__(self):
-        item = self.takeAt(0)
-        while item:
-            item = self.takeAt(0)
 
     @override
     def addItem(self, arg__1: QLayoutItem) -> None:
@@ -69,8 +56,7 @@ class FlowLayout(QLayout):
 
     @override
     def heightForWidth(self, arg__1: int) -> int:
-        height = self._do_layout(QRect(0, 0, arg__1, 0), test_only=True)
-        return int(height)
+        return self._do_layout(QRect(0, 0, arg__1, 0), test_only=True)
 
     @override
     def setGeometry(self, arg__1: QRect) -> None:
@@ -101,7 +87,22 @@ class FlowLayout(QLayout):
             size += QSize(2 * self.contentsMargins().top(), 2 * self.contentsMargins().top())
             return size
 
-    def _do_layout(self, rect: QRect, test_only: bool) -> float:
+    @staticmethod
+    def _style_spacing(widget: QWidget) -> tuple[int, int]:
+        style = widget.style()
+        spacing_x = style.layoutSpacing(
+            QSizePolicy.ControlType.PushButton,
+            QSizePolicy.ControlType.PushButton,
+            Qt.Orientation.Horizontal,
+        )
+        spacing_y = style.layoutSpacing(
+            QSizePolicy.ControlType.PushButton,
+            QSizePolicy.ControlType.PushButton,
+            Qt.Orientation.Vertical,
+        )
+        return spacing_x, spacing_y
+
+    def _do_layout(self, rect: QRect, test_only: bool) -> int:
         x = rect.x()
         y = rect.y()
         line_height = 0
@@ -110,55 +111,29 @@ class FlowLayout(QLayout):
         layout_spacing_y = 0
 
         if self.grid_efficiency and self._item_list:
-            item = self._item_list[0]
-            style = item.widget().style()
-            layout_spacing_x = style.layoutSpacing(
-                QSizePolicy.ControlType.PushButton,
-                QSizePolicy.ControlType.PushButton,
-                Qt.Orientation.Horizontal,
-            )
-            layout_spacing_y = style.layoutSpacing(
-                QSizePolicy.ControlType.PushButton,
-                QSizePolicy.ControlType.PushButton,
-                Qt.Orientation.Vertical,
+            layout_spacing_x, layout_spacing_y = self._style_spacing(
+                unwrap(self._item_list[0].widget())
             )
 
         for item in self._item_list:
-            skip_count = 0
-            ignore_size: bool | None = item.widget().property(IGNORE_SIZE)
-
-            if ignore_size:
-                skip_count += 1
-
-            else:
-                if not self.grid_efficiency:
-                    style = item.widget().style()
-                    layout_spacing_x = style.layoutSpacing(
-                        QSizePolicy.ControlType.PushButton,
-                        QSizePolicy.ControlType.PushButton,
-                        Qt.Orientation.Horizontal,
-                    )
-                    layout_spacing_y = style.layoutSpacing(
-                        QSizePolicy.ControlType.PushButton,
-                        QSizePolicy.ControlType.PushButton,
-                        Qt.Orientation.Vertical,
-                    )
-                space_x = spacing + layout_spacing_x
-                space_y = spacing + layout_spacing_y
+            if not self.grid_efficiency:
+                layout_spacing_x, layout_spacing_y = self._style_spacing(unwrap(item.widget()))
+            space_x = spacing + layout_spacing_x
+            space_y = spacing + layout_spacing_y
+            next_x = x + item.sizeHint().width() + space_x
+            if next_x - space_x > rect.right() and line_height > 0:
+                x = rect.x()
+                y = y + line_height + space_y
                 next_x = x + item.sizeHint().width() + space_x
-                if next_x - space_x > rect.right() and line_height > 0:
-                    x = rect.x()
-                    y = y + line_height + space_y
-                    next_x = x + item.sizeHint().width() + space_x
-                    line_height = 0
+                line_height = 0
 
-                if not test_only:
-                    item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+            if not test_only:
+                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
 
-                x = next_x
-                line_height = max(line_height, item.sizeHint().height())
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
 
-        if len(self._item_list) == 0:
+        if not self._item_list:
             return 0
 
-        return y + line_height - rect.y() * ((len(self._item_list)) / len(self._item_list))
+        return y + line_height - rect.y()

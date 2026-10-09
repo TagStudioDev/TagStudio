@@ -23,7 +23,6 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
-from tagstudio.qt.views.layouts.flow_layout import FlowWidget
 from tagstudio.qt.views.thumb_button import ThumbButton
 
 if TYPE_CHECKING:
@@ -64,7 +63,7 @@ def badge_update_lock(func):
 
 
 # TODO: Split to use MVC guidelines.
-class ItemThumb(FlowWidget):
+class ItemThumb(QWidget):
     """The thumbnail widget for a library item (Entry, Entry Group, etc.)."""
 
     small_text_style = (
