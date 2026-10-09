@@ -109,6 +109,7 @@ class MediaPlayer(QGraphicsView):
         # Graphics Scene
         self.installEventFilter(self)
         self.setScene(QGraphicsScene(self))
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
