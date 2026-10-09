@@ -80,6 +80,12 @@ def _is_audio_or_video(ext: str) -> bool:
     return MediaTypes.contains("video", ext, SEARCH) or MediaTypes.contains("audio", ext, SEARCH)
 
 
+def can_have_duration(filepath: Path) -> bool:
+    """Return whether a file's type can have a duration (audio, video, and animated images)."""
+    ext = filepath.suffix.lower()
+    return _is_audio_or_video(ext) or MediaTypes.contains("image.animated", ext, SEARCH)
+
+
 def get_animation_duration(image: Image.Image) -> float:
     """Return the total duration of an animated image's frames, in seconds."""
     duration_ms = 0
