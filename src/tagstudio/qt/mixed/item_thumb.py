@@ -18,6 +18,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext
+from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
@@ -403,6 +404,14 @@ class ItemThumb(FlowWidget):
             if self.mode == ItemType.ENTRY:
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
+
+    def set_duration(self, duration: float | None) -> None:
+        """Show a media duration on the count badge, or "-:--" while it's unknown."""
+        if duration is None:
+            self.count_badge.setText("-:--")
+        else:
+            self.count_badge.setText(format_duration(duration))
+            self.count_badge.setHidden(False)
 
     def set_filename_text(self, filename: Path):
         self.file_label.setText(str(filename.name))

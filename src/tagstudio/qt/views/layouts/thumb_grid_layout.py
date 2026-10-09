@@ -16,6 +16,7 @@ from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
+from tagstudio.previews.media_probe import can_have_duration, get_duration
 from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 
@@ -26,8 +27,8 @@ if TYPE_CHECKING:
 class ThumbGridLayout(QLayout):
     SPACING = 9
 
-    # Id of first visible entry
-    visible_changed = Signal(int)
+    _duration_loaded = Signal(Path, object)
+    visible_changed = Signal(int)  # ID of first visible entry
 
     def __init__(self, driver: QtDriver, scroll_area: QScrollArea, bottom_padding: int = 0) -> None:
         super().__init__(None)
@@ -53,6 +54,10 @@ class ThumbGridLayout(QLayout):
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
 
+        self._durations: dict[Path, float | None] = {}
+        self._pending_durations: set[Path] = set()
+        self._duration_loaded.connect(self._on_duration_loaded)
+
         # _entry_ids[StartIndex:EndIndex], per_row
         self._last_page_update: tuple[int, int, int] | None = None
 
@@ -70,6 +75,7 @@ class ThumbGridLayout(QLayout):
         self._entry_items.clear()
         self._render_results.clear()
         self.driver.thumb_job_queue.queue.clear()
+        self._pending_durations.clear()
         self._render_cutoff = time.time()
 
         base_size: tuple[int, int] = (
@@ -144,6 +150,32 @@ class ThumbGridLayout(QLayout):
         item_thumb.update_size(size)
         item_thumb.set_filename_text(file_path)
         item_thumb.set_extension(file_path)
+        item_thumb.set_duration(self._durations.get(file_path))
+
+    def _queue_duration(self, file_path: Path) -> None:
+        if (
+            not can_have_duration(file_path)
+            or file_path in self._durations
+            or file_path in self._pending_durations
+        ):
+            return
+        self._pending_durations.add(file_path)
+        self.driver.thumb_job_queue.put((self._load_duration, (file_path,)))
+
+    def _load_duration(self, file_path: Path) -> None:
+        self._duration_loaded.emit(file_path, get_duration(file_path))
+
+    def _on_duration_loaded(self, file_path: Path, duration: float | None) -> None:
+        self._pending_durations.discard(file_path)
+        self._durations[file_path] = duration
+
+        entry_id = self._entry_paths.get(file_path)
+        index = self._entry_items.get(entry_id) if entry_id is not None else None
+        if index is None:
+            return
+        item_thumb = self._item_thumbs[index]
+        if item_thumb.rendered_path == file_path:
+            item_thumb.set_duration(duration)
 
     def _item_thumb(self, index: int) -> ItemThumb:
         if w := getattr(self.driver, "main_window", None):
@@ -236,6 +268,7 @@ class ThumbGridLayout(QLayout):
         # Clear render queue if len > 2 pages
         if len(self.driver.thumb_job_queue.queue) > (per_row * visible_rows * 2):
             self.driver.thumb_job_queue.queue.clear()
+            self._pending_durations.clear()
             pending = []
             for k, v in self._render_results.items():
                 if v is None and k != Path():
@@ -317,6 +350,11 @@ class ThumbGridLayout(QLayout):
                             ),
                         )
                     )
+
+        # Queued after thumbnails so they don't hold up rendering
+        for i in range(start, end):
+            entry = self._entries[self._entry_ids[i]]
+            self._queue_duration(unwrap(self.driver.lib.library_dir) / entry.path)
 
         # set_selected causes stutters making thumbs after selected not show for a frame
         # setting it after positioning thumbs fixes this
