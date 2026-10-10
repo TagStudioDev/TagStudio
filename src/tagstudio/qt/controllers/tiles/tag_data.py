@@ -92,10 +92,7 @@ class TagData(TileData):
     def _on_remove(self, tag: Tag) -> None:
         logger.info("[TagData] remove_tag", selected=self._entries)
 
-        for entry_id in self._entries:
-            self._driver.lib.remove_tags_from_entries(entry_id, tag.id)
-
-        self.on_update.emit()
+        self._driver.entry_state.remove_tags(self._entries, tag.id)
 
     def _on_edit(self, tag: Tag) -> None:
         edit_tag_panel = EditTagPanel(self._driver.lib, tag=tag)

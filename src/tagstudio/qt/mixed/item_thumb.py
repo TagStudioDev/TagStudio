@@ -2,13 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from enum import Enum
-from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, NamedTuple, override
 
 import structlog
-from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
+from PySide6.QtCore import QEvent, QMimeData, QSignalBlocker, QSize, Qt, QUrl
 from PySide6.QtGui import QAction, QDrag, QEnterEvent, QGuiApplication, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QBoxLayout, QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
@@ -32,34 +30,16 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class BadgeType(Enum):
-    FAVORITE = "Favorite"
-    ARCHIVED = "Archived"
+class _BadgeStyle(NamedTuple):
+    name: str
+    icon: str
+    icon_checked: str
 
 
-BADGE_TAGS = {
-    BadgeType.FAVORITE: TAG_FAVORITE,
-    BadgeType.ARCHIVED: TAG_ARCHIVED,
+_BADGE_STYLES: dict[int, _BadgeStyle] = {
+    TAG_FAVORITE: _BadgeStyle("Favorite", "star_icon_empty", "star_icon_filled"),
+    TAG_ARCHIVED: _BadgeStyle("Archived", "box_icon_empty", "box_icon_filled"),
 }
-
-
-def badge_update_lock(func):
-    """Prevent recursively triggering badge updates."""
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.driver.badge_update_lock:
-            return
-
-        self.driver.badge_update_lock = True
-        try:
-            func(self, *args, **kwargs)
-        except Exception:
-            raise
-        finally:
-            self.driver.badge_update_lock = False
-
-    return wrapper
 
 
 # TODO: Split to use MVC guidelines.
@@ -257,39 +237,26 @@ class ItemThumb(QWidget):
         self.cb_container.setLayout(self.cb_layout)
         self.top_layout.addWidget(self.cb_container)
 
-        self.badge_active: dict[BadgeType, bool] = {
-            BadgeType.FAVORITE: False,
-            BadgeType.ARCHIVED: False,
-        }
-
-        self.badges: dict[BadgeType, QCheckBox] = {}
-        badge_icons = {
-            BadgeType.FAVORITE: (
-                ":/images/star_icon_empty_128.png",
-                ":/images/star_icon_filled_128.png",
-            ),
-            BadgeType.ARCHIVED: (
-                ":/images/box_icon_empty_128.png",
-                ":/images/box_icon_filled_128.png",
-            ),
-        }
-        for badge_type in BadgeType:
-            icon_empty, icon_checked = badge_icons[badge_type]
+        self.badges: dict[int, QCheckBox] = {}
+        for tag_id in self.driver.entry_state.badge_tag_ids:
+            style = _BADGE_STYLES[tag_id]
+            icon = unwrap(self.driver.rm.get_path(style.icon)).as_posix()
+            icon_checked = unwrap(self.driver.rm.get_path(style.icon_checked)).as_posix()
             badge = QCheckBox()
-            badge.setObjectName(badge_type.name)
-            badge.setToolTip(badge_type.value)
+            badge.setObjectName(f"{style.name.lower()}_badge")
+            badge.setToolTip(style.name)
             badge.setStyleSheet(
                 f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
-                f"QCheckBox::indicator::unchecked{{image: url({icon_empty})}}"
-                f"QCheckBox::indicator::checked{{image: url({icon_checked})}}"
+                f'QCheckBox::indicator::unchecked{{image: url("{icon}")}}'
+                f'QCheckBox::indicator::checked{{image: url("{icon_checked}")}}'
             )
             badge.setMinimumSize(check_size, check_size)
             badge.setMaximumSize(check_size, check_size)
             badge.setHidden(True)
 
-            badge.stateChanged.connect(lambda x, bt=badge_type: self.on_badge_check(bt))
+            badge.stateChanged.connect(lambda x, t=tag_id: self.on_badge_check(t))
 
-            self.badges[badge_type] = badge
+            self.badges[tag_id] = badge
             self.cb_layout.addWidget(badge)
 
         # Filename Label =======================================================
@@ -307,14 +274,6 @@ class ItemThumb(QWidget):
         self.thumb_button.pressed.connect(self._on_thumb_pressed)
         self.thumb_button.clicked.connect(self._on_thumb_clicked)
         self.set_mode(mode)
-
-    @property
-    def is_favorite(self) -> bool:
-        return self.badge_active[BadgeType.FAVORITE]
-
-    @property
-    def is_archived(self) -> bool:
-        return self.badge_active[BadgeType.ARCHIVED]
 
     def toggle_item_selection(self):
         self.driver.toggle_item_selection(
@@ -459,22 +418,17 @@ class ItemThumb(QWidget):
         self.item_path = path
         self.opener.set_filepath(path)
 
-    def assign_badge(self, badge_type: BadgeType, value: bool) -> None:
-        mode = self.mode
-        # blank mode to avoid recursive badge updates
-        badge = self.badges[badge_type]
-        self.badge_active[badge_type] = value
+    def assign_badge(self, tag_id: int, value: bool) -> None:
+        badge = self.badges[tag_id]
         if badge.isChecked() != value:
-            self.mode = None
-            badge.setChecked(value)
+            with QSignalBlocker(badge):
+                badge.setChecked(value)
             badge.setHidden(not value)
-            self.mode = mode
 
     def show_check_badges(self, show: bool):
         if self.mode != ItemType.TAG_GROUP:
-            for badge_type, badge in self.badges.items():
-                is_hidden = not (show or self.badge_active[badge_type])
-                badge.setHidden(is_hidden)
+            for badge in self.badges.values():
+                badge.setHidden(not (show or badge.isChecked()))
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -486,28 +440,10 @@ class ItemThumb(QWidget):
         self.show_check_badges(show=False)
         return super().leaveEvent(event)
 
-    @badge_update_lock
-    def on_badge_check(self, badge_type: BadgeType):
-        if self.mode is None:
-            return
-
-        toggle_value = self.badges[badge_type].isChecked()
-        self.badge_active[badge_type] = toggle_value
-        badge_values: dict[BadgeType, bool] = {badge_type: toggle_value}
-        # TODO: Ensure that self.item_id is always an integer. During tests, it is currently None.
-        # This issue should be addressed by either fixing the test setup or modifying the
-        # self.driver.update_badges() method.
-        self.driver.update_badges(badge_values, self.item_id)
-
-    def toggle_item_tag(
-        self,
-        entry_id: int,
-        toggle_value: bool,
-        tag_id: int,
-    ):
-        selected = self.driver._selected
-        if len(selected) == 1 and entry_id in selected:
-            self.driver.main_window.inspector.containers.update_toggled_tag(tag_id, toggle_value)
+    def on_badge_check(self, tag_id: int):
+        selected = self.driver.selected
+        entry_ids = selected if self.item_id in selected else [self.item_id]
+        self.driver.entry_state.set_tag(entry_ids, tag_id, self.badges[tag_id].isChecked())
 
     @override
     def mouseMoveEvent(self, event: QMouseEvent) -> None:

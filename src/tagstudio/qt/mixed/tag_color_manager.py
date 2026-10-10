@@ -127,7 +127,7 @@ class TagColorManager(QWidget):
                         ()
                         if len(self.driver.selected) < 1
                         else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
-                            self.driver.selected[0], update_badges=False
+                            self.driver.selected[0]
                         ),
                     )
                 )
@@ -144,7 +144,7 @@ class TagColorManager(QWidget):
                                 ()
                                 if len(self.driver.selected) < 1
                                 else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
-                                    self.driver.selected[0], update_badges=False
+                                    self.driver.selected[0]
                                 ),
                             ),
                         )

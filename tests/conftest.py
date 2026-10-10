@@ -27,6 +27,7 @@ from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FO
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
+from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.qt_driver import QtDriver
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 
@@ -203,6 +204,8 @@ def qt_driver(library: Library, library_dir: Path):
         patch("tagstudio.qt.qt_driver.QThreadPool"),
     ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
+        driver.lib = library
+        driver.entry_state = EntryState(library)
 
         driver.app = Mock()
         driver.main_window = Mock()
@@ -212,7 +215,6 @@ def qt_driver(library: Library, library_dir: Path):
 
         driver.copy_buffer = {"fields": [], "tags": []}
 
-        driver.lib = library
         # TODO - downsize this method and use it
         # driver.start()
         driver.frame_content = [e.id for e in library.all_entries()]

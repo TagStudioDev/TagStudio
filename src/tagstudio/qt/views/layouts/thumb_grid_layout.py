@@ -12,12 +12,11 @@ from PySide6.QtCore import QPoint, QRect, QSize, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLayout, QLayoutItem, QScrollArea
 
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import can_have_duration, get_duration
-from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.mixed.item_thumb import ItemThumb
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 
 if TYPE_CHECKING:
@@ -43,8 +42,6 @@ class ThumbGridLayout(QLayout):
 
         self._entry_ids: list[int] = []
         self._entries: dict[int, Entry] = {}
-        # Tag.id -> {Entry.id}
-        self._tag_entries: dict[int, set[int]] = {}
         self._entry_paths: dict[Path, int] = {}
         # Entry.id -> _items[index]
         self._entry_items: dict[int, int] = {}
@@ -53,6 +50,7 @@ class ThumbGridLayout(QLayout):
         self._renderer: QtFileRenderer = QtFileRenderer(self.driver.lib, self.driver.settings)
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
+        self.driver.entry_state.tags_changed.connect(self._on_tags_changed)
 
         self._durations: dict[Path, float | None] = {}
         self._pending_durations: set[Path] = set()
@@ -69,7 +67,7 @@ class ThumbGridLayout(QLayout):
     def set_entries(self, entry_ids: list[int]):
         self._entry_ids = entry_ids
         self._entries.clear()
-        self._tag_entries.clear()
+        self.driver.entry_state.unload_badges()
         self._entry_paths.clear()
 
         self._entry_items.clear()
@@ -104,13 +102,14 @@ class ThumbGridLayout(QLayout):
             value = item_thumb.item_id in self.driver._selected
             item_thumb.thumb_button.set_selected(value)
 
-    def add_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
-        for tag_id in tag_ids:
-            self._tag_entries.setdefault(tag_id, set()).update(entry_ids)
+    def _assign_badges(self, item_thumb: ItemThumb, entry_id: int) -> None:
+        for tag_id in self.driver.entry_state.badge_tag_ids:
+            item_thumb.assign_badge(tag_id, self.driver.entry_state.has_badge(entry_id, tag_id))
 
-    def remove_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
-        for tag_id in tag_ids:
-            self._tag_entries.setdefault(tag_id, set()).difference_update(entry_ids)
+    def _on_tags_changed(self, entry_ids: set[int]) -> None:
+        for item_thumb in self._item_thumbs:
+            if item_thumb.item_id in entry_ids:
+                self._assign_badges(item_thumb, item_thumb.item_id)
 
     def _fetch_entries(self, ids: Iterable[int]):
         ids = [id for id in ids if id not in self._entries]
@@ -119,10 +118,7 @@ class ThumbGridLayout(QLayout):
             self._entry_paths[unwrap(self.driver.lib.library_dir) / entry.path] = entry.id
             self._entries[entry.id] = entry
 
-        tag_ids = [TAG_ARCHIVED, TAG_FAVORITE]
-        tag_entries = self.driver.lib.get_tag_entries(tag_ids, ids)
-        for tag_id, entries in tag_entries.items():
-            self._tag_entries.setdefault(tag_id, set()).update(entries)
+        self.driver.entry_state.load_badges(ids)
 
     def _on_rendered(self, timestamp: float, image: QPixmap, size: QSize, file_path: Path):
         if timestamp < self._render_cutoff:
@@ -365,9 +361,7 @@ class ThumbGridLayout(QLayout):
             item_index = self._entry_items[entry_id]
             item_thumb = self._item_thumbs[item_index]
             item_thumb.thumb_button.set_selected(entry_id in self.driver._selected)
-
-            item_thumb.assign_badge(BadgeType.ARCHIVED, entry_id in self._tag_entries[TAG_ARCHIVED])
-            item_thumb.assign_badge(BadgeType.FAVORITE, entry_id in self._tag_entries[TAG_FAVORITE])
+            self._assign_badges(item_thumb, entry_id)
 
     @override
     def addItem(self, arg__1: QLayoutItem) -> None:

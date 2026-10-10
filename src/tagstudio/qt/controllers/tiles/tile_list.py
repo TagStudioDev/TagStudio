@@ -9,7 +9,6 @@ from functools import partial
 from typing import override
 
 import structlog
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import (
@@ -39,8 +38,6 @@ logger = structlog.get_logger(__name__)
 class TileList(QWidget):
     """A styled list of Tile widgets."""
 
-    on_tags_update = Signal()
-
     def __init__(self, library: Library, driver: QtDriver) -> None:
         super().__init__()
 
@@ -62,17 +59,15 @@ class TileList(QWidget):
         """Get the topmost entry ID in the (cached) selected entries."""
         return self.cached_entries[0].id
 
-    def update_from_entry(self, entry_id: int, update_badges: bool = True) -> None:
+    def update_from_entry(self, entry_id: int) -> None:
         """Update tags and fields from a single Entry source."""
         logger.warning("[TileList] Updating Selection", entry_id=entry_id)
 
         entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
-        self.update_granular(entry.tags, entry.fields, update_badges)
+        self.update_granular(entry.tags, entry.fields)
 
-    def update_granular(
-        self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
-    ) -> None:
+    def update_granular(self, entry_tags: set[Tag], entry_fields: list[BaseField]) -> None:
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
         container_index = 0
@@ -83,8 +78,6 @@ class TileList(QWidget):
                 self.write_tag_tile(container_index, tags=tags, category_tag=cat, is_mixed=False)
                 container_index += 1
                 container_len += 1
-        if update_badges:
-            self.driver.emit_badge_signals({t.id for t in entry_tags})
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
@@ -95,19 +88,6 @@ class TileList(QWidget):
             for i, c in enumerate(self._tiles):
                 if i > (container_len - 1):
                     c.setHidden(True)
-
-    def update_toggled_tag(self, tag_id: int, toggle_value: bool) -> None:
-        """Visually add or remove a tag from the item preview without needing to query the db."""
-        entry = self.cached_entries[0]
-        tag = self.lib.get_tag(tag_id)
-        if not tag:
-            return
-        if toggle_value:
-            entry.tags.add(tag)
-        else:
-            entry.tags.discard(tag)
-
-        self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
@@ -375,10 +355,7 @@ class TileList(QWidget):
                 inner_widget = TagData(Translations["entries.tags"], self.driver)
                 container.set_inner_widget(inner_widget)
                 inner_widget.on_update.connect(
-                    lambda: (
-                        self.update_from_entry(self.cached_entries[0].id, update_badges=True),
-                        self.on_tags_update.emit(),
-                    )
+                    lambda: self.update_from_entry(self.cached_entries[0].id)
                 )
             inner_widget.set_entries([e.id for e in self.cached_entries])
             inner_widget.set_tags(tags)

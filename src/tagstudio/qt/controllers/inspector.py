@@ -50,7 +50,7 @@ class Inspector(QWidget):
         self._driver = driver
         self._lib = self._driver.lib
         self._settings = self._driver.settings
-        self._selected: list[int]
+        self._selected: list[int] = []
         self._current_stats: FileAttributeData | None = None
 
         self._open_tag_search_action = QShortcut(
@@ -77,7 +77,6 @@ class Inspector(QWidget):
         self.layout().add_tag_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.TAG))
         self._open_tag_search_action.activated.connect(self._open_tag_search_callback)
         self.layout().tag_search_box.done.connect(partial(self._tag_added_callback))
-        self.layout().containers.on_tags_update.connect(self._update_added_callback)
 
         # Field Search
         self.layout().add_field_button.clicked.connect(lambda: self._set_item_mode(_ItemMode.FIELD))
@@ -87,6 +86,13 @@ class Inspector(QWidget):
         # Previews
         self.layout().preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
         self.layout().preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
+
+        self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+
+    def _on_tags_changed(self, entry_ids: set[int]) -> None:
+        if len(self._selected) == 1 and self._selected[0] in entry_ids:
+            self.layout().containers.update_from_entry(self._selected[0])
+            self.layout().tag_search_box.added = self.layout().containers.tags
 
     def _set_item_mode(self, mode: _ItemMode | None):
         def hide_and_disable_buttons():
@@ -128,7 +134,6 @@ class Inspector(QWidget):
             self._set_item_mode(None)
             self.layout().add_tag_button.setFocus()
         else:
-            self._update_added_callback()
             self.layout().tag_search_box.layout().search_field.setFocus()
 
     def _field_added_callback(self, query: str):
@@ -137,9 +142,6 @@ class Inspector(QWidget):
             self.layout().add_field_button.setFocus()
         else:
             self.layout().field_search_box.layout().search_field.setFocus()
-
-    def _update_added_callback(self):
-        self.layout().tag_search_box.added = self.layout().containers.tags
 
     def _thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
         if len(self._selected) != 1:
@@ -215,8 +217,6 @@ class Inspector(QWidget):
 
     def _add_tag_to_selected(self, tag_id: int) -> None:
         self.layout().containers.add_tags_to_selected(tag_id)
-        if len(self._selected) == 1:
-            self.layout().containers.update_from_entry(self._selected[0])
 
     def _toggle_ffmpeg_warning(self, enable_warning: bool = True) -> None:
         if enable_warning and (not FfmpegStatus.which() or not FfprobeStatus.which()):

@@ -35,6 +35,14 @@
         "mode": "pil",
         "path": "qt/images/file_icons/audio.png"
     },
+    "box_icon_empty": {
+        "mode": "qpixmap",
+        "path": "qt/images/box_icon_empty_128.png"
+    },
+    "box_icon_filled": {
+        "mode": "qpixmap",
+        "path": "qt/images/box_icon_filled_128.png"
+    },
     "broken_link_icon": {
         "mode": "pil",
         "path": "qt/images/broken_link_icon.png"
@@ -190,6 +198,14 @@
     "plaintext": {
         "mode": "pil",
         "path": "qt/images/file_icons/text.png"
+    },
+    "star_icon_empty": {
+        "mode": "qpixmap",
+        "path": "qt/images/star_icon_empty_128.png"
+    },
+    "star_icon_filled": {
+        "mode": "qpixmap",
+        "path": "qt/images/star_icon_filled_128.png"
     },
     "thumb_loading": {
         "mode": "pil",

@@ -27,6 +27,7 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
+from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.styles.stylesheets import header
 
@@ -57,7 +58,7 @@ def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ..
 
 
 @deprecated("Will be replaced with upcoming 'Macros' feature.")
-def folders_to_tags(library: Library):
+def folders_to_tags(library: Library, entry_state: EntryState):
     logger.info("Converting folders to Tags")
     tree = BranchData()
 
@@ -79,7 +80,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_tags_to_entries(entry.id, tag.id)
+            entry_state.add_tags(entry.id, tag.id)
 
     logger.info("Done")
 
@@ -221,9 +222,8 @@ class FoldersToTagsModal(QWidget):
         self.root_layout.addWidget(self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def on_apply(self):
-        folders_to_tags(self.library)
+        folders_to_tags(self.library, self.driver.entry_state)
         self.close()
-        self.driver.main_window.inspector.set_selection(self.driver.selected, update_preview=False)
 
     @override
     def showEvent(self, event: QtGui.QShowEvent):
