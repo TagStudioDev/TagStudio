@@ -19,14 +19,14 @@ class ThumbGridLayout[W: QWidget](QLayout):
     _BUFFER_ROWS = 3
 
     first_visible_changed = Signal(int)  # Index of the first visible item
-    items_bound = Signal(object)  # list[tuple[int, W]] of newly bound (index, widget) pairs
+    items_assigned = Signal(object)  # list[tuple[int, W]] of newly assigned (index, widget) pairs
 
     def __init__(self, scroll_area: QScrollArea, create_widget: Callable[[], W]) -> None:
         super().__init__(None)
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(PAD)
 
-        self._bound: dict[int, W] = {}
+        self._assigned: dict[int, W] = {}
         self._create_widget = create_widget
         self._first_visible: int | None = None
         self._free: list[W] = []
@@ -38,10 +38,10 @@ class ThumbGridLayout[W: QWidget](QLayout):
         self._scroll_to: int | None = None
 
     def set_item_count(self, count: int) -> None:
-        """Replace all items with `count` new ones, unbinding every widget."""
+        """Replace all items with `count` new ones, unassigning every widget."""
         self._item_count = count
-        self._free.extend(self._bound.values())
-        self._bound.clear()
+        self._free.extend(self._assigned.values())
+        self._assigned.clear()
         self._first_visible = None
         self._last_layout = None
         self.update()
@@ -54,13 +54,13 @@ class ThumbGridLayout[W: QWidget](QLayout):
         return self._first_visible
 
     def widget_at(self, index: int) -> W | None:
-        return self._bound.get(index)
+        return self._assigned.get(index)
 
-    def bound_items(self) -> list[tuple[int, W]]:
-        return sorted(self._bound.items(), key=lambda item: item[0])
+    def assigned_items(self) -> list[tuple[int, W]]:
+        return sorted(self._assigned.items(), key=lambda item: item[0])
 
     def widgets(self) -> list[W]:
-        return [*self._bound.values(), *self._free]
+        return [*self._assigned.values(), *self._free]
 
     def _new_widget(self) -> W:
         widget = self._create_widget()
@@ -84,8 +84,8 @@ class ThumbGridLayout[W: QWidget](QLayout):
     def setGeometry(self, arg__1: QRect) -> None:
         super().setGeometry(arg__1)
         if self._item_count == 0:
-            self._free.extend(self._bound.values())
-            self._bound.clear()
+            self._free.extend(self._assigned.values())
+            self._assigned.clear()
             for widget in self._free:
                 widget.setGeometry(32_000, 32_000, 0, 0)
             return
@@ -118,24 +118,24 @@ class ThumbGridLayout[W: QWidget](QLayout):
             return
         self._last_layout = (start, end, per_row, item_size)
 
-        for index in [index for index in self._bound if not start <= index < end]:
-            self._free.append(self._bound.pop(index))
+        for index in [index for index in self._assigned if not start <= index < end]:
+            self._free.append(self._assigned.pop(index))
 
-        newly_bound: list[tuple[int, W]] = []
+        newly_assigned: list[tuple[int, W]] = []
         for index in range(start, end):
-            widget = self._bound.get(index)
+            widget = self._assigned.get(index)
             if widget is None:
                 widget = self._free.pop() if self._free else self._new_widget()
-                self._bound[index] = widget
-                newly_bound.append((index, widget))
+                self._assigned[index] = widget
+                newly_assigned.append((index, widget))
             row, column = divmod(index, per_row)
             widget.setGeometry(QRect(QPoint(column * cell.width(), row * cell.height()), item_size))
 
         for widget in self._free:
             widget.setGeometry(32_000, 32_000, 0, 0)
 
-        if newly_bound:
-            self.items_bound.emit(newly_bound)
+        if newly_assigned:
+            self.items_assigned.emit(newly_assigned)
 
     @override
     def addItem(self, arg__1: QLayoutItem) -> None:
@@ -158,7 +158,7 @@ class ThumbGridLayout[W: QWidget](QLayout):
         item = self._items.pop(index)
         widget = item.widget()
         self._free = [w for w in self._free if w is not widget]
-        self._bound = {i: w for i, w in self._bound.items() if w is not widget}
+        self._assigned = {i: w for i, w in self._assigned.items() if w is not widget}
         return item
 
     @override

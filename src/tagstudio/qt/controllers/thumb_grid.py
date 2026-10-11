@@ -28,6 +28,7 @@ logger = structlog.get_logger(__name__)
 class ThumbGrid(QWidget):
     """A scrollable grid of item thumbnails."""
 
+    DURATION_DELAY_MS = 200  # Allows for fast scrolling without getting lagged by duration labels
     RESIZE_RENDER_DELAY_MS = 200  # Allows for more responsive rapid resizing
 
     visible_changed = Signal(int)  # ID of the first visible entry
@@ -40,6 +41,9 @@ class ThumbGrid(QWidget):
         self._driver = driver
         self._renderer = QtFileRenderer(driver.lib, driver.settings)
 
+        self._duration_timer = QTimer(self)
+        self._duration_timer.setInterval(self.DURATION_DELAY_MS)
+        self._duration_timer.setSingleShot(True)
         self._durations: dict[Path, float | None] = {}
         self._entries: dict[int, Entry] = {}
         self._entry_ids: list[int] = []
@@ -68,12 +72,13 @@ class ThumbGrid(QWidget):
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
         scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
-        self.layout().items_bound.connect(self._on_items_bound)
+        self.layout().items_assigned.connect(self._on_items_assigned)
         self.layout().first_visible_changed.connect(
             lambda index: self.visible_changed.emit(self._entry_ids[index])
         )
         self._renderer.updated.connect(self._on_rendered)
         self._resize_render_timer.timeout.connect(self._request_renders)
+        self._duration_timer.timeout.connect(self._queue_durations)
         self._entries_fetched.connect(self._on_entries_fetched)
         self._duration_loaded.connect(self._on_duration_loaded)
         self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
@@ -119,7 +124,7 @@ class ThumbGrid(QWidget):
         self.layout().activate()
 
     def update_selected(self) -> None:
-        for _, thumb in self.layout().bound_items():
+        for _, thumb in self.layout().assigned_items():
             thumb.set_selected(thumb.item_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
 
     def _create_thumb(self) -> ItemThumb:
@@ -135,11 +140,11 @@ class ThumbGrid(QWidget):
     def _path(self, entry: Entry) -> Path:
         return unwrap(self._driver.lib.library_dir) / entry.path
 
-    def _thumb_for(self, entry_id: int) -> ItemThumb | None:
-        index = self._entry_indices.get(entry_id)
+    def _thumb_for(self, entry_id: int | None) -> ItemThumb | None:
+        index = None if entry_id is None else self._entry_indices.get(entry_id)
         return None if index is None else self.layout().widget_at(index)
 
-    def _on_items_bound(self, items: list[tuple[int, ItemThumb]]) -> None:
+    def _on_items_assigned(self, items: list[tuple[int, ItemThumb]]) -> None:
         missing: list[int] = []
         for index, thumb in items:
             entry_id = self._entry_ids[index]
@@ -147,7 +152,7 @@ class ThumbGrid(QWidget):
             thumb.set_selected(entry_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
             entry = self._entries.get(entry_id)
             if entry is not None:
-                self._bind_entry(thumb, entry)
+                self._assign_entry(thumb, entry)
                 continue
 
             thumb.set_filename_text(Path())
@@ -163,7 +168,7 @@ class ThumbGrid(QWidget):
         self._trim_render_queue()
         self._request_renders()
 
-    def _bind_entry(self, thumb: ItemThumb, entry: Entry) -> None:
+    def _assign_entry(self, thumb: ItemThumb, entry: Entry) -> None:
         path = self._path(entry)
         thumb.set_item(entry)
         thumb.set_filename_text(path)
@@ -189,7 +194,7 @@ class ThumbGrid(QWidget):
 
     def _on_tags_changed(self, entry_ids: set[int]) -> None:
         self._changed_while_fetching.update(self._fetching.intersection(entry_ids))
-        for _, thumb in self.layout().bound_items():
+        for _, thumb in self.layout().assigned_items():
             if thumb.item_id in entry_ids and thumb.item_id in self._entries:
                 self._assign_badges(thumb, thumb.item_id)
 
@@ -229,7 +234,7 @@ class ThumbGrid(QWidget):
             self._entries[entry.id] = entry
             self._entry_paths[self._path(entry)] = entry.id
             if (thumb := self._thumb_for(entry.id)) is not None:
-                self._bind_entry(thumb, entry)
+                self._assign_entry(thumb, entry)
         self._request_renders()
 
     def _reset_renders(self) -> None:
@@ -262,13 +267,10 @@ class ThumbGrid(QWidget):
         if self._resize_render_timer.isActive():
             return
 
-        first_visible = self.layout().first_visible_index() or 0
-        bound = sorted(self.layout().bound_items(), key=lambda item: item[0] < first_visible)
-        entries = [entry for _, thumb in bound if (entry := self._entries.get(thumb.item_id))]
         size = self._driver.main_window.thumb_size
         ratio = self._driver.main_window.devicePixelRatio()
         timestamp = time.time()
-        for entry in entries:
+        for entry in self._assigned_entries():
             path = self._path(entry)
             if path in self._renders:
                 continue
@@ -288,15 +290,18 @@ class ThumbGrid(QWidget):
                     ),
                 )
             )
+        self._duration_timer.start()
 
-        # Queued after thumbnails so they don't hold up rendering
-        for entry in entries:
-            self._queue_duration(self._path(entry))
+    def _assigned_entries(self) -> list[Entry]:
+        """Entries of the assigned thumbnails, starting at the first visible one."""
+        first_visible = self.layout().first_visible_index() or 0
+        assigned = sorted(self.layout().assigned_items(), key=lambda item: item[0] < first_visible)
+        return [entry for _, thumb in assigned if (entry := self._entries.get(thumb.item_id))]
 
     def _trim_render_queue(self) -> None:
         """Trim queued renders once they get too backed up."""
         queue = self._driver.thumb_job_queue.queue
-        if len(queue) <= 2 * len(self.layout().bound_items()):
+        if len(queue) <= 2 * len(self.layout().assigned_items()):
             return
 
         queue.clear()
@@ -311,7 +316,7 @@ class ThumbGrid(QWidget):
 
         if file_path == Path():
             self._loading_image = image
-            for _, thumb in self.layout().bound_items():
+            for _, thumb in self.layout().assigned_items():
                 entry = self._entries.get(thumb.item_id)
                 if entry is None or thumb.rendered_path != self._path(entry):
                     thumb.set_image(image, Path())
@@ -319,20 +324,20 @@ class ThumbGrid(QWidget):
 
         self._renders[file_path] = image
         self._previous_size_renders.pop(file_path, None)
-        entry_id = self._entry_paths.get(file_path)
-        thumb = None if entry_id is None else self._thumb_for(entry_id)
-        if thumb is not None:
+        if (thumb := self._thumb_for(self._entry_paths.get(file_path))) is not None:
             thumb.set_image(image, file_path)
 
-    def _queue_duration(self, file_path: Path) -> None:
-        if (
-            not can_have_duration(file_path)
-            or file_path in self._durations
-            or file_path in self._pending_durations
-        ):
-            return
-        self._pending_durations.add(file_path)
-        self._driver.thumb_job_queue.put((self._load_duration, (file_path,)))
+    def _queue_durations(self) -> None:
+        for entry in self._assigned_entries():
+            path = self._path(entry)
+            if (
+                not can_have_duration(path)
+                or path in self._durations
+                or path in self._pending_durations
+            ):
+                continue
+            self._pending_durations.add(path)
+            self._driver.thumb_job_queue.put((self._load_duration, (path,)))
 
     def _load_duration(self, file_path: Path) -> None:
         self._duration_loaded.emit(file_path, get_duration(file_path))
@@ -340,7 +345,5 @@ class ThumbGrid(QWidget):
     def _on_duration_loaded(self, file_path: Path, duration: float | None) -> None:
         self._pending_durations.discard(file_path)
         self._durations[file_path] = duration
-        entry_id = self._entry_paths.get(file_path)
-        thumb = None if entry_id is None else self._thumb_for(entry_id)
-        if thumb is not None:
+        if (thumb := self._thumb_for(self._entry_paths.get(file_path))) is not None:
             thumb.set_duration(duration)
