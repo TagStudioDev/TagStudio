@@ -154,6 +154,7 @@ class ItemThumbView(QVBoxLayout):
             )
             badge.setMinimumSize(_ICON_SIZE, _ICON_SIZE)
             badge.setMaximumSize(_ICON_SIZE, _ICON_SIZE)
+            badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             badge.setHidden(True)
             self.badges[tag_id] = badge
             badge_layout.addWidget(badge)

@@ -80,7 +80,7 @@ class ItemThumb(QWidget):
         self.rendered_path: Path | None = None
 
         self.setMouseTracking(True)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.setFixedSize(*thumb_size)
         self.setLayout(ItemThumbView(driver.entry_state.badge_tag_ids))
         self._connect_callbacks()
