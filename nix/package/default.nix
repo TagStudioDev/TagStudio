@@ -54,7 +54,6 @@ python3Packages.buildPythonApplication {
       pillow-heif
       py7zr
       pydantic
-      pydub
       pygments
       pyside6
       rarfile

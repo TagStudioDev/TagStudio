@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import subprocess
 from io import BytesIO
 from pathlib import Path
 from typing import override
@@ -17,14 +18,16 @@ from PIL.Image import open as open_image
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.utils.ffmpeg_status import FfmpegStatus
+from tagstudio.core.utils.silent_subprocess import silent_run
+from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
-from tagstudio.previews.vendored.pydub.audio_segment import (
-    _AudioSegment as AudioSegment,  # pyright: ignore[reportPrivateUsage]
-)
 from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
+
+_WAVEFORM_SAMPLE_RATE = 8000  # Good enough for the waveforms while still being small bits of data
 
 
 class AudioPreview(BasePreview):
@@ -120,8 +123,11 @@ class AudioPreview(BasePreview):
 
         try:
             bar_count: int = 32
-            audio = AudioSegment.from_file(filepath, filepath.suffix.lower()[1:])  # pyright: ignore[reportUnknownVariableType]
-            data = np.frombuffer(buffer=audio._data, dtype=f"<i{audio.sample_width}")
+            command = [unwrap(FfmpegStatus.which()), "-nostdin", "-v", "error", "-i", str(filepath)]
+            command += ["-vn", "-ac", "1", "-ar", str(_WAVEFORM_SAMPLE_RATE), "-f", "s16le", "-"]
+            ffmpeg = silent_run(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            ffmpeg.check_returncode()
+            data = np.frombuffer(buffer=ffmpeg.stdout, dtype="<i2")
             # Bars are twice as wide as the gaps between them, with double gaps at the edges
             bar_margin: float = size_scaled / (bar_count * 3 + 3)
             line_width: float = bar_margin * 2
@@ -162,7 +168,7 @@ class AudioPreview(BasePreview):
 
                 current_x = current_x + line_width + bar_margin
 
-            im.resize(size, Resampling.BILINEAR)
+            im = im.resize(size, Resampling.BILINEAR)
             im = apply_overlay_color(im, UiColor.GREEN, theme)
 
         except Exception as e:
