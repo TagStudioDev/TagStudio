@@ -6,6 +6,7 @@ import enum
 import random
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -82,17 +83,15 @@ class SortingModeEnum(enum.Enum):
 
 @dataclass
 class BrowsingState:
-    """Represent a state of the Library grid view."""
+    """Represent a browsing history state for a library."""
 
-    page_index: int = 0
-    page_positions: dict[int, int] = field(default_factory=dict)
-    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = False
-    random_seed: float = 0
-
-    show_hidden_entries: bool = False
-
+    first_visible_entry_id: int | None = field(default=None, compare=False)
+    page_index: int = 0
     query: str | None = None
+    random_seed: float = 0
+    show_hidden_entries: bool = False
+    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
 
     # Abstract Syntax Tree Of the current Search Query
     @property
@@ -141,19 +140,23 @@ class BrowsingState:
         return cls(query=f'tag:"{tag_name}"')
 
     def with_page_index(self, index: int) -> BrowsingState:
-        return replace(self, page_index=index)
+        return replace(self, page_index=index, first_visible_entry_id=None)
 
     def with_sorting_mode(self, mode: SortingModeEnum) -> BrowsingState:
         seed = self.random_seed
         if mode == SortingModeEnum.RANDOM:
             seed = random.random()
-        return replace(self, sorting_mode=mode, random_seed=seed)
+        return self._with_new_results(sorting_mode=mode, random_seed=seed)
 
     def with_sorting_direction(self, ascending: bool) -> BrowsingState:
-        return replace(self, ascending=ascending)
+        return self._with_new_results(ascending=ascending)
 
     def with_search_query(self, search_query: str) -> BrowsingState:
-        return replace(self, query=search_query)
+        return self._with_new_results(query=search_query)
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> BrowsingState:
-        return replace(self, show_hidden_entries=show_hidden_entries)
+        return self._with_new_results(show_hidden_entries=show_hidden_entries)
+
+    def _with_new_results(self, **changes: Any) -> BrowsingState:
+        """Copy this state with changes to its results, starting back on the first page."""
+        return replace(self, page_index=0, first_visible_entry_id=None, **changes)

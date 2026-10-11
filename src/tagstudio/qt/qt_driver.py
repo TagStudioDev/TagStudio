@@ -142,12 +142,19 @@ class History[T]:
         self.__history = self.__history[: self.__index + 1]
 
     def push(self, value: T) -> None:
+        """Make `value` current and drop any forward history, unless it equals the current one."""
+        if value == self.current:
+            return
         self.erase_future()
         self.__history.append(value)
         self.__index = len(self.__history) - 1
 
-    def move(self, delta: int):
-        self.__index = clamp(self.__index + delta, 0, len(self.__history) - 1)
+    def move(self, delta: int) -> bool:
+        """Move through the history, returning whether the current value changed."""
+        index = clamp(self.__index + delta, 0, len(self.__history) - 1)
+        moved = index != self.__index
+        self.__index = index
+        return moved
 
     @property
     def current(self) -> T:
@@ -598,13 +605,8 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        def on_visible_changed(entry_id: int | None):
-            current = self.browsing_history.current
-            page_index = current.page_index
-            if entry_id is None:
-                current.page_positions.pop(page_index)
-            else:
-                current.page_positions[page_index] = entry_id
+        def on_visible_changed(entry_id: int):
+            self.browsing_history.current.first_visible_entry_id = entry_id
 
         self.main_window.thumb_grid.visible_changed.connect(on_visible_changed)
 
@@ -1286,16 +1288,9 @@ class QtDriver(DriverMixin, QObject):
         logger.info("page_move", value=value, absolute=absolute)
 
         current = self.browsing_history.current
-        if not absolute:
-            current.page_index += value
-        else:
-            current.page_index = value
-        current.page_index = clamp(current.page_index, 0, self.pages_count - 1)
-
-        # TODO: The back mouse button will no longer move to the previous page and
-        # instead goto the previous query passing a new state to update_browsing_state
-        # will get this behaviour back but would mess with persisting page scroll positions
-        self.update_browsing_state()
+        index = clamp(value if absolute else current.page_index + value, 0, self.pages_count - 1)
+        if index != current.page_index:
+            self.update_browsing_state(current.with_page_index(index))
 
     def navigation_callback(self, delta: int) -> None:
         """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
@@ -1304,9 +1299,8 @@ class QtDriver(DriverMixin, QObject):
             delta=delta,
         )
 
-        self.browsing_history.move(delta)
-
-        self.update_browsing_state()
+        if self.browsing_history.move(delta):
+            self.update_browsing_state()
 
     def copy_fields_action_callback(self):
         if len(self.selected) > 0:
@@ -1476,15 +1470,17 @@ class QtDriver(DriverMixin, QObject):
             logger.info("Library not loaded")
             return
 
+        previous = self.browsing_history.current
         if state:
             self.browsing_history.push(state)
+        current = self.browsing_history.current
 
-        self.main_window.search_field.setText(self.browsing_history.current.query or "")
+        self.main_window.search_field.setText(current.query or "")
 
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(self.browsing_history.current, page_size=0)
+        results = self.lib.search_library(current, page_size=0)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1494,7 +1490,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.results_label.setText(
             Translations.format(
                 # Show "X Results" on query, "X Items" on none
-                "status.results_found" if state and state.query else "status.items",
+                "status.results_found" if current.query else "status.items",
                 count=count,
                 time_span=time_span,
             )
@@ -1502,11 +1498,13 @@ class QtDriver(DriverMixin, QObject):
 
         # update page content
         self.frame_content = results.ids
-        page_index = self.browsing_history.current.page_index
-        if state is None:
-            entry_id = self.browsing_history.current.page_positions.get(page_index)
-        else:
+        if current is previous:
+            entry_id = current.first_visible_entry_id
+        elif current.query == previous.query and current.page_index == previous.page_index:
+            # Keep the selection in view when the same results are only resorted or filtered
             entry_id = self.last_selected
+        else:
+            entry_id = None
         if entry_id is not None:
             self.main_window.thumb_grid.scroll_to(entry_id)
         self.update_thumbs()

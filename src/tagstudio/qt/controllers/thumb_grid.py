@@ -92,11 +92,9 @@ class ThumbGrid(QWidget):
         self._reset_renders()
         self.layout().set_item_count(len(entry_ids))
 
-        if self._scroll_to is not None:
-            index = self._entry_indices.get(self._scroll_to)
-            if index is not None:
-                self.layout().scroll_to_index(index)
-            self._scroll_to = None
+        index = None if self._scroll_to is None else self._entry_indices.get(self._scroll_to)
+        self._scroll_to = None
+        self.layout().scroll_to_index(index or 0)
 
     def scroll_to(self, entry_id: int) -> None:
         """Scroll to this entry once the next entries are set."""
