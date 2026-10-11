@@ -1498,9 +1498,10 @@ class QtDriver(DriverMixin, QObject):
 
         # update page content
         self.frame_content = results.ids
-        if current is previous:
+        same_page = current.query == previous.query and current.page_index == previous.page_index
+        if state is None:
             entry_id = current.first_visible_entry_id
-        elif current.query == previous.query and current.page_index == previous.page_index:
+        elif same_page and current is not previous:
             # Keep the selection in view when the same results are only resorted or filtered
             entry_id = self.last_selected
         else:
