@@ -1267,14 +1267,8 @@ class QtDriver(DriverMixin, QObject):
     def thumb_size_callback(self, size: int):
         """Perform actions needed when the thumbnail size selection is changed."""
         self.update_thumbs()
-        blank_icon: QIcon = QIcon()
         for it in self.main_window.thumb_layout._item_thumbs:
-            it.thumb_button.setIcon(blank_icon)
-            it.resize(self.main_window.thumb_size, self.main_window.thumb_size)
-            it.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
-            it.setFixedSize(self.main_window.thumb_size, self.main_window.thumb_size)
-            it.thumb_button.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
-            it.set_filename_visibility(it.show_filename_label)
+            it.set_thumb_size(self.main_window.thumb_size)
 
     def show_hidden_entries_callback(self):
         logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)

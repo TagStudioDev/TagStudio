@@ -7,8 +7,8 @@
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.entry_state import EntryState
-from tagstudio.qt.mixed.item_thumb import ItemThumb
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -56,7 +56,7 @@ def test_badge_click_updates_whole_selection(qt_driver: QtDriver):
 
     qt_driver.toggle_item_selection(1, append=False, bridge=False)
     qt_driver.toggle_item_selection(2, append=True, bridge=False)
-    thumbs[0].badges[TAG_FAVORITE].setChecked(True)
+    thumbs[0].layout().badges[TAG_FAVORITE].setChecked(True)
 
-    assert all(thumb.badges[TAG_FAVORITE].isChecked() for thumb in thumbs)
+    assert all(thumb.layout().badges[TAG_FAVORITE].isChecked() for thumb in thumbs)
     assert qt_driver.lib.get_tag_entries([TAG_FAVORITE], [1, 2])[TAG_FAVORITE] == {1, 2}

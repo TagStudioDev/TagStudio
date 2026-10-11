@@ -16,7 +16,7 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import can_have_duration, get_duration
-from tagstudio.qt.mixed.item_thumb import ItemThumb
+from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class ThumbGridLayout(QLayout):
     def update_selected(self):
         for item_thumb in self._item_thumbs:
             value = item_thumb.item_id in self.driver._selected
-            item_thumb.thumb_button.set_selected(value)
+            item_thumb.set_selected(value)
 
     def _assign_badges(self, item_thumb: ItemThumb, entry_id: int) -> None:
         for tag_id in self.driver.entry_state.badge_tag_ids:
@@ -142,8 +142,7 @@ class ThumbGridLayout(QLayout):
         if index is None:
             return
         item_thumb = self._item_thumbs[index]
-        item_thumb.update_thumb(image, file_path)
-        item_thumb.update_size(size)
+        item_thumb.set_image(image, size, file_path)
         item_thumb.set_filename_text(file_path)
         item_thumb.set_extension(file_path)
         item_thumb.set_duration(self._durations.get(file_path))
@@ -360,7 +359,7 @@ class ThumbGridLayout(QLayout):
             entry_id = self._entry_ids[i]
             item_index = self._entry_items[entry_id]
             item_thumb = self._item_thumbs[item_index]
-            item_thumb.thumb_button.set_selected(entry_id in self.driver._selected)
+            item_thumb.set_selected(entry_id in self.driver._selected)
             self._assign_badges(item_thumb, entry_id)
 
     @override
