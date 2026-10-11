@@ -4,10 +4,11 @@
 # pyright: reportPrivateUsage=false
 
 
+from PySide6.QtCore import QRect
+
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.controllers.item_thumb import ItemThumb
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.qt_driver import QtDriver
 
@@ -47,12 +48,10 @@ def test_unload_badges_rereads_from_library(library: Library):
 
 
 def test_badge_click_updates_whole_selection(qt_driver: QtDriver):
-    thumbs: list[ItemThumb] = []
-    for entry_id in (1, 2):
-        thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100))
-        thumb.set_item_id(entry_id)
-        thumbs.append(thumb)
-    qt_driver.main_window.thumb_layout._item_thumbs.extend(thumbs)
+    grid = qt_driver.main_window.thumb_grid
+    grid.set_entries([1, 2])
+    grid.layout().setGeometry(QRect(0, 0, 1000, 1000))
+    thumbs = [unwrap(grid.layout().widget_at(index)) for index in (0, 1)]
 
     qt_driver.toggle_item_selection(1, append=False, bridge=False)
     qt_driver.toggle_item_selection(2, append=True, bridge=False)

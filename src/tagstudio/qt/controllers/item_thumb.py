@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QEvent, QMimeData, QPoint, QRect, QRectF, QSignalBlocker, QSize, Qt, QUrl
+from PySide6.QtCore import QEvent, QMimeData, QPoint, QRect, QRectF, QSignalBlocker, Qt, QUrl
 from PySide6.QtGui import (
     QColor,
     QContextMenuEvent,
@@ -178,6 +178,7 @@ class ItemThumb(QWidget):
 
         self.layout().ext_label.setHidden(not show_ext_label)
         self.layout().count_label.setHidden(not show_count_label)
+        self._apply_label_sizes()
 
     def set_count(self, count: str) -> None:
         view = self.layout()
@@ -188,6 +189,7 @@ class ItemThumb(QWidget):
             if self._mode == ItemType.ENTRY:
                 view.ext_label.setHidden(True)
                 view.count_label.setHidden(True)
+        self._apply_label_sizes()
 
     def set_duration(self, duration: float | None) -> None:
         """Show a media duration on the count label, or "-:--" while it's unknown."""
@@ -197,9 +199,14 @@ class ItemThumb(QWidget):
         else:
             count_label.setText(format_duration(duration))
             count_label.setHidden(False)
+        self._apply_label_sizes()
 
     def set_filename_text(self, filename: Path):
         self.layout().file_label.setText(str(filename.name))
+        self._apply_label_sizes()
+
+    def _apply_label_sizes(self) -> None:
+        self.layout().activate()
 
     def set_filename_visibility(self, set_visible: bool):
         """Toggle the visibility of the filename label.
@@ -229,15 +236,18 @@ class ItemThumb(QWidget):
 
     def set_thumb_size(self, size: int) -> None:
         self._thumb_size = (size, size)
-        self._image = None
         self.setFixedSize(size, size)
         self.set_filename_visibility(self._show_filename_label)
         self.update()
 
-    def set_image(self, image: QPixmap, size: QSize, file_path: Path) -> None:
+    def set_image(self, image: QPixmap, file_path: Path) -> None:
         self._image = image
-        self._thumb_size = size.width(), size.height()
         self.rendered_path = file_path
+        self.update()
+
+    def clear_image(self) -> None:
+        self._image = None
+        self.rendered_path = None
         self.update()
 
     def set_item(self, entry: Entry):
@@ -247,6 +257,7 @@ class ItemThumb(QWidget):
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
+        self._item_path = None
 
     def assign_badge(self, tag_id: int, value: bool) -> None:
         badge = self.layout().badges[tag_id]
@@ -372,7 +383,7 @@ class ItemThumb(QWidget):
 
     @override
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
-        if not self._image_rect().contains(event.pos()):
+        if self._item_path is None or not self._image_rect().contains(event.pos()):
             return super().contextMenuEvent(event)
 
         view = self.layout()

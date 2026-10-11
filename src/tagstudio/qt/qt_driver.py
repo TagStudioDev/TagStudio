@@ -606,7 +606,7 @@ class QtDriver(DriverMixin, QObject):
             else:
                 current.page_positions[page_index] = entry_id
 
-        self.main_window.thumb_layout.visible_changed.connect(on_visible_changed)
+        self.main_window.thumb_grid.visible_changed.connect(on_visible_changed)
 
         QFontDatabase.addApplicationFont(
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
@@ -746,8 +746,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
 
     def show_grid_filenames(self, value: bool):
-        for thumb in self.main_window.thumb_layout._item_thumbs:
-            thumb.set_filename_visibility(value)
+        self.main_window.thumb_grid.set_filenames_visible(value)
 
     def call_if_library_open(self, func):
         """Check if loaded library has valid path before executing the button function."""
@@ -818,7 +817,7 @@ class QtDriver(DriverMixin, QObject):
         if hasattr(self, "library_info_window"):
             self.library_info_window.close()
 
-        self.main_window.thumb_layout.set_entries([])
+        self.main_window.thumb_grid.set_entries([])
         self.main_window.inspector.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.landing_widget.animate_logo_in()
@@ -1266,9 +1265,7 @@ class QtDriver(DriverMixin, QObject):
 
     def thumb_size_callback(self, size: int):
         """Perform actions needed when the thumbnail size selection is changed."""
-        self.update_thumbs()
-        for it in self.main_window.thumb_layout._item_thumbs:
-            it.set_thumb_size(self.main_window.thumb_size)
+        self.main_window.thumb_grid.set_thumb_size(self.main_window.thumb_size)
 
     def show_hidden_entries_callback(self):
         logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
@@ -1470,8 +1467,7 @@ class QtDriver(DriverMixin, QObject):
         start = page * page_size
         end = min(start + page_size, len(self.frame_content))
 
-        self.main_window.thumb_layout.set_entries(self.frame_content[start:end])
-        self.main_window.thumb_layout.update()
+        self.main_window.thumb_grid.set_entries(self.frame_content[start:end])
         self.main_window.update()
 
     def update_browsing_state(self, state: BrowsingState | None = None) -> None:
@@ -1512,7 +1508,7 @@ class QtDriver(DriverMixin, QObject):
         else:
             entry_id = self.last_selected
         if entry_id is not None:
-            self.main_window.thumb_layout.scroll_to(entry_id)
+            self.main_window.thumb_grid.scroll_to(entry_id)
         self.update_thumbs()
 
         # update pagination
@@ -1789,7 +1785,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_all(self):
         self._selected = OrderedDict.fromkeys(self.frame_content)
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_inverse(self):
         selected = OrderedDict()
@@ -1798,14 +1794,14 @@ class QtDriver(DriverMixin, QObject):
                 selected[id] = None
 
         self._selected = selected
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_entry(self, entry_id: int):
         if entry_id in self._selected:
             self._selected.pop(entry_id)
         else:
             self._selected[entry_id] = None
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_to_entry(self, entry_id: int):
         if len(self._selected) == 0:
@@ -1823,11 +1819,11 @@ class QtDriver(DriverMixin, QObject):
         for i in range(start, end):
             entry_id = self.frame_content[i]
             self._selected[entry_id] = None
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def clear_selected(self):
         self._selected.clear()
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""

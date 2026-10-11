@@ -40,15 +40,18 @@ class EntryState(QObject):
         return self._badge_tag_ids
 
     def load_badges(self, entry_ids: Iterable[int]) -> None:
-        """Read which entries have the tags used for badges."""
+        """Read which entries have tags used for badges."""
         entry_ids = set(entry_ids)
-        if not entry_ids:
-            return
+        if entry_ids:
+            tag_entries = self._lib.get_tag_entries(self._badge_tag_ids, list(entry_ids))
+            self.cache_badges(entry_ids, tag_entries)
 
-        tag_entries = self._lib.get_tag_entries(self._badge_tag_ids, list(entry_ids))
+    def cache_badges(self, entry_ids: Iterable[int], tag_entries: dict[int, set[int]]) -> None:
+        """Store which entries have tags used for badges, as given by `tag_entries`."""
+        entry_ids = set(entry_ids)
         for tag_id, entries in self._entries_with_badge.items():
             entries.difference_update(entry_ids)
-            entries.update(tag_entries[tag_id])
+            entries.update(entry_ids.intersection(tag_entries[tag_id]))
         self._badges_loaded.update(entry_ids)
 
     def unload_badges(self) -> None:

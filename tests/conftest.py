@@ -27,9 +27,9 @@ from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FO
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
+from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.qt_driver import QtDriver
-from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 
 
 @pytest.fixture
@@ -197,11 +197,16 @@ def qt_driver(library: Library, library_dir: Path):
         open = library_dir
         ci = True
 
+    # In-memory libraries are per-thread, so grid entry fetches run on the test thread
+    grid_fetch_pool = Mock()
+    grid_fetch_pool.return_value.start.side_effect = lambda task: task()
+
     with (
         patch("tagstudio.qt.qt_driver.Consumer"),
         patch("tagstudio.qt.qt_driver.CustomRunnable"),
         # NOTE: Patching the QThreadPool stops Python's garbage collector from causing segfaults
         patch("tagstudio.qt.qt_driver.QThreadPool"),
+        patch("tagstudio.qt.controllers.thumb_grid.QThreadPool", grid_fetch_pool),
     ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
         driver.lib = library
@@ -210,7 +215,7 @@ def qt_driver(library: Library, library_dir: Path):
         driver.app = Mock()
         driver.main_window = Mock()
         driver.main_window.thumb_size = 128
-        driver.main_window.thumb_layout = ThumbGridLayout(driver, QScrollArea())
+        driver.main_window.thumb_grid = ThumbGrid(driver, QScrollArea())
         driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
