@@ -125,7 +125,9 @@ class AudioPreview(BasePreview):
             bar_count: int = 32
             command = [unwrap(FfmpegStatus.which()), "-nostdin", "-v", "error", "-i", str(filepath)]
             command += ["-vn", "-ac", "1", "-ar", str(_WAVEFORM_SAMPLE_RATE), "-f", "s16le", "-"]
-            ffmpeg = silent_run(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            ffmpeg = silent_run(
+                command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, close_fds=False
+            )
             ffmpeg.check_returncode()
             data = np.frombuffer(buffer=ffmpeg.stdout, dtype="<i2")
             # Bars are twice as wide as the gaps between them, with double gaps at the edges
