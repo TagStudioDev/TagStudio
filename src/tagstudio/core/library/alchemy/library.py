@@ -600,7 +600,7 @@ class Library:
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id.in_(entry_ids))
             entries = dict((e.id, e) for e in session.scalars(statement))
-            return [entries[id] for id in entry_ids]
+            return [entries[id] for id in entry_ids if id in entries]
 
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""

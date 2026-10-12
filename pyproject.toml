@@ -26,7 +26,6 @@ dependencies = [
     "Pillow>=10.2,<12",
     "py7zr~=1.1.3",
     "pydantic~=2.10",
-    "pydub~=0.25",
     "Pygments~=2.20",
     "PySide6==6.11.2",
     "rarfile==4.2",
@@ -101,7 +100,6 @@ filterwarnings = [
 ignore = [
     ".venv/**",
     "src/tagstudio/core/library/json/",
-    "src/tagstudio/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
 # Reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
@@ -122,7 +120,6 @@ reportUnannotatedClassAttribute = false
 reportUninitializedInstanceVariable = false
 
 [tool.ruff]
-exclude = ["home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
 
 [tool.ruff.lint]

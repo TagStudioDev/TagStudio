@@ -41,8 +41,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
-import tagstudio.qt.resources_rc  # noqa: F401  # pyright: ignore[reportUnusedImport]
-from tagstudio.core.constants import BUILD_TYPE, TAG_ARCHIVED, TAG_FAVORITE, VERSION
+from tagstudio.core.constants import BUILD_TYPE, VERSION
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
@@ -75,12 +74,12 @@ from tagstudio.qt.controllers.splash import SplashScreen
 from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
+from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.mixed.about_modal import AboutModal
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
-from tagstudio.qt.mixed.item_thumb import BadgeType
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
@@ -91,12 +90,6 @@ from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.styles.palette import ColorType, Palette, UiColor, get_ui_color
 from tagstudio.qt.views.styles.stylesheets import header
-
-BADGE_TAGS = {
-    BadgeType.FAVORITE: TAG_FAVORITE,
-    BadgeType.ARCHIVED: TAG_ARCHIVED,
-}
-
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -149,12 +142,19 @@ class History[T]:
         self.__history = self.__history[: self.__index + 1]
 
     def push(self, value: T) -> None:
+        """Make `value` current and drop any forward history, unless it equals the current one."""
+        if value == self.current:
+            return
         self.erase_future()
         self.__history.append(value)
         self.__index = len(self.__history) - 1
 
-    def move(self, delta: int):
-        self.__index = clamp(self.__index + delta, 0, len(self.__history) - 1)
+    def move(self, delta: int) -> bool:
+        """Move through the history, returning whether the current value changed."""
+        index = clamp(self.__index + delta, 0, len(self.__history) - 1)
+        moved = index != self.__index
+        self.__index = index
+        return moved
 
     @property
     def current(self) -> T:
@@ -165,11 +165,6 @@ class QtDriver(DriverMixin, QObject):
     """A Qt GUI frontend driver for TagStudio."""
 
     SIGTERM = Signal()
-
-    # TODO: If these signals are removed from the base QtDriver, we can probably get rid of the
-    # QObject multiple inheritance and make DriverMixin a proper BaseDriver class.
-    favorite_updated = Signal(bool)
-    archived_updated = Signal(bool)
 
     tag_manager: Modal | None = None
     color_manager_panel: TagColorManager | None = None
@@ -195,11 +190,11 @@ class QtDriver(DriverMixin, QObject):
         super().__init__()
         self.args = args
         self.lib = Library()
+        self.entry_state = EntryState(self.lib)
         self.rm: ResourceManager = ResourceManager()
 
         # Thumbnail Grid
         self._selected: OrderedDict[int, None] = OrderedDict()
-        self.badge_update_lock = False
         self.frame_content: list[int] = []  # List of Entry IDs for the current query
         self.scrollbar_pos = 0
         self.spacing = None
@@ -423,10 +418,7 @@ class QtDriver(DriverMixin, QObject):
         add_tag_tsp.search_for_tag.connect(self.search_for_tag_callback)
         self.add_tag_modal = Modal(add_tag_tsp, Translations["tag.add.plural"])
         add_tag_tsp.item_chosen.connect(
-            lambda chosen_tag: (
-                self.add_tags_to_selected_callback([chosen_tag]),
-                self.main_window.inspector.set_selection(self.selected, update_preview=False),
-            )
+            lambda chosen_tag: self.add_tags_to_selected_callback([chosen_tag])
         )
 
         # region Menu Bar
@@ -613,26 +605,10 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        def on_visible_changed(entry_id: int | None):
-            current = self.browsing_history.current
-            page_index = current.page_index
-            if entry_id is None:
-                current.page_positions.pop(page_index)
-            else:
-                current.page_positions[page_index] = entry_id
+        def on_visible_changed(entry_id: int):
+            self.browsing_history.current.first_visible_entry_id = entry_id
 
-        self.main_window.thumb_layout.visible_changed.connect(on_visible_changed)
-
-        self.archived_updated.connect(
-            lambda hidden: self.update_badges(
-                {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
-            )
-        )
-        self.favorite_updated.connect(
-            lambda hidden: self.update_badges(
-                {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
-            )
-        )
+        self.main_window.thumb_grid.visible_changed.connect(on_visible_changed)
 
         QFontDatabase.addApplicationFont(
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
@@ -772,8 +748,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
 
     def show_grid_filenames(self, value: bool):
-        for thumb in self.main_window.thumb_layout._item_thumbs:
-            thumb.set_filename_visibility(value)
+        self.main_window.thumb_grid.set_filenames_visible(value)
 
     def call_if_library_open(self, func):
         """Check if loaded library has valid path before executing the button function."""
@@ -844,7 +819,7 @@ class QtDriver(DriverMixin, QObject):
         if hasattr(self, "library_info_window"):
             self.library_info_window.close()
 
-        self.main_window.thumb_layout.set_entries([])
+        self.main_window.thumb_grid.set_entries([])
         self.main_window.inspector.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.landing_widget.animate_logo_in()
@@ -876,19 +851,6 @@ class QtDriver(DriverMixin, QObject):
     def backup_library(self):
         logger.info("Backing Up Library...")
         Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
-
-    def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
-        """Emit any connected signals for updating badge icons."""
-        logger.info("[emit_badge_signals] Emitting", tag_ids=tag_ids, emit_on_absent=emit_on_absent)
-        if TAG_ARCHIVED in tag_ids:
-            self.archived_updated.emit(True)  # noqa: FBT003
-        elif emit_on_absent:
-            self.archived_updated.emit(False)  # noqa: FBT003
-
-        if TAG_FAVORITE in tag_ids:
-            self.favorite_updated.emit(True)  # noqa: FBT003
-        elif emit_on_absent:
-            self.favorite_updated.emit(False)  # noqa: FBT003
 
     def add_tag_action_callback(self):
         panel = EditTagPanel(self.lib)
@@ -943,10 +905,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.inspector.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        selected: list[int] = self.selected
-        self.main_window.thumb_layout.add_tags(selected, tag_ids)
-        self.lib.add_tags_to_entries(selected, tag_ids)
-        self.emit_badge_signals(tag_ids, emit_on_absent=False)
+        self.entry_state.add_tags(self.selected, tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -1308,15 +1267,7 @@ class QtDriver(DriverMixin, QObject):
 
     def thumb_size_callback(self, size: int):
         """Perform actions needed when the thumbnail size selection is changed."""
-        self.update_thumbs()
-        blank_icon: QIcon = QIcon()
-        for it in self.main_window.thumb_layout._item_thumbs:
-            it.thumb_button.setIcon(blank_icon)
-            it.resize(self.main_window.thumb_size, self.main_window.thumb_size)
-            it.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
-            it.setFixedSize(self.main_window.thumb_size, self.main_window.thumb_size)
-            it.thumb_button.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
-            it.set_filename_visibility(it.show_filename_label)
+        self.main_window.thumb_grid.set_thumb_size(self.main_window.thumb_size)
 
     def show_hidden_entries_callback(self):
         logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
@@ -1337,16 +1288,9 @@ class QtDriver(DriverMixin, QObject):
         logger.info("page_move", value=value, absolute=absolute)
 
         current = self.browsing_history.current
-        if not absolute:
-            current.page_index += value
-        else:
-            current.page_index = value
-        current.page_index = clamp(current.page_index, 0, self.pages_count - 1)
-
-        # TODO: The back mouse button will no longer move to the previous page and
-        # instead goto the previous query passing a new state to update_browsing_state
-        # will get this behaviour back but would mess with persisting page scroll positions
-        self.update_browsing_state()
+        index = clamp(value if absolute else current.page_index + value, 0, self.pages_count - 1)
+        if index != current.page_index:
+            self.update_browsing_state(current.with_page_index(index))
 
     def navigation_callback(self, delta: int) -> None:
         """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
@@ -1355,9 +1299,8 @@ class QtDriver(DriverMixin, QObject):
             delta=delta,
         )
 
-        self.browsing_history.move(delta)
-
-        self.update_browsing_state()
+        if self.browsing_history.move(delta):
+            self.update_browsing_state()
 
     def copy_fields_action_callback(self):
         if len(self.selected) > 0:
@@ -1380,14 +1323,10 @@ class QtDriver(DriverMixin, QObject):
                         exists = True
                 if not exists:
                     self.lib.add_field_to_entries(id, field=field)
-            self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
-        if len(self.selected) > 1:
-            if TAG_ARCHIVED in self.copy_buffer["tags"]:
-                self.update_badges({BadgeType.ARCHIVED: True}, origin_id=0, add_tags=False)
-            if TAG_FAVORITE in self.copy_buffer["tags"]:
-                self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
-        else:
-            self.main_window.inspector.set_selection(self.selected)
+        if self.copy_buffer["tags"]:
+            self.entry_state.add_tags(self.selected, self.copy_buffer["tags"])
+        elif len(self.selected) == 1:
+            self.main_window.inspector.containers.update_from_entry(self.selected[0])
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1522,56 +1461,8 @@ class QtDriver(DriverMixin, QObject):
         start = page * page_size
         end = min(start + page_size, len(self.frame_content))
 
-        self.main_window.thumb_layout.set_entries(self.frame_content[start:end])
-        self.main_window.thumb_layout.update()
+        self.main_window.thumb_grid.set_entries(self.frame_content[start:end])
         self.main_window.update()
-
-    def update_badges(self, badge_values: dict[BadgeType, bool], origin_id: int, add_tags=True):
-        """Update the tag badges for item_thumbs.
-
-        Args:
-            badge_values(dict[BadgeType, bool]): The BadgeType and associated viability state.
-            origin_id(int): The ID of the item_thumb calling this method. If the ID is found as a
-                part of the current selection, or if the ID is 0, the the entire current selection
-                will be updated. Otherwise, only item_thumbs with that ID will be updated.
-            add_tags(bool): Flag determining if tags associated with the badges need to be added to
-                the items. Defaults to True.
-        """
-        entry_ids = (
-            set(self._selected.keys())
-            if (origin_id == 0 or origin_id in self._selected)
-            else {origin_id}
-        )
-
-        logger.info(
-            "[QtDriver][update_badges] Updating ItemThumb badges",
-            badge_values=badge_values,
-            origin_id=origin_id,
-            add_tags=add_tags,
-        )
-        for it in self.main_window.thumb_layout._item_thumbs:
-            if it.item_id in entry_ids:
-                for badge_type, value in badge_values.items():
-                    if add_tags:
-                        it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
-                    it.assign_badge(badge_type, value)
-
-        if not add_tags:
-            return
-
-        logger.info(
-            "[QtDriver][update_badges] Adding tags to updated entries",
-            pending_entries=entry_ids,
-        )
-        for badge_type, value in badge_values.items():
-            tag_ids = [BADGE_TAGS[badge_type]]
-
-            if value:
-                self.main_window.thumb_layout.add_tags(entry_ids, tag_ids)
-                self.lib.add_tags_to_entries(entry_ids, tag_ids)
-            else:
-                self.main_window.thumb_layout.remove_tags(entry_ids, tag_ids)
-                self.lib.remove_tags_from_entries(entry_ids, tag_ids)
 
     def update_browsing_state(self, state: BrowsingState | None = None) -> None:
         """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
@@ -1579,15 +1470,17 @@ class QtDriver(DriverMixin, QObject):
             logger.info("Library not loaded")
             return
 
+        previous = self.browsing_history.current
         if state:
             self.browsing_history.push(state)
+        current = self.browsing_history.current
 
-        self.main_window.search_field.setText(self.browsing_history.current.query or "")
+        self.main_window.search_field.setText(current.query or "")
 
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(self.browsing_history.current, page_size=0)
+        results = self.lib.search_library(current, page_size=0)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1597,7 +1490,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.results_label.setText(
             Translations.format(
                 # Show "X Results" on query, "X Items" on none
-                "status.results_found" if state and state.query else "status.items",
+                "status.results_found" if current.query else "status.items",
                 count=count,
                 time_span=time_span,
             )
@@ -1605,13 +1498,16 @@ class QtDriver(DriverMixin, QObject):
 
         # update page content
         self.frame_content = results.ids
-        page_index = self.browsing_history.current.page_index
+        same_page = current.query == previous.query and current.page_index == previous.page_index
         if state is None:
-            entry_id = self.browsing_history.current.page_positions.get(page_index)
-        else:
+            entry_id = current.first_visible_entry_id
+        elif same_page and current is not previous:
+            # Keep the selection in view when the same results are only resorted or filtered
             entry_id = self.last_selected
+        else:
+            entry_id = None
         if entry_id is not None:
-            self.main_window.thumb_layout.scroll_to(entry_id)
+            self.main_window.thumb_grid.scroll_to(entry_id)
         self.update_thumbs()
 
         # update pagination
@@ -1888,7 +1784,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_all(self):
         self._selected = OrderedDict.fromkeys(self.frame_content)
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_inverse(self):
         selected = OrderedDict()
@@ -1897,14 +1793,14 @@ class QtDriver(DriverMixin, QObject):
                 selected[id] = None
 
         self._selected = selected
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_entry(self, entry_id: int):
         if entry_id in self._selected:
             self._selected.pop(entry_id)
         else:
             self._selected[entry_id] = None
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def select_to_entry(self, entry_id: int):
         if len(self._selected) == 0:
@@ -1922,11 +1818,11 @@ class QtDriver(DriverMixin, QObject):
         for i in range(start, end):
             entry_id = self.frame_content[i]
             self._selected[entry_id] = None
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def clear_selected(self):
         self._selected.clear()
-        self.main_window.thumb_layout.update_selected()
+        self.main_window.thumb_grid.update_selected()
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""

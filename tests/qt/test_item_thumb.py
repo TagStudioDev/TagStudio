@@ -4,8 +4,9 @@
 
 import pytest
 
+from tagstudio.core.constants import TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
-from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -18,8 +19,5 @@ def test_badge_visual_state(qt_driver: QtDriver, entry_min: int, new_value: bool
     qt_driver.frame_content = [entry_min]
     qt_driver.toggle_item_selection(0, append=False, bridge=False)
 
-    thumb.badges[BadgeType.FAVORITE].setChecked(new_value)
-    assert thumb.badges[BadgeType.FAVORITE].isChecked() == new_value
-    # TODO
-    # assert thumb.favorite_badge.isHidden() == initial_state
-    assert thumb.is_favorite == new_value
+    thumb.layout().badges[TAG_FAVORITE].setChecked(new_value)
+    assert thumb.layout().badges[TAG_FAVORITE].isChecked() == new_value

@@ -42,10 +42,10 @@ from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.banner_stack import BannerStack
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.controllers.pagination import Pagination
+from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.helpers.mnemonics import assign_mnemonics
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
 from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, WIN_PAD, checkbox_style
 
@@ -494,8 +494,7 @@ class MainWindow(QMainWindow):
         self.entry_list_layout: QVBoxLayout
         self.banners: BannerStack
         self.entry_scroll_area: QScrollArea
-        self.thumb_grid: QWidget
-        self.thumb_layout: ThumbGridLayout
+        self.thumb_grid: ThumbGrid
         self.landing_widget: LandingWidget
         self.pagination: Pagination
 
@@ -700,18 +699,10 @@ class MainWindow(QMainWindow):
         self.entry_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.entry_scroll_area.setWidgetResizable(True)
         self.entry_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.entry_scroll_area.verticalScrollBar().valueChanged.connect(
-            lambda value: self.thumb_layout.update()
-        )
 
-        self.thumb_grid = QWidget()
-        self.thumb_grid.setObjectName("thumb_grid")
+        self.thumb_grid = ThumbGrid(driver, self.entry_scroll_area)
         # Padding so floating pagination bar doesn't block bottom of scroll contents
-        self.thumb_layout = ThumbGridLayout(
-            driver, self.entry_scroll_area, bottom_padding=Pagination.HEIGHT
-        )
-        self.thumb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.thumb_grid.setLayout(self.thumb_layout)
+        self.thumb_grid.setContentsMargins(0, 0, 0, Pagination.HEIGHT)
         self.entry_scroll_area.setWidget(self.thumb_grid)
 
         self.banners = BannerStack()

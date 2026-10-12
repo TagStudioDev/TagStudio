@@ -3,6 +3,7 @@
 
 
 import platform
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
@@ -608,7 +609,7 @@ def _is_dark_theme() -> bool:
 
 def get_contrast_text_color(background_color: QColor) -> QColor:
     """Return plain black or white, whichever reads better against `background_color`."""
-    return QColor(0, 0, 0) if background_color.lightness() > 120 else QColor(255, 255, 255)
+    return QColor(0, 0, 0) if background_color.lightness() > 140 else QColor(255, 255, 255)
 
 
 def _banner_button_hover_style(object_name: str) -> str:
@@ -666,7 +667,7 @@ def banner_action_button_style() -> str:
 
 def banner_notice_bg_color() -> QColor:
     """Fill color for the banner card in "notice" mode."""
-    color = QColor(Palette.accent())
+    color = Palette.accent_alt()
     color.setAlpha(235)
     return color
 
@@ -744,11 +745,68 @@ def pagination_style() -> str:
     """
 
 
+def item_thumb_label_style(is_large: bool = False) -> str:
+    """Style used for text labels on item thumbnails, like file extensions and durations."""
+    font_size = 18 if is_large else 12
+    return (
+        "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        f"font-size:{font_size}px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
+    )
+
+
+def item_thumb_check_badge_style(size: int, icon: Path, checked_icon: Path) -> str:
+    """Style used for checkable tag badges on item thumbnails, like Favorite and Archived."""
+    return (
+        f"QCheckBox::indicator{{width: {size}px;height: {size}px;}}"
+        f'QCheckBox::indicator::unchecked{{image: url("{icon.as_posix()}")}}'
+        f'QCheckBox::indicator::checked{{image: url("{checked_icon.as_posix()}")}}'
+    )
+
+
+def item_thumb_filename_style(is_selected: bool = False) -> str:
+    """Style used for filename labels under item thumbnails, highlighted when selected."""
+    if is_selected:
+        return (
+            "background-color: palette(highlight);"
+            "color: palette(highlighted-text);"
+            "font-size: 10px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
+            f"border-radius: {HALF_PAD}px;"
+        )
+    return "font-size: 10px; padding-left: 1px; padding-bottom: 1px;"
+
+
+def item_thumb_faded_select_color() -> QColor:
+    """Semi-transparent accent color used to fill selected item thumbnails."""
+    color = Palette.accent()
+    color.setHsl(color.hslHue(), color.hslSaturation(), max(color.lightness(), 127), 127)
+    return color
+
+
+def item_thumb_hover_color() -> QColor:
+    """Lightened accent color used to outline hovered item thumbnails."""
+    color = Palette.accent()
+    color.setHsl(
+        color.hslHue(),
+        min(255, round(color.hslSaturation() * 1.25)),
+        min(color.lightness() + 80, 255),
+        color.alpha(),
+    )
+    return color
+
+
 def banner_progress_chunk_color() -> QColor:
     """Fill color for the banner's custom-painted progress bar chunk."""
-    is_dark = _is_dark_theme()
-    chunk = QColor(Palette.accent().lighter(130) if is_dark else Palette.accent().darker(115))
-    chunk.setAlpha(235)
+    chunk = Palette.accent_alt()
     return chunk
 
 

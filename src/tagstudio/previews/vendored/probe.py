@@ -35,7 +35,7 @@ def probe(filename: Path | str, timeout: int | None = None, **kwargs: ...):
     args += [filename]  # pyright: ignore
 
     # PATCHED
-    p = silent_popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = silent_popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False)
     communicate_kwargs = {}
     if timeout is not None:
         communicate_kwargs["timeout"] = timeout

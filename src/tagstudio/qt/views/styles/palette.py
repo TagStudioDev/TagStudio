@@ -8,7 +8,8 @@ from enum import IntEnum
 from typing import Any
 
 import structlog
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QGuiApplication, QPalette
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.utils.singleton import Singleton
@@ -44,6 +45,15 @@ class Palette(metaclass=Singleton):
         )
 
         return QPalette.color(Palette._palette, role)
+
+    @staticmethod
+    def accent_alt() -> QColor:
+        """An alternate accent color variant that's lighter in dark mode."""
+        return QColor(
+            Palette.accent().lighter(110)
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Palette.accent()
+        )
 
 
 class ColorType(IntEnum):
