@@ -17,8 +17,7 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
-from tagstudio.qt.helpers.text_wrapper import wrap_full_text
-from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.previews.text_wrapper import wrap_full_text
 from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)
@@ -48,7 +47,7 @@ class FontPreview(BasePreview):
         return (
             font_small_thumb(filepath, theme, size)
             if is_small
-            else font_full_preview(filepath, size)
+            else font_full_preview(filepath, theme, size)
         )
 
 
@@ -110,6 +109,7 @@ def font_small_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Ima
             box=(margin, margin + ((size[1] - new_y) // 2)),
         )
         im = bg
+        # TODO: Replace UiColor system, remove Qt-side import here.
         im = apply_overlay_color(im, UiColor.BLUE, theme)
 
     except OSError as e:
@@ -118,11 +118,12 @@ def font_small_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Ima
     return im
 
 
-def font_full_preview(filepath: Path, size: tuple[int, int]) -> Image | None:
+def font_full_preview(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image | None:
     """Render a large font preview ("Alphabet") thumbnail from a font file.
 
     Args:
         filepath (Path): The path of the file.
+        theme (Theme): The system color theme.
         size (tuple[int,int]): The size of the thumbnail.
     """
     # Scale the sample font sizes to the preview image
@@ -145,8 +146,8 @@ def font_full_preview(filepath: Path, size: tuple[int, int]) -> Image | None:
             y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
                 (0, 0), "A", font=font
             )[-1]
-        # TODO: Separate from any Qt stuff
-        im = auto_theme_overlay(bg, use_alpha=False)
+        im = new_image("RGBA", size, color="#00000000")
+        im.paste("#FFFFFF" if theme == Theme.DARK else "#000000", mask=bg)
     except OSError as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im
