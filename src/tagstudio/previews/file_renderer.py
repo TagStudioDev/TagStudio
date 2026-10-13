@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 
-import contextlib
 import hashlib
 import importlib
 import inspect
@@ -20,7 +19,6 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
-from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -187,10 +185,9 @@ class FileRenderer:
 
         is_unlinked = not filepath.exists()
         is_ignored = False
-        with contextlib.suppress(TypeError):
-            is_ignored = Ignore.matcher.is_ignored(
-                filepath.relative_to(unwrap(self.lib.library_dir))
-            )
+        library_dir = self.lib.library_dir
+        if library_dir is not None and filepath.is_relative_to(library_dir):
+            is_ignored = Ignore.matcher.is_ignored(filepath.relative_to(library_dir))
 
         if is_thumb:
             image = self._get_thumbnail(cache, filepath, size, dpi_scale, theme, date_modified)

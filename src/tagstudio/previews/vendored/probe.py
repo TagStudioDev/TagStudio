@@ -23,8 +23,8 @@ def probe(filename: Path | str, timeout: int | None = None, **kwargs: ...):
     """Run ffprobe on the specified file and return a JSON representation of the output.
 
     Raises:
-        Error: If ffprobe returns a non-zero exit code, an Error is raised
-            with a generic error message. The stderr output can be retrieved
+        Error: If ffprobe returns a non-zero exit code or runs longer than `timeout` seconds,
+            an Error is raised with a generic error message. The stderr output can be retrieved
             by accessing the `stderr` property of the exception.
     """
     ffprobe_cmd: str | None = FfprobeStatus.which()
@@ -36,10 +36,12 @@ def probe(filename: Path | str, timeout: int | None = None, **kwargs: ...):
 
     # PATCHED
     p = silent_popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False)
-    communicate_kwargs = {}
-    if timeout is not None:
-        communicate_kwargs["timeout"] = timeout
-    out, err = p.communicate(**communicate_kwargs)
+    try:
+        out, err = p.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        logger.warning("[Probe] ffprobe timed out", filename=filename, timeout=timeout)
+        p.kill()
+        out, err = p.communicate()
     if p.returncode != 0:
         raise ffmpeg.Error("ffprobe", out, err)
     return json.loads(out.decode("utf-8"))

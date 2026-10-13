@@ -27,7 +27,16 @@ from warnings import catch_warnings
 import semver
 import structlog
 from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
-from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtCore import (
+    QDeadlineTimer,
+    QObject,
+    QSettings,
+    Qt,
+    QThread,
+    QThreadPool,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import (
     QColor,
     QDragEnterEvent,
@@ -767,10 +776,13 @@ class QtDriver(DriverMixin, QObject):
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
 
-        # wait for threads to quit
+        deadline = QDeadlineTimer(1000)
         for thread in self.thumb_threads:
             thread.quit()
-            thread.wait()
+            thread.wait(deadline)
+        if any(thread.isRunning() for thread in self.thumb_threads):
+            logger.warning("[SHUTDOWN] Thumbnail threads are still running, forcing exit")
+            os._exit(0)
 
         QApplication.quit()
 
