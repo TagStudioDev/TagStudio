@@ -17,7 +17,6 @@ logger = structlog.get_logger(__name__)
 
 
 class PowerPointPreview(BasePreview):
-    _fallback_icon = "presentation"
     media_type_name = "microsoft.office.powerpoint"
 
     @override

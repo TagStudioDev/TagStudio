@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, override
 import structlog
 from PySide6.QtCore import QEvent, QMimeData, QPoint, QRect, QRectF, QSignalBlocker, Qt, QUrl
 from PySide6.QtGui import (
+    QBrush,
     QColor,
     QContextMenuEvent,
     QDrag,
@@ -19,6 +20,7 @@ from PySide6.QtGui import (
     QPaintEvent,
     QPen,
     QPixmap,
+    QTransform,
 )
 from PySide6.QtWidgets import QApplication, QMenu, QWidget
 
@@ -33,6 +35,7 @@ from tagstudio.qt.utils.file_opener import FileOpenerHelper
 from tagstudio.qt.views.item_thumb_view import ItemThumbView
 from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import (
+    OUTLINE_WIDTH,
     RADIUS,
     item_thumb_faded_select_color,
     item_thumb_filename_style,
@@ -220,8 +223,8 @@ class ItemThumb(QWidget):
                 file_label.setHidden(False)
             self.setFixedHeight(
                 self._thumb_size[1]
-                + ItemThumbView.FILE_LABEL_HEIGHT
                 + ItemThumbView.FILE_LABEL_SPACING
+                + file_label.sizeHint().height()
             )
         else:
             file_label.setHidden(True)
@@ -243,11 +246,6 @@ class ItemThumb(QWidget):
     def set_image(self, image: QPixmap, file_path: Path) -> None:
         self._image = image
         self.rendered_path = file_path
-        self.update()
-
-    def clear_image(self) -> None:
-        self._image = None
-        self.rendered_path = None
         self.update()
 
     def set_item(self, entry: Entry):
@@ -305,35 +303,67 @@ class ItemThumb(QWidget):
         painter = QPainter(self)
         rect = self._image_rect()
         if self._image is not None:
-            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            painter.drawPixmap(rect, self._image)
+            self._paint_decorated_image(painter, QRectF(rect))
 
         if self._image_hovered or self._selected:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            width = 3
-            path = QPainterPath()
-            path.addRoundedRect(
-                QRectF(width / 2, width / 2, rect.width() - width, rect.height() - width),
-                RADIUS,
-                RADIUS,
+            inset = OUTLINE_WIDTH / 2
+            outline = QPainterPath()
+            outline.addRoundedRect(
+                QRectF(rect).adjusted(inset, inset, -inset, -inset),
+                RADIUS - inset,
+                RADIUS - inset,
             )
 
+            color: QColor = self._hover_color
             if self._selected:
                 painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_HardLight)
-                painter.setPen(QPen(self._select_color_faded, width))
-                painter.fillPath(path, self._select_color_faded)
-                painter.drawPath(path)
-
-                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-                color: QColor = self._hover_color if self._image_hovered else self._select_color
-                painter.setPen(QPen(color, width))
-                painter.drawPath(path)
-            else:
-                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
-                painter.setPen(QPen(self._hover_color, width))
-                painter.drawPath(path)
+                painter.setPen(QPen(self._select_color_faded, OUTLINE_WIDTH))
+                painter.setBrush(self._select_color_faded)
+                painter.drawPath(outline)
+                if not self._image_hovered:
+                    color = self._select_color
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.setPen(QPen(color, OUTLINE_WIDTH))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(outline)
 
         painter.end()
+
+    def _paint_decorated_image(self, painter: QPainter, rect: QRectF) -> None:
+        """Paint the image with rounded corners and a raised edge decoration."""
+        image = unwrap(self._image)
+        image_size = image.deviceIndependentSize()
+        brush = QBrush(image)
+        brush.setTransform(
+            QTransform.fromScale(
+                rect.width() / image_size.width(), rect.height() / image_size.height()
+            )
+        )
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(brush)
+        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
+
+        highlight = QPainterPath()
+        highlight.addRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
+        highlight.addRoundedRect(rect.adjusted(2, 2, -2, -2), RADIUS - 2, RADIUS - 2)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
+        painter.setOpacity(0.875)
+        painter.fillPath(highlight, brush)
+        painter.setOpacity(1)
+
+        shadow = QPainterPath()
+        shadow.addRoundedRect(rect, RADIUS, RADIUS)
+        shadow.addRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
+        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
+        painter.fillPath(shadow, QColor(0, 0, 0, 255 if is_dark else 115))
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
+        painter.fillPath(shadow, brush)
+        painter.restore()
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

@@ -2,26 +2,22 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from PIL import Image
+from PIL import Image, ImageQt
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPixmap
+from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-
-from tagstudio.previews.gradients import linear_gradient
 
 # TODO: Consolidate the built-in QT theme values with the values
 # here, in enums.py, and in palette.py.
-_THEME_DARK_FG: str = "#FFFFFF77"
-_THEME_LIGHT_FG: str = "#000000DD"
-_THEME_DARK_BG: str = "#000000DD"
-_THEME_LIGHT_BG: str = "#FFFFFF55"
+_THEME_DARK_FG = QColor(255, 255, 255, 120)
+_THEME_LIGHT_FG = QColor(0, 0, 0, 220)
 
 
 def theme_foreground_color() -> QColor:
     """Return a translucent foreground color for icons and hint text in the current theme."""
     if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-        return QColor(255, 255, 255, 0x77)
-    return QColor(0, 0, 0, 0x77)
+        return QColor(255, 255, 255, 120)
+    return QColor(0, 0, 0, 120)
 
 
 def svg_to_pixmap(
@@ -45,70 +41,33 @@ def svg_to_pixmap(
 
 def auto_theme_overlay(
     image: Image.Image, inverse: bool = False, use_alpha: bool = True
-) -> Image.Image:
+) -> QPixmap:
     """Overlay the current foreground theme color onto an image.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
         inverse (bool): Option to invert the overlay color relative to the current theme.
-        use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
+        use_alpha (bool): Option to use the theme's translucent foreground color.
     """
-    dark_fg: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG
-    light_fg: str = _THEME_LIGHT_FG[:-2] if not use_alpha else _THEME_LIGHT_FG
-
-    overlay_color = (
-        dark_fg if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark else light_fg
-    )
+    is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
     if inverse:
-        overlay_color = light_fg if overlay_color == dark_fg else dark_fg
-
-    im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
-    return _apply_overlay(image, im)
-
-
-def light_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
-    """Overlay the light theme foreground color onto an image.
-
-    Args:
-        image (Image): The PIL Image object to apply an overlay to.
-        use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
-    """
-    overlay_color: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG
-    im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
-    return _apply_overlay(image, im)
+        is_dark = not is_dark
+    color = QColor(_THEME_DARK_FG if is_dark else _THEME_LIGHT_FG)
+    if not use_alpha:
+        color.setAlpha(255)
+    return apply_overlay(image, color)
 
 
-def dark_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
-    """Overlay the dark theme foreground color onto an image.
+def apply_overlay(image: Image.Image, color: QColor) -> QPixmap:
+    """Apply a color overlay on top of an image using the image's alpha channel as a mask.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
-        use_alpha (bool): Option to retain the base image's alpha value when applying the overlay.
+        color (QColor): The color of the overlay.
     """
-    overlay_color: str = _THEME_LIGHT_FG[:-2] if not use_alpha else _THEME_LIGHT_FG
-    im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
-    return _apply_overlay(image, im)
-
-
-def gradient_overlay(image: Image.Image, gradient: list[str]) -> Image.Image:
-    """Overlay a color gradient onto an image.
-
-    Args:
-        image (Image): The PIL Image object to apply an overlay to.
-        gradient (list[str): A list of string hex color codes for use as
-            the colors of the gradient.
-    """
-    im: Image.Image = _apply_overlay(image, linear_gradient(image.size, gradient))
-    return im
-
-
-def _apply_overlay(image: Image.Image, overlay: Image.Image) -> Image.Image:
-    """Apply an overlay on top of an image using the image's alpha channel as a mask.
-
-    Args:
-        image (Image): The PIL Image object to apply an overlay to.
-        overlay (Image): The PIL Image object to act as the overlay contents.
-    """
-    im: Image.Image = Image.new(mode="RGBA", size=image.size, color="#00000000")
-    im.paste(overlay, (0, 0), mask=image)
-    return im
+    overlaid = ImageQt.ImageQt(image).convertToFormat(QImage.Format.Format_ARGB32_Premultiplied)
+    painter = QPainter(overlaid)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(overlaid.rect(), color)
+    painter.end()
+    return QPixmap.fromImage(overlaid)

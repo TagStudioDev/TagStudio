@@ -291,9 +291,7 @@ class LibraryInfoWindowView(QWidget):
 
         self.dupe_file_icon = QLabel()
         dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
-        dupe_file_pixmap = QPixmap.fromImage(
-            ImageQt.ImageQt(auto_theme_overlay(dupe_file_image, use_alpha=False))
-        )
+        dupe_file_pixmap = auto_theme_overlay(dupe_file_image, use_alpha=False)
         dupe_file_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         dupe_file_pixmap = dupe_file_pixmap.scaledToWidth(
             math.floor((row_height - icon_margin) * self.devicePixelRatio()),

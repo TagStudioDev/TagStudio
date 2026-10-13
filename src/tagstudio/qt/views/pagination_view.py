@@ -4,9 +4,8 @@
 
 from typing import override
 
-from PIL import Image, ImageQt
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QIntValidator, QPixmap, Qt
+from PySide6.QtGui import QIntValidator, Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
@@ -38,8 +37,7 @@ class PaginationView(QHBoxLayout):
 
         # [<] ----------------------------------
         self.prev_button = QPushButton()
-        prev_icon: Image.Image = auto_theme_overlay(_rm.bxs_left_arrow, use_alpha=False)
-        self.prev_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(prev_icon)))
+        self.prev_button.setIcon(auto_theme_overlay(_rm.bxs_left_arrow, use_alpha=False))
         self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.BUTTON_SIZE)
         self.prev_button.setMaximumSize(self.BUTTON_SIZE)
@@ -86,8 +84,7 @@ class PaginationView(QHBoxLayout):
 
         # ---------------------------------- [>]
         self.next_button = QPushButton()
-        next_icon: Image.Image = auto_theme_overlay(_rm.bxs_right_arrow, use_alpha=False)
-        self.next_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(next_icon)))
+        self.next_button.setIcon(auto_theme_overlay(_rm.bxs_right_arrow, use_alpha=False))
         self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.BUTTON_SIZE)
         self.next_button.setMaximumSize(self.BUTTON_SIZE)

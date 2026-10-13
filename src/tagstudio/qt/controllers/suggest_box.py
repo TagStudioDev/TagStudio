@@ -5,7 +5,7 @@ from functools import partial
 from typing import Any, override
 
 import structlog
-from PIL import Image, ImageQt
+from PIL import Image
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
@@ -133,8 +133,7 @@ class SuggestBox[T](QWidget):
 
     def set_hint_icon(self, icon: Image.Image | None) -> None:
         if icon:
-            pixmap = QPixmap.fromImage(ImageQt.ImageQt(auto_theme_overlay(icon)))
-            self.layout().hint_icon_action.setIcon(pixmap)
+            self.layout().hint_icon_action.setIcon(auto_theme_overlay(icon))
         else:
             self.layout().hint_icon_action.setIcon(QPixmap())
 

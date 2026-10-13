@@ -52,7 +52,6 @@ class STLRenderError(ValueError):
 
 class STLPreview(BasePreview):
     media_type_name = "model.stl"
-    _fallback_icon = "model"
 
     @override
     @classmethod
