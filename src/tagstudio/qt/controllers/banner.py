@@ -9,7 +9,6 @@ from typing import Literal, override
 
 from PySide6.QtCore import (
     QEasingCurve,
-    QPropertyAnimation,
     QRectF,
     Qt,
     QTimer,
@@ -115,10 +114,10 @@ class Banner(QWidget):
         self._connect_callbacks()
         self._set_mode("notice")
 
-        self._height_anim = QPropertyAnimation(self, b"maximumHeight", self)
+        self._height_anim = QVariantAnimation(self)
         self._height_anim.setDuration(self.ANIMATION_MS)
         self._height_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._height_anim.valueChanged.connect(self.setMinimumHeight)
+        self._height_anim.valueChanged.connect(lambda height: self.setFixedHeight(round(height)))
         self._height_anim.finished.connect(self._on_height_anim_finished)
 
         self._shown_at: float | None = None
@@ -191,7 +190,7 @@ class Banner(QWidget):
     def _is_fully_open(self) -> bool:
         return (
             self.maximumHeight() == self.HEIGHT
-            and self._height_anim.state() != QPropertyAnimation.State.Running
+            and self._height_anim.state() != QVariantAnimation.State.Running
         )
 
     def _connect_callbacks(self) -> None:
@@ -211,14 +210,38 @@ class Banner(QWidget):
             self._shown_at = time.monotonic()
 
     def _start_height_animation(self, target_height: int) -> None:
-        if self.maximumHeight() == target_height and self._height_anim.state() != (
-            QPropertyAnimation.State.Running
-        ):
+        is_running = self._height_anim.state() == QVariantAnimation.State.Running
+        if is_running and self._height_anim.endValue() == target_height:
             return
+        if self.maximumHeight() == target_height and not is_running:
+            return
+        is_opening = self.maximumHeight() == 0 and target_height > 0
         self._height_anim.stop()
-        self._height_anim.setStartValue(self.maximumHeight())
-        self._height_anim.setEndValue(target_height)
+        self._height_anim.setStartValue(float(self.maximumHeight()))
+        self._height_anim.setEndValue(float(target_height))
         self._height_anim.start()
+        if is_opening and (closing := self._closing_sibling()) is not None:
+            # Open in step with the closing banner so their heights add up to one banner.
+            self._height_anim.setCurrentTime(closing._height_anim.currentTime())
+
+    def _closing_sibling(self) -> Banner | None:
+        """Another banner in the same stack that's animating out, if any.
+
+        Used to sync up another banner's opening animation so they keep a constant height together.
+        """
+        parent = self.parentWidget()
+        if parent is None:
+            return None
+        for sibling in parent.findChildren(
+            Banner, options=Qt.FindChildOption.FindDirectChildrenOnly
+        ):
+            if (
+                sibling is not self
+                and sibling._height_anim.state() == QVariantAnimation.State.Running
+                and sibling._height_anim.endValue() == 0
+            ):
+                return sibling
+        return None
 
     def _animate_to(self, target_height: int, force: bool = False) -> None:
         self._hide_timer.stop()

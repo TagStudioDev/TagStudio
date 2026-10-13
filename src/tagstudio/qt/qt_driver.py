@@ -798,8 +798,7 @@ class QtDriver(DriverMixin, QObject):
         self._new_sync_session()
         self._wait_for_sync_stop()
         self.file_scan_lock = False
-        if (sync_banner := self._sync_banner) is not None:
-            sync_banner.hide_banner(force=True)
+        self.main_window.banners.clear()
 
         if not is_shutdown:
             self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
