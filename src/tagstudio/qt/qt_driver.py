@@ -1299,16 +1299,14 @@ class QtDriver(DriverMixin, QObject):
         elif event.button() == Qt.MouseButton.BackButton:
             self.navigation_callback(-1)
 
-    def page_move(self, value: int, absolute=False) -> None:
-        logger.info("page_move", value=value, absolute=absolute)
-
+    def page_move(self, value: int, absolute: bool = False) -> None:
         current = self.browsing_history.current
         index = clamp(value if absolute else current.page_index + value, 0, self.pages_count - 1)
         if index != current.page_index:
             self.update_browsing_state(current.with_page_index(index))
 
     def navigation_callback(self, delta: int) -> None:
-        """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
+        """Callback for the Forwards and Backwards Navigation Buttons next to the search bar."""
         logger.info(
             "navigation_callback",
             delta=delta,
