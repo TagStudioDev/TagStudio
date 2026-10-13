@@ -5,6 +5,7 @@
 
 
 from PySide6.QtCore import QRect
+from pytestqt.qtbot import QtBot
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.library import Library
@@ -47,10 +48,11 @@ def test_unload_badges_rereads_from_library(library: Library):
     assert entry_state.has_badge(1, TAG_ARCHIVED)
 
 
-def test_badge_click_updates_whole_selection(qt_driver: QtDriver):
+def test_badge_click_updates_whole_selection(qt_driver: QtDriver, qtbot: QtBot):
     grid = qt_driver.main_window.thumb_grid
     grid.set_entries([1, 2])
     grid.layout().setGeometry(QRect(0, 0, 1000, 1000))
+    qtbot.waitUntil(lambda: not grid._held)
     thumbs = [unwrap(grid.layout().widget_at(index)) for index in (0, 1)]
 
     qt_driver.toggle_item_selection(1, append=False, bridge=False)

@@ -2,11 +2,23 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QEvent, QMimeData, QPoint, QRect, QRectF, QSignalBlocker, Qt, QUrl
+from PySide6.QtCore import (
+    QAbstractAnimation,
+    QEvent,
+    QMimeData,
+    QPoint,
+    QRect,
+    QRectF,
+    QSignalBlocker,
+    Qt,
+    QUrl,
+    QVariantAnimation,
+)
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -49,9 +61,27 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
+_DARK_SHADOW = QColor(0, 0, 0, 255)
+_LIGHT_SHADOW = QColor(0, 0, 0, 115)
+
+
+@lru_cache(maxsize=16)
+def _rounded_path(width: float, height: float, inset: float, edge_width: float = 0) -> QPainterPath:
+    """A thumbnail's rounded rect shrunk by `inset`, or only its `edge_width` edge."""
+    rect = QRectF(0, 0, width, height).adjusted(inset, inset, -inset, -inset)
+    path = QPainterPath()
+    path.addRoundedRect(rect, RADIUS - inset, RADIUS - inset)
+    if edge_width:
+        inner = rect.adjusted(edge_width, edge_width, -edge_width, -edge_width)
+        inner_radius = RADIUS - inset - edge_width
+        path.addRoundedRect(inner, inner_radius, inner_radius)
+    return path
+
 
 class ItemThumb(QWidget):
     """The thumbnail widget for a library item (Entry, Entry Group, etc.)."""
+
+    _FADE_IN_MS = 75  # Fade in time for thumbnails from the loading image
 
     def __init__(
         self,
@@ -70,8 +100,13 @@ class ItemThumb(QWidget):
         self._select_color = Palette.accent_alt()
         self._select_color_faded = item_thumb_faded_select_color()
 
+        self._fade = QVariantAnimation(self)
+        self._fade.setDuration(self._FADE_IN_MS)
+        self._fade.setStartValue(0.0)
+        self._fade.setEndValue(1.0)
+        self._fade_from_brush: QBrush | None = None
         self._image_hovered: bool = False
-        self._image: QPixmap | None = None
+        self._image_brush: QBrush | None = None
         self._item_path: Path | None = None
         self._mode: ItemType | None = mode
         self._press_pos: QPoint | None = None
@@ -99,6 +134,7 @@ class ItemThumb(QWidget):
         view.open_file_action.triggered.connect(self._opener.open_file)
         view.open_explorer_action.triggered.connect(self._opener.open_explorer)
         view.delete_action.triggered.connect(self._on_delete)
+        self._fade.valueChanged.connect(lambda _: self.update())
         for tag_id, badge in view.badges.items():
             badge.stateChanged.connect(lambda _, t=tag_id: self._on_badge_check(t))
 
@@ -206,7 +242,17 @@ class ItemThumb(QWidget):
 
     def set_filename_text(self, filename: Path):
         self.layout().file_label.setText(str(filename.name))
+        self._apply_filename_style()
         self._apply_label_sizes()
+
+    def _apply_filename_style(self) -> None:
+        """Style the filename label as a blank placeholder while it's loading."""
+        file_label = self.layout().file_label
+        is_placeholder = not file_label.text() and self.rendered_path == Path()
+        style = item_thumb_filename_style(is_selected=self._selected, is_placeholder=is_placeholder)
+        if style != file_label.styleSheet():
+            file_label.setStyleSheet(style)
+        file_label.setMinimumWidth(self._thumb_size[0] if is_placeholder else 0)
 
     def _apply_label_sizes(self) -> None:
         self.layout().activate()
@@ -234,18 +280,45 @@ class ItemThumb(QWidget):
     def set_selected(self, value: bool) -> None:
         if value != self._selected:
             self._selected = value
-            self.layout().file_label.setStyleSheet(item_thumb_filename_style(is_selected=value))
+            self._apply_filename_style()
             self.update()
 
     def set_thumb_size(self, size: int) -> None:
         self._thumb_size = (size, size)
         self.setFixedSize(size, size)
+        if self._image_brush is not None:
+            self._image_brush = self._scaled_image_brush(self._image_brush.texture())
+        self._apply_filename_style()
         self.set_filename_visibility(self._show_filename_label)
         self.update()
 
     def set_image(self, image: QPixmap, file_path: Path) -> None:
-        self._image = image
+        if self.rendered_path == Path() and file_path != Path():
+            self._fade_from_brush = self._image_brush
+            self._fade.start()
+        else:
+            self._fade.stop()
+        self._image_brush = self._scaled_image_brush(image)
         self.rendered_path = file_path
+        self._apply_filename_style()
+        self.update()
+
+    def _scaled_image_brush(self, image: QPixmap) -> QBrush:
+        """A brush that paints an image scaled to the thumbnail size."""
+        image_size = image.deviceIndependentSize()
+        brush = QBrush(image)
+        brush.setTransform(
+            QTransform.fromScale(
+                self._thumb_size[0] / image_size.width(), self._thumb_size[1] / image_size.height()
+            )
+        )
+        return brush
+
+    def clear_image(self) -> None:
+        self._fade.stop()
+        self._image_brush = None
+        self.rendered_path = None
+        self._apply_filename_style()
         self.update()
 
     def set_item(self, entry: Entry):
@@ -301,19 +374,19 @@ class ItemThumb(QWidget):
             return
 
         painter = QPainter(self)
-        rect = self._image_rect()
-        if self._image is not None:
-            self._paint_decorated_image(painter, QRectF(rect))
+        if self._image_brush is not None:
+            if (
+                self._fade_from_brush is not None
+                and self._fade.state() == QAbstractAnimation.State.Running
+            ):
+                self._paint_decorated_image(painter, self._fade_from_brush)
+                painter.setOpacity(float(self._fade.currentValue()))
+            self._paint_decorated_image(painter, self._image_brush)
+            painter.setOpacity(1)
 
         if self._image_hovered or self._selected:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            inset = OUTLINE_WIDTH / 2
-            outline = QPainterPath()
-            outline.addRoundedRect(
-                QRectF(rect).adjusted(inset, inset, -inset, -inset),
-                RADIUS - inset,
-                RADIUS - inset,
-            )
+            outline = _rounded_path(*self._thumb_size, OUTLINE_WIDTH / 2)
 
             color: QColor = self._hover_color
             if self._selected:
@@ -330,37 +403,26 @@ class ItemThumb(QWidget):
 
         painter.end()
 
-    def _paint_decorated_image(self, painter: QPainter, rect: QRectF) -> None:
-        """Paint the image with rounded corners and a raised edge decoration."""
-        image = unwrap(self._image)
-        image_size = image.deviceIndependentSize()
-        brush = QBrush(image)
-        brush.setTransform(
-            QTransform.fromScale(
-                rect.width() / image_size.width(), rect.height() / image_size.height()
-            )
-        )
+    def _paint_decorated_image(self, painter: QPainter, brush: QBrush) -> None:
+        """Paint an image with rounded corners and edge decorations."""
+        opacity = painter.opacity()
+        width, height = self._thumb_size
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(brush)
-        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
+        painter.drawPath(_rounded_path(width, height, 1))
 
-        highlight = QPainterPath()
-        highlight.addRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
-        highlight.addRoundedRect(rect.adjusted(2, 2, -2, -2), RADIUS - 2, RADIUS - 2)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
-        painter.setOpacity(0.875)
-        painter.fillPath(highlight, brush)
-        painter.setOpacity(1)
+        painter.setOpacity(opacity * 0.875)
+        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), brush)
+        painter.setOpacity(opacity)
 
-        shadow = QPainterPath()
-        shadow.addRoundedRect(rect, RADIUS, RADIUS)
-        shadow.addRoundedRect(rect.adjusted(1, 1, -1, -1), RADIUS - 1, RADIUS - 1)
+        shadow = _rounded_path(width, height, 0, edge_width=1)
         is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
-        painter.fillPath(shadow, QColor(0, 0, 0, 255 if is_dark else 115))
+        painter.fillPath(shadow, _DARK_SHADOW if is_dark else _LIGHT_SHADOW)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
         painter.fillPath(shadow, brush)
         painter.restore()

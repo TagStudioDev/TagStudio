@@ -196,6 +196,7 @@ class QtDriver(DriverMixin, QObject):
         # Thumbnail Grid
         self._selected: OrderedDict[int, None] = OrderedDict()
         self.frame_content: list[int] = []  # List of Entry IDs for the current query
+        self._results_state: BrowsingState | None = None
         self.scrollbar_pos = 0
         self.spacing = None
         self.thumb_job_queue: Queue = Queue()
@@ -673,6 +674,7 @@ class QtDriver(DriverMixin, QObject):
             sync_banner = self._sync_banner
             if sync_banner is not None and sync_banner.is_awaiting_refresh:
                 sync_banner.hide_banner()
+            self._results_state = None  # Submitting a search always searches again
             try:
                 self.update_browsing_state(
                     BrowsingState.from_search_query(self.main_window.search_field.text())
@@ -809,6 +811,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
         self.frame_content.clear()
+        self._results_state = None
         self._selected.clear()
         if self.color_manager_panel:
             self.color_manager_panel.reset()
@@ -1477,27 +1480,37 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.setText(current.query or "")
 
-        # search the library
-        start_time = time.time()
-        Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(current, page_size=0)
-        logger.info("items to render", count=len(results))
-        end_time = time.time()
-
-        # inform user about completed search
-        time_span = f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
-        count = f"<b>{results.total_count:,}</b>"
-        self.main_window.results_label.setText(
-            Translations.format(
-                # Show "X Results" on query, "X Items" on none
-                "status.results_found" if current.query else "status.items",
-                count=count,
-                time_span=time_span,
-            )
+        shown = self._results_state
+        only_page_changed = (
+            current is not shown  # Refreshing the shown state searches again
+            and shown is not None
+            and current.with_page_index(0) == shown.with_page_index(0)
         )
+        if not only_page_changed:
+            # search the library
+            start_time = time.time()
+            Ignore.get_patterns(self.lib.library_dir, include_global=True)
+            results = self.lib.search_library(current, page_size=0)
+            logger.info("items to render", count=len(results))
+            end_time = time.time()
+
+            # inform user about completed search
+            time_span = (
+                f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
+            )
+            count = f"<b>{results.total_count:,}</b>"
+            self.main_window.results_label.setText(
+                Translations.format(
+                    # Show "X Results" on query, "X Items" on none
+                    "status.results_found" if current.query else "status.items",
+                    count=count,
+                    time_span=time_span,
+                )
+            )
+            self.frame_content = results.ids
+        self._results_state = current
 
         # update page content
-        self.frame_content = results.ids
         same_page = current.query == previous.query and current.page_index == previous.page_index
         if state is None:
             entry_id = current.first_visible_entry_id
@@ -1513,7 +1526,7 @@ class QtDriver(DriverMixin, QObject):
         # update pagination
         page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
         if page_size > 0:
-            self.pages_count = math.ceil(results.total_count / page_size)
+            self.pages_count = math.ceil(len(self.frame_content) / page_size)
         else:
             self.pages_count = 1
         self.main_window.pagination.update_buttons(
