@@ -105,17 +105,10 @@ class LandingWidget(QWidget):
             style (str): = The style of the logo. Either "mono" or "color".
         """
         if style == "mono":
-            logo_im = auto_theme_overlay(LandingWidget.mono_logo)
+            self.landing_pixmap = auto_theme_overlay(LandingWidget.mono_logo)
         elif style == "color":
-            logo_im = LandingWidget.color_logo
+            self.landing_pixmap = QPixmap.fromImage(ImageQt.ImageQt(LandingWidget.color_logo))
 
-        logo_final: Image.Image = Image.new(
-            mode="RGBA", size=LandingWidget.mono_logo.size, color="#00000000"
-        )
-
-        logo_final.paste(logo_im, (0, 0), mask=LandingWidget.mono_logo)
-
-        self.landing_pixmap = QPixmap.fromImage(ImageQt.ImageQt(logo_im))
         self.landing_pixmap.setDevicePixelRatio(self._pixel_ratio)
         self.landing_pixmap = self.landing_pixmap.scaledToWidth(
             self._logo_width, Qt.TransformationMode.SmoothTransformation

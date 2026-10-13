@@ -9,10 +9,9 @@ from pathlib import Path
 from typing import override
 
 import structlog
-from PIL import Image, ImageQt
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QPixmap
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -554,18 +553,14 @@ class MainWindow(QMainWindow):
         self.search_bar_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
 
         self.back_button = QPushButton(self.central_widget)
-        back_icon: Image.Image = self.rm.bxs_left_arrow
-        back_icon = auto_theme_overlay(back_icon, use_alpha=False)
-        self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
+        self.back_button.setIcon(auto_theme_overlay(self.rm.bxs_left_arrow, use_alpha=False))
         self.back_button.setObjectName("back_button")
         self.back_button.setMinimumSize(QSize(32, 32))
         self.back_button.setMaximumSize(QSize(32, 16777215))
         self.search_bar_layout.addWidget(self.back_button)
 
         self.forward_button = QPushButton(self.central_widget)
-        forward_icon: Image.Image = self.rm.bxs_right_arrow
-        forward_icon = auto_theme_overlay(forward_icon, use_alpha=False)
-        self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
+        self.forward_button.setIcon(auto_theme_overlay(self.rm.bxs_right_arrow, use_alpha=False))
         self.forward_button.setIconSize(QSize(16, 16))
         self.forward_button.setObjectName("forward_button")
         self.forward_button.setMinimumSize(QSize(32, 32))

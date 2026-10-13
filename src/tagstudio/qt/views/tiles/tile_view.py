@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from PIL import ImageQt
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
@@ -21,9 +19,6 @@ class TileView(QVBoxLayout):
     """The layout used for a Tile widget."""
 
     _rm = ResourceManager()
-    copy_icon = auto_theme_overlay(_rm.copy, inverse=True)
-    edit_icon = auto_theme_overlay(_rm.edit, inverse=True)
-    trash_icon = auto_theme_overlay(_rm.trash, inverse=True)
 
     def __init__(self) -> None:
         super().__init__()
@@ -53,7 +48,7 @@ class TileView(QVBoxLayout):
         self.copy_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.copy_icon)))
+        self.copy_button.setIcon(auto_theme_overlay(self._rm.copy, inverse=True))
         self.copy_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
@@ -63,7 +58,7 @@ class TileView(QVBoxLayout):
         self.edit_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setFlat(True)
-        self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.edit_icon)))
+        self.edit_button.setIcon(auto_theme_overlay(self._rm.edit, inverse=True))
         self.edit_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.edit_button)
@@ -73,7 +68,7 @@ class TileView(QVBoxLayout):
         self.remove_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon)))
+        self.remove_button.setIcon(auto_theme_overlay(self._rm.trash, inverse=True))
         self.remove_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)

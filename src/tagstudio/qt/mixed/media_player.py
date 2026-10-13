@@ -8,7 +8,6 @@ from time import gmtime
 from typing import override
 
 import structlog
-from PIL import ImageQt
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
 from PySide6.QtGui import (
     QAction,
@@ -17,7 +16,6 @@ from PySide6.QtGui import (
     QLinearGradient,
     QMouseEvent,
     QPen,
-    QPixmap,
     QResizeEvent,
 )
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
@@ -36,7 +34,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_slider import ClickableSlider
-from tagstudio.qt.views.styles.color_overlay import light_overlay
+from tagstudio.qt.views.styles.color_overlay import apply_overlay
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -56,18 +54,11 @@ class MediaPlayer(QGraphicsView):
     def __init__(self, driver: QtDriver) -> None:
         super().__init__()
         self.driver = driver
-        self.play_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(light_overlay(self.driver.rm.bxs_right_arrow, use_alpha=False))
-        )
-        self.pause_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(light_overlay(self.driver.rm.pause_icon, use_alpha=False))
-        )
-        self.mute_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(light_overlay(self.driver.rm.mute_icon, use_alpha=False))
-        )
-        self.volume_icon = QPixmap.fromImage(
-            ImageQt.ImageQt(light_overlay(self.driver.rm.volume_icon, use_alpha=False))
-        )
+        white = QColor(Qt.GlobalColor.white)
+        self.play_icon = apply_overlay(self.driver.rm.bxs_right_arrow, white)
+        self.pause_icon = apply_overlay(self.driver.rm.pause_icon, white)
+        self.mute_icon = apply_overlay(self.driver.rm.mute_icon, white)
+        self.volume_icon = apply_overlay(self.driver.rm.volume_icon, white)
 
         slider_style = """
             QSlider {
