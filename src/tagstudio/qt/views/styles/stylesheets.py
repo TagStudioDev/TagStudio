@@ -25,6 +25,9 @@ from tagstudio.qt.views.styles.palette import (
 
 RADIUS = 6  # Standard corner radius
 INNER_RADIUS = RADIUS // 2  # Inner/small corder radius
+
+OUTLINE_WIDTH = 2  # Hover/selection outlines
+
 PAD = 6  # Standard padding value
 HALF_PAD = PAD // 2
 WIN_PAD = 12  # Padding used for window edge margins
@@ -502,7 +505,7 @@ def autofill_scroll_top_focus_style(object_name: str = "") -> str:
         border-top-left-radius: {RADIUS}px;
         border-top-right-radius: {RADIUS}px;
         border: solid;
-        border-width: 2px 2px 0px 2px;
+        border-width: {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px 0px {OUTLINE_WIDTH}px;
         border-color: rgba{Palette.accent().toTuple()};
         }}
     """
@@ -530,7 +533,7 @@ def autofill_line_edit_style(is_invalid: bool = False) -> str:
     QLineEdit::focus{{
         padding: 4px 4px;
         border: solid;
-        border-width: 2px;
+        border-width: {OUTLINE_WIDTH}px;
         border-color: {focus_border_color};
         }}
     """
@@ -551,12 +554,12 @@ def autofill_line_edit_top_style() -> str:
         border-top-right-radius: 0px;
         border-bottom-left-radius: {RADIUS}px;
         border-bottom-right-radius: {RADIUS}px;
-        padding: 0px 0px 2px {RADIUS}px;
+        padding: 0px 0px {OUTLINE_WIDTH}px {RADIUS}px;
         }}
     QLineEdit::focus{{
         padding: 4px 4px;
         border: solid;
-        border-width: 0px 2px 2px 2px;
+        border-width: 0px {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px;
         border-color: rgba{Palette.accent().toTuple()};
         }}
     """

@@ -15,7 +15,7 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QBuffer, QByteArray, QRectF, QSize, Qt, QThreadPool, Signal
-from PySide6.QtGui import QBrush, QMovie, QPainter, QPixmap, QResizeEvent
+from PySide6.QtGui import QBrush, QColor, QMovie, QPainter, QPixmap, QResizeEvent
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import QWidget
 from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
@@ -32,7 +32,7 @@ from tagstudio.previews.media_probe import (
 )
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
-from tagstudio.qt.qt_file_renderer import QtFileRenderer
+from tagstudio.qt.qt_file_renderer import QtFileRenderer, paint_fallback_icon_border
 from tagstudio.qt.utils.file_opener import open_file
 from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
 from tagstudio.qt.views.styles.stylesheets import RADIUS
@@ -82,6 +82,7 @@ class PreviewThumb(QWidget):
         self._rendered_res: tuple[int, int] = (0, 0)
         self._should_render_on_resize: bool = False
         self._source_pixmap: QPixmap = QPixmap()
+        self._border_color: QColor | None = None
 
         self.setMinimumSize(*self._preview_size)
         self.setLayout(PreviewThumbView(driver))
@@ -175,12 +176,13 @@ class PreviewThumb(QWidget):
             self._display_image(filepath, is_new_file=False)
 
     def _file_renderer_updated_callback(
-        self, timestamp: float, img: QPixmap, _size: QSize, path: Path
+        self, timestamp: float, img: QPixmap, path: Path, border_color: QColor | None
     ) -> None:
         if path != self._current_file or timestamp < self._render_timestamp:
             return
 
         self._source_pixmap = img
+        self._border_color = border_color
         self._image_ratio = img.width() / img.height()
         self._update_image_size((self.size().width(), self.size().height()), refresh_icon=True)
 
@@ -204,6 +206,8 @@ class PreviewThumb(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(scaled))
         painter.drawRoundedRect(QRectF(pixmap.rect()), RADIUS * ratio, RADIUS * ratio)
+        if self._border_color is not None:
+            paint_fallback_icon_border(painter, QRectF(pixmap.rect()), self._border_color, ratio)
         painter.end()
         pixmap.setDevicePixelRatio(ratio)
         button.setIcon(pixmap)
@@ -318,7 +322,7 @@ class PreviewThumb(QWidget):
             filepath,
             _DEFAULT_PREVIEW_SIZE,
             self.devicePixelRatio(),
-            is_loading=True,
+            is_placeholder=True,
             date_modified=self._date_modified,
         )
 

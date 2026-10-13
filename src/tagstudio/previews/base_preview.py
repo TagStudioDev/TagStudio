@@ -17,13 +17,11 @@ class BasePreview:
     """A base preview renderer class.
 
     Attributes:
-        _fallback_icon (str): The name of the fallback icon resource to use, if needed.
         has_small_variant (bool): Whether `is_small` renders a different image than the preview.
         media_type_name (str):  Used for identifying the MediaType.
         priority (int): Render priority over other Preview classes.
     """
 
-    _fallback_icon: str = ""
     has_small_variant: bool = False
     media_type_name: str
     priority: int = 50
@@ -45,8 +43,3 @@ class BasePreview:
         dpi_scale: float,
     ) -> Image | None:
         raise NotImplementedError
-
-    @classmethod
-    def icon_name(cls) -> str:
-        """Get the name of the fallback icon resource associated with this renderer."""
-        return cls._fallback_icon or cls.media_type_name

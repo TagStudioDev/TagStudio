@@ -36,8 +36,7 @@ _ICON_SIZE = 24
 
 
 class ItemThumbView(QVBoxLayout):
-    FILE_LABEL_HEIGHT = 12
-    FILE_LABEL_SPACING = 4
+    FILE_LABEL_SPACING = 3
 
     def __init__(self, badge_tag_ids: Iterable[int]) -> None:
         super().__init__()

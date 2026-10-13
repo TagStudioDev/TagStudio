@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QSize, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QThreadPool, QTimer, Signal
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
@@ -183,10 +183,7 @@ class ThumbGrid(QWidget):
             self._show_loading_image(thumb)
 
     def _show_loading_image(self, thumb: ItemThumb) -> None:
-        if self._loading_image is None:
-            thumb.clear_image()
-        else:
-            thumb.set_image(self._loading_image, Path())
+        thumb.set_image(unwrap(self._loading_image), Path())
 
     def _assign_badges(self, thumb: ItemThumb, entry_id: int) -> None:
         for tag_id in self._driver.entry_state.badge_tag_ids:
@@ -240,27 +237,14 @@ class ThumbGrid(QWidget):
     def _reset_renders(self) -> None:
         self._render_cutoff = time.time()
         self._renders.clear()
-        self._loading_image = None
+        size = self._driver.main_window.thumb_size
+        self._loading_image = self._renderer.loading_image((size, size), self.devicePixelRatio())
         self._driver.thumb_job_queue.queue.clear()
         self._pending_durations.clear()
-        self._request_loading_image()
-
-    def _request_loading_image(self) -> None:
-        size = self._driver.main_window.thumb_size
-        self._driver.thumb_job_queue.put(
-            (
-                self._renderer.render,
-                (
-                    self._driver.cache_manager,
-                    self._render_cutoff,
-                    Path(),
-                    (size, size),
-                    self._driver.main_window.devicePixelRatio(),
-                    True,
-                    True,
-                ),
-            )
-        )
+        for _, thumb in self.layout().assigned_items():
+            entry = self._entries.get(thumb.item_id)
+            if entry is None or thumb.rendered_path != self._path(entry):
+                thumb.set_image(self._loading_image, Path())
 
     def _request_renders(self) -> None:
         """Queue renders for thumbnails, starting at the first visible one."""
@@ -307,19 +291,11 @@ class ThumbGrid(QWidget):
         queue.clear()
         self._pending_durations.clear()
         self._renders = {path: image for path, image in self._renders.items() if image is not None}
-        if self._loading_image is None:
-            self._request_loading_image()
 
-    def _on_rendered(self, timestamp: float, image: QPixmap, _size: QSize, file_path: Path) -> None:
+    def _on_rendered(
+        self, timestamp: float, image: QPixmap, file_path: Path, _border_color: QColor | None
+    ) -> None:
         if timestamp < self._render_cutoff:
-            return
-
-        if file_path == Path():
-            self._loading_image = image
-            for _, thumb in self.layout().assigned_items():
-                entry = self._entries.get(thumb.item_id)
-                if entry is None or thumb.rendered_path != self._path(entry):
-                    thumb.set_image(image, Path())
             return
 
         self._renders[file_path] = image

@@ -7,8 +7,6 @@ from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 
-from tagstudio.previews.gradients import linear_gradient
-
 # TODO: Consolidate the built-in QT theme values with the values
 # here, in enums.py, and in palette.py.
 _THEME_DARK_FG: str = "#FFFFFF77"
@@ -88,18 +86,6 @@ def dark_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
     overlay_color: str = _THEME_LIGHT_FG[:-2] if not use_alpha else _THEME_LIGHT_FG
     im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
     return _apply_overlay(image, im)
-
-
-def gradient_overlay(image: Image.Image, gradient: list[str]) -> Image.Image:
-    """Overlay a color gradient onto an image.
-
-    Args:
-        image (Image): The PIL Image object to apply an overlay to.
-        gradient (list[str): A list of string hex color codes for use as
-            the colors of the gradient.
-    """
-    im: Image.Image = _apply_overlay(image, linear_gradient(image.size, gradient))
-    return im
 
 
 def _apply_overlay(image: Image.Image, overlay: Image.Image) -> Image.Image:
