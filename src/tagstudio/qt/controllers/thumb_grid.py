@@ -183,7 +183,7 @@ class ThumbGrid(QWidget):
         if not self._entry_ids:
             return True
 
-        cursor = self._driver.selection.last_selected
+        cursor = self._driver.selection.cursor
         index = None if cursor is None else self._entry_indices.get(cursor)
         if index is None:
             target = self.layout().first_visible_index() or 0

@@ -143,10 +143,11 @@ class ItemThumb(QWidget):
             self._driver.delete_files_callback(self._item_path, self.item_id)
 
     def _toggle_item_selection(self) -> None:
+        modifiers = QGuiApplication.keyboardModifiers()
         self._driver.selection.toggle_item_selection(
             self.item_id,
-            append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
-            bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+            append=bool(modifiers & Qt.KeyboardModifier.ControlModifier),
+            bridge=bool(modifiers & Qt.KeyboardModifier.ShiftModifier),
         )
 
     def _image_rect(self) -> QRect:
@@ -444,7 +445,7 @@ class ItemThumb(QWidget):
             return super().mousePressEvent(event)
 
         self._press_pos = pos
-        ctrl = QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+        ctrl = bool(QGuiApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier)
         self._select_on_release = False
         if ctrl or not self._selected:
             self._toggle_item_selection()
@@ -478,6 +479,8 @@ class ItemThumb(QWidget):
         if self._item_path is None or not self._image_rect().contains(event.pos()):
             return super().contextMenuEvent(event)
 
+        if not self._selected:
+            self._driver.selection.toggle_item_selection(self.item_id, append=False, bridge=False)
         view = self.layout()
         QMenu.exec(
             [view.open_file_action, view.open_explorer_action, view.delete_action],

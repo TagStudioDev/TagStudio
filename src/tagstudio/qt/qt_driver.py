@@ -1459,7 +1459,7 @@ class QtDriver(DriverMixin, QObject):
             entry_id = current.first_visible_entry_id
         elif same_page and current is not previous:
             # Keep the selection in view when the same results are only resorted or filtered
-            entry_id = self.selection.last_selected
+            entry_id = self.selection.cursor
         else:
             entry_id = None
         if entry_id is not None:
