@@ -771,8 +771,10 @@ class QtDriver(DriverMixin, QObject):
 
     def shutdown(self):
         """Save Library on Application Exit."""
+        logger.info("[QtDriver] Shutting down application...")
         self.close_library(is_shutdown=True)
-        logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
+
+        logger.info("[QtDriver] Ending thumbnail threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
 
@@ -781,16 +783,16 @@ class QtDriver(DriverMixin, QObject):
             thread.quit()
             thread.wait(deadline)
         if any(thread.isRunning() for thread in self.thumb_threads):
-            logger.warning("[SHUTDOWN] Thumbnail threads are still running, forcing exit")
+            logger.warning("[QtDriver]Forcing exit of remaining thumbnail threads...")
             os._exit(0)
 
         QApplication.quit()
 
     def close_library(self, is_shutdown: bool = False):
         if not self.lib.library_dir:
-            logger.info("No Library to Close")
+            logger.info("[QtDriver] No library to close")
             return
-        logger.info("Closing Library...")
+        logger.info("[QtDriver] Closing library...")
 
         # Invalidate any sync still active for the old library,
         # and wait for the sync to stop before releasing the lock.
@@ -805,7 +807,6 @@ class QtDriver(DriverMixin, QObject):
             self.cached_values.sync()
 
         # Reset library state
-        self.main_window.inspector.set_selection(self.selected)
         self.main_window.search_field.setText("")
         self.main_window.results_label.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
@@ -863,7 +864,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
 
     def backup_library(self):
-        logger.info("Backing Up Library...")
+        logger.info("[QtDriver] Backing up library...")
         Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
 
     def add_tag_action_callback(self):
