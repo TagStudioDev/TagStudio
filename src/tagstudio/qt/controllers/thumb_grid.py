@@ -52,10 +52,6 @@ class ThumbGrid(QWidget):
         self._show_thumbs_timer.setInterval(self.SHOW_THUMBS_DELAY_MS)
         self._show_thumbs_timer.setSingleShot(True)
 
-        self._existing_selection: list[int] = []
-        self._selection_anchor: int | None = None
-        self._selection_cursor: int | None = None  # Where the arrow keys last moved to
-
         self._changed_while_fetching: set[int] = set()
         self._durations: dict[Path, float | None] = {}
         self._entries: dict[int, Entry] = {}
@@ -88,9 +84,9 @@ class ThumbGrid(QWidget):
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() == Qt.KeyboardModifier.NoModifier
             and isinstance(self.childAt(event.position().toPoint()), ItemThumb | None)
-            and self._driver.selected
+            and self._driver.selection.selected
         ):
-            self._driver.clear_select_action_callback()
+            self._driver.selection.clear()
         super().mousePressEvent(event)
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
@@ -108,6 +104,7 @@ class ThumbGrid(QWidget):
         self._entries_fetched.connect(self._on_entries_fetched)
         self._duration_loaded.connect(self._on_duration_loaded)
         self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+        self._driver.selection.changed.connect(self._update_selected)
 
     def set_entries(self, entry_ids: list[int]) -> None:
         self._generation += 1
@@ -186,35 +183,13 @@ class ThumbGrid(QWidget):
         if not self._entry_ids:
             return True
 
-        cursor = self._driver.last_selected
-        if cursor != self._selection_cursor:  # The selection was changed somewhere else
-            self._selection_anchor = cursor
-            self._existing_selection = self._driver.selected
+        cursor = self._driver.selection.last_selected
         index = None if cursor is None else self._entry_indices.get(cursor)
         if index is None:
             target = self.layout().first_visible_index() or 0
         else:
             target = self._index_in_direction(index, key)
-        if not extend or self._selection_anchor not in self._entry_indices:
-            self._selection_anchor = self._entry_ids[target]
-            self._existing_selection = []
-        elif index is not None and target != index:
-            # Skip past an earlier selection instead of stopping inside it
-            # NOTE: This mimics macOS Finder behavior in list view
-            direction = 1 if target > index else -1
-            earlier = set(self._existing_selection)
-            while 0 <= target < len(self._entry_ids) and self._entry_ids[target] in earlier:
-                target += direction
-            if not 0 <= target < len(self._entry_ids):  # The earlier selection reaches the edge
-                target -= direction
-
-        anchor = self._entry_indices[unwrap(self._selection_anchor)]
-        step = 1 if target >= anchor else -1
-        self._selection_cursor = self._entry_ids[target]
-        span = [self._entry_ids[i] for i in range(anchor, target + step, step)]
-        in_span = set(span)
-        self._existing_selection = [i for i in self._existing_selection if i not in in_span]
-        self._driver.select_entries(self._existing_selection + span)
+        target = self._driver.selection.move_selection(self._entry_ids, target, extend)
         pagination = self._driver.main_window.pagination
         self.layout().ensure_visible(target, pagination.height() if pagination.isVisible() else 0)
         return True
@@ -233,10 +208,10 @@ class ThumbGrid(QWidget):
             case _:
                 return min(index + per_row, last) if index // per_row < last // per_row else index
 
-    def update_selected(self) -> None:
+    def _update_selected(self) -> None:
         for _, thumb in self.layout().assigned_items():
             if thumb not in self._held:
-                thumb.set_selected(thumb.item_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
+                thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
 
     def _create_thumb(self) -> ItemThumb:
         size = self._driver.main_window.thumb_size
@@ -281,7 +256,7 @@ class ThumbGrid(QWidget):
             self._show_loading_image(thumb)
         else:
             self._assign_entry(thumb, entry)
-        thumb.set_selected(thumb.item_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
+        thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
 
     def _clear_thumb(self, thumb: ItemThumb) -> None:
         """Remove the entry details and image a thumbnail is showing."""

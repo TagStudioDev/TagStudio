@@ -50,7 +50,6 @@ class Inspector(QWidget):
         self._driver = driver
         self._lib = self._driver.lib
         self._settings = self._driver.settings
-        self._selected: list[int] = []
         self._current_stats: FileAttributeData | None = None
 
         self._open_tag_search_action = QShortcut(
@@ -88,10 +87,12 @@ class Inspector(QWidget):
         self.layout().preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
 
         self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+        self._driver.selection.changed.connect(self.update_from_selection)
 
     def _on_tags_changed(self, entry_ids: set[int]) -> None:
-        if len(self._selected) == 1 and self._selected[0] in entry_ids:
-            self.layout().containers.update_from_entry(self._selected[0])
+        selected = self._driver.selection.selected
+        if len(selected) == 1 and selected[0] in entry_ids:
+            self.layout().containers.update_from_entry(selected[0])
             self.layout().tag_search_box.added = self.layout().containers.tags
 
     def _set_item_mode(self, mode: _ItemMode | None):
@@ -144,7 +145,8 @@ class Inspector(QWidget):
             self.layout().field_search_box.layout().search_field.setFocus()
 
     def _thumb_stats_updated_callback(self, filepath: Path, stats: FileAttributeData) -> None:
-        if len(self._selected) != 1:
+        selected = self._driver.selection.selected
+        if len(selected) != 1:
             return
 
         if filepath != self.layout().preview_thumb.current_file:
@@ -160,7 +162,7 @@ class Inspector(QWidget):
         if stats.duration is not None:
             self._current_stats.duration = stats.duration
 
-        entry = unwrap(self._lib.get_entry(self._selected[0]))
+        entry = unwrap(self._lib.get_entry(selected[0]))
         self.layout().file_attrs.update_stats(filepath, self._current_stats, entry)
 
     def _set_selection_callback(self) -> None:
@@ -174,9 +176,10 @@ class Inspector(QWidget):
     def _add_field_to_selected(self, template: BaseFieldTemplate) -> None:
         self.layout().containers.add_field_to_selected(template)
         # TODO: Allow editing of fields across multiple entries at once.
-        if len(self._selected) == 1:
+        selected = self._driver.selection.selected
+        if len(selected) == 1:
             if self._driver.settings.edit_field_on_add:
-                entry = unwrap(self._lib.get_entry_full(self._selected[0]))
+                entry = unwrap(self._lib.get_entry_full(selected[0]))
                 entry_field = None
                 if isinstance(template, TextFieldTemplate):
                     entry_field = entry.text_fields[-1]
@@ -185,7 +188,7 @@ class Inspector(QWidget):
                 if entry_field is not None:
                     self._edit_field(entry.id, entry_field)
 
-            self.layout().containers.update_from_entry(self._selected[0])
+            self.layout().containers.update_from_entry(selected[0])
 
     def _edit_field(self, entry_id: int, field: BaseField) -> None:
         # TODO: A lot of this code is similar to or straight up shared with TileList.
@@ -225,15 +228,14 @@ class Inspector(QWidget):
 
         self.layout().warning_banner.hide()
 
-    def set_selection(self, selected: list[int], update_preview: bool = True) -> None:
-        """Render the panel widgets with the newest data from the Library.
+    def update_from_selection(self, update_preview: bool = True) -> None:
+        """Update the panel widgets with the selected entries' newest data from the Library.
 
         Args:
-            selected  (list[int]): List of the IDs of the selected entries.
             update_preview (bool): Should the file preview be updated?
             (Only works with one or more items selected)
         """
-        self._selected = selected
+        selected = self._driver.selection.selected
         self._set_item_mode(None)
         try:
             # No Items Selected

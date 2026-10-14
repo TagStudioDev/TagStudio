@@ -16,9 +16,8 @@ def test_update_selection_empty(qt_driver: QtDriver):
     panel = Inspector(qt_driver)
 
     # Clear the library selection (selecting 1 then unselecting 1)
-    qt_driver.toggle_item_selection(1, append=False, bridge=False)
-    qt_driver.toggle_item_selection(1, append=True, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.selection.toggle_item_selection(1, append=True, bridge=False)
 
     # TileList should hide all tiles
     for container in panel.containers._tiles:
@@ -29,8 +28,7 @@ def test_update_selection_single(qt_driver: QtDriver, entry_full: Entry):
     panel = Inspector(qt_driver)
 
     # Select the single entry
-    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
 
     # TileList should show all applicable tag and field tiles
     for container in panel.containers._tiles:
@@ -43,9 +41,8 @@ def test_update_selection_multiple(qt_driver: QtDriver):
     panel = Inspector(qt_driver)
 
     # Select the multiple entries
-    qt_driver.toggle_item_selection(1, append=False, bridge=False)
-    qt_driver.toggle_item_selection(2, append=True, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.selection.toggle_item_selection(2, append=True, bridge=False)
 
     # TileList should show mixed field editing
     for container in panel.containers._tiles:
@@ -58,8 +55,7 @@ def test_add_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry):
     assert {t.id for t in entry_full.tags} == {1000}
 
     # Select the single entry
-    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
 
     # Add new tag
     panel.containers.add_tags_to_selected(2000)
@@ -75,8 +71,7 @@ def test_add_same_tag_to_selection_single(qt_driver: QtDriver, entry_full: Entry
     assert {t.id for t in entry_full.tags} == {1000}
 
     # Select the single entry
-    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
 
     # Add an existing tag
     panel.containers.add_tags_to_selected(1000)
@@ -105,8 +100,11 @@ def test_add_tag_to_selection_multiple(qt_driver: QtDriver):
 
     # Select the multiple entries
     for i, e in enumerate(qt_driver.lib.all_entries(with_joins=True), start=0):
-        qt_driver.toggle_item_selection(e.id, append=(True if i == 0 else False), bridge=False)  # noqa: SIM210
-    panel.set_selection(qt_driver.selected)
+        qt_driver.selection.toggle_item_selection(
+            e.id,
+            append=(True if i == 0 else False),  # noqa: SIM210
+            bridge=False,
+        )
 
     # Add new tag
     panel.containers.add_tags_to_selected(1000)
@@ -133,8 +131,7 @@ def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
     qt_driver.lib.add_tags_to_entries(1, entry_full.id)
 
     # Select the single entry
-    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
 
     # TileList should hide all tiles
     assert len(panel.containers._tiles) == 3
@@ -166,8 +163,7 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
     qt_driver.lib.add_tags_to_entries(1, entry_full.id)
 
     # Select the single entry
-    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
 
     # TileList should hide all tiles
     assert len(panel.containers._tiles) == 3
@@ -203,8 +199,7 @@ def test_exclude_tag_category(
     library.add_entries([entry])
     library.add_tags_to_entries(entry.id, tag.id)
 
-    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
     assert panel.containers._tiles[0].title == "<h4>Tags</h4>"
@@ -226,8 +221,7 @@ def test_exclude_self_from_tag_category(
     library.add_entries([entry])
     library.add_tags_to_entries(entry.id, tag.id)
 
-    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
     assert panel.containers._tiles[0].title == f"<h4>{category_parent.name}</h4>"
@@ -246,8 +240,7 @@ def test_exclude_self_from_tag_category_without_parent(
     library.add_entries([entry])
     library.add_tags_to_entries(entry.id, tag.id)
 
-    qt_driver.toggle_item_selection(entry.id, append=False, bridge=False)
-    panel.set_selection(qt_driver.selected)
+    qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
     assert panel.containers._tiles[0].title == "<h4>Tags</h4>"

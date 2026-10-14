@@ -116,6 +116,7 @@ class TagColorManager(QWidget):
     def setup_color_groups(self):
         all_default = True
         if self.driver.lib.engine:
+            tiles = self.driver.main_window.inspector.containers
             for group, colors in self.driver.lib.tag_color_groups.items():
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
@@ -125,10 +126,8 @@ class TagColorManager(QWidget):
                         self.reset(),
                         self.setup_color_groups(),
                         ()
-                        if len(self.driver.selected) < 1
-                        else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
-                            self.driver.selected[0]
-                        ),
+                        if len(self.driver.selection.selected) < 1
+                        else tiles.update_from_entry(self.driver.selection.selected[0]),
                     )
                 )
                 tile = Tile(self.driver.lib.get_namespace_name(group))
@@ -142,10 +141,8 @@ class TagColorManager(QWidget):
                                 self.reset(),
                                 self.setup_color_groups(),
                                 ()
-                                if len(self.driver.selected) < 1
-                                else self.driver.main_window.inspector.containers.update_from_entry(  # noqa: E501
-                                    self.driver.selected[0]
-                                ),
+                                if len(self.driver.selection.selected) < 1
+                                else tiles.update_from_entry(self.driver.selection.selected[0]),
                             ),
                         )
                     )

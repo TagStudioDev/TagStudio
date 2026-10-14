@@ -16,7 +16,6 @@ import re
 import sys
 import time
 from argparse import Namespace
-from collections import OrderedDict
 from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
@@ -93,6 +92,7 @@ from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.selection_state import SelectionState
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
@@ -199,15 +199,16 @@ class QtDriver(DriverMixin, QObject):
         super().__init__()
         self.args = args
         self.lib = Library()
-        self.entry_state = EntryState(self.lib)
         self.rm: ResourceManager = ResourceManager()
 
+        # State Management
+        self.entry_state = EntryState(self.lib)
+        self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
+        self.selection.changed.connect(self._on_selection_changed)
+
         # Thumbnail Grid
-        self._selected: OrderedDict[int, None] = OrderedDict()
         self.frame_content: list[int] = []  # List of Entry IDs for the current query
         self._results_state: BrowsingState | None = None
-        self.scrollbar_pos = 0
-        self.spacing = None
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
 
@@ -259,16 +260,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-    @property
-    def selected(self) -> list[int]:
-        return list(self._selected.keys())
-
-    @property
-    def last_selected(self) -> int | None:
-        if len(self._selected) == 0:
-            return None
-        return reversed(self._selected).__next__()
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -395,8 +386,8 @@ class QtDriver(DriverMixin, QObject):
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
         self.tag_manager.done.connect(
-            lambda checked=False: self.main_window.inspector.set_selection(
-                self.selected, update_preview=False
+            lambda checked=False: self.main_window.inspector.update_from_selection(
+                update_preview=False
             )
         )
 
@@ -414,8 +405,8 @@ class QtDriver(DriverMixin, QObject):
             is_savable=False,
         )
         self.field_template_manager.done.connect(
-            lambda checked=False: self.main_window.inspector.set_selection(
-                self.selected, update_preview=False
+            lambda checked=False: self.main_window.inspector.update_from_selection(
+                update_preview=False
             )
         )
 
@@ -478,17 +469,13 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.add_tag_action_callback()
         )
 
-        self.main_window.menu_bar.select_all_action.triggered.connect(
-            self.select_all_action_callback
-        )
+        self.main_window.menu_bar.select_all_action.triggered.connect(self.selection.select_all)
 
         self.main_window.menu_bar.select_inverse_action.triggered.connect(
-            self.select_inverse_action_callback
+            self.selection.select_inverse
         )
 
-        self.main_window.menu_bar.clear_select_action.triggered.connect(
-            self.clear_select_action_callback
-        )
+        self.main_window.menu_bar.clear_select_action.triggered.connect(self.selection.clear)
 
         self.copy_buffer: dict = {"fields": [], "tags": []}
 
@@ -824,18 +811,14 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setWindowTitle(self.base_title)
         self.frame_content.clear()
         self._results_state = None
-        self._selected.clear()
+        self.selection.clear()
         if self.color_manager_panel:
             self.color_manager_panel.reset()
-
-        self.set_clipboard_menu_viability()
-        self.set_select_actions_visibility()
 
         if hasattr(self, "library_info_window"):
             self.library_info_window.close()
 
         self.main_window.thumb_grid.set_entries([])
-        self.main_window.inspector.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.landing_widget.animate_logo_in()
         self.main_window.pagination.setHidden(True)
@@ -894,33 +877,8 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.search_field.setText(f"tag_id:{tag_id}")
         self.update_browsing_state(BrowsingState.from_tag_id(tag_id, self.browsing_history.current))
 
-    def select_all_action_callback(self):
-        """Set the selection to all visible items."""
-        self.select_all()
-
-        self.set_clipboard_menu_viability()
-        self.set_select_actions_visibility()
-
-        self.main_window.inspector.set_selection(self.selected, update_preview=False)
-
-    def select_inverse_action_callback(self):
-        """Invert the selection of all visible items."""
-        self.select_inverse()
-
-        self.set_clipboard_menu_viability()
-        self.set_select_actions_visibility()
-
-        self.main_window.inspector.set_selection(self.selected, update_preview=False)
-
-    def clear_select_action_callback(self):
-        self.clear_selected()
-
-        self.set_select_actions_visibility()
-        self.set_clipboard_menu_viability()
-        self.main_window.inspector.set_selection(self.selected)
-
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        self.entry_state.add_tags(self.selected, tag_ids)
+        self.entry_state.add_tags(self.selection.selected, tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -938,7 +896,7 @@ class QtDriver(DriverMixin, QObject):
         entry: Entry | None = None
         pending: list[tuple[int | None, Path]] = []
 
-        selected = self.selected
+        selected = self.selection.selected
         library_dir = unwrap(self.lib.library_dir)
 
         if len(selected) <= 1 and origin_path:
@@ -962,7 +920,7 @@ class QtDriver(DriverMixin, QObject):
                     self.lib.remove_entries([e_id])
                 delete_file(library_dir / f)
 
-            self.clear_select_action_callback()
+            self.selection.clear()
             self.update_browsing_state()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> bool:
@@ -1156,7 +1114,7 @@ class QtDriver(DriverMixin, QObject):
 
     def _on_new_files_banner_refresh(self):
         self.update_browsing_state()
-        self.main_window.inspector.set_selection(self.selected, update_preview=True)
+        self.main_window.inspector.update_from_selection()
         # If there are still unlinked entries after the automatic relinking step, show a notice.
         sync_banner = self._sync_banner
         if sync_banner is None:
@@ -1316,15 +1274,15 @@ class QtDriver(DriverMixin, QObject):
             self.update_browsing_state()
 
     def copy_fields_action_callback(self):
-        if len(self.selected) > 0:
-            entry = self.lib.get_entry_full(self.selected[0])
+        if len(self.selection.selected) > 0:
+            entry = self.lib.get_entry_full(self.selection.selected[0])
             if entry:
                 self.copy_buffer["fields"] = entry.fields
                 self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
         self.set_clipboard_menu_viability()
 
     def paste_fields_action_callback(self):
-        for id in self.selected:
+        for id in self.selection.selected:
             entry = self.lib.get_entry_full(id, with_fields=True, with_tags=False)
             if not entry:
                 continue
@@ -1337,45 +1295,20 @@ class QtDriver(DriverMixin, QObject):
                 if not exists:
                     self.lib.add_field_to_entries(id, field=field)
         if self.copy_buffer["tags"]:
-            self.entry_state.add_tags(self.selected, self.copy_buffer["tags"])
-        elif len(self.selected) == 1:
-            self.main_window.inspector.containers.update_from_entry(self.selected[0])
+            self.entry_state.add_tags(self.selection.selected, self.copy_buffer["tags"])
+        elif len(self.selection.selected) == 1:
+            self.main_window.inspector.containers.update_from_entry(self.selection.selected[0])
 
-    def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
-        """Toggle the selection of an item in the Thumbnail Grid.
-
-        If an item is not selected, this selects it. If an item is already selected, this will
-        deselect it as long as append and bridge are False.
-
-        Args:
-            item_id(int): The ID of the item/entry to select.
-            append(bool): Whether or not to add this item to the previous selection
-                or to restart the selection with this item.
-                Setting to True acts like "Ctrl + Click" selecting.
-            bridge(bool): Whether or not to select items in the visual range of the last item
-                selected and this current item.
-                Setting to True acts like "Shift + Click" selecting.
-        """
-        logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
-        if append:
-            self.select_entry(item_id)
-        elif bridge:
-            self.select_to_entry(item_id)
-        else:
-            self.clear_selected()
-            self.select_entry(item_id)
-
+    def _on_selection_changed(self) -> None:
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.inspector.set_selection(self.selected)
-
     def set_clipboard_menu_viability(self):
-        if len(self.selected) == 1:
+        if len(self.selection.selected) == 1:
             self.main_window.menu_bar.copy_fields_action.setEnabled(True)
         else:
             self.main_window.menu_bar.copy_fields_action.setEnabled(False)
-        if self.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
+        if self.selection.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
             self.main_window.menu_bar.paste_fields_action.setEnabled(True)
         else:
             self.main_window.menu_bar.paste_fields_action.setEnabled(False)
@@ -1391,7 +1324,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.select_all_action.setEnabled(False)
             self.main_window.menu_bar.select_inverse_action.setEnabled(False)
 
-        if self.selected:
+        if self.selection.selected:
             self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(True)
             self.main_window.menu_bar.clear_select_action.setEnabled(True)
             self.main_window.menu_bar.delete_file_action.setEnabled(True)
@@ -1526,7 +1459,7 @@ class QtDriver(DriverMixin, QObject):
             entry_id = current.first_visible_entry_id
         elif same_page and current is not previous:
             # Keep the selection in view when the same results are only resorted or filtered
-            entry_id = self.last_selected
+            entry_id = self.selection.last_selected
         else:
             entry_id = None
         if entry_id is not None:
@@ -1768,7 +1701,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
-        self.main_window.inspector.set_selection(self.selected)
+        self.main_window.inspector.update_from_selection()
 
         # page (re)rendering, extract eventually
         initial_state = BrowsingState(
@@ -1804,56 +1737,6 @@ class QtDriver(DriverMixin, QObject):
             event.accept()
         else:
             event.ignore()
-
-    def select_all(self):
-        self._selected = OrderedDict.fromkeys(self.frame_content)
-        self.main_window.thumb_grid.update_selected()
-
-    def select_inverse(self):
-        selected = OrderedDict()
-        for id in self.frame_content:
-            if id not in self._selected:
-                selected[id] = None
-
-        self._selected = selected
-        self.main_window.thumb_grid.update_selected()
-
-    def select_entries(self, entry_ids: list[int]) -> None:
-        """Replace the selection with `entry_ids`, the last one being the last selected."""
-        self._selected = OrderedDict.fromkeys(entry_ids)
-        self.main_window.thumb_grid.update_selected()
-        self.set_clipboard_menu_viability()
-        self.set_select_actions_visibility()
-        self.main_window.inspector.set_selection(self.selected)
-
-    def select_entry(self, entry_id: int):
-        if entry_id in self._selected:
-            self._selected.pop(entry_id)
-        else:
-            self._selected[entry_id] = None
-        self.main_window.thumb_grid.update_selected()
-
-    def select_to_entry(self, entry_id: int):
-        if len(self._selected) == 0:
-            self.select_entry(entry_id)
-            return
-        last_selected = reversed(self._selected).__next__()
-        start = self.frame_content.index(last_selected)
-        end = self.frame_content.index(entry_id)
-
-        if start > end:
-            end, start = start, end
-        else:
-            end += 1
-
-        for i in range(start, end):
-            entry_id = self.frame_content[i]
-            self._selected[entry_id] = None
-        self.main_window.thumb_grid.update_selected()
-
-    def clear_selected(self):
-        self._selected.clear()
-        self.main_window.thumb_grid.update_selected()
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""
