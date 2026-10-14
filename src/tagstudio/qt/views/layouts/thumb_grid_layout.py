@@ -56,6 +56,21 @@ class ThumbGridLayout[W: QWidget](QLayout):
         self._scroll_to = index
         self.update()
 
+    def ensure_visible(self, index: int, bottom_padding: int = 0) -> None:
+        """Scroll just enough to fully show the item at `index` above `bottom_padding` pixels."""
+        per_row, cell = self._grid_metrics(self.geometry().width())
+        top = index // per_row * cell.height() - self.spacing()
+        bottom = top + self._item_size().height() + 2 * self.spacing()
+        scroll_bar = self._scroll_area.verticalScrollBar()
+        visible_height = self._scroll_area.viewport().height() - bottom_padding
+        if top < scroll_bar.value():
+            scroll_bar.setValue(top)
+        elif bottom > scroll_bar.value() + visible_height:
+            scroll_bar.setValue(bottom - visible_height)
+
+    def items_per_row(self) -> int:
+        return self._grid_metrics(self.geometry().width())[0]
+
     def first_visible_index(self) -> int | None:
         return self._first_visible
 

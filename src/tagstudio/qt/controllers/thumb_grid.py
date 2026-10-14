@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import Qt, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QColor, QMouseEvent, QPixmap
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
@@ -52,6 +52,10 @@ class ThumbGrid(QWidget):
         self._show_thumbs_timer.setInterval(self.SHOW_THUMBS_DELAY_MS)
         self._show_thumbs_timer.setSingleShot(True)
 
+        self._existing_selection: list[int] = []
+        self._selection_anchor: int | None = None
+        self._selection_cursor: int | None = None  # Where the arrow keys last moved to
+
         self._changed_while_fetching: set[int] = set()
         self._durations: dict[Path, float | None] = {}
         self._entries: dict[int, Entry] = {}
@@ -90,6 +94,7 @@ class ThumbGrid(QWidget):
         super().mousePressEvent(event)
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
+        scroll_area.installEventFilter(self)
         scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
         self.layout().items_assigned.connect(self._on_items_assigned)
         self.layout().items_unassigned.connect(self._on_items_unassigned)
@@ -156,6 +161,77 @@ class ThumbGrid(QWidget):
         for thumb in self.layout().widgets():
             thumb.set_filename_visibility(visible)
         self.layout().activate()
+
+    @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress and isinstance(event, QKeyEvent):
+            # NOTE: macOS marks arrow keys as keypad keys:
+            # https://doc.qt.io/qt-6/qt.html#KeyboardModifier-enum
+            modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+            is_shift = modifiers == Qt.KeyboardModifier.ShiftModifier
+            if (is_shift or modifiers == Qt.KeyboardModifier.NoModifier) and self._move_selection(
+                Qt.Key(event.key()), extend=is_shift
+            ):
+                return True
+        return super().eventFilter(watched, event)
+
+    def _move_selection(self, key: Qt.Key, extend: bool) -> bool:
+        """Move or extend the selection with an arrow key.
+
+        Returns:
+            bool: True if `key` is an arrow key.
+        """
+        if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+            return False
+        if not self._entry_ids:
+            return True
+
+        cursor = self._driver.last_selected
+        if cursor != self._selection_cursor:  # The selection was changed somewhere else
+            self._selection_anchor = cursor
+            self._existing_selection = self._driver.selected
+        index = None if cursor is None else self._entry_indices.get(cursor)
+        if index is None:
+            target = self.layout().first_visible_index() or 0
+        else:
+            target = self._index_in_direction(index, key)
+        if not extend or self._selection_anchor not in self._entry_indices:
+            self._selection_anchor = self._entry_ids[target]
+            self._existing_selection = []
+        elif index is not None and target != index:
+            # Skip past an earlier selection instead of stopping inside it
+            # NOTE: This mimics macOS Finder behavior in list view
+            direction = 1 if target > index else -1
+            earlier = set(self._existing_selection)
+            while 0 <= target < len(self._entry_ids) and self._entry_ids[target] in earlier:
+                target += direction
+            if not 0 <= target < len(self._entry_ids):  # The earlier selection reaches the edge
+                target -= direction
+
+        anchor = self._entry_indices[unwrap(self._selection_anchor)]
+        step = 1 if target >= anchor else -1
+        self._selection_cursor = self._entry_ids[target]
+        span = [self._entry_ids[i] for i in range(anchor, target + step, step)]
+        in_span = set(span)
+        self._existing_selection = [i for i in self._existing_selection if i not in in_span]
+        self._driver.select_entries(self._existing_selection + span)
+        pagination = self._driver.main_window.pagination
+        self.layout().ensure_visible(target, pagination.height() if pagination.isVisible() else 0)
+        return True
+
+    def _index_in_direction(self, index: int, key: Qt.Key) -> int:
+        """The index of the next item from `index` towards a direction from an arrow key."""
+        per_row = self.layout().items_per_row()
+        last = len(self._entry_ids) - 1
+        match key:
+            case Qt.Key.Key_Left:
+                return max(index - 1, 0)
+            case Qt.Key.Key_Right:
+                return min(index + 1, last)
+            case Qt.Key.Key_Up:
+                return index - per_row if index >= per_row else index
+            case _:
+                return min(index + per_row, last) if index // per_row < last // per_row else index
 
     def update_selected(self) -> None:
         for _, thumb in self.layout().assigned_items():

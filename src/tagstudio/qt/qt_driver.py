@@ -1818,6 +1818,14 @@ class QtDriver(DriverMixin, QObject):
         self._selected = selected
         self.main_window.thumb_grid.update_selected()
 
+    def select_entries(self, entry_ids: list[int]) -> None:
+        """Replace the selection with `entry_ids`, the last one being the last selected."""
+        self._selected = OrderedDict.fromkeys(entry_ids)
+        self.main_window.thumb_grid.update_selected()
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+        self.main_window.inspector.set_selection(self.selected)
+
     def select_entry(self, entry_id: int):
         if entry_id in self._selected:
             self._selected.pop(entry_id)
