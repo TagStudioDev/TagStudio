@@ -54,7 +54,7 @@ class ArchivePreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
-        return archive_thumb(filepath)
+        return archive_thumb(filepath, size=size)
 
 
 class SevenZipFile(py7zr.SevenZipFile):
@@ -123,11 +123,12 @@ def open_archive(filepath: Path) -> Archive:
     return archiver(filepath, "r")
 
 
-def first_image_in_archive(archive: Archive) -> Image | None:
+def first_image_in_archive(archive: Archive, size: tuple[int, int] | None = None) -> Image | None:
     """Find and extract the first renderable image in the archive.
 
     Args:
         archive (Archive): The current archive.
+        size (tuple[int, int] | None): The size of the thumbnail, if known.
 
     Returns:
         Image: The first renderable image in the archive.
@@ -137,7 +138,7 @@ def first_image_in_archive(archive: Archive) -> Image | None:
         ext = archive_path.suffix.lower() if archive_path.suffix else archive_path.stem
         if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(file_name)  # pyright: ignore[reportUnknownVariableType]
-            return image_from_bytes(BytesIO(image_data))
+            return image_from_bytes(BytesIO(image_data), min_size=size)
 
     return None
 
@@ -145,13 +146,14 @@ def first_image_in_archive(archive: Archive) -> Image | None:
 def archive_thumb(
     filepath: Path,
     image_names: list[Path] | list[str] | None = None,
+    size: tuple[int, int] | None = None,
 ) -> Image | None:
     """Extract an embedded preview image from an archive.
 
     Args:
         filepath (Path): The path to the archive.
         image_names: (list[Path] | list[str] | None): List of embedded image names to search for.
-        ext (str): The file extension. Used to help determine more specific archive type.
+        size (tuple[int, int] | None): The size of the thumbnail, if known.
 
     Returns:
         Image: The first image found in the archive.
@@ -160,16 +162,15 @@ def archive_thumb(
         with open_archive(filepath) as archive:
             # If no list of image names to search for was provided, default to the first image.
             if not image_names:
-                return first_image_in_archive(archive)
+                return first_image_in_archive(archive, size)
 
             for image_name in image_names:
                 if image_name in archive.namelist():
                     file_data = archive.read(str(image_name))  # pyright: ignore[reportUnknownVariableType]
-                    return image_from_bytes(BytesIO(file_data))
+                    return image_from_bytes(BytesIO(file_data), min_size=size)
 
             # If no images were found with the given names, fallback to the first image found.
-            if not image_names:
-                return first_image_in_archive(archive)
+            return first_image_in_archive(archive, size)
 
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)

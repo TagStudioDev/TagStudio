@@ -54,15 +54,15 @@ class EbookPreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
-        return epub_thumb(filepath)
+        return epub_thumb(filepath, size)
 
 
-def epub_thumb(filepath: Path) -> Image | None:
+def epub_thumb(filepath: Path, size: tuple[int, int] | None = None) -> Image | None:
     """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
     Args:
         filepath (Path): The path to the ePub file.
-        ext (str): The file extension.
+        size (tuple[int, int] | None): The size of the thumbnail, if known.
 
     Returns:
         Image: The cover specified in ComicInfo.xml,
@@ -73,25 +73,28 @@ def epub_thumb(filepath: Path) -> Image | None:
         with open_archive(filepath) as archive:
             if "ComicInfo.xml" in archive.namelist():
                 comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
-                im = cover_from_comic_info(archive, comic_info, "FrontCover")
+                im = cover_from_comic_info(archive, comic_info, "FrontCover", size)
                 if not im:
-                    im = cover_from_comic_info(archive, comic_info, "InnerCover")
+                    im = cover_from_comic_info(archive, comic_info, "InnerCover", size)
 
             if not im:
-                im = first_image_in_archive(archive)
+                im = first_image_in_archive(archive, size)
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
     return im
 
 
-def cover_from_comic_info(archive: Archive, comic_info: Element, cover_type: str) -> Image | None:
+def cover_from_comic_info(
+    archive: Archive, comic_info: Element, cover_type: str, size: tuple[int, int] | None = None
+) -> Image | None:
     """Extract the cover specified in ComicInfo.xml.
 
     Args:
         archive (Archive): The current ePub file.
         comic_info (Element): The parsed ComicInfo.xml.
         cover_type (str): The type of cover to load.
+        size (tuple[int, int] | None): The size of the thumbnail, if known.
 
     Returns:
         Image: The cover specified in ComicInfo.xml.
@@ -105,6 +108,6 @@ def cover_from_comic_info(archive: Archive, comic_info: Element, cover_type: str
         ext = Path(page_name).suffix.lower()
         if MediaTypes.image_raster.contains(ext, RENDER):
             image_data = archive.read(page_name)  # pyright: ignore[reportUnknownVariableType]
-            im = image_from_bytes(BytesIO(image_data))
+            im = image_from_bytes(BytesIO(image_data), min_size=size)
 
     return im
