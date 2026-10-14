@@ -1424,6 +1424,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.search_field.setText(current.query or "")
 
         shown = self._results_state
+        if current is shown:  # Results refresh in case entries were removed from the library
+            selected = self.selection.selected
+            self.selection.deselect(self.lib.removed_entry_ids(selected))
         only_page_changed = (
             current is not shown  # Refreshing the shown state searches again
             and shown is not None

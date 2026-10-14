@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 
 import structlog
 from PySide6.QtCore import QObject, Signal
@@ -90,6 +90,17 @@ class SelectionState[T: Hashable](QObject):
         self._existing_selection = []
         self._selection_anchor = None
         self._selection_cursor = None
+        self.changed.emit()
+
+    def deselect(self, item_ids: Iterable[T]) -> None:
+        removed = self._selected.keys() & set(item_ids)
+        if not removed:
+            return
+        self._selected = {item: None for item in self._selected if item not in removed}
+        self._existing_selection = [i for i in self._existing_selection if i not in removed]
+        self._keep_anchor_selected()
+        if self._selection_cursor in removed:
+            self._selection_cursor = self._selection_anchor
         self.changed.emit()
 
     def move_selection(self, order: Sequence[T], target: int, extend: bool) -> int:
