@@ -17,12 +17,14 @@ class BasePreview:
     """A base preview renderer class.
 
     Attributes:
-        has_small_variant (bool): Whether `is_small` renders a different image than the preview.
+        has_small_variant (bool): Whether this renderer has a small variant (for thumbnails).
+        has_theme_variants (bool): Whether this renderer has variants for the light/dark theme.
         media_type_name (str):  Used for identifying the MediaType.
         priority (int): Render priority over other Preview classes.
     """
 
     has_small_variant: bool = False
+    has_theme_variants: bool = False
     media_type_name: str
     priority: int = 50
 

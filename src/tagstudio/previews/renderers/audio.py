@@ -32,6 +32,7 @@ _WAVEFORM_SAMPLE_RATE = 8000  # Good enough for the waveforms while still being 
 
 class AudioPreview(BasePreview):
     media_type_name = "audio"
+    has_theme_variants = True
     priority = 70
 
     @override

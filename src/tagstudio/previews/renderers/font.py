@@ -26,6 +26,7 @@ logger = structlog.get_logger(__name__)
 class FontPreview(BasePreview):
     media_type_name = "font"
     has_small_variant = True
+    has_theme_variants = True
 
     @override
     @classmethod
