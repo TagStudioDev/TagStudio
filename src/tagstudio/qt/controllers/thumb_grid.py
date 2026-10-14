@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QThreadPool, QTimer, Signal
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtCore import Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QColor, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
@@ -76,6 +76,18 @@ class ThumbGrid(QWidget):
     @override
     def layout(self) -> ThumbGridLayout[ItemThumb]:
         return super().layout()  # pyright: ignore[reportReturnType]
+
+    @override
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        # Clear selected entries when clicking the background
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and isinstance(self.childAt(event.position().toPoint()), ItemThumb | None)
+            and self._driver.selected
+        ):
+            self._driver.clear_select_action_callback()
+        super().mousePressEvent(event)
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
         scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
