@@ -27,7 +27,16 @@ from warnings import catch_warnings
 import semver
 import structlog
 from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
-from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtCore import (
+    QDeadlineTimer,
+    QObject,
+    QSettings,
+    Qt,
+    QThread,
+    QThreadPool,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import (
     QColor,
     QDragEnterEvent,
@@ -196,6 +205,7 @@ class QtDriver(DriverMixin, QObject):
         # Thumbnail Grid
         self._selected: OrderedDict[int, None] = OrderedDict()
         self.frame_content: list[int] = []  # List of Entry IDs for the current query
+        self._results_state: BrowsingState | None = None
         self.scrollbar_pos = 0
         self.spacing = None
         self.thumb_job_queue: Queue = Queue()
@@ -673,6 +683,7 @@ class QtDriver(DriverMixin, QObject):
             sync_banner = self._sync_banner
             if sync_banner is not None and sync_banner.is_awaiting_refresh:
                 sync_banner.hide_banner()
+            self._results_state = None  # Submitting a search always searches again
             try:
                 self.update_browsing_state(
                     BrowsingState.from_search_query(self.main_window.search_field.text())
@@ -760,23 +771,28 @@ class QtDriver(DriverMixin, QObject):
 
     def shutdown(self):
         """Save Library on Application Exit."""
+        logger.info("[QtDriver] Shutting down application...")
         self.close_library(is_shutdown=True)
-        logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
+
+        logger.info("[QtDriver] Ending thumbnail threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
 
-        # wait for threads to quit
+        deadline = QDeadlineTimer(1000)
         for thread in self.thumb_threads:
             thread.quit()
-            thread.wait()
+            thread.wait(deadline)
+        if any(thread.isRunning() for thread in self.thumb_threads):
+            logger.warning("[QtDriver]Forcing exit of remaining thumbnail threads...")
+            os._exit(0)
 
         QApplication.quit()
 
     def close_library(self, is_shutdown: bool = False):
         if not self.lib.library_dir:
-            logger.info("No Library to Close")
+            logger.info("[QtDriver] No library to close")
             return
-        logger.info("Closing Library...")
+        logger.info("[QtDriver] Closing library...")
 
         # Invalidate any sync still active for the old library,
         # and wait for the sync to stop before releasing the lock.
@@ -784,15 +800,13 @@ class QtDriver(DriverMixin, QObject):
         self._new_sync_session()
         self._wait_for_sync_stop()
         self.file_scan_lock = False
-        if (sync_banner := self._sync_banner) is not None:
-            sync_banner.hide_banner(force=True)
+        self.main_window.banners.clear()
 
         if not is_shutdown:
             self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
             self.cached_values.sync()
 
         # Reset library state
-        self.main_window.inspector.set_selection(self.selected)
         self.main_window.search_field.setText("")
         self.main_window.results_label.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
@@ -809,6 +823,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
         self.frame_content.clear()
+        self._results_state = None
         self._selected.clear()
         if self.color_manager_panel:
             self.color_manager_panel.reset()
@@ -849,7 +864,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
 
     def backup_library(self):
-        logger.info("Backing Up Library...")
+        logger.info("[QtDriver] Backing up library...")
         Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
 
     def add_tag_action_callback(self):
@@ -1284,16 +1299,14 @@ class QtDriver(DriverMixin, QObject):
         elif event.button() == Qt.MouseButton.BackButton:
             self.navigation_callback(-1)
 
-    def page_move(self, value: int, absolute=False) -> None:
-        logger.info("page_move", value=value, absolute=absolute)
-
+    def page_move(self, value: int, absolute: bool = False) -> None:
         current = self.browsing_history.current
         index = clamp(value if absolute else current.page_index + value, 0, self.pages_count - 1)
         if index != current.page_index:
             self.update_browsing_state(current.with_page_index(index))
 
     def navigation_callback(self, delta: int) -> None:
-        """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
+        """Callback for the Forwards and Backwards Navigation Buttons next to the search bar."""
         logger.info(
             "navigation_callback",
             delta=delta,
@@ -1477,27 +1490,37 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.setText(current.query or "")
 
-        # search the library
-        start_time = time.time()
-        Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(current, page_size=0)
-        logger.info("items to render", count=len(results))
-        end_time = time.time()
-
-        # inform user about completed search
-        time_span = f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
-        count = f"<b>{results.total_count:,}</b>"
-        self.main_window.results_label.setText(
-            Translations.format(
-                # Show "X Results" on query, "X Items" on none
-                "status.results_found" if current.query else "status.items",
-                count=count,
-                time_span=time_span,
-            )
+        shown = self._results_state
+        only_page_changed = (
+            current is not shown  # Refreshing the shown state searches again
+            and shown is not None
+            and current.with_page_index(0) == shown.with_page_index(0)
         )
+        if not only_page_changed:
+            # search the library
+            start_time = time.time()
+            Ignore.get_patterns(self.lib.library_dir, include_global=True)
+            results = self.lib.search_library(current, page_size=0)
+            logger.info("items to render", count=len(results))
+            end_time = time.time()
+
+            # inform user about completed search
+            time_span = (
+                f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
+            )
+            count = f"<b>{results.total_count:,}</b>"
+            self.main_window.results_label.setText(
+                Translations.format(
+                    # Show "X Results" on query, "X Items" on none
+                    "status.results_found" if current.query else "status.items",
+                    count=count,
+                    time_span=time_span,
+                )
+            )
+            self.frame_content = results.ids
+        self._results_state = current
 
         # update page content
-        self.frame_content = results.ids
         same_page = current.query == previous.query and current.page_index == previous.page_index
         if state is None:
             entry_id = current.first_visible_entry_id
@@ -1513,7 +1536,7 @@ class QtDriver(DriverMixin, QObject):
         # update pagination
         page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
         if page_size > 0:
-            self.pages_count = math.ceil(results.total_count / page_size)
+            self.pages_count = math.ceil(len(self.frame_content) / page_size)
         else:
             self.pages_count = 1
         self.main_window.pagination.update_buttons(

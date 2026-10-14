@@ -42,6 +42,7 @@ logger = structlog.get_logger(__name__)
 
 class TextPreview(BasePreview):
     media_type_name = "plaintext"
+    has_theme_variants = True
     font = ImageFont.load_default(20)
 
     @override

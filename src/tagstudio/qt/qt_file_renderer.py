@@ -146,7 +146,7 @@ class QtFileRenderer(QObject):
         if (
             renderer is None
             or not filepath.is_file()
-            or FileRenderer.previously_failed(filepath, date_modified)
+            or FileRenderer.previously_failed(filepath, self.theme, date_modified)
         ):
             return None
         if renderer.has_small_variant:
@@ -154,7 +154,7 @@ class QtFileRenderer(QObject):
             blank = QImage(side, side, QImage.Format.Format_ARGB32_Premultiplied)
             blank.fill(Qt.GlobalColor.transparent)
             return blank
-        cached = FileRenderer.cached_thumbnail(cache, filepath, date_modified)
+        cached = FileRenderer.cached_thumbnail(cache, filepath, self.theme, date_modified)
         if cached is None:
             return _icon("thumb_loading", self._theme_color, self.theme, side, pixel_ratio)
         return ImageQt.ImageQt(cached)
@@ -193,7 +193,7 @@ class QtFileRenderer(QObject):
             is_missing = result.is_unlinked or not filepath.is_file()
             cached = None
             if is_missing and not is_thumb:
-                cached = FileRenderer.cached_thumbnail(cache, filepath, date_modified)
+                cached = FileRenderer.cached_thumbnail(cache, filepath, self.theme, date_modified)
             if cached is not None:
                 image = ImageQt.ImageQt(cached)
             else:

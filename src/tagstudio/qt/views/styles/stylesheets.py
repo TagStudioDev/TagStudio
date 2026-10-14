@@ -774,12 +774,21 @@ def item_thumb_check_badge_style(size: int, icon: Path, checked_icon: Path) -> s
     )
 
 
-def item_thumb_filename_style(is_selected: bool = False) -> str:
+def item_thumb_filename_style(is_selected: bool = False, is_placeholder: bool = False) -> str:
     """Style used for filename labels under item thumbnails, highlighted when selected."""
     if is_selected:
         return (
             "background-color: palette(highlight);"
             "color: palette(highlighted-text);"
+            "font-size: 10px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
+            f"border-radius: {HALF_PAD}px;"
+        )
+    if is_placeholder:
+        background = "rgba(255, 255, 255, 13)" if _is_dark_theme() else "rgba(0, 0, 0, 34)"
+        return (
+            f"background-color: {background};"
             "font-size: 10px;"
             "padding-bottom: 1px;"
             "padding-left: 1px;"

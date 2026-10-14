@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 
-import contextlib
 import hashlib
 import importlib
 import inspect
@@ -20,7 +19,6 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
-from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -125,19 +123,23 @@ class FileRenderer:
         return renderer
 
     @staticmethod
-    def previously_failed(filepath: Path, date_modified: float | None = None) -> bool:
+    def previously_failed(filepath: Path, theme: Theme, date_modified: float | None = None) -> bool:
         """Return whether rendering a file failed before."""
-        file_name = FileRenderer._cached_thumb_name(filepath, date_modified)
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
         return file_name in FileRenderer._failed_render_filenames
 
     @staticmethod
     def cached_thumbnail(
-        cache: CacheManager | None, filepath: Path, date_modified: float | None = None
+        cache: CacheManager | None,
+        filepath: Path,
+        theme: Theme,
+        date_modified: float | None = None,
     ) -> Image.Image | None:
         """Return a file's cached thumbnail, if it has one."""
         if not cache:
             return None
-        cached_path = cache.get_file_path(FileRenderer._cached_thumb_name(filepath, date_modified))
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
+        cached_path = cache.get_file_path(file_name)
         if not (cached_path and cached_path.is_file()):
             return None
         try:
@@ -149,15 +151,20 @@ class FileRenderer:
             return None
 
     @staticmethod
-    def _cached_thumb_name(filepath: Path, date_modified: float | None = None) -> Path:
+    def _cached_thumb_name(
+        filepath: Path, theme: Theme, date_modified: float | None = None
+    ) -> Path:
         """Return the cache filename for a file's thumbnail.
 
         Args:
             filepath (Path): The path of the file to check for a cached image of.
+            theme (Theme): The light/dark theme, used if the file's renderer has theme variants.
             date_modified (float | None): The file's stored date modified timestamp, if it has one.
         """
         mod_time: str = "" if date_modified is None else str(date_modified)
-        hashable_str: str = f"{str(filepath)}{mod_time}"
+        renderer = FileRenderer.find_renderer(filepath)
+        theme_name = theme.name if renderer is not None and renderer.has_theme_variants else ""
+        hashable_str: str = f"{str(filepath)}{mod_time}{theme_name}"
         hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
         return Path(f"{hash_value}{FileRenderer._cached_img_ext}")
 
@@ -187,10 +194,9 @@ class FileRenderer:
 
         is_unlinked = not filepath.exists()
         is_ignored = False
-        with contextlib.suppress(TypeError):
-            is_ignored = Ignore.matcher.is_ignored(
-                filepath.relative_to(unwrap(self.lib.library_dir))
-            )
+        library_dir = self.lib.library_dir
+        if library_dir is not None and filepath.is_relative_to(library_dir):
+            is_ignored = Ignore.matcher.is_ignored(filepath.relative_to(library_dir))
 
         if is_thumb:
             image = self._get_thumbnail(cache, filepath, size, dpi_scale, theme, date_modified)
@@ -219,7 +225,7 @@ class FileRenderer:
             theme (Theme): A theme enum to determine the light/dark theme.
             date_modified (float | None): The date modified timestamp of the file. Used for caches.
         """
-        image = FileRenderer.cached_thumbnail(cache, filepath, date_modified)
+        image = FileRenderer.cached_thumbnail(cache, filepath, theme, date_modified)
         if not image and self.settings.generate_thumbs:
             res = self.settings.cached_thumb_resolution
             if not MIN_CACHED_THUMB_RES <= res <= MAX_CACHED_THUMB_RES:
@@ -254,7 +260,7 @@ class FileRenderer:
             is_small (bool): Is this specifically a thumbnail? Use for specifying small variants.
             cache (CacheManager | None): A cache manager to save the rendered image to, if any.
         """
-        file_name = FileRenderer._cached_thumb_name(filepath, date_modified)
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
         scaled_size = math.ceil(max(size) * dpi_scale)
         image: Image.Image | None = None
 

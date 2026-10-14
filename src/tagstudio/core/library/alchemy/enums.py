@@ -106,7 +106,7 @@ class BrowsingState:
 
     @classmethod
     def from_search_query(cls, search_query: str) -> BrowsingState:
-        return cls(query=search_query)
+        return cls(query=search_query if search_query.strip() else None)
 
     @classmethod
     def from_tag_id(cls, tag_id: int | str, state: BrowsingState | None = None) -> BrowsingState:
@@ -152,7 +152,7 @@ class BrowsingState:
         return self._with_new_results(ascending=ascending)
 
     def with_search_query(self, search_query: str) -> BrowsingState:
-        return self._with_new_results(query=search_query)
+        return self._with_new_results(query=search_query if search_query.strip() else None)
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> BrowsingState:
         return self._with_new_results(show_hidden_entries=show_hidden_entries)

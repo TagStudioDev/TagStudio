@@ -993,14 +993,14 @@ class Library:
 
             start_time = time.time()
             if page_size:
-                rows = session.execute(statement).fetchall()
+                rows = session.connection().execute(statement).fetchall()
                 ids = []
                 total_count = 0
                 for row in rows:
                     ids.append(row[0])
                     total_count = row[1]
             else:
-                ids = list(session.scalars(statement))
+                ids = list(session.connection().execute(statement).scalars())
                 total_count = len(ids)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")

@@ -33,7 +33,7 @@ def probe_file(filepath: Path) -> dict[str, Any] | None:
 @lru_cache(maxsize=256)
 def _cached_probe(filepath: Path, _mod_time: float) -> dict[str, Any] | None:
     try:
-        return probe(filepath)
+        return probe(filepath, timeout=10)
     except ffmpeg.Error:
         return None
 

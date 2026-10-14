@@ -20,6 +20,7 @@ class ThumbGridLayout[W: QWidget](QLayout):
 
     first_visible_changed = Signal(int)  # Index of the first visible item
     items_assigned = Signal(object)  # list[tuple[int, W]] of newly assigned (index, widget) pairs
+    items_unassigned = Signal(object)  # list[W] of widgets that no longer have an index
 
     def __init__(self, scroll_area: QScrollArea, create_widget: Callable[[], W]) -> None:
         super().__init__(None)
@@ -34,14 +35,19 @@ class ThumbGridLayout[W: QWidget](QLayout):
         self._items: list[QLayoutItem] = []
         # [start, end, per_row, item size]
         self._last_layout: tuple[int, int, int, QSize] | None = None
+        # Widgets by [row from the first visible row, column] from before the items were replaced
+        self._previous_slots: dict[tuple[int, int], W] = {}
+        self._previous_offset = 0
         self._scroll_area = scroll_area
         self._scroll_to: int | None = None
 
     def set_item_count(self, count: int) -> None:
-        """Replace all items with `count` new ones, unassigning every widget."""
+        """Replace all items with `count` new ones, keeping widgets in place if nothing scrolls."""
         self._item_count = count
-        self._free.extend(self._assigned.values())
-        self._assigned.clear()
+        if self._assigned:
+            self._previous_slots = self._screen_slots()
+            self._previous_offset = self._scroll_area.verticalScrollBar().value()
+            self._assigned.clear()
         self._first_visible = None
         self._last_layout = None
         self.update()
@@ -60,7 +66,16 @@ class ThumbGridLayout[W: QWidget](QLayout):
         return sorted(self._assigned.items(), key=lambda item: item[0])
 
     def widgets(self) -> list[W]:
-        return [*self._assigned.values(), *self._free]
+        return [*self._assigned.values(), *self._previous_slots.values(), *self._free]
+
+    def _screen_slots(self) -> dict[tuple[int, int], W]:
+        """Assigned widgets by their row from the first visible row and their column."""
+        per_row = unwrap(self._last_layout)[2]
+        first_row = unwrap(self._first_visible) // per_row
+        return {
+            (index // per_row - first_row, index % per_row): widget
+            for index, widget in self._assigned.items()
+        }
 
     def _new_widget(self) -> W:
         widget = self._create_widget()
@@ -84,10 +99,14 @@ class ThumbGridLayout[W: QWidget](QLayout):
     def setGeometry(self, arg__1: QRect) -> None:
         super().setGeometry(arg__1)
         if self._item_count == 0:
-            self._free.extend(self._assigned.values())
+            unassigned = [*self._assigned.values(), *self._previous_slots.values()]
             self._assigned.clear()
+            self._previous_slots.clear()
+            self._free.extend(unassigned)
             for widget in self._free:
                 widget.setGeometry(32_000, 32_000, 0, 0)
+            if unassigned:
+                self.items_unassigned.emit(unassigned)
             return
 
         per_row, cell = self._grid_metrics(arg__1.width())
@@ -100,6 +119,11 @@ class ThumbGridLayout[W: QWidget](QLayout):
             self._scroll_to = None
 
         offset = scroll_bar.value()
+        unassigned: list[W] = []
+        if offset != self._previous_offset:
+            unassigned.extend(self._previous_slots.values())
+            self._free.extend(self._previous_slots.values())
+            self._previous_slots.clear()
         last_row = (self._item_count - 1) // per_row
         first_row = min(offset // cell.height(), last_row)
         visible_rows = math.ceil(
@@ -118,22 +142,32 @@ class ThumbGridLayout[W: QWidget](QLayout):
             return
         self._last_layout = (start, end, per_row, item_size)
 
-        for index in [index for index in self._assigned if not start <= index < end]:
-            self._free.append(self._assigned.pop(index))
+        moved_out = [
+            self._assigned.pop(index) for index in list(self._assigned) if not start <= index < end
+        ]
+        self._free.extend(moved_out)
+        unassigned.extend(moved_out)
 
         newly_assigned: list[tuple[int, W]] = []
         for index in range(start, end):
             widget = self._assigned.get(index)
+            row, column = divmod(index, per_row)
             if widget is None:
-                widget = self._free.pop() if self._free else self._new_widget()
+                widget = self._previous_slots.pop((row - first_row, column), None)
+                if widget is None:
+                    widget = self._free.pop() if self._free else self._new_widget()
                 self._assigned[index] = widget
                 newly_assigned.append((index, widget))
-            row, column = divmod(index, per_row)
             widget.setGeometry(QRect(QPoint(column * cell.width(), row * cell.height()), item_size))
 
+        unassigned.extend(self._previous_slots.values())
+        self._free.extend(self._previous_slots.values())
+        self._previous_slots.clear()
         for widget in self._free:
             widget.setGeometry(32_000, 32_000, 0, 0)
 
+        if unassigned:
+            self.items_unassigned.emit(unassigned)
         if newly_assigned:
             self.items_assigned.emit(newly_assigned)
 
@@ -159,6 +193,7 @@ class ThumbGridLayout[W: QWidget](QLayout):
         widget = item.widget()
         self._free = [w for w in self._free if w is not widget]
         self._assigned = {i: w for i, w in self._assigned.items() if w is not widget}
+        self._previous_slots = {k: w for k, w in self._previous_slots.items() if w is not widget}
         return item
 
     @override

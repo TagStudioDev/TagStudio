@@ -43,6 +43,14 @@ class BannerStack(QWidget):
         if key is not None:
             self._by_key[key] = banner
 
+    def clear(self) -> None:
+        """Remove all banners without animating them out."""
+        self._by_key.clear()
+        while (item := self.layout().takeAt(0)) is not None:
+            if (banner := item.widget()) is not None:
+                banner.hide()
+                banner.deleteLater()
+
     def _on_banner_closed(self, banner: Banner) -> None:
         if banner.stack_key is not None and self._by_key.get(banner.stack_key) is banner:
             del self._by_key[banner.stack_key]

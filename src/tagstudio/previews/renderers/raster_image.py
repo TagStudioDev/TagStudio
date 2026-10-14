@@ -65,14 +65,15 @@ class RasterImagePreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image | None:
-        return raster_image_thumb(filepath)
+        return raster_image_thumb(filepath, size)
 
 
-def raster_image_thumb(filepath: Path) -> Image | None:
+def raster_image_thumb(filepath: Path, size: tuple[int, int] | None = None) -> Image | None:
     """Render a thumbnail for a standard image type.
 
     Args:
         filepath (Path): The path of the file.
+        size (tuple[int, int] | None): The size of the thumbnail, if known.
     """
     im: Image | None = None
     try:
@@ -80,7 +81,7 @@ def raster_image_thumb(filepath: Path) -> Image | None:
             return exr_image_thumb(filepath)
 
         with filepath.open("rb") as file:
-            im = image_from_bytes(BytesIO(file.read()))
+            im = image_from_bytes(BytesIO(file.read()), min_size=size)
     except (
         DecompressionBombError,
         FileNotFoundError,
@@ -123,16 +124,20 @@ def exr_image_thumb(filepath: Path) -> Image | None:
     return im
 
 
-def image_from_bytes(image_data: BytesIO) -> Image:
+def image_from_bytes(image_data: BytesIO, min_size: tuple[int, int] | None = None) -> Image:
     """Load a raster image and add a background if it's transparent.
 
     Args:
         image_data (BytesIO): The binary image data.
+        min_size (tuple[int, int] | None): The smallest size to decode the image at, if known.
+            Only JPEGs can be decoded at a reduced size.
 
     Returns:
         Image.Image: The loaded raster image, with a background if needed.
     """
     im: Image = open_image(image_data)
+    if min_size is not None:
+        im.draft(None, min_size)
     if im.mode != "RGB" and im.mode != "RGBA":
         im = im.convert(mode="RGBA")
     if im.mode == "RGBA":

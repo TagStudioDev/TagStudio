@@ -48,7 +48,9 @@ class PaginationView(QHBoxLayout):
         self.start_button.setMaximumSize(self.BUTTON_SIZE)
 
         # ------ ... ---------------------------
-        self.start_ellipses = QLabel(". . .")
+        self.start_ellipses = QLabel("<b>. . .</b>")
+        self.start_ellipses.setStyleSheet("padding-bottom: 1px;")
+        self.start_ellipses.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         self.start_ellipses.setMinimumSize(self.BUTTON_SIZE)
         self.start_ellipses.setMaximumSize(self.BUTTON_SIZE)
 
@@ -73,7 +75,9 @@ class PaginationView(QHBoxLayout):
         self.end_buffer_layout.setSpacing(3)
 
         # -------------------------- ... -------
-        self.end_ellipses = QLabel(". . .")
+        self.end_ellipses = QLabel("<b>. . .</b>")
+        self.end_ellipses.setStyleSheet("padding-bottom: 1px;")
+        self.end_ellipses.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)
         self.end_ellipses.setMinimumSize(self.BUTTON_SIZE)
         self.end_ellipses.setMaximumSize(self.BUTTON_SIZE)
 
