@@ -636,7 +636,6 @@ class QtDriver(DriverMixin, QObject):
 
         if show_changelog:
             self.show_changelog()
-        self.main_window.search_field.setFocus()
 
         self.check_for_update()
         self.app.exec()
@@ -724,6 +723,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.toggle_landing_page(enabled=True)
 
         self.main_window.pagination.index.connect(lambda i: self.page_move(i, absolute=True))
+        self.main_window.pagination.index.connect(
+            lambda _: self.main_window.entry_scroll_area.setFocus()
+        )
 
         self.splash.finish(self.main_window)
 
@@ -1454,6 +1456,7 @@ class QtDriver(DriverMixin, QObject):
                 )
             )
             self.frame_content = results.ids
+            self.set_select_actions_visibility()
         self._results_state = current
 
         # update page content
@@ -1688,7 +1691,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_ignore_modal()
 
-        self.set_select_actions_visibility()
         self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
         self.main_window.menu_bar.close_library_action.setEnabled(True)
         self.main_window.menu_bar.sync_library_action.setEnabled(True)
@@ -1715,6 +1717,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_browsing_state(initial_state)
 
         self.main_window.toggle_landing_page(enabled=False)
+        self.main_window.entry_scroll_area.setFocus()
         return open_status
 
     def drop_event(self, event: QDropEvent):

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 
 from tagstudio.i18n.translations import Translations
@@ -24,6 +25,7 @@ class BannerView(QVBoxLayout):
         self.close_button = QPushButton("×")
         self.close_button.setObjectName("bannerCloseButton")
         self.close_button.setFixedSize(24, 24)
+        self.close_button.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         content_row.addWidget(self.close_button)
 
         content_row.addStretch(1)
@@ -33,6 +35,7 @@ class BannerView(QVBoxLayout):
 
         self.action_button = QPushButton(Translations["entries.generic.refresh_alt"])
         self.action_button.setObjectName("bannerActionButton")
+        self.action_button.setFocusPolicy(Qt.FocusPolicy.TabFocus)
         content_row.addWidget(self.action_button)
 
         content_row.addStretch(1)
