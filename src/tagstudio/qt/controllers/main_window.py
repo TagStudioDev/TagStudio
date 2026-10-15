@@ -694,7 +694,7 @@ class MainWindow(QMainWindow):
         self.entry_list_container = QWidget()
         self.entry_list_layout = QVBoxLayout(self.entry_list_container)
         self.entry_list_layout.setSpacing(0)
-        self.entry_list_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
+        self.entry_list_layout.setContentsMargins(0, 0, 0, 0)
 
         self.entry_scroll_area = QScrollArea()
         self.entry_scroll_area.setObjectName("entry_scroll_area")
@@ -705,15 +705,18 @@ class MainWindow(QMainWindow):
         self.entry_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.thumb_grid = ThumbGrid(driver, self.entry_scroll_area)
-        # Padding so floating pagination bar doesn't block bottom of scroll contents
-        self.thumb_grid.setContentsMargins(0, 0, 0, Pagination.HEIGHT)
+        # Left padding is part of the grid so box selections can start from it.
+        # Bottom padding so floating pagination bar doesn't block bottom of scroll contents.
+        self.thumb_grid.setContentsMargins(WIN_PAD, 0, 0, Pagination.HEIGHT)
         self.entry_scroll_area.setWidget(self.thumb_grid)
 
         self.banners = BannerStack()
+        self.banners.setContentsMargins(WIN_PAD, 0, 0, 0)
         self.entry_list_layout.addWidget(self.banners)
 
         self.entry_list_layout.addWidget(self.entry_scroll_area)
         self.landing_widget = LandingWidget(driver, self.devicePixelRatio())
+        self.landing_widget.setContentsMargins(WIN_PAD, 0, 0, 0)
         self.entry_list_layout.addWidget(self.landing_widget)
         self.pagination = Pagination(self.entry_list_container)
         self.central_content_layout.addWidget(self.entry_list_container)

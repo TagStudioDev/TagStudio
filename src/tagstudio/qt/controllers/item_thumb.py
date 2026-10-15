@@ -467,7 +467,7 @@ class ItemThumb(QWidget):
         pos = event.position().toPoint()
         self._set_image_hovered(self._image_rect().contains(pos))
         if self._press_pos is None or event.buttons() != Qt.MouseButton.LeftButton:
-            return
+            return super().mouseMoveEvent(event)
         if (pos - self._press_pos).manhattanLength() < QApplication.startDragDistance():
             return
 

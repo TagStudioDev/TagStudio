@@ -797,6 +797,20 @@ def item_thumb_filename_style(is_selected: bool = False, is_placeholder: bool = 
     return "font-size: 10px; padding-left: 1px; padding-bottom: 1px;"
 
 
+def box_selection_style() -> str:
+    """Style for box selections.
+
+    NOTE: This does not style Qt's `QRubberBand` widget as that doesn't respect stylesheets.
+    This style is used for custom implemented plain QWidgets treated as box selections.
+    """
+    accent = Palette.accent()
+    return (
+        f"background-color: rgba({accent.red()}, {accent.green()}, {accent.blue()}, 64);"
+        f"border: 1px solid {accent.name()};"
+        f"border-radius: {INNER_RADIUS}px;"
+    )
+
+
 def item_thumb_faded_select_color() -> QColor:
     """Semi-transparent accent color used to fill selected item thumbnails."""
     color = Palette.accent()
