@@ -123,7 +123,7 @@ class SelectionState[T: Hashable](QObject):
             self._existing_selection = self.selected
         elif index is not None and target != index:
             # Skip past an earlier selection instead of stopping inside it
-            # NOTE: This mimics macOS Finder behavior in list view
+            # NOTE: This mimics macOS Finder's list view behavior
             direction = 1 if target > index else -1
             earlier = set(self._existing_selection)
             while 0 <= target < len(order) and order[target] in earlier:
