@@ -33,6 +33,7 @@ class SelectionState[T: Hashable](QObject):
 
     @property
     def cursor(self) -> T | None:
+        """The last item clicked or moved to with arrow keys and where they continue from."""
         return self._selection_cursor
 
     def is_selected(self, item_id: T) -> bool:
@@ -105,6 +106,16 @@ class SelectionState[T: Hashable](QObject):
         if self._selection_cursor in removed:
             self._selection_cursor = self._selection_anchor
         self.changed.emit()
+
+    def select_items(self, item_ids: Iterable[T]) -> None:
+        """Set the selection to these items, setting the last one as the anchor and cursor."""
+        previous = self.selected
+        self._selected = dict.fromkeys(item_ids)
+        self._existing_selection = self.selected
+        self._selection_anchor = next(reversed(self._selected), None)
+        self._selection_cursor = self._selection_anchor
+        if self.selected != previous:
+            self.changed.emit()
 
     def move_selection(self, order: Sequence[T], target: int, extend: bool) -> int:
         """Move or extend the selection to `order[target]`, like with an arrow key.

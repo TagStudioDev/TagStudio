@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPixmap
-from PySide6.QtWidgets import QScrollArea, QWidget
+from PySide6.QtWidgets import QApplication, QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
@@ -18,6 +18,7 @@ from tagstudio.previews.media_probe import can_have_duration, get_duration
 from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
+from tagstudio.qt.views.styles.stylesheets import box_selection_style
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -28,9 +29,10 @@ logger = structlog.get_logger(__name__)
 class ThumbGrid(QWidget):
     """A scrollable grid of item thumbnails."""
 
-    DURATION_DELAY_MS = 200  # Allows fast scrolling without getting lagged by duration labels
-    RESIZE_RENDER_DELAY_MS = 200  # Allows more responsive rapid resizing
-    SHOW_THUMBS_DELAY_MS = 200  # Allows quick renders to appear together without a loading flash
+    _BOX_SCROLL_INTERVAL_MS = 16  # Scrolls every interval while box selecting past an edge
+    _DURATION_DELAY_MS = 200  # Allows fast scrolling without getting lagged by duration labels
+    _RESIZE_RENDER_DELAY_MS = 200  # Allows more responsive rapid resizing
+    _SHOW_THUMBS_DELAY_MS = 200  # Allows quick renders to appear together without a loading flash
 
     _duration_loaded = Signal(Path, object)
     _entries_fetched = Signal(int, object, object)
@@ -42,17 +44,29 @@ class ThumbGrid(QWidget):
         self._driver = driver
         self._renderer = QtFileRenderer(driver.lib, driver.settings)
 
+        self._box_scroll_timer = QTimer(self)
+        self._box_scroll_timer.setInterval(self._BOX_SCROLL_INTERVAL_MS)
         self._duration_timer = QTimer(self)
-        self._duration_timer.setInterval(self.DURATION_DELAY_MS)
+        self._duration_timer.setInterval(self._DURATION_DELAY_MS)
         self._duration_timer.setSingleShot(True)
         self._resize_render_timer = QTimer(self)
-        self._resize_render_timer.setInterval(self.RESIZE_RENDER_DELAY_MS)
+        self._resize_render_timer.setInterval(self._RESIZE_RENDER_DELAY_MS)
         self._resize_render_timer.setSingleShot(True)
         self._show_thumbs_timer = QTimer(self)
-        self._show_thumbs_timer.setInterval(self.SHOW_THUMBS_DELAY_MS)
+        self._show_thumbs_timer.setInterval(self._SHOW_THUMBS_DELAY_MS)
         self._show_thumbs_timer.setSingleShot(True)
 
+        self._box_rect = QWidget(self)
+        self._box_rect.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self._box_rect.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._box_rect.setStyleSheet(box_selection_style())
+        self._box_rect.hide()
+
+        self._box_cursor = QPoint()
+        self._box_entries: dict[int, None] = {}  # Entries in the selection box, in grid order
+        self._box_origin: QPoint | None = None
         self._changed_while_fetching: set[int] = set()
+        self._does_box_toggle = False  # Ctrl+Drag toggles the selection instead of adding
         self._durations: dict[Path, float | None] = {}
         self._entries: dict[int, Entry] = {}
         self._entry_ids: list[int] = []
@@ -68,6 +82,7 @@ class ThumbGrid(QWidget):
         self._previous_size_renders: dict[Path, QPixmap] = {}
         self._render_cutoff = 0.0
         self._renders: dict[Path, QPixmap | None] = {}
+        self._scroll_area = scroll_area
         self._scroll_to: int | None = None
 
         self.setLayout(ThumbGridLayout(scroll_area, self._create_thumb))
@@ -79,15 +94,85 @@ class ThumbGrid(QWidget):
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        # Clear selected entries when clicking the background
         if (
             event.button() == Qt.MouseButton.LeftButton
-            and event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.modifiers()
+            in (
+                Qt.KeyboardModifier.NoModifier,
+                Qt.KeyboardModifier.ShiftModifier,
+                Qt.KeyboardModifier.ControlModifier,
+            )
             and isinstance(self.childAt(event.position().toPoint()), ItemThumb | None)
-            and self._driver.selection.selected
         ):
-            self._driver.selection.clear()
+            # Clear selected entries when clicking the background, unless Shift/Ctrl clicking
+            if (
+                event.modifiers() == Qt.KeyboardModifier.NoModifier
+                and self._driver.selection.selected
+            ):
+                self._driver.selection.clear()
+            self._does_box_toggle = event.modifiers() == Qt.KeyboardModifier.ControlModifier
+            self._box_origin = event.position().toPoint()
+            self._box_cursor = event.globalPosition().toPoint()
+            return
         super().mousePressEvent(event)
+
+    @override
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        # Track the box selection if it's active
+        if self._box_origin is None:
+            return super().mouseMoveEvent(event)
+        self._box_cursor = event.globalPosition().toPoint()
+        self._update_box()
+        viewport = self._scroll_area.viewport()
+        # Mouse cursor is inside the viewport, cancel the scroll timer
+        if 0 <= viewport.mapFromGlobal(self._box_cursor).y() < viewport.height():
+            self._box_scroll_timer.stop()
+        # Mouse cursor is above or below the viewport, start scrolling in that direction on a timer
+        elif self._box_rect.isVisible() and not self._box_scroll_timer.isActive():
+            self._box_scroll_timer.start()
+
+    @override
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        # End the box selection, if it was active
+        if self._box_origin is None or event.button() != Qt.MouseButton.LeftButton:
+            return super().mouseReleaseEvent(event)
+        if self._box_rect.isVisible():
+            selection = self._driver.selection
+            kept = selection.selected
+            if self._does_box_toggle:
+                kept = [entry_id for entry_id in kept if entry_id not in self._box_entries]
+            added = [
+                entry_id for entry_id in self._box_entries if not selection.is_selected(entry_id)
+            ]
+            selection.select_items([*kept, *added])
+        self._box_origin = None
+        self._box_rect.hide()
+        self._box_scroll_timer.stop()
+        self._box_entries = {}
+        self._update_selected()
+
+    def _update_box(self) -> None:
+        """Highlight entries in the selection box from the point clicked to the mouse cursor."""
+        origin = unwrap(self._box_origin)
+        end = self.mapFromGlobal(self._box_cursor)
+        if not self._box_rect.isVisible():
+            if (end - origin).manhattanLength() < QApplication.startDragDistance():
+                return
+            self._box_rect.raise_()
+            self._box_rect.show()
+        rect = QRect(origin, end).normalized()
+        self._box_rect.setGeometry(rect)
+        indices = self.layout().indices_in_rect(rect)
+        self._box_entries = dict.fromkeys(self._entry_ids[index] for index in indices)
+        self._update_selected()
+
+    def _scroll_box(self) -> None:
+        """Scroll towards the mouse cursor while it's box selecting past the top or bottom edge."""
+        viewport = self._scroll_area.viewport()
+        y = viewport.mapFromGlobal(self._box_cursor).y()
+        scroll_bar = self._scroll_area.verticalScrollBar()
+        scroll_bar.setValue(scroll_bar.value() + min(y, 0) + max(y - viewport.height(), 0))
+        self._update_box()
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
         scroll_area.installEventFilter(self)
@@ -100,6 +185,7 @@ class ThumbGrid(QWidget):
         self._renderer.updated.connect(self._on_rendered)
         self._resize_render_timer.timeout.connect(self._request_renders)
         self._show_thumbs_timer.timeout.connect(self._show_held_entries)
+        self._box_scroll_timer.timeout.connect(self._scroll_box)
         self._duration_timer.timeout.connect(self._queue_durations)
         self._entries_fetched.connect(self._on_entries_fetched)
         self._duration_loaded.connect(self._on_duration_loaded)
@@ -121,7 +207,7 @@ class ThumbGrid(QWidget):
         if self._fetch_pool is not None:
             self._fetch_pool.clear()
         now = time.monotonic()
-        if now - self._last_entries_time < self.SHOW_THUMBS_DELAY_MS / 1000:
+        if now - self._last_entries_time < self._SHOW_THUMBS_DELAY_MS / 1000:
             # Show entries immediately if the results are changing quickly.
             # Traversing pages or searching quickly feels much more responsive.
             self._show_thumbs_timer.stop()
@@ -240,7 +326,20 @@ class ThumbGrid(QWidget):
     def _update_selected(self) -> None:
         for _, thumb in self.layout().assigned_items():
             if thumb not in self._held:
-                thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
+                thumb.set_selected(self._shows_selected(thumb.item_id))
+
+    def _shows_selected(self, entry_id: int) -> bool:
+        """Whether an item shows as selected, including an unreleased selection box's changes.
+
+        A selection box won't truly select items until released, but items are allowed to
+        appear selected under the box before the selection is completed.
+
+        NOTE: This mimics macOS Finder behavior, and prevents rapid Inspector updates.
+        """
+        selected = self._driver.selection.is_selected(entry_id)
+        if entry_id not in self._box_entries:
+            return selected
+        return not selected if self._does_box_toggle else True
 
     def _create_thumb(self) -> ItemThumb:
         size = self._driver.main_window.thumb_size
@@ -285,7 +384,7 @@ class ThumbGrid(QWidget):
             self._show_loading_image(thumb)
         else:
             self._assign_entry(thumb, entry)
-        thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
+        thumb.set_selected(self._shows_selected(thumb.item_id))
 
     def _clear_thumb(self, thumb: ItemThumb) -> None:
         """Remove the entry details and image a thumbnail is showing."""
