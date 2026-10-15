@@ -183,30 +183,59 @@ class ThumbGrid(QWidget):
         if not self._entry_ids:
             return True
 
+        # Paginated results are treated as a single result set that's visually broken up, meaning:
+        # - Arrow keys move to adjacent pages for navigation and selection
+        # - Arrow keys will jump to the page with the navigated entry
+        results = self._driver.frame_content
+        page_start = self._driver.browsing_history.current.page_index * self._driver.page_size
         cursor = self._driver.selection.cursor
-        index = None if cursor is None else self._entry_indices.get(cursor)
-        if index is None:
-            target = self.layout().first_visible_index() or 0
+        if cursor in results:
+            target = self._index_in_direction(results.index(cursor), key)
         else:
-            target = self._index_in_direction(index, key)
-        target = self._driver.selection.move_selection(self._entry_ids, target, extend)
-        pagination = self._driver.main_window.pagination
-        self.layout().ensure_visible(target, pagination.height() if pagination.isVisible() else 0)
+            target = page_start + (self.layout().first_visible_index() or 0)
+        target = self._driver.selection.move_selection(results, target, extend)
+
+        page = target // self._driver.page_size
+        if page != self._driver.browsing_history.current.page_index:
+            self.scroll_to(results[target])
+            self._driver.page_move(page, absolute=True)
+        else:
+            pagination = self._driver.main_window.pagination
+            bottom_padding = pagination.height() if pagination.isVisible() else 0
+            self.layout().ensure_visible(target - page_start, bottom_padding)
         return True
 
     def _index_in_direction(self, index: int, key: Qt.Key) -> int:
-        """The index of the next item from `index` towards a direction from an arrow key."""
+        """The index of the next item from `index` in an arrow key's direction, across all pages."""
         per_row = self.layout().items_per_row()
-        last = len(self._entry_ids) - 1
+        page_size = self._driver.page_size
+        last = len(self._driver.frame_content) - 1
+        page_start = index - index % page_size
+        page_end = min(page_start + page_size - 1, last)
+        column = (index - page_start) % per_row
         match key:
             case Qt.Key.Key_Left:
                 return max(index - 1, 0)
             case Qt.Key.Key_Right:
                 return min(index + 1, last)
             case Qt.Key.Key_Up:
-                return index - per_row if index >= per_row else index
+                if index - per_row >= page_start:
+                    return index - per_row
+                if page_start == 0:
+                    return index
+                # The same (or closest) column in the PREVIOUS page's last row
+                previous_start = page_start - page_size
+                last_row_start = previous_start + (page_size - 1) // per_row * per_row
+                return min(last_row_start + column, page_start - 1)
             case _:
-                return min(index + per_row, last) if index // per_row < last // per_row else index
+                last_row_start = page_start + (page_end - page_start) // per_row * per_row
+                # The same (or closest) column in THIS page's next row
+                if index < last_row_start:
+                    return min(index + per_row, page_end)
+                if page_end == last:
+                    return index
+                # The same (or closest) column in the NEXT page's first row
+                return min(page_end + 1 + column, page_end + page_size, last)
 
     def _update_selected(self) -> None:
         for _, thumb in self.layout().assigned_items():

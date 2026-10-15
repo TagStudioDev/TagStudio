@@ -1086,6 +1086,12 @@ class QtDriver(DriverMixin, QObject):
         if (sync_banner := self._sync_banner) is not None:
             sync_banner.finish(new_count, unlinked_count, relinked_count)
 
+    # TODO: Break this out of the driver with other thumbnail grid stuff.
+    @property
+    def page_size(self) -> int:
+        """The max page size setting, or number of current results with infinite scroll on."""
+        return len(self.frame_content) if self.settings.infinite_scroll else self.settings.page_size
+
     @property
     def _sync_banner(self) -> SyncBanner | None:
         """Get the sync banner, if there currently is one."""
@@ -1402,12 +1408,8 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
 
-        page_size = (
-            len(self.frame_content) if self.settings.infinite_scroll else self.settings.page_size
-        )
-        page = self.browsing_history.current.page_index
-        start = page * page_size
-        end = min(start + page_size, len(self.frame_content))
+        start = self.browsing_history.current.page_index * self.page_size
+        end = min(start + self.page_size, len(self.frame_content))
 
         self.main_window.thumb_grid.set_entries(self.frame_content[start:end])
         self.main_window.update()

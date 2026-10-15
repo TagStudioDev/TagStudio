@@ -11,7 +11,10 @@ logger = structlog.get_logger(__name__)
 
 
 class SelectionState[T: Hashable](QObject):
-    """Tracks which items are selected, emitting `changed` whenever the selection changes."""
+    """Tracks which items are selected, emitting `changed` whenever the selection changes.
+
+    Selections persist across pages and searches.
+    """
 
     changed = Signal()
 
