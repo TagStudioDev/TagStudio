@@ -156,13 +156,13 @@ class TileList(QWidget):
 
         logger.info(
             "[TileList][add_field_to_selected]",
-            selected=self.driver.selected,
+            selected=self.driver.selection.selected,
             fields=[
                 (field_template.class_name, field_template.id) for field_template in field_templates
             ],
         )
 
-        for entry_id in self.driver.selected:
+        for entry_id in self.driver.selection.selected:
             for field_template in field_templates:
                 logger.info(
                     "[TileList][add_field_to_selected] Adding field",
@@ -180,7 +180,7 @@ class TileList(QWidget):
             tag_ids = [tag_ids]
         logger.info(
             "[TileList][add_tags_to_selected]",
-            selected=self.driver.selected,
+            selected=self.driver.selection.selected,
             tag_ids=tag_ids,
         )
         self.driver.add_tags_to_selected_callback(tag_ids)

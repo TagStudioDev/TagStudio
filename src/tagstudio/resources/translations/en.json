@@ -305,7 +305,7 @@
     "menu.help.changelog": "View Changelog",
     "menu.macros": "&Macros",
     "menu.macros.folders_to_tags": "Folders to Tags",
-    "menu.select": "Select",
+    "menu.select": "&Select",
     "menu.settings": "Settings…",
     "menu.tools": "&Tools",
     "menu.tools.fix_duplicate_files": "Fix &Duplicate Files",

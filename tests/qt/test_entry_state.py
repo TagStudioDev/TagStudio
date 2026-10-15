@@ -55,8 +55,8 @@ def test_badge_click_updates_whole_selection(qt_driver: QtDriver, qtbot: QtBot):
     qtbot.waitUntil(lambda: not grid._held)
     thumbs = [unwrap(grid.layout().widget_at(index)) for index in (0, 1)]
 
-    qt_driver.toggle_item_selection(1, append=False, bridge=False)
-    qt_driver.toggle_item_selection(2, append=True, bridge=False)
+    qt_driver.selection.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.selection.toggle_item_selection(2, append=True, bridge=False)
     thumbs[0].layout().badges[TAG_FAVORITE].setChecked(True)
 
     assert all(thumb.layout().badges[TAG_FAVORITE].isChecked() for thumb in thumbs)

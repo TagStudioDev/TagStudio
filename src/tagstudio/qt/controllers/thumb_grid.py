@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import Qt, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QColor, QMouseEvent, QPixmap
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPixmap
 from PySide6.QtWidgets import QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
@@ -84,12 +84,13 @@ class ThumbGrid(QWidget):
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers() == Qt.KeyboardModifier.NoModifier
             and isinstance(self.childAt(event.position().toPoint()), ItemThumb | None)
-            and self._driver.selected
+            and self._driver.selection.selected
         ):
-            self._driver.clear_select_action_callback()
+            self._driver.selection.clear()
         super().mousePressEvent(event)
 
     def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
+        scroll_area.installEventFilter(self)
         scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
         self.layout().items_assigned.connect(self._on_items_assigned)
         self.layout().items_unassigned.connect(self._on_items_unassigned)
@@ -103,6 +104,7 @@ class ThumbGrid(QWidget):
         self._entries_fetched.connect(self._on_entries_fetched)
         self._duration_loaded.connect(self._on_duration_loaded)
         self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+        self._driver.selection.changed.connect(self._update_selected)
 
     def set_entries(self, entry_ids: list[int]) -> None:
         self._generation += 1
@@ -157,10 +159,88 @@ class ThumbGrid(QWidget):
             thumb.set_filename_visibility(visible)
         self.layout().activate()
 
-    def update_selected(self) -> None:
+    @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress and isinstance(event, QKeyEvent):
+            # NOTE: macOS marks arrow keys as keypad keys:
+            # https://doc.qt.io/qt-6/qt.html#KeyboardModifier-enum
+            modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+            is_shift = modifiers == Qt.KeyboardModifier.ShiftModifier
+            if (is_shift or modifiers == Qt.KeyboardModifier.NoModifier) and self._move_selection(
+                Qt.Key(event.key()), extend=is_shift
+            ):
+                return True
+        return super().eventFilter(watched, event)
+
+    def _move_selection(self, key: Qt.Key, extend: bool) -> bool:
+        """Move or extend the selection with an arrow key.
+
+        Returns:
+            bool: True if `key` is an arrow key.
+        """
+        if key not in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+            return False
+        if not self._entry_ids:
+            return True
+
+        # Paginated results are treated as a single result set that's visually broken up, meaning:
+        # - Arrow keys move to adjacent pages for navigation and selection
+        # - Arrow keys will jump to the page with the navigated entry
+        results = self._driver.frame_content
+        page_start = self._driver.browsing_history.current.page_index * self._driver.page_size
+        cursor = self._driver.selection.cursor
+        if cursor in results:
+            target = self._index_in_direction(results.index(cursor), key)
+        else:
+            target = page_start + (self.layout().first_visible_index() or 0)
+        target = self._driver.selection.move_selection(results, target, extend)
+
+        page = target // self._driver.page_size
+        if page != self._driver.browsing_history.current.page_index:
+            self.scroll_to(results[target])
+            self._driver.page_move(page, absolute=True)
+        else:
+            pagination = self._driver.main_window.pagination
+            bottom_padding = pagination.height() if pagination.isVisible() else 0
+            self.layout().ensure_visible(target - page_start, bottom_padding)
+        return True
+
+    def _index_in_direction(self, index: int, key: Qt.Key) -> int:
+        """The index of the next item from `index` in an arrow key's direction, across all pages."""
+        per_row = self.layout().items_per_row()
+        page_size = self._driver.page_size
+        last = len(self._driver.frame_content) - 1
+        page_start = index - index % page_size
+        page_end = min(page_start + page_size - 1, last)
+        column = (index - page_start) % per_row
+        match key:
+            case Qt.Key.Key_Left:
+                return max(index - 1, 0)
+            case Qt.Key.Key_Right:
+                return min(index + 1, last)
+            case Qt.Key.Key_Up:
+                if index - per_row >= page_start:
+                    return index - per_row
+                if page_start == 0:
+                    return index
+                # The same (or closest) column in the PREVIOUS page's last row
+                previous_start = page_start - page_size
+                last_row_start = previous_start + (page_size - 1) // per_row * per_row
+                return min(last_row_start + column, page_start - 1)
+            case _:
+                last_row_start = page_start + (page_end - page_start) // per_row * per_row
+                # The same (or closest) column in THIS page's next row
+                if index < last_row_start:
+                    return min(index + per_row, page_end)
+                if page_end == last:
+                    return index
+                # The same (or closest) column in the NEXT page's first row
+                return min(page_end + 1 + column, page_end + page_size, last)
+
+    def _update_selected(self) -> None:
         for _, thumb in self.layout().assigned_items():
             if thumb not in self._held:
-                thumb.set_selected(thumb.item_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
+                thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
 
     def _create_thumb(self) -> ItemThumb:
         size = self._driver.main_window.thumb_size
@@ -205,7 +285,7 @@ class ThumbGrid(QWidget):
             self._show_loading_image(thumb)
         else:
             self._assign_entry(thumb, entry)
-        thumb.set_selected(thumb.item_id in self._driver._selected)  # pyright: ignore[reportPrivateUsage]
+        thumb.set_selected(self._driver.selection.is_selected(thumb.item_id))
 
     def _clear_thumb(self, thumb: ItemThumb) -> None:
         """Remove the entry details and image a thumbnail is showing."""

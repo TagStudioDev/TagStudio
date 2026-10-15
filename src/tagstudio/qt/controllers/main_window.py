@@ -68,9 +68,6 @@ class MainMenuBar(QMenuBar):
 
     edit_menu: QMenu
     new_tag_action: QAction
-    select_all_action: QAction
-    select_inverse_action: QAction
-    clear_select_action: QAction
     copy_fields_action: QAction
     paste_fields_action: QAction
     add_tag_to_selected_action: QAction
@@ -79,6 +76,11 @@ class MainMenuBar(QMenuBar):
     tag_manager_action: QAction
     field_template_manager_action: QAction
     color_manager_action: QAction
+
+    select_menu: QMenu
+    select_all_action: QAction
+    clear_select_action: QAction
+    select_inverse_action: QAction
 
     view_menu: QMenu
     show_filenames_action: QAction
@@ -101,6 +103,7 @@ class MainMenuBar(QMenuBar):
 
         self.setup_file_menu()
         self.setup_edit_menu()
+        self.setup_select_menu()
         self.setup_view_menu()
         self.setup_tools_menu()
         self.setup_macros_menu()
@@ -193,39 +196,6 @@ class MainMenuBar(QMenuBar):
 
         self.edit_menu.addSeparator()
 
-        # Select All
-        self.select_all_action = QAction(Translations["select.all"], self)
-        self.select_all_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
-            )
-        )
-        self.select_all_action.setToolTip("Ctrl+A")
-        self.select_all_action.setEnabled(False)
-        self.edit_menu.addAction(self.select_all_action)
-
-        # Invert Selection
-        self.select_inverse_action = QAction(Translations["select.inverse"], self)
-        self.select_inverse_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_I,
-            )
-        )
-        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
-        self.select_inverse_action.setEnabled(False)
-        self.edit_menu.addAction(self.select_inverse_action)
-
-        # Clear Selection
-        self.clear_select_action = QAction(Translations["select.clear"], self)
-        self.clear_select_action.setEnabled(False)
-        self.clear_select_action.setToolTip("Esc")
-        self.edit_menu.addAction(self.clear_select_action)
-
         # Copy Fields
         self.copy_fields_action = QAction(Translations["edit.copy_fields"], self)
         self.copy_fields_action.setShortcut(
@@ -309,6 +279,45 @@ class MainMenuBar(QMenuBar):
 
         assign_mnemonics(self.edit_menu)
         self.addMenu(self.edit_menu)
+
+    def setup_select_menu(self):
+        self.select_menu = QMenu(Translations["menu.select"], self)
+
+        # Select All
+        self.select_all_action = QAction(Translations["select.all"], self)
+        self.select_all_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_A,
+            )
+        )
+        self.select_all_action.setToolTip("Ctrl+A")
+        self.select_all_action.setEnabled(False)
+        self.select_menu.addAction(self.select_all_action)
+
+        # Clear Selection
+        self.clear_select_action = QAction(Translations["select.clear"], self)
+        self.clear_select_action.setEnabled(False)
+        self.clear_select_action.setToolTip("Esc")
+        self.select_menu.addAction(self.clear_select_action)
+
+        # Invert Selection
+        self.select_inverse_action = QAction(Translations["select.inverse"], self)
+        self.select_inverse_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_I,
+            )
+        )
+        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
+        self.select_inverse_action.setEnabled(False)
+        self.select_menu.addAction(self.select_inverse_action)
+
+        assign_mnemonics(self.select_menu)
+        self.addMenu(self.select_menu)
 
     def setup_view_menu(self):
         self.view_menu = QMenu(Translations["menu.view"], self)

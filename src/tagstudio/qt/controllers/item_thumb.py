@@ -143,10 +143,11 @@ class ItemThumb(QWidget):
             self._driver.delete_files_callback(self._item_path, self.item_id)
 
     def _toggle_item_selection(self) -> None:
-        self._driver.toggle_item_selection(
+        modifiers = QGuiApplication.keyboardModifiers()
+        self._driver.selection.toggle_item_selection(
             self.item_id,
-            append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
-            bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+            append=bool(modifiers & Qt.KeyboardModifier.ControlModifier),
+            bridge=bool(modifiers & Qt.KeyboardModifier.ShiftModifier),
         )
 
     def _image_rect(self) -> QRect:
@@ -343,7 +344,7 @@ class ItemThumb(QWidget):
                 badge.setHidden(not (show or badge.isChecked()))
 
     def _on_badge_check(self, tag_id: int):
-        selected = self._driver.selected
+        selected = self._driver.selection.selected
         entry_ids = selected if self.item_id in selected else [self.item_id]
         is_checked = self.layout().badges[tag_id].isChecked()
         self._driver.entry_state.set_tag(entry_ids, tag_id, is_checked)
@@ -353,7 +354,7 @@ class ItemThumb(QWidget):
         paths: list[QUrl] = []
         mimedata = QMimeData()
 
-        selected_ids = self._driver.selected
+        selected_ids = self._driver.selection.selected
 
         for entry_id in selected_ids:
             entry = self._lib.get_entry(entry_id)
@@ -444,11 +445,11 @@ class ItemThumb(QWidget):
             return super().mousePressEvent(event)
 
         self._press_pos = pos
-        ctrl = QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier
+        ctrl = bool(QGuiApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier)
         self._select_on_release = False
         if ctrl or not self._selected:
             self._toggle_item_selection()
-        elif len(self._driver.selected) > 1:
+        elif len(self._driver.selection.selected) > 1:
             # Wait for release so clicking a selected item can still drag the existing selection
             self._select_on_release = True
 
@@ -478,6 +479,8 @@ class ItemThumb(QWidget):
         if self._item_path is None or not self._image_rect().contains(event.pos()):
             return super().contextMenuEvent(event)
 
+        if not self._selected:
+            self._driver.selection.toggle_item_selection(self.item_id, append=False, bridge=False)
         view = self.layout()
         QMenu.exec(
             [view.open_file_action, view.open_explorer_action, view.delete_action],

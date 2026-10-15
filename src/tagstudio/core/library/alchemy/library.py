@@ -602,6 +602,19 @@ class Library:
             entries = dict((e.id, e) for e in session.scalars(statement))
             return [entries[id] for id in entry_ids if id in entries]
 
+    def removed_entry_ids(self, entry_ids: Iterable[int]) -> set[int]:
+        """Return IDs from `entry_ids` that no longer exist in the library."""
+        entry_ids = list(entry_ids)
+        existing: set[int] = set()
+
+        with Session(self.engine) as session:
+            for sub_list in [
+                entry_ids[i : i + MAX_SQL_VARIABLES]
+                for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
+            ]:
+                existing.update(session.scalars(select(Entry.id).where(Entry.id.in_(sub_list))))
+        return set(entry_ids) - existing
+
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:

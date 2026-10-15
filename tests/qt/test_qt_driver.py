@@ -46,7 +46,7 @@ def test_close_library(qt_driver: QtDriver):
     # Then
     assert qt_driver.lib.library_dir is None
     assert not qt_driver.frame_content
-    assert not qt_driver.selected
+    assert not qt_driver.selection.selected
     assert len(qt_driver.main_window.thumb_grid._entry_ids) == 0
 
     # close library again to see there's no error
