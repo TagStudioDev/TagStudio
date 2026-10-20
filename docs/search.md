@@ -114,6 +114,18 @@ While the following searches will **NOT:**
 - `path: PieCe.jpg` _(Reason: Mismatched case)_
 - `path: *PieCe.jpg*` _(Reason: Mismatched case)_
 
+### File Type
+
+Use `filetype:` followed by a file extension to find entries with that extension. For example, `filetype:png` finds PNG entries. Equivalent extensions are included: `filetype:jpg` also finds `.jpeg` entries.
+
+File-type searches match filename extensions. Preview support is independent of this filter. You can combine file-type searches with the [Boolean operators](#boolean-operators) and other search terms described above.
+
+#### Examples
+
+- `filetype:png` finds PNG entries.
+- `filetype:jpg OR filetype:png` finds JPEG and PNG entries.
+- `path:Artwork filetype:png` finds PNG entries whose path contains `Artwork`.
+
 ## Special Searches
 
 Some predefined searches use the `special:` keyword prefix and give quick results for certain special search queries.
