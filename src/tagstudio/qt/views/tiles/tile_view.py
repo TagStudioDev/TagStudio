@@ -41,8 +41,8 @@ class TileView(QVBoxLayout):
         self.title_widget = QLabel()
         self.title_widget.setMinimumHeight(_BUTTON_SIZE)
         self.title_widget.setWordWrap(True)
-        self.title_layout.addWidget(self.title_widget)
-        self.title_layout.addStretch(2)
+        self.title_layout.addWidget(self.title_widget, stretch=1)
+        self.title_layout.addStretch()
 
         self.copy_button = QPushButton()
         self.copy_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)

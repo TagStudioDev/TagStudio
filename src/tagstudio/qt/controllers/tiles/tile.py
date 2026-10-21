@@ -32,7 +32,9 @@ class Tile(QWidget):
 
     @override
     def layout(self) -> TileView:
-        return super().layout()  # pyright: ignore[reportReturnType]
+        layout = super().layout()
+        assert isinstance(layout, TileView)
+        return layout
 
     def set_copy_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
@@ -100,5 +102,5 @@ class Tile(QWidget):
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.layout().title_widget.setFixedWidth(int(event.size().width() // 1.5))
+        self.layout().title_widget.setMaximumWidth(int(event.size().width() // 1.5))
         return super().resizeEvent(event)
