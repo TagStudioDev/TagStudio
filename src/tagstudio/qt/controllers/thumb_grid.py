@@ -9,13 +9,14 @@ from typing import TYPE_CHECKING, override
 import structlog
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QKeyEvent, QMouseEvent, QPixmap
-from PySide6.QtWidgets import QApplication, QScrollArea, QWidget
+from PySide6.QtWidgets import QApplication, QFrame, QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import can_have_duration, get_duration
 from tagstudio.qt.controllers.item_thumb import ItemThumb
+from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 from tagstudio.qt.views.layouts.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.views.styles.stylesheets import box_selection_style
@@ -38,7 +39,7 @@ class ThumbGrid(QWidget):
     _entries_fetched = Signal(int, object, object)
     visible_changed = Signal(int)  # ID of the first visible entry
 
-    def __init__(self, driver: QtDriver, scroll_area: QScrollArea) -> None:
+    def __init__(self, driver: QtDriver, pagination: Pagination) -> None:
         super().__init__()
         self.setObjectName("thumb_grid")
         self._driver = driver
@@ -78,19 +79,36 @@ class ThumbGrid(QWidget):
         self._held: set[ItemThumb] = set()
         self._last_entries_time = 0.0
         self._loading_image: QPixmap | None = None
+        self._pagination = pagination
         self._pending_durations: set[Path] = set()
         self._previous_size_renders: dict[Path, QPixmap] = {}
         self._render_cutoff = 0.0
         self._renders: dict[Path, QPixmap | None] = {}
-        self._scroll_area = scroll_area
+        self._scroll_area = QScrollArea()
         self._scroll_to: int | None = None
 
-        self.setLayout(ThumbGridLayout(scroll_area, self._create_thumb))
-        self._connect_callbacks(scroll_area)
+        self.setLayout(ThumbGridLayout(self._scroll_area, self._create_thumb))
+        self._setup_scroll_area()
+        self._connect_callbacks()
 
     @override
     def layout(self) -> ThumbGridLayout[ItemThumb]:
         return super().layout()  # pyright: ignore[reportReturnType]
+
+    @property
+    def scroll_area(self) -> QScrollArea:
+        """The scroll area holding the thumbnail grid."""
+        return self._scroll_area
+
+    def _setup_scroll_area(self) -> None:
+        scroll_area = self._scroll_area
+        scroll_area.setObjectName("entry_scroll_area")
+        scroll_area.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setWidget(self)
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
@@ -174,9 +192,9 @@ class ThumbGrid(QWidget):
         scroll_bar.setValue(scroll_bar.value() + min(y, 0) + max(y - viewport.height(), 0))
         self._update_box()
 
-    def _connect_callbacks(self, scroll_area: QScrollArea) -> None:
-        scroll_area.installEventFilter(self)
-        scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
+    def _connect_callbacks(self) -> None:
+        self._scroll_area.installEventFilter(self)
+        self._scroll_area.verticalScrollBar().valueChanged.connect(lambda _: self.layout().update())
         self.layout().items_assigned.connect(self._on_items_assigned)
         self.layout().items_unassigned.connect(self._on_items_unassigned)
         self.layout().first_visible_changed.connect(
@@ -286,8 +304,7 @@ class ThumbGrid(QWidget):
             self.scroll_to(results[target])
             self._driver.page_move(page, absolute=True)
         else:
-            pagination = self._driver.main_window.pagination
-            bottom_padding = pagination.height() if pagination.isVisible() else 0
+            bottom_padding = self._pagination.height() if self._pagination.isVisible() else 0
             self.layout().ensure_visible(target - page_start, bottom_padding)
         return True
 
