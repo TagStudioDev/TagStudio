@@ -12,7 +12,6 @@ import ctypes
 import math
 import os
 import platform
-import re
 import sys
 import time
 from argparse import Namespace
@@ -20,7 +19,7 @@ from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
 from queue import Queue
-from typing import TypeVar
+from typing import Any, TypeVar
 from warnings import catch_warnings
 
 import semver
@@ -38,13 +37,9 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QColor,
-    QDragEnterEvent,
-    QDragMoveEvent,
-    QDropEvent,
     QFontDatabase,
     QGuiApplication,
     QIcon,
-    QMouseEvent,
     QPalette,
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
@@ -57,8 +52,6 @@ from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.sync import LibrarySyncEngine
-from tagstudio.core.media_types import MediaTypes
-from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
@@ -84,7 +77,6 @@ from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.mixed.about_modal import AboutModal
-from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
@@ -204,7 +196,6 @@ class QtDriver(DriverMixin, QObject):
         # State Management
         self.entry_state = EntryState(self.lib)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
-        self.selection.changed.connect(self._on_selection_changed)
 
         # Thumbnail Grid
         self.frame_content: list[int] = []  # List of Entry IDs for the current query
@@ -350,10 +341,6 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation
-        self.main_window.dragEnterEvent = self.drag_enter_event
-        self.main_window.dragMoveEvent = self.drag_move_event
-        self.main_window.dropEvent = self.drop_event
 
         self.splash: SplashScreen = SplashScreen(
             resource_manager=self.rm,
@@ -422,185 +409,8 @@ class QtDriver(DriverMixin, QObject):
             lambda chosen_tag: self.add_tags_to_selected_callback([chosen_tag])
         )
 
-        # region Menu Bar
-
-        # region File Menu ============================================================
-        # Open/Create Library
-        self.main_window.menu_bar.open_library_action.triggered.connect(
-            self.open_library_from_dialog
-        )
-
-        # Open Recent
         self.update_recent_lib_menu()
-
-        # Save Library Backup
-        self.main_window.menu_bar.save_library_backup_action.triggered.connect(
-            lambda: self.call_if_library_open(self.backup_library)
-        )
-
-        # Settings
-        self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
-
-        # Reopen Library on Start
-        self.main_window.menu_bar.open_on_start_action.setChecked(
-            self.settings.open_last_loaded_on_startup
-        )
-
-        def set_open_last_loaded_on_startup(checked: bool):
-            self.settings.open_last_loaded_on_startup = checked
-            self.settings.save()
-
-        self.main_window.menu_bar.open_on_start_action.triggered.connect(
-            set_open_last_loaded_on_startup
-        )
-
-        # Sync Library
-        self.main_window.menu_bar.sync_library_action.triggered.connect(
-            lambda: self.call_if_library_open(self.sync_library_callback)
-        )
-
-        # Close Library
-        self.main_window.menu_bar.close_library_action.triggered.connect(self.close_library)
-
-        # endregion
-
-        # region Edit Menu ============================================================
-        self.main_window.menu_bar.new_tag_action.triggered.connect(
-            lambda: self.add_tag_action_callback()
-        )
-
-        self.main_window.menu_bar.select_all_action.triggered.connect(self.selection.select_all)
-
-        self.main_window.menu_bar.select_inverse_action.triggered.connect(
-            self.selection.select_inverse
-        )
-
-        self.main_window.menu_bar.clear_select_action.triggered.connect(self.selection.clear)
-
-        self.copy_buffer: dict = {"fields": [], "tags": []}
-
-        self.main_window.menu_bar.copy_fields_action.triggered.connect(
-            self.copy_fields_action_callback
-        )
-
-        self.main_window.menu_bar.paste_fields_action.triggered.connect(
-            self.paste_fields_action_callback
-        )
-
-        self.main_window.menu_bar.add_tag_to_selected_action.triggered.connect(
-            self.add_tag_modal.show
-        )
-
-        self.main_window.menu_bar.delete_file_action.triggered.connect(
-            lambda f="": self.delete_files_callback(f)
-        )
-
-        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager.show)
-
-        self.main_window.menu_bar.color_manager_action.triggered.connect(
-            self.color_manager_panel.show
-        )
-
-        self.main_window.menu_bar.field_template_manager_action.triggered.connect(
-            self.field_template_manager.show
-        )
-
-        # endregion
-
-        # region View Menu ============================================================
-
-        def create_library_info_window():
-            if not hasattr(self, "library_info_window"):
-                self.library_info_window = LibraryInfoWindow(self.lib, self)
-            self.library_info_window.show()
-
-        self.main_window.menu_bar.library_info_action.triggered.connect(create_library_info_window)
-
-        def on_show_filenames_action(checked: bool):
-            self.settings.show_filenames_in_grid = checked
-            self.settings.save()
-            self.show_grid_filenames(checked)
-
-        self.main_window.menu_bar.show_filenames_action.triggered.connect(on_show_filenames_action)
-        self.main_window.menu_bar.show_filenames_action.setChecked(
-            self.settings.show_filenames_in_grid
-        )
-
-        def on_decrease_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
-            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
-
-        self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
-            on_decrease_thumbnail_size_action
-        )
-
-        def on_increase_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
-            if not new_val < 0:
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
-
-        self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
-            on_increase_thumbnail_size_action
-        )
-
-        # endregion
-
-        # region Tools Menu ===========================================================
-
-        self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
-            self.open_fix_unlinked_entries_modal
-        )
-
-        def create_ignored_entries_modal():
-            if not hasattr(self, "ignored_modal"):
-                self.ignored_modal = FixIgnoredEntriesModal(self.lib, self)
-            self.ignored_modal.show()
-
-        self.main_window.menu_bar.fix_ignored_entries_action.triggered.connect(
-            create_ignored_entries_modal
-        )
-
-        def create_dupe_files_modal():
-            if not hasattr(self, "dupe_modal"):
-                self.dupe_modal = FixDupeFilesModal(self.lib, self)
-            self.dupe_modal.show()
-
-        self.main_window.menu_bar.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
-
-        # TODO: Make this accessible somewhere more sensible too, like "Library Information"
-        self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: unwrap(self.cache_manager).clear_cache()
-        )
-
-        # endregion
-
-        # region Macros Menu ==========================================================
-        def create_folders_tags_modal():
-            if not hasattr(self, "folders_modal"):
-                self.folders_modal = FoldersToTagsModal(self.lib, self)
-            self.folders_modal.show()
-
-        self.main_window.menu_bar.folders_to_tags_action.triggered.connect(
-            create_folders_tags_modal
-        )
-
-        # endregion
-
-        # region Help Menu ============================================================
-        def create_about_modal():
-            if not hasattr(self, "about_modal"):
-                self.about_modal = AboutModal(self.global_settings_path)
-            self.about_modal.show()
-
-        self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
-        self.main_window.menu_bar.changelog_action.triggered.connect(self.show_changelog)
-
-        # endregion
-
-        # endregion
-
-        self.main_window.search_field.textChanged.connect(self.update_completions_list)
+        self.copy_buffer: dict[str, list[Any]] = {"fields": [], "tags": []}
 
         def on_visible_changed(entry_id: int):
             self.browsing_history.current.first_visible_entry_id = entry_id
@@ -622,7 +432,7 @@ class QtDriver(DriverMixin, QObject):
                 startup_path = str(last_library)
 
         if not startup_path:
-            self.main_window.landing_widget.animate_logo_in()
+            self.main_window.browsing_area.landing_page.animate_logo_in()
         else:
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
             if startup_result.success and startup_result.library_path:
@@ -642,7 +452,7 @@ class QtDriver(DriverMixin, QObject):
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
-        self.main_window.landing_widget.set_status_label(error_name)
+        self.main_window.browsing_area.landing_page.set_status_label(error_name)
         self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
 
         msg_box = QMessageBox()
@@ -657,83 +467,55 @@ class QtDriver(DriverMixin, QObject):
         msg_box.exec()
 
     def init_library_window(self):
-        # self._init_landing_page() # Taken care of inside the widget now
-
-        # TODO: Put this into its own method that copies the font file(s) into memory
-        # so the resource isn't being used, then store the specific size variations
-        # in a global dict for methods to access for different DPIs.
-        # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-
-        def _update_browsing_state():
-            # Clear any banner asking for a manual refresh of the view
-            sync_banner = self._sync_banner
-            if sync_banner is not None and sync_banner.is_awaiting_refresh:
-                sync_banner.hide_banner()
-            self._results_state = None  # Submitting a search always searches again
-            try:
-                self.update_browsing_state(
-                    BrowsingState.from_search_query(self.main_window.search_field.text())
-                    .with_sorting_mode(self.main_window.sorting_mode)
-                    .with_sorting_direction(self.main_window.sorting_direction)
-                    .with_show_hidden_entries(self.main_window.show_hidden_entries)
-                )
-            except ParsingError as e:
-                self.main_window.results_label.setText(
-                    f"{Translations['status.results.invalid_syntax']} "
-                    f'"{self.main_window.search_field.text()}"'
-                )
-                logger.error("[QtDriver] Could not update BrowsingState", error=e)
-
-        # Search Button
-        self.main_window.search_button.clicked.connect(_update_browsing_state)
-
-        # Search Field
-        self.main_window.search_field.returnPressed.connect(_update_browsing_state)
+        self.main_window.search_bar.search_submitted.connect(self.submit_search)
 
         # Sorting Dropdowns
-        self.main_window.sorting_mode_combobox.setCurrentIndex(
-            list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
-        )
-        self.main_window.sorting_mode_combobox.currentIndexChanged.connect(
-            self.sorting_mode_callback
-        )
-
-        self.main_window.sorting_direction_combobox.currentIndexChanged.connect(
-            self.sorting_direction_callback
-        )
-
-        # Thumbnail Size ComboBox
-        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-        self.main_window.thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
-        )
+        self.main_window.set_sorting_mode(self.browsing_history.current.sorting_mode)
+        self.main_window.sorting_mode_changed.connect(self.sorting_mode_callback)
+        self.main_window.sorting_direction_changed.connect(self.sorting_direction_callback)
 
         # Exclude hidden entries checkbox
-        self.main_window.show_hidden_entries_checkbox.setChecked(False)  # Default: No
-        self.main_window.show_hidden_entries_checkbox.stateChanged.connect(
-            self.show_hidden_entries_callback
-        )
+        self.main_window.show_hidden_entries_changed.connect(self.show_hidden_entries_callback)
 
-        self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
-        self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
+        self.main_window.navigation_requested.connect(self.navigation_callback)
 
         # NOTE: Putting this too early will result in a non-responsive white window on start.
         self.main_window.show()
         self.main_window.activateWindow()
-        self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.browsing_area.toggle_landing_page(enabled=True)
 
-        self.main_window.pagination.index.connect(lambda i: self.page_move(i, absolute=True))
-        self.main_window.pagination.index.connect(
-            lambda _: self.main_window.entry_scroll_area.setFocus()
+        self.main_window.browsing_area.pagination.index.connect(
+            lambda i: self.page_move(i, absolute=True)
+        )
+        self.main_window.browsing_area.landing_page.open_library_requested.connect(
+            self.open_library_from_dialog
         )
 
         self.splash.finish(self.main_window)
+
+    def submit_search(self, query: str) -> None:
+        # Clear any banner asking for a manual refresh of the view
+        sync_banner = self._sync_banner
+        if sync_banner is not None and sync_banner.is_awaiting_refresh:
+            sync_banner.hide_banner()
+        self._results_state = None  # Submitting a search always searches again
+        try:
+            self.update_browsing_state(
+                BrowsingState.from_search_query(query)
+                .with_sorting_mode(self.main_window.sorting_mode)
+                .with_sorting_direction(self.main_window.sorting_direction)
+                .with_show_hidden_entries(self.main_window.show_hidden_entries)
+            )
+        except ParsingError as e:
+            self.main_window.set_results_text(
+                f'{Translations["status.results.invalid_syntax"]} "{query}"'
+            )
+            logger.error("[QtDriver] Could not update BrowsingState", error=e)
 
     def init_ignore_modal(self):
         """Initialize the Ignore Files panel."""
         if self.ignore_modal:
             with catch_warnings(record=True):
-                self.main_window.menu_bar.ignore_modal_action.triggered.disconnect()
                 self.ignore_modal.saved.disconnect()
             self.ignore_modal.deleteLater()
             self.ignore_modal = None
@@ -745,7 +527,6 @@ class QtDriver(DriverMixin, QObject):
             is_savable=True,
         )
         self.ignore_modal.saved.connect(panel.save)
-        self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
 
     def show_grid_filenames(self, value: bool):
         self.main_window.thumb_grid.set_filenames_visible(value)
@@ -772,7 +553,7 @@ class QtDriver(DriverMixin, QObject):
             thread.quit()
             thread.wait(deadline)
         if any(thread.isRunning() for thread in self.thumb_threads):
-            logger.warning("[QtDriver]Forcing exit of remaining thumbnail threads...")
+            logger.warning("[QtDriver] Forcing exit of remaining thumbnail threads...")
             os._exit(0)
 
         QApplication.quit()
@@ -789,16 +570,16 @@ class QtDriver(DriverMixin, QObject):
         self._new_sync_session()
         self._wait_for_sync_stop()
         self.file_scan_lock = False
-        self.main_window.banners.clear()
+        self.main_window.browsing_area.banners.clear()
 
         if not is_shutdown:
             self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
             self.cached_values.sync()
 
         # Reset library state
-        self.main_window.search_field.setText("")
-        self.main_window.results_label.setText("")
-        scrollbar: QScrollArea = self.main_window.entry_scroll_area
+        self.main_window.search_bar.set_query("")
+        self.main_window.set_results_text("")
+        scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
         self.__reset_navigation()
 
@@ -821,32 +602,11 @@ class QtDriver(DriverMixin, QObject):
             self.library_info_window.close()
 
         self.main_window.thumb_grid.set_entries([])
-        self.main_window.toggle_landing_page(enabled=True)
-        self.main_window.landing_widget.animate_logo_in()
-        self.main_window.pagination.setHidden(True)
-        try:
-            self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
-            self.main_window.menu_bar.close_library_action.setEnabled(False)
-            self.main_window.menu_bar.sync_library_action.setEnabled(False)
-            self.main_window.menu_bar.tag_manager_action.setEnabled(False)
-            self.main_window.menu_bar.color_manager_action.setEnabled(False)
-            self.main_window.menu_bar.field_template_manager_action.setEnabled(False)
-            self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
-            self.main_window.menu_bar.new_tag_action.setEnabled(False)
-            self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
-            self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(False)
-            self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
-            self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
-            self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
-            self.main_window.menu_bar.library_info_action.setEnabled(False)
-        except AttributeError:
-            logger.warning(
-                "[Library] Could not disable library management menu actions. Is this in a test?"
-            )
-
-        # NOTE: Doesn't try to disable during tests
-        if self.main_window.menu_bar.add_tag_to_selected_action:
-            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
+        self.main_window.browsing_area.toggle_landing_page(enabled=True)
+        self.main_window.browsing_area.landing_page.animate_logo_in()
+        self.main_window.browsing_area.pagination.setHidden(True)
+        self.main_window.menu_bar.set_library_actions_enabled(False)
+        self.main_window.menu_bar.update_select_actions()
 
     def backup_library(self):
         logger.info("[QtDriver] Backing up library...")
@@ -876,7 +636,7 @@ class QtDriver(DriverMixin, QObject):
 
     def search_for_tag_callback(self, tag_id: int) -> None:
         """Callback to search for a given Tag ID."""
-        self.main_window.search_field.setText(f"tag_id:{tag_id}")
+        self.main_window.search_bar.set_query(f"tag_id:{tag_id}")
         self.update_browsing_state(BrowsingState.from_tag_id(tag_id, self.browsing_history.current))
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
@@ -1095,7 +855,7 @@ class QtDriver(DriverMixin, QObject):
     @property
     def _sync_banner(self) -> SyncBanner | None:
         """Get the sync banner, if there currently is one."""
-        return self.main_window.banners.get(SyncBanner.KEY, SyncBanner)
+        return self.main_window.browsing_area.banners.get(SyncBanner.KEY, SyncBanner)
 
     def _create_sync_banner(self) -> SyncBanner:
         banner = SyncBanner()
@@ -1103,7 +863,7 @@ class QtDriver(DriverMixin, QObject):
         banner.review_requested.connect(self._on_unlinked_banner_review)
         banner.settings_requested.connect(self._on_sync_disabled_open_settings)
         banner.progress_cancelled.connect(self._on_sync_cancel_requested)
-        self.main_window.banners.push(banner, key=SyncBanner.KEY)
+        self.main_window.browsing_area.banners.push(banner, key=SyncBanner.KEY)
         return banner
 
     def _on_sync_cancel_requested(self) -> None:
@@ -1141,6 +901,31 @@ class QtDriver(DriverMixin, QObject):
         if (sync_banner := self._sync_banner) is not None:
             sync_banner.hide_banner(force=True)
         self.open_settings_modal()
+
+    def open_library_info_window(self):
+        if not hasattr(self, "library_info_window"):
+            self.library_info_window = LibraryInfoWindow(self.lib, self)
+        self.library_info_window.show()
+
+    def open_fix_ignored_entries_modal(self):
+        if not hasattr(self, "ignored_modal"):
+            self.ignored_modal = FixIgnoredEntriesModal(self.lib, self)
+        self.ignored_modal.show()
+
+    def open_fix_dupe_files_modal(self):
+        if not hasattr(self, "dupe_modal"):
+            self.dupe_modal = FixDupeFilesModal(self.lib, self)
+        self.dupe_modal.show()
+
+    def open_folders_to_tags_modal(self):
+        if not hasattr(self, "folders_modal"):
+            self.folders_modal = FoldersToTagsModal(self.lib, self)
+        self.folders_modal.show()
+
+    def open_about_modal(self):
+        if not hasattr(self, "about_modal"):
+            self.about_modal = AboutModal(self.global_settings_path)
+        self.about_modal.show()
 
     def open_fix_unlinked_entries_modal(self):
         if not hasattr(self, "unlinked_modal"):
@@ -1234,36 +1019,19 @@ class QtDriver(DriverMixin, QObject):
                     continue
                 self.run_macro(macro_id, entry_id)
 
-    def sorting_direction_callback(self):
-        logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
+    def sorting_direction_callback(self, ascending: bool):
+        logger.info("[QtDriver] Sorting Direction Changed", ascending=ascending)
+        self.update_browsing_state(self.browsing_history.current.with_sorting_direction(ascending))
+
+    def sorting_mode_callback(self, mode: SortingModeEnum):
+        logger.info("[QtDriver] Sorting Mode Changed", mode=mode)
+        self.update_browsing_state(self.browsing_history.current.with_sorting_mode(mode))
+
+    def show_hidden_entries_callback(self, show_hidden_entries: bool):
+        logger.info("[QtDriver] Show Hidden Entries Changed", exclude=show_hidden_entries)
         self.update_browsing_state(
-            self.browsing_history.current.with_sorting_direction(self.main_window.sorting_direction)
+            self.browsing_history.current.with_show_hidden_entries(show_hidden_entries)
         )
-
-    def sorting_mode_callback(self):
-        logger.info("Sorting Mode Changed", mode=self.main_window.sorting_mode)
-        self.update_browsing_state(
-            self.browsing_history.current.with_sorting_mode(self.main_window.sorting_mode)
-        )
-
-    def thumb_size_callback(self, size: int):
-        """Perform actions needed when the thumbnail size selection is changed."""
-        self.main_window.thumb_grid.set_thumb_size(self.main_window.thumb_size)
-
-    def show_hidden_entries_callback(self):
-        logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
-        self.update_browsing_state(
-            self.browsing_history.current.with_show_hidden_entries(
-                self.main_window.show_hidden_entries
-            )
-        )
-
-    def mouse_navigation(self, event: QMouseEvent):
-        # print(event.button())
-        if event.button() == Qt.MouseButton.ForwardButton:
-            self.navigation_callback(1)
-        elif event.button() == Qt.MouseButton.BackButton:
-            self.navigation_callback(-1)
 
     def page_move(self, value: int, absolute: bool = False) -> None:
         current = self.browsing_history.current
@@ -1287,7 +1055,7 @@ class QtDriver(DriverMixin, QObject):
             if entry:
                 self.copy_buffer["fields"] = entry.fields
                 self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
-        self.set_clipboard_menu_viability()
+        self.main_window.menu_bar.update_clipboard_actions()
 
     def paste_fields_action_callback(self):
         for id in self.selection.selected:
@@ -1306,99 +1074,6 @@ class QtDriver(DriverMixin, QObject):
             self.entry_state.add_tags(self.selection.selected, self.copy_buffer["tags"])
         elif len(self.selection.selected) == 1:
             self.main_window.inspector.containers.update_from_entry(self.selection.selected[0])
-
-    def _on_selection_changed(self) -> None:
-        self.set_clipboard_menu_viability()
-        self.set_select_actions_visibility()
-
-    def set_clipboard_menu_viability(self):
-        if len(self.selection.selected) == 1:
-            self.main_window.menu_bar.copy_fields_action.setEnabled(True)
-        else:
-            self.main_window.menu_bar.copy_fields_action.setEnabled(False)
-        if self.selection.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
-            self.main_window.menu_bar.paste_fields_action.setEnabled(True)
-        else:
-            self.main_window.menu_bar.paste_fields_action.setEnabled(False)
-
-    def set_select_actions_visibility(self):
-        if not self.main_window.menu_bar.add_tag_to_selected_action:
-            return
-
-        if self.frame_content:
-            self.main_window.menu_bar.select_all_action.setEnabled(True)
-            self.main_window.menu_bar.select_inverse_action.setEnabled(True)
-        else:
-            self.main_window.menu_bar.select_all_action.setEnabled(False)
-            self.main_window.menu_bar.select_inverse_action.setEnabled(False)
-
-        if self.selection.selected:
-            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(True)
-            self.main_window.menu_bar.clear_select_action.setEnabled(True)
-            self.main_window.menu_bar.delete_file_action.setEnabled(True)
-        else:
-            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
-            self.main_window.menu_bar.clear_select_action.setEnabled(False)
-            self.main_window.menu_bar.delete_file_action.setEnabled(False)
-
-    def update_completions_list(self, text: str) -> None:
-        matches = re.search(
-            r"((?:.* )?)(mediatype|filetype|path|tag|tag_id):(\"?[A-Za-z0-9\ \t]+\"?)?", text
-        )
-
-        completion_list: list[str] = []
-        if len(text) < 3:
-            completion_list = [
-                "mediatype:",
-                "filetype:",
-                "path:",
-                "tag:",
-                "tag_id:",
-                "special:untagged",
-            ]
-            self.main_window.search_field_completion_list.setStringList(completion_list)
-
-        if not matches:
-            return
-
-        query_type: str
-        query_value: str | None
-        prefix, query_type, query_value = matches.groups()
-
-        if not query_value:
-            return
-
-        if query_type == "tag":
-            completion_list = list(map(lambda x: prefix + "tag:" + x.name, self.lib.tags))
-        elif query_type == "tag_id":
-            completion_list = list(map(lambda x: prefix + "tag_id:" + str(x.id), self.lib.tags))
-        elif query_type == "path":
-            completion_list = list(
-                map(lambda x: prefix + "path:" + x, self.lib.get_paths(limit=100))
-            )
-        elif query_type == "mediatype":
-            completion_list = []
-            for group in MediaTypes.all_groups:
-                for alias in group.name_aliases:
-                    if " " in alias:
-                        completion_list.append(f'{prefix}mediatype:"{alias}"')
-                    else:
-                        completion_list.append(f"{prefix}mediatype:{alias}")
-                        completion_list.append(f'{prefix}mediatype:"{alias}"')
-        elif query_type == "filetype":
-            extensions_list: set[str] = set()
-            for group in MediaTypes.all_groups:
-                extensions_list |= group.context_sets.get(SEARCH, set())
-            completion_list = list(
-                map(lambda x: prefix + "filetype:" + x.replace(".", ""), extensions_list)
-            )
-
-        update_completion_list: bool = (
-            completion_list != self.main_window.search_field_completion_list.stringList()
-            or self.main_window.search_field_completion_list == []
-        )
-        if update_completion_list:
-            self.main_window.search_field_completion_list.setStringList(completion_list)
 
     def update_thumbs(self):
         """Update search thumbnails."""
@@ -1425,7 +1100,7 @@ class QtDriver(DriverMixin, QObject):
             self.browsing_history.push(state)
         current = self.browsing_history.current
 
-        self.main_window.search_field.setText(current.query or "")
+        self.main_window.search_bar.set_query(current.query or "")
 
         shown = self._results_state
         if current is shown:  # Results refresh in case entries were removed from the library
@@ -1437,31 +1112,32 @@ class QtDriver(DriverMixin, QObject):
             and current.with_page_index(0) == shown.with_page_index(0)
         )
         if not only_page_changed:
-            # search the library
+            # Search the library
             start_time = time.time()
             Ignore.get_patterns(self.lib.library_dir, include_global=True)
             results = self.lib.search_library(current, page_size=0)
             logger.info("items to render", count=len(results))
             end_time = time.time()
 
-            # inform user about completed search
+            # Show search result labels
             time_span = (
                 f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
             )
             count = f"<b>{results.total_count:,}</b>"
-            self.main_window.results_label.setText(
-                Translations.format(
-                    # Show "X Results" on query, "X Items" on none
-                    "status.results_found" if current.query else "status.items",
-                    count=count,
-                    time_span=time_span,
-                )
+            is_single = results.total_count == 1
+            # Show "X Results" on query, otherwise "X Items"
+            if current.query:
+                key = "status.results_found.singular" if is_single else "status.results_found"
+            else:
+                key = "status.items.singular" if is_single else "status.items"
+            self.main_window.set_results_text(
+                Translations.format(key, count=count, time_span=time_span)
             )
             self.frame_content = results.ids
-            self.set_select_actions_visibility()
+            self.main_window.menu_bar.update_select_actions()
         self._results_state = current
 
-        # update page content
+        # Update page content
         same_page = current.query == previous.query and current.page_index == previous.page_index
         if state is None:
             entry_id = current.first_visible_entry_id
@@ -1474,13 +1150,13 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.thumb_grid.scroll_to(entry_id)
         self.update_thumbs()
 
-        # update pagination
+        # Update pagination
         page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
         if page_size > 0:
             self.pages_count = math.ceil(len(self.frame_content) / page_size)
         else:
             self.pages_count = 1
-        self.main_window.pagination.update_buttons(
+        self.main_window.browsing_area.pagination.update_buttons(
             self.pages_count, self.browsing_history.current.page_index, emit=False
         )
 
@@ -1607,7 +1283,7 @@ class QtDriver(DriverMixin, QObject):
             path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
         )
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
-        self.main_window.landing_widget.set_status_label(message)
+        self.main_window.browsing_area.landing_page.set_status_label(message)
         self.main_window.repaint()
 
         if self.lib.library_dir:
@@ -1647,7 +1323,7 @@ class QtDriver(DriverMixin, QObject):
             self.migration_modal.migration_finished.connect(
                 lambda: self._init_library(path, self.lib.open_library(path))
             )
-            self.main_window.landing_widget.set_status_label("")
+            self.main_window.browsing_area.landing_page.set_status_label("")
             self.migration_modal.paged_panel.show()
         else:
             self._init_library(path, open_status)
@@ -1693,20 +1369,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_ignore_modal()
 
-        self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
-        self.main_window.menu_bar.close_library_action.setEnabled(True)
-        self.main_window.menu_bar.sync_library_action.setEnabled(True)
-        self.main_window.menu_bar.tag_manager_action.setEnabled(True)
-        self.main_window.menu_bar.color_manager_action.setEnabled(True)
-        self.main_window.menu_bar.field_template_manager_action.setEnabled(True)
-        self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
-        self.main_window.menu_bar.new_tag_action.setEnabled(True)
-        self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
-        self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(True)
-        self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
-        self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
-        self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
-        self.main_window.menu_bar.library_info_action.setEnabled(True)
+        self.main_window.menu_bar.set_library_actions_enabled(True)
 
         self.main_window.inspector.update_from_selection()
 
@@ -1718,33 +1381,9 @@ class QtDriver(DriverMixin, QObject):
         )
         self.update_browsing_state(initial_state)
 
-        self.main_window.toggle_landing_page(enabled=False)
-        self.main_window.entry_scroll_area.setFocus()
+        self.main_window.browsing_area.toggle_landing_page(enabled=False)
+        self.main_window.thumb_grid.scroll_area.setFocus()
         return open_status
-
-    def drop_event(self, event: QDropEvent):
-        if event.source() is self:
-            return
-
-        if not event.mimeData().hasUrls():
-            return
-
-        urls = event.mimeData().urls()
-        logger.info("New items dragged in", urls=urls)
-        drop_import = DropImportModal(self)
-        drop_import.import_urls(urls)
-
-    def drag_enter_event(self, event: QDragEnterEvent):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
-    def drag_move_event(self, event: QDragMoveEvent):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""

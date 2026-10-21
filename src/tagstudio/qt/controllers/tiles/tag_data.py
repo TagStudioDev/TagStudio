@@ -40,7 +40,9 @@ class TagData(TileData):
 
     @override
     def layout(self) -> TagDataView:
-        return super().layout()  # pyright: ignore[reportReturnType]
+        layout = super().layout()
+        assert isinstance(layout, TagDataView)
+        return layout
 
     def set_entries(self, entries: list[int]) -> None:
         self._entries = entries
@@ -116,7 +118,7 @@ class TagData(TileData):
         self.on_update.emit()
 
     def _on_search(self, tag: Tag) -> None:
-        self._driver.main_window.search_field.setText(f"tag_id:{tag.id}")
+        self._driver.main_window.search_bar.set_query(f"tag_id:{tag.id}")
         self._driver.update_browsing_state(
             BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)
         )

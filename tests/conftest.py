@@ -13,7 +13,6 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
-from PySide6.QtWidgets import QScrollArea
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.fields import TextField
@@ -27,6 +26,7 @@ from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FO
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
+from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.qt_driver import QtDriver
@@ -215,7 +215,7 @@ def qt_driver(library: Library, library_dir: Path):
         driver.app = Mock()
         driver.main_window = Mock()
         driver.main_window.thumb_size = 128
-        driver.main_window.thumb_grid = ThumbGrid(driver, QScrollArea())
+        driver.main_window.thumb_grid = ThumbGrid(driver, Pagination())
         driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
