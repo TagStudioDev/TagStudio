@@ -11,7 +11,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6 import QtCore
-from PySide6.QtGui import QShortcut
+from PySide6.QtGui import QResizeEvent, QShortcut
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.fields import (
@@ -51,6 +51,7 @@ class Inspector(QWidget):
         self._lib = self._driver.lib
         self._settings = self._driver.settings
         self._current_stats: FileAttributeData | None = None
+        self._preview_outdated = False  # Preview can become outdated if the Inspector is collapsed
 
         self._open_tag_search_action = QShortcut(
             QtCore.QKeyCombination(
@@ -257,7 +258,10 @@ class Inspector(QWidget):
                 if filepath != self.layout().preview_thumb.current_file:
                     self._current_stats = None
 
-                if update_preview:
+                if update_preview and self.width() == 0:
+                    self.layout().preview_thumb.hide_preview()
+                    self._preview_outdated = True
+                elif update_preview:
                     self.layout().preview_thumb.display_file(filepath, entry.date_modified)
                     if self._current_stats is None:
                         self._current_stats = FileAttributeData()
@@ -290,5 +294,14 @@ class Inspector(QWidget):
         return self.layout().containers
 
     @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self._preview_outdated and self.width() > 0:
+            self._preview_outdated = False
+            self.update_from_selection()
+
+    @override
     def layout(self) -> InspectorView:
-        return super().layout()  # pyright: ignore[reportReturnType]
+        layout = super().layout()
+        assert isinstance(layout, InspectorView)
+        return layout

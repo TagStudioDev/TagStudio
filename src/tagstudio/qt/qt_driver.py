@@ -482,7 +482,6 @@ class QtDriver(DriverMixin, QObject):
         # NOTE: Putting this too early will result in a non-responsive white window on start.
         self.main_window.show()
         self.main_window.activateWindow()
-        self.main_window.browsing_area.toggle_landing_page(enabled=True)
 
         self.main_window.browsing_area.pagination.index.connect(
             lambda i: self.page_move(i, absolute=True)
@@ -602,7 +601,7 @@ class QtDriver(DriverMixin, QObject):
             self.library_info_window.close()
 
         self.main_window.thumb_grid.set_entries([])
-        self.main_window.browsing_area.toggle_landing_page(enabled=True)
+        self.main_window.toggle_landing_page(enabled=True)
         self.main_window.browsing_area.landing_page.animate_logo_in()
         self.main_window.browsing_area.pagination.setHidden(True)
         self.main_window.menu_bar.set_library_actions_enabled(False)
@@ -1381,7 +1380,7 @@ class QtDriver(DriverMixin, QObject):
         )
         self.update_browsing_state(initial_state)
 
-        self.main_window.browsing_area.toggle_landing_page(enabled=False)
+        self.main_window.toggle_landing_page(enabled=False)
         self.main_window.thumb_grid.scroll_area.setFocus()
         return open_status
 

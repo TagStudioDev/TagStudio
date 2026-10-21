@@ -33,5 +33,4 @@ class BrowsingAreaView(QVBoxLayout):
         self.addWidget(self.thumb_grid.scroll_area)
 
         self.landing_page = LandingPage(pixel_ratio)
-        self.landing_page.setContentsMargins(WIN_PAD, 0, 0, 0)
         self.addWidget(self.landing_page)

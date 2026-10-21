@@ -71,6 +71,10 @@ class ThumbGridLayout[W: QWidget](QLayout):
     def items_per_row(self) -> int:
         return self._grid_metrics(self.geometry().width())[0]
 
+    def cell_width(self) -> int:
+        """The width of an item plus the spacing after it."""
+        return self._grid_metrics(self.geometry().width())[1].width()
+
     def indices_in_rect(self, rect: QRect) -> list[int]:
         """The indices of items that intersect with `rect`."""
         # No items means no items

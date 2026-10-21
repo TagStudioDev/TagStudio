@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import math
 import typing
 from typing import override
 
 import structlog
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QMainWindow, QWidget
 
@@ -50,6 +51,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         self._connect_callbacks()
+        self.toggle_landing_page(enabled=True)
 
     @override
     def layout(self) -> MainWindowView:
@@ -76,6 +78,8 @@ class MainWindow(QMainWindow):
         view.thumb_size_combobox.currentIndexChanged.connect(
             lambda: self.thumb_grid.set_thumb_size(self.thumb_size)
         )
+        view.content_splitter.splitterMoved.connect(lambda *_: self._snap_content_splitter())
+        self.thumb_grid.scroll_area.installEventFilter(self)
 
     @property
     def search_bar(self) -> SearchBar:
@@ -112,6 +116,14 @@ class MainWindow(QMainWindow):
         """Whether to show entries tagged with hidden tags."""
         return self.layout().show_hidden_entries_checkbox.isChecked()
 
+    def toggle_landing_page(self, enabled: bool) -> None:
+        """Show the landing page and hide any library controls and panels."""
+        view = self.layout()
+        view.search_bar.setHidden(enabled)
+        view.extra_input_bar.setHidden(enabled)
+        view.inspector.setHidden(enabled)
+        view.browsing_area.toggle_landing_page(enabled)
+
     def set_sorting_mode(self, mode: SortingModeEnum) -> None:
         self.layout().sorting_mode_combobox.setCurrentIndex(list(SortingModeEnum).index(mode))
 
@@ -129,6 +141,40 @@ class MainWindow(QMainWindow):
         new_val = combobox.currentIndex() + 1
         if not (new_val + 1) > len(MainWindowView.THUMB_SIZES):
             combobox.setCurrentIndex(new_val)
+
+    def _snap_content_splitter(self) -> None:
+        """Snap the splitter so it fits a whole number of thumbnail grid columns."""
+        if not self.thumb_grid.isVisible():
+            return
+        view = self.layout()
+        grid_width = self.thumb_grid.layout().geometry().width()
+        cell_width = self.thumb_grid.layout().cell_width()
+        grid_size, inspector_size = view.content_splitter.sizes()
+        if inspector_size == 0:  # Collapsed by dragging the splitter all the way
+            return
+        columns = max(1, round(grid_width / cell_width))
+        # Round down when the Inspector can't shrink enough to fit another column
+        if (
+            inspector_size + grid_width - columns * cell_width
+            < self.inspector.minimumSizeHint().width()
+        ):
+            columns = max(1, grid_width // cell_width)
+        # Round up when the grid's side can't shrink enough to lose a column
+        elif (
+            grid_size - grid_width + columns * cell_width
+            < view.central_content.minimumSizeHint().width()
+        ):
+            columns = math.ceil(grid_width / cell_width)
+        extra = grid_width - columns * cell_width
+        if extra:
+            view.content_splitter.setSizes([grid_size - extra, inspector_size + extra])
+
+    @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # Snap once the grid has been laid out
+        if watched is self.thumb_grid.scroll_area and event.type() == QEvent.Type.Show:
+            QTimer.singleShot(0, self._snap_content_splitter)
+        return super().eventFilter(watched, event)
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:

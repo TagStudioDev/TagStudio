@@ -43,7 +43,6 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 
-_DEFAULT_PREVIEW_SIZE = (272, 272)
 _THUMB_SIZE_FACTOR = 2
 
 
@@ -77,7 +76,7 @@ class PreviewThumb(QWidget):
         self._current_file: Path | None = None
         self._date_modified: float | None = None
         self._image_ratio: float = 1.0
-        self._preview_size: tuple[int, int] = _DEFAULT_PREVIEW_SIZE
+        self._preview_size: tuple[int, int] = PreviewThumbView.MINIMUM_SIZE
         self._render_timestamp: float = 0.0
         self._rendered_res: tuple[int, int] = (0, 0)
         self._should_render_on_resize: bool = False
@@ -316,11 +315,12 @@ class PreviewThumb(QWidget):
         right away instead of a loading graphic.
         Some filetypes shouldn't display a loading graphic ever, like fonts.
         """
+        side = min(self.width(), self.height())
         self._file_renderer.render(
             self._driver.cache_manager,
             time.time(),
             filepath,
-            _DEFAULT_PREVIEW_SIZE,
+            (side, side),
             self.devicePixelRatio(),
             is_placeholder=True,
             date_modified=self._date_modified,
