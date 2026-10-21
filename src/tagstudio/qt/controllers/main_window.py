@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.setObjectName("main_window")
         self.resize(1280, 720)
 
-        self.menu_bar = MenuBar(self)
+        self.menu_bar = MenuBar(driver, self)
         self.setMenuBar(self.menu_bar)
         self.menu_bar.setNativeMenuBar(True)
 
@@ -59,6 +59,9 @@ class MainWindow(QMainWindow):
         return layout
 
     def _connect_callbacks(self) -> None:
+        self.menu_bar.increase_thumbnail_size_action.triggered.connect(self.increase_thumb_size)
+        self.menu_bar.decrease_thumbnail_size_action.triggered.connect(self.decrease_thumb_size)
+
         view = self.layout()
         view.search_bar.navigation_requested.connect(self.navigation_requested)
         view.sorting_mode_combobox.currentIndexChanged.connect(
