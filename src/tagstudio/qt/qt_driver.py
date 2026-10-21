@@ -597,7 +597,7 @@ class QtDriver(DriverMixin, QObject):
                 startup_path = str(last_library)
 
         if not startup_path:
-            self.main_window.browsing_area.landing_widget.animate_logo_in()
+            self.main_window.browsing_area.landing_page.animate_logo_in()
         else:
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
             if startup_result.success and startup_result.library_path:
@@ -617,7 +617,7 @@ class QtDriver(DriverMixin, QObject):
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
-        self.main_window.browsing_area.landing_widget.set_status_label(error_name)
+        self.main_window.browsing_area.landing_page.set_status_label(error_name)
         self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
 
         msg_box = QMessageBox()
@@ -632,13 +632,6 @@ class QtDriver(DriverMixin, QObject):
         msg_box.exec()
 
     def init_library_window(self):
-        # self._init_landing_page() # Taken care of inside the widget now
-
-        # TODO: Put this into its own method that copies the font file(s) into memory
-        # so the resource isn't being used, then store the specific size variations
-        # in a global dict for methods to access for different DPIs.
-        # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-
         self.main_window.search_bar.search_submitted.connect(self.submit_search)
 
         # Sorting Dropdowns
@@ -658,6 +651,9 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.browsing_area.pagination.index.connect(
             lambda i: self.page_move(i, absolute=True)
+        )
+        self.main_window.browsing_area.landing_page.open_library_requested.connect(
+            self.open_library_from_dialog
         )
 
         self.splash.finish(self.main_window)
@@ -774,7 +770,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.thumb_grid.set_entries([])
         self.main_window.browsing_area.toggle_landing_page(enabled=True)
-        self.main_window.browsing_area.landing_widget.animate_logo_in()
+        self.main_window.browsing_area.landing_page.animate_logo_in()
         self.main_window.browsing_area.pagination.setHidden(True)
         self.main_window.menu_bar.set_library_actions_enabled(False)
 
@@ -1466,7 +1462,7 @@ class QtDriver(DriverMixin, QObject):
             path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
         )
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
-        self.main_window.browsing_area.landing_widget.set_status_label(message)
+        self.main_window.browsing_area.landing_page.set_status_label(message)
         self.main_window.repaint()
 
         if self.lib.library_dir:
@@ -1506,7 +1502,7 @@ class QtDriver(DriverMixin, QObject):
             self.migration_modal.migration_finished.connect(
                 lambda: self._init_library(path, self.lib.open_library(path))
             )
-            self.main_window.browsing_area.landing_widget.set_status_label("")
+            self.main_window.browsing_area.landing_page.set_status_label("")
             self.migration_modal.paged_panel.show()
         else:
             self._init_library(path, open_status)

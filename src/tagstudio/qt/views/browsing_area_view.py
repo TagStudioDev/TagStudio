@@ -7,9 +7,9 @@ import typing
 from PySide6.QtWidgets import QVBoxLayout
 
 from tagstudio.qt.controllers.banner_stack import BannerStack
+from tagstudio.qt.controllers.landing_page import LandingPage
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
-from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.views.styles.stylesheets import WIN_PAD
 
 if typing.TYPE_CHECKING:
@@ -32,6 +32,6 @@ class BrowsingAreaView(QVBoxLayout):
         self.thumb_grid.setContentsMargins(WIN_PAD, 0, 0, Pagination.HEIGHT)
         self.addWidget(self.thumb_grid.scroll_area)
 
-        self.landing_widget = LandingWidget(driver, pixel_ratio)
-        self.landing_widget.setContentsMargins(WIN_PAD, 0, 0, 0)
-        self.addWidget(self.landing_widget)
+        self.landing_page = LandingPage(pixel_ratio)
+        self.landing_page.setContentsMargins(WIN_PAD, 0, 0, 0)
+        self.addWidget(self.landing_page)

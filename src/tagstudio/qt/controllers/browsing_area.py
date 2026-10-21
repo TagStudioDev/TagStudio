@@ -8,9 +8,9 @@ from typing import override
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.qt.controllers.banner_stack import BannerStack
+from tagstudio.qt.controllers.landing_page import LandingPage
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
-from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.views.browsing_area_view import BrowsingAreaView
 
 if typing.TYPE_CHECKING:
@@ -45,15 +45,15 @@ class BrowsingArea(QWidget):
         return self.layout().banners
 
     @property
-    def landing_widget(self) -> LandingWidget:
-        return self.layout().landing_widget
+    def landing_page(self) -> LandingPage:
+        return self.layout().landing_page
 
     def toggle_landing_page(self, enabled: bool) -> None:
         view = self.layout()
         if enabled:
             view.thumb_grid.scroll_area.setHidden(True)
-            view.landing_widget.setHidden(False)
+            view.landing_page.setHidden(False)
         else:
-            view.landing_widget.setHidden(True)
-            view.landing_widget.set_status_label("")
+            view.landing_page.setHidden(True)
+            view.landing_page.set_status_label("")
             view.thumb_grid.scroll_area.setHidden(False)
