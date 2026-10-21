@@ -639,7 +639,6 @@ class QtDriver(DriverMixin, QObject):
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
 
-        # Search Button and Field
         self.main_window.search_bar.search_submitted.connect(self.submit_search)
 
         # Sorting Dropdowns

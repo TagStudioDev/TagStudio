@@ -42,7 +42,10 @@ class MenuBar(QMenuBar):
     select_inverse_action: QAction
 
     view_menu: QMenu
+    library_info_action: QAction
     show_filenames_action: QAction
+    increase_thumbnail_size_action: QAction
+    decrease_thumbnail_size_action: QAction
 
     tools_menu: QMenu
     fix_unlinked_entries_action: QAction
@@ -74,7 +77,6 @@ class MenuBar(QMenuBar):
         # Open/Create Library
         self.open_library_action = QAction(Translations["menu.file.open_create_library"], self)
         self.open_library_action.setShortcut(QKeySequence("Ctrl+O"))
-        self.open_library_action.setToolTip("Ctrl+O")
         self.file_menu.addAction(self.open_library_action)
 
         # Open Recent
@@ -84,7 +86,6 @@ class MenuBar(QMenuBar):
         # Save Library Backup
         self.save_library_backup_action = QAction(Translations["menu.file.save_backup"], self)
         self.save_library_backup_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
-        self.save_library_backup_action.setStatusTip("Ctrl+Shift+S")
         self.save_library_backup_action.setEnabled(False)
         self.file_menu.addAction(self.save_library_backup_action)
 
@@ -104,7 +105,6 @@ class MenuBar(QMenuBar):
         # Sync Library
         self.sync_library_action = QAction(Translations["menu.file.sync_library"], self)
         self.sync_library_action.setShortcut(QKeySequence("Ctrl+R"))
-        self.sync_library_action.setStatusTip("Ctrl+R")
         self.sync_library_action.setEnabled(False)
         self.file_menu.addAction(self.sync_library_action)
 
@@ -124,7 +124,6 @@ class MenuBar(QMenuBar):
         # New Tag
         self.new_tag_action = QAction(Translations["menu.edit.new_tag"], self)
         self.new_tag_action.setShortcut(QKeySequence("Ctrl+N"))
-        self.new_tag_action.setToolTip("Ctrl+N")
         self.new_tag_action.setEnabled(False)
         self.edit_menu.addAction(self.new_tag_action)
         self.edit_menu.addSeparator()
@@ -132,21 +131,18 @@ class MenuBar(QMenuBar):
         # Copy Fields
         self.copy_fields_action = QAction(Translations["edit.copy_fields"], self)
         self.copy_fields_action.setShortcut(QKeySequence("Ctrl+C"))
-        self.copy_fields_action.setToolTip("Ctrl+C")
         self.copy_fields_action.setEnabled(False)
         self.edit_menu.addAction(self.copy_fields_action)
 
         # Paste Fields
         self.paste_fields_action = QAction(Translations["edit.paste_fields"], self)
         self.paste_fields_action.setShortcut(QKeySequence("Ctrl+V"))
-        self.paste_fields_action.setToolTip("Ctrl+V")
         self.paste_fields_action.setEnabled(False)
         self.edit_menu.addAction(self.paste_fields_action)
 
         # Add Tag to Selected
         self.add_tag_to_selected_action = QAction(Translations["select.add_tag_to_selected"], self)
         self.add_tag_to_selected_action.setShortcut(QKeySequence("Ctrl+Shift+T"))
-        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
         self.add_tag_to_selected_action.setEnabled(False)
         self.edit_menu.addAction(self.add_tag_to_selected_action)
         self.edit_menu.addSeparator()
@@ -170,7 +166,6 @@ class MenuBar(QMenuBar):
         self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)
         self.tag_manager_action.setShortcut(QKeySequence("Ctrl+M"))
         self.tag_manager_action.setEnabled(False)
-        self.tag_manager_action.setToolTip("Ctrl+M")
         self.edit_menu.addAction(self.tag_manager_action)
 
         # Color Manager
@@ -194,20 +189,17 @@ class MenuBar(QMenuBar):
         # Select All
         self.select_all_action = QAction(Translations["select.all"], self)
         self.select_all_action.setShortcut(QKeySequence("Ctrl+A"))
-        self.select_all_action.setToolTip("Ctrl+A")
         self.select_all_action.setEnabled(False)
         self.select_menu.addAction(self.select_all_action)
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
         self.clear_select_action.setEnabled(False)
-        self.clear_select_action.setToolTip("Esc")
         self.select_menu.addAction(self.clear_select_action)
 
         # Invert Selection
         self.select_inverse_action = QAction(Translations["select.inverse"], self)
         self.select_inverse_action.setShortcut(QKeySequence("Ctrl+Shift+I"))
-        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
         self.select_inverse_action.setEnabled(False)
         self.select_menu.addAction(self.select_inverse_action)
 
@@ -217,7 +209,8 @@ class MenuBar(QMenuBar):
     def _setup_view_menu(self):
         self.view_menu = QMenu(Translations["menu.view"], self)
 
-        self.library_info_action = QAction(Translations["menu.view.library_info"])
+        self.library_info_action = QAction(Translations["menu.view.library_info"], self)
+        self.library_info_action.setEnabled(False)
         self.view_menu.addAction(self.library_info_action)
 
         self.show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], self)
@@ -229,14 +222,12 @@ class MenuBar(QMenuBar):
             Translations["menu.view.increase_thumbnail_size"], self
         )
         self.increase_thumbnail_size_action.setShortcut(QKeySequence("Ctrl++"))
-        self.increase_thumbnail_size_action.setToolTip("Ctrl++")
         self.view_menu.addAction(self.increase_thumbnail_size_action)
 
         self.decrease_thumbnail_size_action = QAction(
             Translations["menu.view.decrease_thumbnail_size"], self
         )
         self.decrease_thumbnail_size_action.setShortcut(QKeySequence("Ctrl+-"))
-        self.decrease_thumbnail_size_action.setToolTip("Ctrl+-")
         self.view_menu.addAction(self.decrease_thumbnail_size_action)
 
         assign_mnemonics(self.view_menu)
@@ -325,34 +316,16 @@ class MenuBar(QMenuBar):
         open_library_callback: Callable[[Path], None],
         clear_libraries_callback: Callable[[], None],
     ):
-        actions: list[QAction] = []
+        menu = self.open_recent_library_menu
+        menu.clear()
+
         for path in libraries:
-            action = QAction(self.open_recent_library_menu)
-            if show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
-                action.setText(str(path))
-            else:
-                action.setText(str(path.name))
+            text = str(path) if show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+            action = menu.addAction(text)
             action.triggered.connect(lambda checked=False, p=path: open_library_callback(p))
-            actions.append(action)
 
-        clear_recent_action = QAction(
-            Translations["menu.file.clear_recent_libraries"], self.open_recent_library_menu
-        )
-        clear_recent_action.triggered.connect(clear_libraries_callback)
-        actions.append(clear_recent_action)
-
-        # Clear previous actions
-        for action in self.open_recent_library_menu.actions():
-            self.open_recent_library_menu.removeAction(action)
-
-        # Add new actions
-        for action in actions:
-            self.open_recent_library_menu.addAction(action)
-
-        # Only enable add "clear recent" if there are still recent libraries.
-        if len(actions) > 1:
-            self.open_recent_library_menu.setDisabled(False)
-            self.open_recent_library_menu.addSeparator()
-            self.open_recent_library_menu.addAction(clear_recent_action)
-        else:
-            self.open_recent_library_menu.setDisabled(True)
+        if libraries:
+            menu.addSeparator()
+            clear_recent_action = menu.addAction(Translations["menu.file.clear_recent_libraries"])
+            clear_recent_action.triggered.connect(clear_libraries_callback)
+        menu.setDisabled(not libraries)
