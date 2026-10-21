@@ -1296,31 +1296,32 @@ class QtDriver(DriverMixin, QObject):
             and current.with_page_index(0) == shown.with_page_index(0)
         )
         if not only_page_changed:
-            # search the library
+            # Search the library
             start_time = time.time()
             Ignore.get_patterns(self.lib.library_dir, include_global=True)
             results = self.lib.search_library(current, page_size=0)
             logger.info("items to render", count=len(results))
             end_time = time.time()
 
-            # inform user about completed search
+            # Show search result labels
             time_span = (
                 f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
             )
             count = f"<b>{results.total_count:,}</b>"
+            is_single = results.total_count == 1
+            # Show "X Results" on query, otherwise "X Items"
+            if current.query:
+                key = "status.results_found.singular" if is_single else "status.results_found"
+            else:
+                key = "status.items.singular" if is_single else "status.items"
             self.main_window.set_results_text(
-                Translations.format(
-                    # Show "X Results" on query, "X Items" on none
-                    "status.results_found" if current.query else "status.items",
-                    count=count,
-                    time_span=time_span,
-                )
+                Translations.format(key, count=count, time_span=time_span)
             )
             self.frame_content = results.ids
             self.set_select_actions_visibility()
         self._results_state = current
 
-        # update page content
+        # Update page content
         same_page = current.query == previous.query and current.page_index == previous.page_index
         if state is None:
             entry_id = current.first_visible_entry_id
@@ -1333,7 +1334,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.thumb_grid.scroll_to(entry_id)
         self.update_thumbs()
 
-        # update pagination
+        # Update pagination
         page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
         if page_size > 0:
             self.pages_count = math.ceil(len(self.frame_content) / page_size)
