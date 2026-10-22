@@ -38,6 +38,23 @@ def test_sync_new_files(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_saves_new_files_oldest_modified_first(library: Library):
+    """New files must be added to the library by their date modified order."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    for name, mtime in (("a.txt", 3000), ("b.txt", 1000), ("c.txt", 2000)):
+        (library_dir / name).touch()
+        os.utime(library_dir / name, (mtime, mtime))
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    list(engine.save_new_entries())
+
+    ids = [library.get_entry_id_from_path(Path(name)) for name in ("b.txt", "c.txt", "a.txt")]
+    assert -1 not in ids
+    assert ids == sorted(ids)
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_multi_byte_filenames(library: Library):
     """Multi-byte and accented Unicode filenames must be scanned and added without errors."""
     library_dir = unwrap(library.library_dir)

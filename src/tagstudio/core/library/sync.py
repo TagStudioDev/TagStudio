@@ -144,6 +144,9 @@ class LibrarySyncEngine:
         batch_size = 1000
         library_dir = unwrap(self.library.library_dir)
 
+        # Sort new files by date modified before adding to the library
+        self.new_paths.sort(key=lambda path: get_date_modified(library_dir / path))
+
         index = 0
         while index < len(self.new_paths):
             if self.cancelled:
