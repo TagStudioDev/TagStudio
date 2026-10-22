@@ -62,6 +62,7 @@ class PreviewThumb(QWidget):
     _animation_loaded = Signal(Path, object)
     _video_probed = Signal(Path, object, object)
     check_ffmpeg = Signal(bool)
+    aspect_ratio_changed = Signal()
     stats_updated = Signal(Path, FileAttributeData)
 
     def __init__(self, driver: QtDriver):
@@ -156,7 +157,7 @@ class PreviewThumb(QWidget):
         if preview == _PreviewType.VIDEO and stats is not None:
             # Display the video's size and duration
             if stats.width and stats.height:
-                self._image_ratio = stats.width / stats.height
+                self._set_image_ratio(stats.width / stats.height)
                 self._update_image_size((self.size().width(), self.size().height()))
             self.stats_updated.emit(filepath, stats)
         elif preview == _PreviewType.AUDIO:
@@ -182,8 +183,13 @@ class PreviewThumb(QWidget):
 
         self._source_pixmap = img
         self._border_color = border_color
-        self._image_ratio = img.width() / img.height()
+        self._set_image_ratio(img.width() / img.height())
         self._update_image_size((self.size().width(), self.size().height()), refresh_icon=True)
+
+    def _set_image_ratio(self, ratio: float) -> None:
+        if ratio != self._image_ratio:
+            self._image_ratio = ratio
+            self.aspect_ratio_changed.emit()
 
     def _update_icon(self) -> None:
         button = self.layout().button_wrapper
@@ -217,10 +223,10 @@ class PreviewThumb(QWidget):
         scaled_height: float = size[1]
         # Landscape
         if self._image_ratio > 1:
-            scaled_height = size[0] * (1 / self._image_ratio)
+            scaled_height = round(size[0] / self._image_ratio)
         # Portrait
         elif self._image_ratio <= 1:
-            scaled_width = size[1] * self._image_ratio
+            scaled_width = round(size[1] * self._image_ratio)
 
         if scaled_width > size[0]:
             scaled_height = scaled_height * (size[0] / scaled_width)
@@ -371,7 +377,7 @@ class PreviewThumb(QWidget):
             self._animation_buffer.close()
 
         self._animation_size = QSize(*size)
-        self._image_ratio = self._animation_size.width() / self._animation_size.height()
+        self._set_image_ratio(self._animation_size.width() / self._animation_size.height())
 
         self._animation_buffer.setData(data)
         movie = QMovie(self._animation_buffer, QByteArray())
@@ -436,6 +442,10 @@ class PreviewThumb(QWidget):
             self._render_preview(self._current_file)
 
         return super().resizeEvent(event)
+
+    @property
+    def aspect_ratio(self) -> float:
+        return self._image_ratio
 
     @property
     def media_player(self) -> MediaPlayer:

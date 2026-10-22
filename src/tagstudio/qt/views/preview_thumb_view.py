@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class PreviewThumbView(QStackedLayout):
     """The layout for the file preview thumbnail widget."""
 
-    MINIMUM_SIZE = (128, 256)
+    MINIMUM_SIZE = (128, 128)
 
     def __init__(self, driver: QtDriver) -> None:
         super().__init__()

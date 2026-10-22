@@ -17,6 +17,7 @@ from tagstudio.qt.controllers.browsing_area import BrowsingArea
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.controllers.menu_bar import MenuBar
 from tagstudio.qt.controllers.search_bar import SearchBar
+from tagstudio.qt.controllers.splitter_corner_handle import SplitterCornerHandle
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.views.main_window_view import MainWindowView
@@ -49,6 +50,13 @@ class MainWindow(QMainWindow):
         central_widget.setObjectName("central_widget")
         central_widget.setLayout(MainWindowView(driver, self.devicePixelRatio()))
         self.setCentralWidget(central_widget)
+        self._corner_handle = SplitterCornerHandle(
+            self.layout().content_splitter,
+            self.inspector.preview_splitter,
+            self._corner_handle_content_widget,
+            central_widget,
+            snap_outer=self._snapped_splitter_position,
+        )
 
         self._connect_callbacks()
         self.toggle_landing_page(enabled=True)
@@ -79,6 +87,7 @@ class MainWindow(QMainWindow):
             lambda: self.thumb_grid.set_thumb_size(self.thumb_size)
         )
         view.content_splitter.splitterMoved.connect(lambda *_: self._snap_content_splitter())
+        self._driver.selection.changed.connect(self._corner_handle.queue_update)
         self.thumb_grid.scroll_area.installEventFilter(self)
 
     @property
@@ -144,14 +153,26 @@ class MainWindow(QMainWindow):
 
     def _snap_content_splitter(self) -> None:
         """Snap the splitter so it fits a whole number of thumbnail grid columns."""
+        splitter = self.layout().content_splitter
+        position = splitter.handle(1).x()
+        extra = position - self._snapped_splitter_position(position)
+        if extra:
+            grid_size, inspector_size = splitter.sizes()
+            splitter.setSizes([grid_size - extra, inspector_size + extra])
+
+    def _snapped_splitter_position(self, position: int) -> int:
+        """The nearest splitter position that fits a whole number of thumbnail grid columns."""
         if not self.thumb_grid.isVisible():
-            return
+            return position
         view = self.layout()
-        grid_width = self.thumb_grid.layout().geometry().width()
-        cell_width = self.thumb_grid.layout().cell_width()
+        shift = position - view.content_splitter.handle(1).x()
         grid_size, inspector_size = view.content_splitter.sizes()
-        if inspector_size == 0:  # Collapsed by dragging the splitter all the way
-            return
+        grid_size += shift
+        inspector_size -= shift
+        if inspector_size <= 0:  # Collapsed by dragging the splitter all the way
+            return position
+        grid_width = self.thumb_grid.layout().geometry().width() + shift
+        cell_width = self.thumb_grid.layout().cell_width()
         columns = max(1, round(grid_width / cell_width))
         # Round down when the Inspector can't shrink enough to fit another column
         if (
@@ -165,9 +186,12 @@ class MainWindow(QMainWindow):
             < view.central_content.minimumSizeHint().width()
         ):
             columns = math.ceil(grid_width / cell_width)
-        extra = grid_width - columns * cell_width
-        if extra:
-            view.content_splitter.setSizes([grid_size - extra, inspector_size + extra])
+        return position - (grid_width - columns * cell_width)
+
+    def _corner_handle_content_widget(self) -> QWidget | None:
+        if not self.inspector.is_preview_showing:
+            return None
+        return self.inspector.preview_section
 
     @override
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:

@@ -56,8 +56,8 @@ class InspectorView(QVBoxLayout):
         self.containers = TileList(driver.lib, driver)
 
         # Visual Preview
-        preview_section = QWidget()
-        preview_layout = QVBoxLayout(preview_section)
+        self.preview_section = QWidget()
+        preview_layout = QVBoxLayout(self.preview_section)
         preview_layout.setContentsMargins(0, 0, 0, 0)
         preview_layout.setSpacing(PAD)
 
@@ -94,9 +94,9 @@ class InspectorView(QVBoxLayout):
         info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.setSpacing(PAD)
 
-        splitter = QSplitter()
-        splitter.setOrientation(Qt.Orientation.Vertical)
-        splitter.setHandleWidth(PAD * 2)
+        self.preview_splitter = QSplitter()
+        self.preview_splitter.setOrientation(Qt.Orientation.Vertical)
+        self.preview_splitter.setHandleWidth(PAD * 2)
 
         # Add Tag/Field Buttons
         add_buttons_container = QWidget()
@@ -127,9 +127,9 @@ class InspectorView(QVBoxLayout):
         info_layout.addWidget(self.file_attrs)
         info_layout.addWidget(self.containers)
 
-        splitter.addWidget(preview_section)
-        splitter.addWidget(info_section)
-        splitter.setStretchFactor(1, 2)
+        self.preview_splitter.addWidget(self.preview_section)
+        self.preview_splitter.addWidget(info_section)
+        self.preview_splitter.setStretchFactor(1, 2)
 
-        self.addWidget(splitter)
+        self.addWidget(self.preview_splitter)
         self.addWidget(add_buttons_container)
