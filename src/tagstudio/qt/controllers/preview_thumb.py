@@ -315,7 +315,7 @@ class PreviewThumb(QWidget):
         )
 
     def _render_placeholder(self, filepath: Path) -> None:
-        """Display the file's cached thumbnail, or a loading graphic if it has none.
+        """Display the file's cached thumbnail or large variant, or a loading graphic if none.
 
         If a file is already known to not be renderable, it'll display the default icon for it
         right away instead of a loading graphic.

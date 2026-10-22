@@ -146,18 +146,20 @@ class QtFileRenderer(QObject):
         if (
             renderer is None
             or not filepath.is_file()
-            or FileRenderer.previously_failed(filepath, self.theme, date_modified)
+            or FileRenderer.previously_failed(filepath, self.theme, date_modified, is_small=False)
         ):
             return None
+        cached = FileRenderer.cached_thumbnail(
+            cache, filepath, self.theme, date_modified, is_small=False
+        )
+        if cached is not None:
+            return ImageQt.ImageQt(cached)
         if renderer.has_small_variant:
             # The thumbnail looks different, so stay blank until the preview renders
             blank = QImage(side, side, QImage.Format.Format_ARGB32_Premultiplied)
             blank.fill(Qt.GlobalColor.transparent)
             return blank
-        cached = FileRenderer.cached_thumbnail(cache, filepath, self.theme, date_modified)
-        if cached is None:
-            return _icon("thumb_loading", self._theme_color, self.theme, side, pixel_ratio)
-        return ImageQt.ImageQt(cached)
+        return _icon("thumb_loading", self._theme_color, self.theme, side, pixel_ratio)
 
     def render(
         self,

@@ -123,9 +123,11 @@ class FileRenderer:
         return renderer
 
     @staticmethod
-    def previously_failed(filepath: Path, theme: Theme, date_modified: float | None = None) -> bool:
+    def previously_failed(
+        filepath: Path, theme: Theme, date_modified: float | None = None, is_small: bool = True
+    ) -> bool:
         """Return whether rendering a file failed before."""
-        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified, is_small)
         return file_name in FileRenderer._failed_render_filenames
 
     @staticmethod
@@ -134,11 +136,12 @@ class FileRenderer:
         filepath: Path,
         theme: Theme,
         date_modified: float | None = None,
+        is_small: bool = True,
     ) -> Image.Image | None:
-        """Return a file's cached thumbnail, if it has one."""
+        """Return a file's cached thumbnail, or its cached large variant if not `is_small`."""
         if not cache:
             return None
-        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified, is_small)
         cached_path = cache.get_file_path(file_name)
         if not (cached_path and cached_path.is_file()):
             return None
@@ -152,7 +155,7 @@ class FileRenderer:
 
     @staticmethod
     def _cached_thumb_name(
-        filepath: Path, theme: Theme, date_modified: float | None = None
+        filepath: Path, theme: Theme, date_modified: float | None = None, is_small: bool = True
     ) -> Path:
         """Return the cache filename for a file's thumbnail.
 
@@ -160,11 +163,15 @@ class FileRenderer:
             filepath (Path): The path of the file to check for a cached image of.
             theme (Theme): The light/dark theme, used if the file's renderer has theme variants.
             date_modified (float | None): The file's stored date modified timestamp, if it has one.
+            is_small (bool): If the thumbnail is the normal small variant, or a special large one.
         """
         mod_time: str = "" if date_modified is None else str(date_modified)
         renderer = FileRenderer.find_renderer(filepath)
         theme_name = theme.name if renderer is not None and renderer.has_theme_variants else ""
-        hashable_str: str = f"{str(filepath)}{mod_time}{theme_name}"
+        variant = (
+            "LARGE" if not is_small and renderer is not None and renderer.has_small_variant else ""
+        )
+        hashable_str: str = f"{str(filepath)}{mod_time}{theme_name}{variant}"
         hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
         return Path(f"{hash_value}{FileRenderer._cached_img_ext}")
 
@@ -201,7 +208,17 @@ class FileRenderer:
         if is_thumb:
             image = self._get_thumbnail(cache, filepath, size, dpi_scale, theme, date_modified)
         else:
-            image = self._render(filepath, size, dpi_scale, theme, date_modified)
+            # Only cache large variants since small ones are taken care of by the thumb grid
+            renderer = FileRenderer.find_renderer(filepath)
+            has_large_variant = renderer is not None and renderer.has_small_variant
+            image = self._render(
+                filepath,
+                size,
+                dpi_scale,
+                theme,
+                date_modified,
+                cache=cache if has_large_variant else None,
+            )
             if image:
                 image = image.convert("RGBA")
         return RenderResult(image, is_ignored, is_unlinked)
@@ -260,7 +277,7 @@ class FileRenderer:
             is_small (bool): Is this specifically a thumbnail? Use for specifying small variants.
             cache (CacheManager | None): A cache manager to save the rendered image to, if any.
         """
-        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified)
+        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified, is_small)
         scaled_size = math.ceil(max(size) * dpi_scale)
         image: Image.Image | None = None
 

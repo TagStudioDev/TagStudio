@@ -33,6 +33,7 @@ _WAVEFORM_SAMPLE_RATE = 8000  # Good enough for the waveforms while still being 
 class AudioPreview(BasePreview):
     media_type_name = "audio"
     has_theme_variants = True
+    has_small_variant = True
     priority = 70
 
     @override
@@ -63,7 +64,9 @@ class AudioPreview(BasePreview):
         dpi_scale: float,
     ) -> Image | None:
 
-        return cls.audio_album_thumb(filepath) or cls.audio_waveform_thumb(filepath, theme, size)
+        return cls.audio_album_thumb(filepath) or cls.audio_waveform_thumb(
+            filepath, is_small, theme, size
+        )
 
     @staticmethod
     def audio_album_thumb(filepath: Path) -> Image | None:
@@ -107,11 +110,17 @@ class AudioPreview(BasePreview):
         return image
 
     @staticmethod
-    def audio_waveform_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image | None:
+    def audio_waveform_thumb(
+        filepath: Path,
+        is_small: bool,
+        theme: Theme,
+        size: tuple[int, int],
+    ) -> Image | None:
         """Render a waveform image from an audio file.
 
         Args:
             filepath (Path): The path of the file.
+            is_small (bool): If the thumbnail has a small variant.
             theme (Theme): The system color theme.
             size (int): The size of the thumbnail.
         """
@@ -123,7 +132,7 @@ class AudioPreview(BasePreview):
         im: Image | None = None
 
         try:
-            bar_count: int = 32
+            bar_count: int = 32 if is_small else 64
             command = [unwrap(FfmpegStatus.which()), "-nostdin", "-v", "error", "-i", str(filepath)]
             command += ["-vn", "-ac", "1", "-ar", str(_WAVEFORM_SAMPLE_RATE), "-f", "s16le", "-"]
             ffmpeg = silent_run(
