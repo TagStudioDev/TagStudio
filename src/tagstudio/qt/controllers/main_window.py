@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
         view.thumb_size_combobox.currentIndexChanged.connect(
             lambda: self.thumb_grid.set_thumb_size(self.thumb_size)
         )
-        view.content_splitter.splitterMoved.connect(lambda *_: self._snap_content_splitter())
+        view.content_splitter.splitterMoved.connect(self._snap_content_splitter)
         self._driver.selection.changed.connect(self._corner_handle.queue_update)
         self.thumb_grid.scroll_area.installEventFilter(self)
 
