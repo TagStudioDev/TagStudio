@@ -37,13 +37,13 @@ _BINARY_STL_DTYPE = np.dtype(
 _ASCII_VERTEX_MARKERS = (b"vertex", b"VERTEX", b"Vertex")
 _MODEL_PADDING = 0.86
 _MIN_TRIANGLE_AREA = 1e-12
-_MODEL_BASE_COLOR = np.asarray([150.0, 153.0, 163.0], dtype=np.float32)
-_LIGHT_DIRECTION = np.asarray([0.35, -0.45, 0.82], dtype=np.float32)
-_LIGHT_DIRECTION /= np.linalg.norm(_LIGHT_DIRECTION)
-_AMBIENT_INTENSITY = 0.34
-_DIFFUSE_INTENSITY = 0.66
-_THUMBNAIL_YAW_DEGREES = 35.0
-_THUMBNAIL_PITCH_DEGREES = -42.0
+_MODEL_BASE_COLOR = np.asarray([128.0, 132.0, 144.0], dtype=np.float32)  # Slightly cool gray
+_LIGHT_VECTOR = np.asarray([-0.2, 0.4, 0.9], dtype=np.float32)
+_LIGHT_DIRECTION = _LIGHT_VECTOR / np.linalg.norm(_LIGHT_VECTOR)
+_AMBIENT_INTENSITY = 0.4
+_DIFFUSE_INTENSITY = 0.75
+_THUMBNAIL_YAW_DEGREES = 45.0  # Isometric projection
+_THUMBNAIL_PITCH_DEGREES = -60.0
 
 
 class STLRenderError(ValueError):
@@ -68,24 +68,21 @@ class STLPreview(BasePreview):
         size: tuple[int, int],
         dpi_scale: float,
     ) -> Image.Image | None:
-        return _stl_thumb(filepath, theme, size)
+        return _stl_thumb(filepath, size)
 
 
-def _stl_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image.Image | None:
+def _stl_thumb(filepath: Path, size: tuple[int, int]) -> Image.Image | None:
     """Render a thumbnail for an STL file.
 
     Args:
         filepath (Path): The path of the file.
-        theme (Theme): The system color theme.
         size (tuple[int, int]): The target size of the thumbnail.
     """
-    bg_rgb: tuple[int, int, int] = (30, 30, 30) if theme == Theme.DARK else (255, 255, 255)
     im: Image.Image | None = None
     try:
         im = _render_stl_thumbnail(
             filepath=filepath,
             size=max(size),
-            bg_rgb=bg_rgb,
             max_file_size=_MAX_STL_FILE_SIZE,
             max_triangles=_MAX_STL_TRIANGLES,
         )
@@ -99,7 +96,6 @@ def _stl_thumb(filepath: Path, theme: Theme, size: tuple[int, int]) -> Image.Ima
 def _render_stl_thumbnail(
     filepath: Path,
     size: int,
-    bg_rgb: tuple[int, int, int],
     max_file_size: int,
     max_triangles: int,
 ) -> Image.Image:
@@ -123,7 +119,7 @@ def _render_stl_thumbnail(
 
     projected, depths, normals = _project_triangles(triangles, normals, size)
     project_time = perf_counter()
-    image, drawn_triangle_count = _rasterize(projected, depths, normals, size, bg_rgb)
+    image, drawn_triangle_count = _rasterize(projected, depths, normals, size)
     raster_time = perf_counter()
 
     logger.debug(
@@ -305,13 +301,14 @@ def _rasterize(
     depths: np.ndarray,
     normals: np.ndarray,
     size: int,
-    bg_rgb: tuple[int, int, int],
 ) -> tuple[Image.Image, int]:
-    pixels = np.empty((size, size, 3), dtype=np.uint8)
-    pixels[:, :] = bg_rgb
+    pixels = np.zeros((size, size, 4), dtype=np.uint8)
     depth_buffer = np.full((size, size), -np.inf, dtype=np.float32)
 
-    intensities = _AMBIENT_INTENSITY + (_DIFFUSE_INTENSITY * np.abs(normals @ _LIGHT_DIRECTION))
+    # Flip any normals that aren't facing the camera, in case file has inverted normals
+    normals = np.where(normals[:, 2:3] < 0, -normals, normals)
+    diffuse = np.clip(normals @ _LIGHT_DIRECTION, 0, None)
+    intensities = _AMBIENT_INTENSITY + (_DIFFUSE_INTENSITY * diffuse)
     colors = np.clip(_MODEL_BASE_COLOR * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
 
     projected_list = projected.tolist()
@@ -340,7 +337,7 @@ def _rasterize(
     if not rendered_any:
         raise STLRenderError("STL mesh is outside the thumbnail frame")
 
-    return Image.fromarray(pixels, "RGB"), drawn_triangle_count
+    return Image.fromarray(pixels, "RGBA"), drawn_triangle_count
 
 
 def _fill_triangle(
@@ -398,6 +395,7 @@ def _fill_triangle(
             pixels[y, x, 0] = r
             pixels[y, x, 1] = g
             pixels[y, x, 2] = b
+            pixels[y, x, 3] = 255
             drew_any = True
 
     return drew_any

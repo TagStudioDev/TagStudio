@@ -12,7 +12,6 @@ import numpy as np
 import structlog
 from PIL import ImageOps, UnidentifiedImageError
 from PIL.Image import DecompressionBombError, Image, fromarray
-from PIL.Image import new as new_image
 from PIL.Image import open as open_image
 from pillow_heif import register_heif_opener  # pyright: ignore[reportUnknownVariableType]
 
@@ -113,19 +112,13 @@ def exr_image_thumb(filepath: Path) -> Image | None:
 
         im = fromarray(array, mode="RGBA")
 
-        # Paste solid background
-        if im.mode == "RGBA":
-            new_bg = new_image("RGB", im.size, color="#1e1e1e")
-            new_bg.paste(im, mask=im.getchannel(3))
-            im = new_bg
-
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
     return im
 
 
 def image_from_bytes(image_data: BytesIO, min_size: tuple[int, int] | None = None) -> Image:
-    """Load a raster image and add a background if it's transparent.
+    """Load a raster image.
 
     Args:
         image_data (BytesIO): The binary image data.
@@ -133,15 +126,11 @@ def image_from_bytes(image_data: BytesIO, min_size: tuple[int, int] | None = Non
             Only JPEGs can be decoded at a reduced size.
 
     Returns:
-        Image.Image: The loaded raster image, with a background if needed.
+        Image.Image: The loaded raster image.
     """
     im: Image = open_image(image_data)
     if min_size is not None:
         im.draft(None, min_size)
     if im.mode != "RGB" and im.mode != "RGBA":
         im = im.convert(mode="RGBA")
-    if im.mode == "RGBA":
-        new_bg = new_image("RGB", im.size, color="#1e1e1e")
-        new_bg.paste(im, mask=im.getchannel(3))
-        im = new_bg
     return unwrap(ImageOps.exif_transpose(im))

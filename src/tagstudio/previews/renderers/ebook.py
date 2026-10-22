@@ -10,9 +10,11 @@ from xml.etree.ElementTree import Element
 
 import structlog
 from PIL.Image import Image
+from PIL.Image import new as new_image
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
+from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.renderers.archive import Archive, first_image_in_archive, open_archive
@@ -82,6 +84,12 @@ def epub_thumb(filepath: Path, size: tuple[int, int] | None = None) -> Image | N
     except Exception as e:
         logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
+    # Put book pages on white like PDFs, but keep comic pages transparent like other images
+    is_comic = MediaTypes.contains("ebook.comic", filepath.suffix.lower(), SEARCH)
+    if im is not None and im.mode == "RGBA" and not is_comic:
+        page = new_image("RGB", im.size, color="#ffffff")
+        page.paste(im, mask=im.getchannel(3))
+        im = page
     return im
 
 

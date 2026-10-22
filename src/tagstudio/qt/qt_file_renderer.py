@@ -25,8 +25,8 @@ def _letterbox(image: QImage) -> QImage:
     width, height = image.width(), image.height()
     side = max(width, height)
     colors = [image.pixelColor(x, y) for y in (0, height - 1) for x in (0, width - 1)]
-    corners = Image.new("RGB", (2, 2))
-    corners.putdata([(c.red(), c.green(), c.blue()) for c in colors])
+    corners = Image.new("RGBA", (2, 2))
+    corners.putdata([(c.red(), c.green(), c.blue(), c.alpha()) for c in colors])
     background = ImageQt.ImageQt(corners.resize((side, side), Image.Resampling.BICUBIC)).copy()
 
     painter = QPainter(background)
@@ -64,9 +64,8 @@ def _media_icon(filepath: Path) -> str:
 
 @lru_cache(maxsize=32)
 def _icon(name: str, color: UiColor, theme: Theme, side: int, pixel_ratio: float) -> QImage:
-    """A default icon centered on a background."""
+    """A default icon centered in a transparent square."""
     is_dark = theme == Theme.DARK
-    background = get_ui_color(ColorType.DARK_ACCENT if is_dark else ColorType.PRIMARY, color)
     foreground = get_ui_color(ColorType.BORDER if is_dark else ColorType.LIGHT_ACCENT, color)
 
     glyph_side = int(side / 1.75)
@@ -85,10 +84,6 @@ def _icon(name: str, color: UiColor, theme: Theme, side: int, pixel_ratio: float
     image = QImage(side, side, QImage.Format.Format_ARGB32_Premultiplied)
     image.fill(Qt.GlobalColor.transparent)
     painter = QPainter(image)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(QColor(background))
-    painter.drawRoundedRect(QRectF(image.rect()), RADIUS * pixel_ratio, RADIUS * pixel_ratio)
     painter.drawImage((side - glyph_side) // 2, (side - glyph_side) // 2, glyph)
     painter.end()
     return image

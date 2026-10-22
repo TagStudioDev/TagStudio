@@ -404,7 +404,7 @@ class ItemThumb(QWidget):
 
         painter.end()
 
-    def _paint_decorated_image(self, painter: QPainter, brush: QBrush) -> None:
+    def _paint_decorated_image(self, painter: QPainter, image_brush: QBrush) -> None:
         """Paint an image with rounded corners and edge decorations."""
         opacity = painter.opacity()
         width, height = self._thumb_size
@@ -412,20 +412,27 @@ class ItemThumb(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(brush)
+
+        # Image
+        painter.setBrush(image_brush)
         painter.drawPath(_rounded_path(width, height, 1))
 
+        # Pre-highlight background for dark images + alpha backgrounds
+        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), QColor(255, 255, 255, 25))
+
+        # Edge Highlight
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
-        painter.setOpacity(opacity * 0.875)
-        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), brush)
+        painter.setOpacity(opacity * 0.15)
+        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), image_brush)
         painter.setOpacity(opacity)
 
+        # Edge Shadow
         shadow = _rounded_path(width, height, 0, edge_width=1)
         is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
         painter.fillPath(shadow, _DARK_SHADOW if is_dark else _LIGHT_SHADOW)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
-        painter.fillPath(shadow, brush)
+        painter.fillPath(shadow, image_brush)
         painter.restore()
 
     @override
