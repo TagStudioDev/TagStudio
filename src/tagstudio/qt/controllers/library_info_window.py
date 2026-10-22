@@ -124,11 +124,7 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         else:
             self.view_legacy_json_file.setEnabled(False)
 
-        self.open_backups_folder.clicked.connect(
-            lambda: file_opener.open_file(
-                unwrap(self.lib.library_dir) / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
-            )
-        )
+        self.open_backups_folder.clicked.connect(self.__open_backups_folder)
 
     def update_version(self):
         version_text: str = f"<b>{self.lib.get_version(DB_VERSION_CURRENT_KEY)}</b> / {DB_VERSION}"
@@ -147,9 +143,16 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         json_path = unwrap(self.lib.library_dir) / TS_FOLDER_NAME / JSON_FILENAME
         return json_path.exists()
 
+    def __open_backups_folder(self):
+        backups_path = unwrap(self.lib.library_dir) / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+        backups_path.mkdir(parents=True, exist_ok=True)
+        file_opener.open_file(backups_path)
+
     @property
     def __backups_count(self):
         backups_path = unwrap(self.lib.library_dir) / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+        if not backups_path.is_dir():
+            return 0
         return len(os.listdir(backups_path))
 
     @property
