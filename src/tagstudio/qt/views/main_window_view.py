@@ -37,6 +37,7 @@ class MainWindowView(QHBoxLayout):
         ("home.thumbnail_size.mini", 76),
     ]
 
+    extra_input_bar: QWidget
     extra_input_layout: QHBoxLayout
     results_label: QLabel
     show_hidden_entries_widget: QWidget
@@ -56,26 +57,29 @@ class MainWindowView(QHBoxLayout):
         self.browsing_area = BrowsingArea(driver, pixel_ratio)
         self.inspector = Inspector(driver)
 
-        central_content = QWidget()
-        central_content.setObjectName("central_content")
-        central_content_layout = QVBoxLayout(central_content)
+        self.central_content = QWidget()
+        self.central_content.setObjectName("central_content")
+        central_content_layout = QVBoxLayout(self.central_content)
         central_content_layout.setContentsMargins(0, 0, 0, 0)
         central_content_layout.setSpacing(PAD)
         central_content_layout.addWidget(self.search_bar)
-        central_content_layout.addLayout(self.extra_input_layout)
+        central_content_layout.addWidget(self.extra_input_bar)
         central_content_layout.addWidget(self.browsing_area)
 
         self.content_splitter = QSplitter()
         self.content_splitter.setObjectName("content_splitter")
         self.content_splitter.setHandleWidth(PAD + HALF_PAD)
-        self.content_splitter.addWidget(central_content)
+        self.content_splitter.addWidget(self.central_content)
         self.content_splitter.addWidget(self.inspector)
         self.content_splitter.setStretchFactor(0, 1)
+        self.content_splitter.setCollapsible(0, False)  # noqa: FBT003
         self.addWidget(self.content_splitter)
 
     def setup_extra_input_bar(self):
         """Sets up inputs for sorting settings and thumbnail size."""
-        self.extra_input_layout = QHBoxLayout()
+        self.extra_input_bar = QWidget()
+        self.extra_input_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.extra_input_layout = QHBoxLayout(self.extra_input_bar)
         self.extra_input_layout.setObjectName("extra_input_layout")
         self.extra_input_layout.setContentsMargins(WIN_PAD, 0, 0, 0)
 

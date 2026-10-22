@@ -11,8 +11,8 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6 import QtCore
-from PySide6.QtGui import QShortcut
-from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QResizeEvent, QShortcut
+from PySide6.QtWidgets import QSplitter, QWidget
 
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
@@ -50,7 +50,10 @@ class Inspector(QWidget):
         self._driver = driver
         self._lib = self._driver.lib
         self._settings = self._driver.settings
+
         self._current_stats: FileAttributeData | None = None
+        self._preview_height_limit: int | None = None  # Max dragged preview area height
+        self._preview_outdated = False  # Preview can become outdated if the Inspector is collapsed
 
         self._open_tag_search_action = QShortcut(
             QtCore.QKeyCombination(
@@ -85,6 +88,8 @@ class Inspector(QWidget):
         # Previews
         self.layout().preview_thumb.stats_updated.connect(self._thumb_stats_updated_callback)
         self.layout().preview_thumb.check_ffmpeg.connect(self._toggle_ffmpeg_warning)
+        self.layout().preview_thumb.aspect_ratio_changed.connect(self._fit_preview_height)
+        self.layout().preview_splitter.splitterMoved.connect(self._on_preview_splitter_moved)
 
         self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
         self._driver.selection.changed.connect(self.update_from_selection)
@@ -257,7 +262,10 @@ class Inspector(QWidget):
                 if filepath != self.layout().preview_thumb.current_file:
                     self._current_stats = None
 
-                if update_preview:
+                if update_preview and self.width() == 0:
+                    self.layout().preview_thumb.hide_preview()
+                    self._preview_outdated = True
+                elif update_preview:
                     self.layout().preview_thumb.display_file(filepath, entry.date_modified)
                     if self._current_stats is None:
                         self._current_stats = FileAttributeData()
@@ -280,6 +288,7 @@ class Inspector(QWidget):
 
         except Exception as e:
             logger.error("[Inspector] Error updating selection", error=e)
+        self._fit_preview_height()
 
     def stop_media_playback(self) -> None:
         """Stop any media playback in the inspector."""
@@ -289,6 +298,59 @@ class Inspector(QWidget):
     def containers(self) -> TileList:
         return self.layout().containers
 
+    def _content_height(self) -> int | None:
+        """How tall the current preview is when it fills the preview area's width."""
+        thumb = self.layout().preview_thumb
+        if thumb.current_file is None or thumb.width() == 0:
+            return None
+        return round(thumb.width() / thumb.aspect_ratio)
+
+    def _fit_preview_height(self) -> None:
+        """Resize the preview area to its content, up to the dragged height or else a square."""
+        if self.width() == 0:
+            return
+        splitter = self.layout().preview_splitter
+        preview_height, info_height = splitter.sizes()
+        height = self._preview_height_limit
+        if height is None:
+            height = self.layout().preview_thumb.width()
+        if (content_height := self._content_height()) is not None:
+            height = min(height, content_height)
+        if height != preview_height:
+            splitter.setSizes([height, preview_height + info_height - height])
+
+    def _on_preview_splitter_moved(self) -> None:
+        preview_height = self.layout().preview_splitter.sizes()[0]
+        content_height = self._content_height()
+        if content_height is None or preview_height < content_height:
+            self._preview_height_limit = preview_height
+        else:
+            self._preview_height_limit = max(self._preview_height_limit or 0, content_height)
+        self._fit_preview_height()
+
+    @property
+    def is_preview_showing(self) -> bool:
+        """Whether the Inspector is showing a file preview."""
+        return self.layout().preview_thumb.current_file is not None
+
+    @property
+    def preview_section(self) -> QWidget:
+        return self.layout().preview_section
+
+    @property
+    def preview_splitter(self) -> QSplitter:
+        return self.layout().preview_splitter
+
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._fit_preview_height()
+        if self._preview_outdated and self.width() > 0:
+            self._preview_outdated = False
+            self.update_from_selection()
+
     @override
     def layout(self) -> InspectorView:
-        return super().layout()  # pyright: ignore[reportReturnType]
+        layout = super().layout()
+        assert isinstance(layout, InspectorView)
+        return layout

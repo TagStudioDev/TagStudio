@@ -17,11 +17,11 @@ from tagstudio.qt.views.styles.stylesheets import RADIUS
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
-_DEFAULT_PREVIEW_SIZE = (272, 272)
-
 
 class PreviewThumbView(QStackedLayout):
     """The layout for the file preview thumbnail widget."""
+
+    MINIMUM_SIZE = (128, 128)
 
     def __init__(self, driver: QtDriver) -> None:
         super().__init__()
@@ -36,7 +36,7 @@ class PreviewThumbView(QStackedLayout):
         )
 
         self.button_wrapper = QPushButton()
-        self.button_wrapper.setMinimumSize(*_DEFAULT_PREVIEW_SIZE)
+        self.button_wrapper.setMinimumSize(*self.MINIMUM_SIZE)
         self.button_wrapper.setFlat(True)
         self.button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.button_wrapper.addAction(self.open_file_action)
@@ -49,7 +49,7 @@ class PreviewThumbView(QStackedLayout):
         self._stacked_page_setup(self.preview_img_page, self.button_wrapper)
 
         self.preview_animation = QLabel()
-        self.preview_animation.setMinimumSize(*_DEFAULT_PREVIEW_SIZE)
+        self.preview_animation.setMinimumSize(*self.MINIMUM_SIZE)
         self.preview_animation.setScaledContents(True)
         self.preview_animation.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_animation.setCursor(Qt.CursorShape.ArrowCursor)
