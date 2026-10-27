@@ -1229,7 +1229,16 @@ class QtDriver(DriverMixin, QObject):
         SettingsPanel.build_modal(self).show()
 
     def check_for_update(self):
-        """Check for an update to TagStudio and display a message box if there is one."""
+        """Check for an update to TagStudio and display a notification if there is one."""
+
+        def fetch_latest_version() -> None:
+            TagStudioCore.get_most_recent_release_version()
+
+        runnable = CustomRunnable(fetch_latest_version)
+        runnable.done.connect(self._show_available_update)
+        QThreadPool.globalInstance().start(runnable)
+
+    def _show_available_update(self) -> None:
         latest_version = TagStudioCore.get_most_recent_release_version()
         if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
             return

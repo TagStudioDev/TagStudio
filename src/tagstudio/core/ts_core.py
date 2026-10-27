@@ -15,6 +15,7 @@ from tagstudio.core.library.alchemy.library import Library
 logger = structlog.get_logger(__name__)
 
 MOST_RECENT_RELEASE_VERSION: str | None = None
+_UPDATE_CHECK_TIMEOUT = 10
 
 
 class TagStudioCore:
@@ -24,32 +25,35 @@ class TagStudioCore:
     @staticmethod
     @lru_cache(maxsize=1)
     def get_most_recent_release_version() -> str | None:
-        """Get the version of the most recent GitHub release."""
+        """Get the version of the most recent GitHub release and cache the result."""
         logger.info("[Core] Checking for updates...")
 
         try:
             resp = requests.get(
-                "https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest"
+                "https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest",
+                timeout=_UPDATE_CHECK_TIMEOUT,
             )
         except Exception as e:
-            logger.error("Error getting most recent GitHub release.", error=e)
+            logger.error("[Core] Error getting most recent GitHub release", error=e)
             return None
 
         if resp.status_code != 200:
-            logger.error("Error getting most recent GitHub release.", status_code=resp.status_code)
+            logger.error(
+                "[Core] Error getting most recent GitHub release", status_code=resp.status_code
+            )
             return None
 
         data = resp.json()
         tag: str = data["tag_name"]
         if not tag.startswith("v"):
-            logger.error("Unexpected tag format.", tag=tag)
+            logger.error("[Core] Unexpected git tag format", tag=tag)
             return None
 
         version = tag[1:]
         # the assertion does not allow for prerelease/build,
         # because the latest release should never have them
         if re.match(r"^\d+\.\d+\.\d+$", version) is None:
-            logger.error("Invalid version format.", version=version)
+            logger.error("[Core] Invalid version format", version=version)
             return None
 
         return version
