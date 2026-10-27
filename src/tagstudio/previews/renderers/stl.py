@@ -21,7 +21,7 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Make these parameters configurable
 _MAX_STL_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
-_MAX_STL_TRIANGLES = 250_000
+_MAX_STL_TRIANGLES = 500_000
 
 _BINARY_STL_HEADER_SIZE = 84
 _BINARY_STL_TRIANGLE_COUNT_OFFSET = 80
@@ -37,13 +37,15 @@ _BINARY_STL_DTYPE = np.dtype(
 _ASCII_VERTEX_MARKERS = (b"vertex", b"VERTEX", b"Vertex")
 _MODEL_PADDING = 0.86
 _MIN_TRIANGLE_AREA = 1e-12
-_MODEL_BASE_COLOR = np.asarray([128.0, 132.0, 144.0], dtype=np.float32)  # Slightly cool gray
+_MODEL_BASE_COLOR = np.asarray([144.0, 148.0, 160.0], dtype=np.float32)  # Slightly cool gray
 _LIGHT_VECTOR = np.asarray([-0.2, 0.4, 0.9], dtype=np.float32)
 _LIGHT_DIRECTION = _LIGHT_VECTOR / np.linalg.norm(_LIGHT_VECTOR)
 _AMBIENT_INTENSITY = 0.4
 _DIFFUSE_INTENSITY = 0.75
 _THUMBNAIL_YAW_DEGREES = 45.0  # Isometric projection
 _THUMBNAIL_PITCH_DEGREES = -60.0
+_RASTER_BATCH_AREA = 500_000  # Number of bounding box pixels tested at once
+_EDGE_TOLERANCE = 0.00001  # Tolerance for overlapping shared edges to hide seams
 
 
 class STLRenderError(ValueError):
@@ -143,7 +145,7 @@ def _render_stl_thumbnail(
 
 
 def _read_stl_header(filepath: Path) -> bytes:
-    """Reads the header of an STL file, avoiding a full file read."""
+    """Read the header of an STL file."""
     with filepath.open("rb") as file:
         return file.read(_BINARY_STL_HEADER_SIZE)
 
@@ -151,7 +153,7 @@ def _read_stl_header(filepath: Path) -> bytes:
 def _load_stl_triangles(
     filepath: Path, header: bytes, file_size: int, max_triangles: int
 ) -> tuple[np.ndarray, int, str]:
-    """STL files come in either binary or ascii format.
+    """STL files come in either binary or ASCII format.
 
     Figure out the format and parse the triangles from the file.
     """
@@ -174,7 +176,7 @@ def _load_stl_triangles(
             triangles = _load_binary_stl_triangles(filepath, triangle_count, max_triangles)
             return triangles, triangle_count, "binary"
 
-    # No sign of binary format found. Try parsing ascii-format instead.
+    # No sign of binary format found. Try parsing as the ASCII format instead.
     data = filepath.read_bytes()
     triangles, source_triangle_count = _load_ascii_stl_triangles(data, max_triangles)
     return triangles, source_triangle_count, "ascii"
@@ -302,100 +304,147 @@ def _rasterize(
     normals: np.ndarray,
     size: int,
 ) -> tuple[Image.Image, int]:
-    pixels = np.zeros((size, size, 4), dtype=np.uint8)
-    depth_buffer = np.full((size, size), -np.inf, dtype=np.float32)
+    """Draw the triangles for the model. Only surfaces nearest to the camera are kept.
 
-    # Flip any normals that aren't facing the camera, in case file has inverted normals
+    Args:
+        projected (np.ndarray): Each triangle's three corners as image x and y, shaped (n, 3, 2).
+        depths (np.ndarray): Each corner's depth, higher being nearer the camera, shaped (n, 3).
+        normals (np.ndarray): Each triangle's unit normal, used for shading, shaped (n, 3).
+        size (int): The width and height of the square image in pixels.
+
+    Returns:
+        tuple[Image.Image, int]: The image and how many triangles cover at least one pixel.
+    """
+    # Flip any normals that aren't facing the camera in case file has inverted normals
     normals = np.where(normals[:, 2:3] < 0, -normals, normals)
+    # Flat shading with one color per triangle
     diffuse = np.clip(normals @ _LIGHT_DIRECTION, 0, None)
     intensities = _AMBIENT_INTENSITY + (_DIFFUSE_INTENSITY * diffuse)
     colors = np.clip(_MODEL_BASE_COLOR * intensities[:, np.newaxis], 0, 255).astype(np.uint8)
 
-    projected_list = projected.tolist()
-    depths_list = depths.tolist()
-    colors_list = colors.tolist()
-    rendered_any = False
-    drawn_triangle_count = 0
+    # Each triangle's bounding box of pixels
+    x_starts, y_starts, widths, pixel_area = _pixel_bounds(projected, size)
+    steps = _interpolation_steps(projected, depths, x_starts, y_starts)
+    pixel_area[~np.isfinite(steps).all(axis=(1, 2))] = 0  # Skip edge-on triangles
 
-    for index in range(len(projected_list)):
-        xy = projected_list[index]
-        xs = (xy[0][0], xy[1][0], xy[2][0])
-        ys = (xy[0][1], xy[1][1], xy[2][1])
-        if max(xs) < 0 or min(xs) >= size or max(ys) < 0 or min(ys) >= size:
-            continue
+    # Nearest depth and triangle at each pixel
+    depth_buffer = np.full(size * size, -np.inf, dtype=np.float32)
+    triangle_buffer = np.full(size * size, -1, dtype=np.int32)
+    is_drawn = np.zeros(len(projected), dtype=bool)
 
-        tri_z = depths_list[index]
-        tri = (
-            (xy[0][0], xy[0][1], tri_z[0]),
-            (xy[1][0], xy[1][1], tri_z[1]),
-            (xy[2][0], xy[2][1], tri_z[2]),
+    # Test the pixels in each triangle's bounding box for whether the triangle covers them, only
+    # keeping the nearest. Whole triangles go in batches of up to _RASTER_BATCH_AREA pixels.
+    area_ends = np.cumsum(pixel_area)
+    batch_start = 0
+    while batch_start < len(pixel_area):
+        area_limit = area_ends[batch_start] - pixel_area[batch_start] + _RASTER_BATCH_AREA
+        # At least one triangle
+        batch_end = max(batch_start + 1, int(np.searchsorted(area_ends, area_limit, side="right")))
+        batch_areas = pixel_area[batch_start:batch_end]
+
+        # The triangle and its column + row in the bounding box for each pixel
+        triangles = np.repeat(np.arange(batch_start, batch_end, dtype=np.int32), batch_areas)
+        bounding_box_offsets = np.arange(len(triangles), dtype=np.int32) - np.repeat(
+            (np.cumsum(batch_areas) - batch_areas).astype(np.int32), batch_areas
         )
-        if _fill_triangle(pixels, depth_buffer, tri, size, colors_list[index]):
-            rendered_any = True
-            drawn_triangle_count += 1
+        local_x = bounding_box_offsets % widths[triangles]
+        local_y = bounding_box_offsets // widths[triangles]
 
-    if not rendered_any:
+        # Barycentric weights for corners 0 and 1, and the depth, at each pixel
+        pixel_steps = steps[triangles]
+        x = local_x.astype(np.float32)[:, np.newaxis]
+        y = local_y.astype(np.float32)[:, np.newaxis]
+        values = pixel_steps[:, :, 0] * x + pixel_steps[:, :, 1] * y + pixel_steps[:, :, 2]
+        weight_0, weight_1, z = values[:, 0], values[:, 1], values[:, 2]
+        # All three weights at 0 or more means the pixel is inside the triangle.
+        # They always add up to 1, so corner 2's weight is 1 minus the other two.
+        inside = (
+            (weight_0 >= -_EDGE_TOLERANCE)
+            & (weight_1 >= -_EDGE_TOLERANCE)
+            & (weight_0 + weight_1 <= 1 + _EDGE_TOLERANCE)
+        )
+
+        # Positions in the image of the pixels inside their triangle
+        triangles, z = triangles[inside], z[inside]
+        image_positions = (y_starts[triangles] + local_y[inside]) * size + x_starts[triangles]
+        image_positions += local_x[inside]
+        is_drawn[triangles] = True
+
+        # Keep the nearest depth at each position and the triangle it came from
+        np.maximum.at(depth_buffer, image_positions, z)
+        is_nearest = z == depth_buffer[image_positions]
+        triangle_buffer[image_positions[is_nearest]] = triangles[is_nearest]
+        batch_start = batch_end
+
+    if not is_drawn.any():
         raise STLRenderError("STL mesh is outside the thumbnail frame")
 
-    return Image.fromarray(pixels, "RGBA"), drawn_triangle_count
+    # Color the covered pixels
+    image = np.zeros((size * size, 4), dtype=np.uint8)
+    covered = triangle_buffer >= 0
+    image[covered, :3] = colors[triangle_buffer[covered]]
+    image[covered, 3] = 255
+    return Image.fromarray(image.reshape((size, size, 4)), "RGBA"), int(is_drawn.sum())
 
 
-def _fill_triangle(
-    pixels: np.ndarray,
-    depth_buffer: np.ndarray,
-    tri: tuple[tuple[float, float, float], ...],
-    size: int,
-    color: list[int],
-) -> bool:
-    """Fill a single triangle into a pixel buffer via scanline conversion."""
-    (ax, ay, az), (bx, by, bz), (cx, cy, cz) = tri
-    if ay > by:
-        ax, ay, az, bx, by, bz = bx, by, bz, ax, ay, az
-    if by > cy:
-        bx, by, bz, cx, cy, cz = cx, cy, cz, bx, by, bz
-    if ay > by:
-        ax, ay, az, bx, by, bz = bx, by, bz, ax, ay, az
+def _pixel_bounds(
+    projected: np.ndarray, size: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Each triangle's top-left pixel's column & row, bounding box width, and bounding box area."""
+    xs = projected[:, :, 0]
+    ys = projected[:, :, 1]
 
-    y_start = max(0, math.ceil(ay))
-    y_end = min(size - 1, math.ceil(cy) - 1)
-    r, g, b = color
-    drew_any = False
+    # Round within whole pixels to stay within the image
+    x_starts = np.clip(np.ceil(xs.min(axis=1)), 0, size).astype(np.int32)
+    y_starts = np.clip(np.ceil(ys.min(axis=1)), 0, size).astype(np.int32)
+    x_ends = np.clip(np.floor(xs.max(axis=1)), -1, size - 1).astype(np.int32)
+    y_ends = np.clip(np.floor(ys.max(axis=1)), -1, size - 1).astype(np.int32)
+    widths = np.maximum(x_ends - x_starts + 1, 0)
+    heights = np.maximum(y_ends - y_starts + 1, 0)
+    return x_starts, y_starts, widths, widths.astype(np.int64) * heights
 
-    # a/b/c are the triangle's vertices sorted by y; ta/tb interpolate the left/right
-    # edge x and z at each scanline.
-    for y in range(y_start, y_end + 1):
-        fy = float(y)
-        ta = 0.0 if cy == ay else (fy - ay) / (cy - ay)
-        xa = ax + ta * (cx - ax)
-        za = az + ta * (cz - az)
-        if fy < by:
-            tb = 0.0 if by == ay else (fy - ay) / (by - ay)
-            xb = ax + tb * (bx - ax)
-            zb = az + tb * (bz - az)
-        else:
-            tb = 0.0 if cy == by else (fy - by) / (cy - by)
-            xb = bx + tb * (cx - bx)
-            zb = bz + tb * (cz - bz)
 
-        if xa > xb:
-            xa, xb = xb, xa
-            za, zb = zb, za
+def _interpolation_steps(
+    projected: np.ndarray, depths: np.ndarray, x_starts: np.ndarray, y_starts: np.ndarray
+) -> np.ndarray:
+    """Each triangle's barycentric weights and depth as steps across its bounding box's pixels.
 
-        x_start = max(0, math.ceil(xa))
-        x_end = min(size - 1, math.ceil(xb) - 1)
-        for x in range(x_start, x_end + 1):
-            tx = 0.0 if xb == xa else (x - xa) / (xb - xa)
-            # Linear z interpolation is only correct because the projection is
-            # orthographic; this test makes triangles occlude correctly regardless
-            # of draw order.
-            z = za + tx * (zb - za)
-            if z <= depth_buffer[y, x]:
-                continue
-            depth_buffer[y, x] = z
-            pixels[y, x, 0] = r
-            pixels[y, x, 1] = g
-            pixels[y, x, 2] = b
-            pixels[y, x, 3] = 255
-            drew_any = True
+    A step (a, b, c) is how much a value changes per pixel right (a) and down (b), and its value
+    at the bounding box's top-left pixel (c), so a pixel's value is "a * column + b * row + c".
 
-    return drew_any
+    The weights tell whether a pixel is inside the triangle and blend the corners' depths there.
+
+    Returns:
+        np.ndarray: Steps for corner 0's weight, corner 1's weight, and the depth, shaped (n, 3, 3).
+    """
+    x0, x1, x2 = projected[:, :, 0].astype(np.float64).T
+    y0, y1, y2 = projected[:, :, 1].astype(np.float64).T
+    z0, z1, z2 = depths.astype(np.float64).T
+    origin_x = x_starts.astype(np.float64)
+    origin_y = y_starts.astype(np.float64)
+
+    with np.errstate(divide="ignore", invalid="ignore"):  # Ignore zero-area triangles
+        # The barycentric weights divide by double the area so each is 1 at its own corner.
+        # The area can be negative depending on the corner order, which the division cancels out.
+        doubled_area = (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0)
+        weight_0 = np.stack(
+            [
+                (y1 - y2) / doubled_area,
+                (x2 - x1) / doubled_area,
+                ((x2 - x1) * (origin_y - y1) - (y2 - y1) * (origin_x - x1)) / doubled_area,
+            ],
+            axis=-1,
+        )
+        weight_1 = np.stack(
+            [
+                (y2 - y0) / doubled_area,
+                (x0 - x2) / doubled_area,
+                ((x0 - x2) * (origin_y - y2) - (y0 - y2) * (origin_x - x2)) / doubled_area,
+            ],
+            axis=-1,
+        )
+        # Blending the three corner depths by the weights gives the depth at each pixel.
+        # NOTE: Blending depth linearly like this is only correct because the view is orthographic.
+        depth = weight_0 * (z0 - z2)[:, np.newaxis] + weight_1 * (z1 - z2)[:, np.newaxis]
+        depth[:, 2] += z2  # Adds corner 2's depth, whose weight is 1 minus the other two
+    return np.stack([weight_0, weight_1, depth], axis=1).astype(np.float32)
