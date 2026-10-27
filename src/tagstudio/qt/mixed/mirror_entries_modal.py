@@ -5,9 +5,16 @@
 import typing
 from time import sleep
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QStringListModel, Qt, Signal
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
 from tagstudio.i18n.translations import Translations
@@ -40,7 +47,9 @@ class MirrorEntriesModal(QWidget):
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
-        self.model = QStandardItemModel()
+        self.list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.list_view.setUniformItemSizes(True)
+        self.model = QStringListModel()
         self.list_view.setModel(self.model)
 
         self.button_container = QWidget()
@@ -66,10 +75,7 @@ class MirrorEntriesModal(QWidget):
         self.desc_widget.setText(
             Translations.format("entries.mirror.confirmation", count=self.tracker.groups_count)
         )
-
-        self.model.clear()
-        for i in self.tracker.groups:
-            self.model.appendRow(QStandardItem(str(i)))
+        self.model.setStringList([str(group) for group in self.tracker.groups])
 
     def mirror_entries(self):
         def displayed_text(x):

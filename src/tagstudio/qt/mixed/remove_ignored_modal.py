@@ -5,9 +5,16 @@
 from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Qt, QThreadPool, Signal
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QStringListModel, Qt, QThreadPool, Signal
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRegistry
 from tagstudio.i18n.translations import Translations
@@ -43,7 +50,9 @@ class RemoveIgnoredModal(QWidget):
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
-        self.model = QStandardItemModel()
+        self.list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.list_view.setUniformItemSizes(True)
+        self.model = QStringListModel()
         self.list_view.setModel(self.model)
 
         self.button_container = QWidget()
@@ -69,12 +78,7 @@ class RemoveIgnoredModal(QWidget):
         self.desc_widget.setText(
             Translations.format("entries.remove.plural.confirm", count=self.tracker.ignored_count)
         )
-
-        self.model.clear()
-        for i in self.tracker.ignored_entries:
-            item = QStandardItem(str(i.path))
-            item.setEditable(False)
-            self.model.appendRow(item)
+        self.model.setStringList([str(entry.path) for entry in self.tracker.ignored_entries])
 
     def delete_entries(self):
         pw = ProgressWidget(

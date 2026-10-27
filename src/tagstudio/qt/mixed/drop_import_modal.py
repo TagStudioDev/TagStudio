@@ -9,9 +9,16 @@ from typing import TYPE_CHECKING, override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QStringListModel, Qt, QUrl
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -32,7 +39,7 @@ class DuplicateChoice(enum.StrEnum):
 
 # TODO: Split to use MVC guidelines.
 class DropImportModal(QWidget):
-    DUPE_NAME_LIMT: int = 5
+    DUPE_NAME_LIMIT: int = 5
 
     def __init__(self, driver: QtDriver):
         super().__init__()
@@ -54,7 +61,9 @@ class DropImportModal(QWidget):
 
         # Duplicate File List ========
         self.list_view = QListView()
-        self.model = QStandardItemModel()
+        self.list_view.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.list_view.setUniformItemSizes(True)
+        self.model = QStringListModel()
         self.list_view.setModel(self.model)
 
         # Buttons ====================
@@ -88,7 +97,7 @@ class DropImportModal(QWidget):
         self.root_layout.addWidget(self.button_container)
 
     def import_urls(self, urls: list[QUrl]):
-        """Add a colleciton of urls to the library."""
+        """Add a collection of local file URLs to the library."""
         self.files: list[Path] = []
         self.dirs_in_root: list[Path] = []
         self.duplicate_files: list[Path] = []
@@ -132,7 +141,7 @@ class DropImportModal(QWidget):
                     self.duplicate_files.append(file)
 
     def ask_duplicates_choice(self):
-        """Display the message widgeth with a list of the duplicated files."""
+        """Display a message with the list of the duplicated files."""
         self.desc_widget.setText(
             Translations["drop_import.duplicates_choice.singular"]
             if len(self.duplicate_files) == 1
@@ -140,12 +149,9 @@ class DropImportModal(QWidget):
                 "drop_import.duplicates_choice.plural", count=len(self.duplicate_files)
             )
         )
-
-        self.model.clear()
-        for dupe in self.duplicate_files:
-            item = QStandardItem(str(self._get_relative_path(dupe)))
-            item.setEditable(False)
-            self.model.appendRow(item)
+        self.model.setStringList(
+            [str(self._get_relative_path(dupe)) for dupe in self.duplicate_files]
+        )
 
         self.driver.main_window.raise_()
         self.show()
@@ -174,7 +180,6 @@ class DropImportModal(QWidget):
         )
         pw.setWindowTitle(Translations["drop_import.progress.window_title"])
         pw.update_label(Translations["drop_import.progress.label.initial"])
-
         pw.from_iterable_function(
             self.copy_files,
             displayed_text,
