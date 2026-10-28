@@ -24,6 +24,8 @@ python3Packages.buildPythonApplication {
   inherit (pyproject) version;
   pyproject = true;
 
+  __structuredAttrs = true;
+
   src = ../../.;
 
   nativeBuildInputs = [
@@ -83,20 +85,25 @@ python3Packages.buildPythonApplication {
   dontWrapGApps = true;
   dontWrapQtApps = true;
   makeWrapperArgs = [
-    "--suffix PATH : ${
-      lib.makeBinPath [
-        ffmpeg-headless
-        ripgrep
-      ]
-    }"
+    "--suffix"
+    "PATH"
+    ":"
+    (lib.makeBinPath [
+      ffmpeg-headless
+      ripgrep
+    ])
   ]
-  ++ lib.optional stdenv.hostPlatform.isLinux "--suffix LD_LIBRARY_PATH : ${
-    lib.makeLibraryPath [ pipewire ]
-  }"
-  ++ [
-    "\${gappsWrapperArgs[@]}"
-    "\${qtWrapperArgs[@]}"
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    "--suffix"
+    "LD_LIBRARY_PATH"
+    ":"
+    (lib.makeLibraryPath [ pipewire ])
   ];
+
+  preFixup = ''
+    makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
+    makeWrapperArgs+=("''${qtWrapperArgs[@]}")
+  '';
 
   pythonRemoveDeps = lib.optional (!withJXLSupport) "pillow_jxl";
   pythonRelaxDeps = [
