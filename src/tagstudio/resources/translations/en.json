@@ -357,6 +357,7 @@
     "settings.media": "Media",
     "settings.open_library_on_start": "Reopen Library on Start",
     "settings.page_size": "Page Size",
+    "settings.pill_shaped_tags": "Pill-Shaped Tags",
     "settings.restart_required": "Please restart TagStudio for changes to take effect.",
     "settings.scan_files_on_open": "Sync Library on Open",
     "settings.show_filenames_in_grid": "Show Filenames in Grid",

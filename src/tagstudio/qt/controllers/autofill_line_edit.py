@@ -6,12 +6,7 @@ from typing import override
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QPoint, Signal
-from PySide6.QtWidgets import QLineEdit, QMenu, QWidget
-
-from tagstudio.qt.views.styles.stylesheets import (
-    autofill_scroll_top_focus_style,
-    autofill_scroll_top_style,
-)
+from PySide6.QtWidgets import QLineEdit, QMenu
 
 logger = structlog.get_logger(__name__)
 
@@ -22,19 +17,16 @@ class AutofillLineEdit(QLineEdit):
     holding_shift = Signal(bool)
     index_updated = Signal(int)
 
-    def __init__(self, popup: QWidget) -> None:
-        super().__init__()
-        self._popup = popup
-
     @override
     def focusOutEvent(self, arg__1: QtGui.QFocusEvent) -> None:
-        if arg__1.reason() != QtCore.Qt.FocusReason.PopupFocusReason:
-            self._popup.setStyleSheet(autofill_scroll_top_style("container"))
+        if (parent := self.parentWidget()) is not None:
+            parent.update()
         return super().focusOutEvent(arg__1)
 
     @override
     def focusInEvent(self, arg__1: QtGui.QFocusEvent) -> None:
-        self._popup.setStyleSheet(autofill_scroll_top_focus_style("container"))
+        if (parent := self.parentWidget()) is not None:
+            parent.update()
         return super().focusInEvent(arg__1)
 
     @override

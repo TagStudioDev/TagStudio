@@ -18,6 +18,7 @@ from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tile_data import TileData
+from tagstudio.qt.views.styles.tag_icons import tag_icon
 from tagstudio.qt.views.tiles.tag_data_view import TagDataView
 
 if TYPE_CHECKING:
@@ -54,19 +55,25 @@ class TagData(TileData):
         layout = self.layout()
         while item := layout.takeAt(0):
             if widget := item.widget():
+                widget.hide()
                 widget.deleteLater()
 
         for tag in tags_:
             capsule = Capsule(
-                has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
+                has_edit=True,
+                has_remove=True,
+                search_label=Translations["tag.search_for_tag"],
+                is_tag=True,
             )
             capsule.set_text(self._lib.tag_display_name(tag))
             capsule.set_color_group(tag.color)
+            capsule.set_icon(tag_icon(tag.id))
             capsule.on_click.connect(lambda t=tag: self._on_click(t))
             capsule.on_remove.connect(lambda t=tag: self._on_remove(t))
             capsule.on_edit.connect(lambda t=tag: self._on_edit(t))
             capsule.on_search.connect(lambda t=tag: self._on_search(t))
             layout.addWidget(capsule)
+            capsule.show()
 
     def _on_click(self, tag: Tag) -> None:
         match self._driver.settings.tag_click_action:

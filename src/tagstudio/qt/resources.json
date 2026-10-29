@@ -23,6 +23,10 @@
         "mode": "pil",
         "path": "qt/images/file_icons/archive.png"
     },
+    "archived_icon": {
+        "mode": "rb",
+        "path": "qt/images/archived.svg"
+    },
     "arrow_right": {
         "mode": "rb",
         "path": "qt/images/arrow-right.svg"
@@ -82,6 +86,10 @@
     "edit": {
         "mode": "pil",
         "path": "qt/images/bxs-pencil-solid.png"
+    },
+    "favorite_icon": {
+        "mode": "rb",
+        "path": "qt/images/favorite.svg"
     },
     "file_generic": {
         "mode": "pil",

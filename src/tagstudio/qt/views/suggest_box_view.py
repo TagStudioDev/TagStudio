@@ -9,65 +9,54 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QSizePolicy, QVBoxLayout, QWi
 
 from tagstudio.qt.controllers.autofill_line_edit import AutofillLineEdit
 from tagstudio.qt.controllers.horizontal_scroll_area import HorizontalScrollArea
-from tagstudio.qt.views.styles.stylesheets import (
-    PAD,
-    autofill_line_edit_style,
-    autofill_scroll_top_style,
-)
+from tagstudio.qt.views.capsule_view import CapsuleView
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, MED_HEIGHT, PAD
+from tagstudio.qt.views.styles.widget_effects import DEBOSSED_OUTLINE_WIDTH
+from tagstudio.qt.views.underlined_widget_view import UnderlinedWidgetView
 
 logger = structlog.get_logger(__name__)
 
 
 class SuggestBoxView(QVBoxLayout):
+    """A row of suggestions above a search field."""
+
+    # A capsule with an underline below it
+    ROW_HEIGHT = (
+        CapsuleView.HEIGHT
+        + UnderlinedWidgetView.UNDERLINE_PAD
+        + UnderlinedWidgetView.UNDERLINE_THICKNESS
+    )
+
     def __init__(self, placeholder_text: str = "") -> None:
         super().__init__()
-
-        self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(0)
+        side_inset = PAD - DEBOSSED_OUTLINE_WIDTH
 
-        scroll_area_style = """
-        QScrollArea{
-            background: transparent;
-            }
-        QScrollArea > QWidget > QWidget{
-            background: transparent;
-            }
-        """
-
-        # Autocomplete ScrollArea
+        # Suggestions
         contents = QWidget()
         self.content_layout = QHBoxLayout(contents)
-        self.content_layout.setSpacing(PAD)
-        self.content_layout.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft)
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_area_container = QWidget()
-        scroll_area_container.setObjectName("container")
-        scroll_area_container_layout = QHBoxLayout(scroll_area_container)
-        scroll_area_container_layout.setContentsMargins(0, 0, 0, 0)
-        scroll_area_container_layout.setSpacing(0)
-        scroll_area_container.setStyleSheet(autofill_scroll_top_style("container"))
+        self.content_layout.setSpacing(HALF_PAD)
+        self.content_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.content_layout.setContentsMargins(side_inset, 0, side_inset, 0)
         self.scroll_area = HorizontalScrollArea()
-        self.scroll_area.setStyleSheet(scroll_area_style)
-        self.scroll_area.setViewportMargins(2, 0, 2, 0)
-        scroll_area_container_layout.addWidget(self.scroll_area)
         self.scroll_area.setWidget(contents)
-        search_bar_height = 28
-        underline_padding = 7
-        self.scroll_area.setMaximumHeight(search_bar_height + underline_padding)
+        self.scroll_area.viewport().setAutoFillBackground(False)
+        contents.setAutoFillBackground(False)
+        self.scroll_area.setFixedHeight(self.ROW_HEIGHT)
+        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.verticalScrollBar().setEnabled(False)
-        self.scroll_area.setContentsMargins(0, 0, 0, 0)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
 
         # Search Field
-        self.search_field = AutofillLineEdit(scroll_area_container)
-        self.search_field.setStyleSheet(autofill_line_edit_style())
+        self.search_field = AutofillLineEdit()
         self.search_field.setObjectName("search_field")
-        self.search_field.setMinimumHeight(search_bar_height)
+        self.search_field.setFrame(False)
+        self.search_field.setFixedHeight(CapsuleView.HEIGHT)
+        self.search_field.setContentsMargins(side_inset, 0, side_inset, 0)
+        self.search_field.setStyleSheet("QLineEdit { background: transparent; }")
         self.search_field.setPlaceholderText(placeholder_text)
         self.hint_icon_action = self.search_field.addAction(
             QPixmap(), AutofillLineEdit.ActionPosition.TrailingPosition
@@ -77,5 +66,15 @@ class SuggestBoxView(QVBoxLayout):
         self.search_field.customContextMenuRequested.connect(self.search_field.show_action_menu)
 
         # Finalize Layout
-        self.addWidget(scroll_area_container)
+        self.addWidget(self.scroll_area)
         self.addWidget(self.search_field)
+        self.set_suggestions_visible(False)
+
+    def set_suggestions_visible(self, visible: bool) -> None:
+        """Show the suggestion row or shrink to just the search field."""
+        field_margin = (MED_HEIGHT - CapsuleView.HEIGHT) // 2
+        top_margin = PAD if visible else field_margin
+        self.setContentsMargins(
+            DEBOSSED_OUTLINE_WIDTH, top_margin, DEBOSSED_OUTLINE_WIDTH, field_margin
+        )
+        self.scroll_area.setHidden(not visible)

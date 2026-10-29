@@ -23,6 +23,7 @@ class ResourceManager:
     adobe_photoshop: Image.Image
     affinity_photo: Image.Image
     alert: QPixmap
+    archived_icon: bytes
     archive: Image.Image
     arrow_right: bytes
     arrow_right_bottom: bytes
@@ -37,6 +38,7 @@ class ResourceManager:
     dupe_file_stat: Image.Image
     ebook: Image.Image
     edit: Image.Image
+    favorite_icon: bytes
     file_generic: Image.Image
     font: Image.Image
     hint_field_add: Image.Image

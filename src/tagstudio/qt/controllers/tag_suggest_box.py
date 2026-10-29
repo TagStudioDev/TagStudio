@@ -21,6 +21,7 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
+from tagstudio.qt.views.styles.tag_icons import tag_icon
 
 logger = structlog.get_logger(__name__)
 
@@ -153,6 +154,7 @@ class TagSuggestBox(SuggestBox[Tag]):
 
         capsule.set_text(self._lib.tag_display_name(item))
         capsule.set_color_group(item.color)
+        capsule.set_icon(tag_icon(item.id))
 
         # Select first item
         underlined_widget.toggle_underline(index != 0)
@@ -203,7 +205,10 @@ class TagSuggestBox(SuggestBox[Tag]):
         if self.layout().content_layout.count() <= index:
             while self.layout().content_layout.count() <= index:
                 capsule = Capsule(
-                    has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
+                    has_edit=True,
+                    has_remove=True,
+                    search_label=Translations["tag.search_for_tag"],
+                    is_tag=True,
                 )
                 capsule.on_remove.connect(self._update_items)
                 widget = UnderlinedWidget(capsule)

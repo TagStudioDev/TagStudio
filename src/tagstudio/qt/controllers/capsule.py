@@ -4,15 +4,17 @@
 
 from typing import override
 
-from PySide6.QtCore import QEvent, Qt, Signal, SignalInstance
-from PySide6.QtGui import QAction, QEnterEvent
+from PySide6.QtCore import QEvent, QRect, QSize, Qt, Signal, SignalInstance
+from PySide6.QtGui import QAction, QEnterEvent, QPainter, QPaintEvent
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.views.capsule_view import CapsuleView
-from tagstudio.qt.views.styles.stylesheets import tag_colors
+from tagstudio.qt.views.styles.stylesheets import RADIUS, TagShape, capsule_colors
+from tagstudio.qt.views.styles.tag_icons import icon_shrink, paint_icon
+from tagstudio.qt.views.styles.widget_effects import WidgetEffects
 
 
 class Capsule(QWidget):
@@ -28,14 +30,22 @@ class Capsule(QWidget):
         has_edit: bool = False,
         has_remove: bool = False,
         search_label: str | None = None,
-        padded: bool = False,
+        is_tag: bool = False,
+        is_stretched: bool = False,
     ) -> None:
         super().__init__()
+        self._colors = capsule_colors(None)
+        self._effect = WidgetEffects()
+        self._icon: bytes | None = None
+        self._is_colorless = True
+        self._is_pill = False
+        self._is_stretched = is_stretched
+        self._is_tag = is_tag
         self.has_remove = has_remove
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.setLayout(CapsuleView(padded))
+        self.setLayout(CapsuleView())
 
         self.layout().button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self._edit_action: QAction | None = None
@@ -67,7 +77,64 @@ class Capsule(QWidget):
 
     def set_color_group(self, color_group: TagColorGroup | None) -> None:
         """Set the colors from a tag color group, or the default tag colors if `None`."""
-        self.layout().set_colors(*tag_colors(color_group))
+        self._colors = capsule_colors(color_group)
+        self._is_colorless = color_group is None
+        self.restyle()
+
+    def set_icon(self, icon: bytes | None) -> None:
+        """Show an SVG icon left of the text."""
+        if icon != self._icon:
+            self._icon = icon
+            self.restyle()
+
+    def restyle(self) -> None:
+        """Style the capsule with its colors, icon, and shape."""
+        # NOTE: Only tag capsules follow the pill-shaped tag setting
+        self._is_pill = self._is_tag and TagShape.is_pill
+        shrink = None
+        if self._icon is not None:
+            shrink = icon_shrink(self._icon, CapsuleView.HEIGHT, self._radius())
+        self.layout().set_colors(
+            *self._colors,
+            is_pill=self._is_pill,
+            icon_shrink=shrink,
+            is_stretched=self._is_stretched,
+        )
+        self.update()
+
+    def _radius(self) -> float:
+        return CapsuleView.HEIGHT // 2 if self._is_pill else RADIUS
+
+    @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        # Paints the body under the button, and the button only draws the text
+        primary, border, highlight, text = self._colors
+        button = self.layout().button
+        rect = button.geometry()
+        radius = self._radius()
+
+        painter = QPainter(self)
+        self._effect.paint_capsule(
+            painter,
+            rect,
+            radius,
+            primary,
+            border,
+            highlight,
+            is_down=button.isDown(),
+            is_hovered=button.underMouse(),
+            is_colorless=self._is_colorless,
+        )
+        view = self.layout()
+        if self._icon is not None and view.remove_button.isHidden():
+            icon_slot = QRect(rect.topLeft(), QSize(view.HEIGHT, view.HEIGHT))
+            icon_color = primary if button.isDown() else text
+            paint_icon(painter, icon_slot, radius, self._icon, icon_color)
+        if button.hasFocus() and self.window().testAttribute(
+            Qt.WidgetAttribute.WA_KeyboardFocusChange
+        ):
+            self._effect.paint_focus_ring(painter, rect, radius)
+        painter.end()
 
     @override
     def layout(self) -> CapsuleView:

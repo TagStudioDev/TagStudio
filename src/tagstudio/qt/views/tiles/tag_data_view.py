@@ -3,6 +3,7 @@
 
 
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD
 
 
 class TagDataView(FlowLayout):
@@ -12,3 +13,4 @@ class TagDataView(FlowLayout):
         super().__init__()
         self.enable_grid_optimizations(value=False)
         self.setContentsMargins(0, 0, 0, 0)
+        self.setSpacing(HALF_PAD)

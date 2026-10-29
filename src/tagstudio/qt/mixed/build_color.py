@@ -20,18 +20,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
 from tagstudio.qt.views.styles.stylesheets import (
-    checkbox_style,
-    line_edit_style,
-    list_button_style,
+    CHECKBOX_SIZE,
+    MED_HEIGHT,
+    PAD,
+    RADIUS,
+    capsule_colors,
 )
+from tagstudio.qt.views.styles.tagstudio_style import set_color_group, set_invalid
 
 logger = structlog.get_logger(__name__)
 
@@ -53,7 +54,7 @@ class BuildColorPanel(ModalContent):
 
         self.setMinimumSize(340, 240)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 0, 6, 0)
+        self.root_layout.setContentsMargins(PAD, 0, PAD, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.form_container = QWidget()
@@ -65,16 +66,16 @@ class BuildColorPanel(ModalContent):
         self.preview_widget = QWidget()
         self.preview_layout = QVBoxLayout(self.preview_widget)
         self.preview_layout.setStretch(1, 1)
-        self.preview_layout.setContentsMargins(0, 0, 0, 6)
+        self.preview_layout.setContentsMargins(0, 0, 0, PAD)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_button = Capsule(padded=True)
+        self.preview_button = Capsule()
         self.preview_button.setEnabled(False)
         self.preview_layout.addWidget(self.preview_button)
 
         # Name -----------------------------------------------------------------
         self.name_title = QLabel(Translations["library_object.name"])
         self.name_field = QLineEdit()
-        self.name_field.setFixedHeight(24)
+        self.name_field.setFixedHeight(MED_HEIGHT)
         self.name_field.textChanged.connect(self.on_text_changed)
         self.name_field.setPlaceholderText(Translations["library_object.name_required"])
         self.form_layout.addRow(self.name_title, self.name_field)
@@ -83,15 +84,15 @@ class BuildColorPanel(ModalContent):
         self.slug_title = QLabel(Translations["library_object.slug"])
         self.slug_field = QLineEdit()
         self.slug_field.setEnabled(False)
-        self.slug_field.setFixedHeight(24)
+        self.slug_field.setFixedHeight(MED_HEIGHT)
         self.slug_field.setPlaceholderText(Translations["library_object.slug_required"])
         self.form_layout.addRow(self.slug_title, self.slug_field)
 
         # Primary --------------------------------------------------------------
         self.primary_title = QLabel(Translations["color.primary"])
         self.primary_button = QPushButton()
-        self.primary_button.setMinimumSize(44, 22)
-        self.primary_button.setMaximumHeight(22)
+        self.primary_button.setMinimumSize(CHECKBOX_SIZE * 2, CHECKBOX_SIZE)
+        self.primary_button.setMaximumHeight(CHECKBOX_SIZE)
         self.edit_primary_modal = QColorDialog()
         self.primary_button.clicked.connect(self.primary_color_callback)
         self.form_layout.addRow(self.primary_title, self.primary_button)
@@ -100,16 +101,17 @@ class BuildColorPanel(ModalContent):
         self.secondary_widget = QWidget()
         self.secondary_layout = QHBoxLayout(self.secondary_widget)
         self.secondary_layout.setContentsMargins(0, 0, 0, 0)
-        self.secondary_layout.setSpacing(6)
+        self.secondary_layout.setSpacing(PAD)
         self.secondary_title = QLabel(Translations["color.secondary"])
         self.secondary_button = QPushButton()
-        self.secondary_button.setMinimumSize(44, 22)
-        self.secondary_button.setMaximumHeight(22)
+        self.secondary_button.setMinimumSize(CHECKBOX_SIZE * 2, CHECKBOX_SIZE)
+        self.secondary_button.setMaximumHeight(CHECKBOX_SIZE)
         self.edit_secondary_modal = QColorDialog()
         self.secondary_button.clicked.connect(self.secondary_color_callback)
         self.secondary_layout.addWidget(self.secondary_button)
 
         self.secondary_reset_button = QPushButton(Translations["generic.reset"])
+        self.secondary_reset_button.setProperty("radius", RADIUS)
         self.secondary_reset_button.clicked.connect(self.update_secondary)
         self.secondary_layout.addWidget(self.secondary_reset_button)
         self.secondary_layout.setStretch(0, 3)
@@ -121,10 +123,10 @@ class BuildColorPanel(ModalContent):
         self.border_layout = QHBoxLayout(self.border_widget)
         self.border_layout.setStretch(1, 1)
         self.border_layout.setContentsMargins(0, 0, 0, 0)
-        self.border_layout.setSpacing(6)
+        self.border_layout.setSpacing(PAD)
         self.border_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.border_checkbox = QCheckBox()
-        self.border_checkbox.setFixedSize(22, 22)
+        self.border_checkbox.setFixedSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
         self.border_checkbox.clicked.connect(
             lambda checked: self.update_secondary(
                 color=QColor(self.secondary_button.text())
@@ -135,7 +137,6 @@ class BuildColorPanel(ModalContent):
         self.border_layout.addWidget(self.border_checkbox)
         self.border_label = QLabel(Translations["color.color_border"])
         self.border_layout.addWidget(self.border_label)
-        self.border_checkbox.setStyleSheet(checkbox_style())
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.preview_widget)
@@ -195,18 +196,25 @@ class BuildColorPanel(ModalContent):
         hex_code = color.name().upper()
 
         self.primary_button.setText(hex_code)
-        self.primary_button.setStyleSheet(list_button_style(color))
+        self._set_button_color(self.primary_button, color)
         self.preview_button.set_color_group(self.build_color()[1])
 
     def update_secondary(self, color: QColor | None = None):
         logger.info("[BuildColorPanel] Updating Secondary", color=color)
 
-        color_ = color or QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
         hex_code = "" if not color else color.name().upper()
 
         self.secondary_button.setText(hex_code if color else Translations["color.title.no_color"])
-        self.secondary_button.setStyleSheet(list_button_style(color_))
+        self._set_button_color(self.secondary_button, color)
         self.preview_button.set_color_group(self.build_color()[1])
+
+    @staticmethod
+    def _set_button_color(button: QPushButton, color: QColor | None) -> None:
+        """Paint a button like a tag in this color, or like a tag without a color if None."""
+        color_group = None if color is None else TagColorGroup("", "", "", color.name())
+        set_color_group(button, color_group)
+        text_color = capsule_colors(color_group)[3]
+        button.setStyleSheet(f"QPushButton{{color: {text_color.name()}; font-weight: 600;}}")
 
     def update_known_colors(self):
         groups = self.lib.tag_color_groups
@@ -246,9 +254,9 @@ class BuildColorPanel(ModalContent):
         is_slug_empty = not slug
         is_invalid = False
 
-        self.name_field.setStyleSheet(line_edit_style() if is_name_empty else "")
+        set_invalid(self.name_field, is_name_empty)
 
-        self.slug_field.setStyleSheet(line_edit_style() if is_slug_empty or is_invalid else "")
+        set_invalid(self.slug_field, is_slug_empty or is_invalid)
 
         self.slug_field.setText(slug)
         self.update_preview_text()

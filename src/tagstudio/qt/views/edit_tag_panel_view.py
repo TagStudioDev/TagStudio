@@ -111,7 +111,7 @@ class EditTagPanelView(QHBoxLayout):
         color_layout.setSpacing(6)
         color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         color_layout.addWidget(QLabel(header(Translations["tag.color"], 3)))
-        self.color_button = Capsule(padded=True)
+        self.color_button = Capsule()
         color_layout.addWidget(self.color_button)
 
         # Properties -----------------------------------------------------------

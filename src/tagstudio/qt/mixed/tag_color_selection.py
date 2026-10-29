@@ -4,7 +4,6 @@
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -17,20 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
-from tagstudio.qt.views.styles.palette import ColorType, get_tag_color
-from tagstudio.qt.views.styles.stylesheets import (
-    color_swatch_style,
-    get_tag_border_color,
-    get_tag_highlight_color,
-    get_tag_text_color,
-    header,
-)
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, INNER_RADIUS, PAD, SWATCH_SIZE, header
+from tagstudio.qt.views.styles.tagstudio_style import set_color_group, set_swatch
 
 logger = structlog.get_logger(__name__)
 
@@ -49,8 +41,8 @@ class TagColorSelection(ModalContent):
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(6, 0, 6, 0)
-        self.scroll_layout.setSpacing(3)
+        self.scroll_layout.setContentsMargins(PAD, 0, PAD, 0)
+        self.scroll_layout.setSpacing(HALF_PAD)
 
         scroll_container: QWidget = QWidget()
         scroll_container.setObjectName("entryScrollContainer")
@@ -63,7 +55,10 @@ class TagColorSelection(ModalContent):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet("QScrollArea { background: transparent; }")
         self.scroll_area.setWidget(scroll_container)
+        # Turned on by setWidget(), which paints a solid color behind the swatches
+        scroll_container.setAutoFillBackground(False)
         self.root_layout.addWidget(self.scroll_area)
 
         # Add Widgets to Layout ================================================
@@ -71,81 +66,52 @@ class TagColorSelection(ModalContent):
         self.button_group = QButtonGroup(self)
 
         self.add_no_color_widget()
-        self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
+        self.scroll_layout.addSpacerItem(QSpacerItem(1, PAD))
         for group, colors in tag_color_groups.items():
             display_name: str = self.lib.get_namespace_name(group)
             self.scroll_layout.addWidget(QLabel(header(display_name if display_name else group, 4)))
             color_box_widget = QWidget()
             color_group_layout = FlowLayout()
-            color_group_layout.setSpacing(4)
+            color_group_layout.setSpacing(1)
             color_group_layout.enable_grid_optimizations(value=False)
             color_group_layout.setContentsMargins(0, 0, 0, 0)
             color_box_widget.setLayout(color_group_layout)
             for color in colors:
-                primary_color = self._get_primary_color(color)
-                border_color = (
-                    get_tag_border_color(primary_color)
-                    if not (color and color.secondary and color.color_border)
-                    else (QColor(color.secondary))
-                )
-                highlight_color = get_tag_highlight_color(
-                    primary_color if not (color and color.secondary) else QColor(color.secondary)
-                )
-                text_color: QColor
-                if color and color.secondary:
-                    text_color = QColor(color.secondary)
-                else:
-                    text_color = get_tag_text_color(primary_color, highlight_color)
-
-                radio_button = QRadioButton()
-                radio_button.setObjectName(f"{color.namespace}.{color.slug}")
-                radio_button.setToolTip(color.name)
-                radio_button.setFixedSize(24, 24)
-                radio_button.setStyleSheet(
-                    color_swatch_style(
-                        primary_color,
-                        text_color,
-                        border_color,
-                        highlight_color,
-                        text_color if color.secondary else None,
-                    )
-                )
-                radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
-                color_group_layout.addWidget(radio_button)
-                self.button_group.addButton(radio_button)
+                swatch = self._create_swatch(color)
+                swatch.setObjectName(f"{color.namespace}.{color.slug}")
+                swatch.setToolTip(color.name)
+                swatch.clicked.connect(lambda checked=False, x=color: self.select_color(x))
+                color_group_layout.addWidget(swatch)
+                self.button_group.addButton(swatch)
             self.scroll_layout.addWidget(color_box_widget)
-            self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
+            self.scroll_layout.addSpacerItem(QSpacerItem(1, PAD))
 
     def add_no_color_widget(self):
         no_color_str: str = Translations["color.title.no_color"]
         self.scroll_layout.addWidget(QLabel(header(no_color_str, 4)))
         color_box_widget = QWidget()
         color_group_layout = FlowLayout()
-        color_group_layout.setSpacing(4)
+        color_group_layout.setSpacing(1)
         color_group_layout.enable_grid_optimizations(value=False)
         color_group_layout.setContentsMargins(0, 0, 0, 0)
         color_box_widget.setLayout(color_group_layout)
         color = None
-        primary_color = self._get_primary_color(color)
-        border_color = get_tag_border_color(primary_color)
-        highlight_color = get_tag_highlight_color(primary_color)
-        text_color: QColor
-        if color and color.secondary and color.color_border:
-            text_color = QColor(color.secondary)
-        else:
-            text_color = get_tag_text_color(primary_color, highlight_color)
-
-        radio_button = QRadioButton()
-        radio_button.setObjectName("None")
-        radio_button.setToolTip(no_color_str)
-        radio_button.setFixedSize(24, 24)
-        radio_button.setStyleSheet(
-            color_swatch_style(primary_color, text_color, border_color, highlight_color)
-        )
-        radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
-        color_group_layout.addWidget(radio_button)
-        self.button_group.addButton(radio_button)
+        swatch = self._create_swatch(color)
+        swatch.setObjectName("None")
+        swatch.setToolTip(no_color_str)
+        swatch.clicked.connect(lambda checked=False, x=color: self.select_color(x))
+        color_group_layout.addWidget(swatch)
+        self.button_group.addButton(swatch)
         self.scroll_layout.addWidget(color_box_widget)
+
+    @staticmethod
+    def _create_swatch(color: TagColorGroup | None) -> QRadioButton:
+        swatch = QRadioButton()
+        swatch.setFixedSize(SWATCH_SIZE, SWATCH_SIZE)
+        swatch.setProperty("radius", INNER_RADIUS)
+        set_color_group(swatch, color)
+        set_swatch(swatch)
+        return swatch
 
     def select_color(self, color: TagColorGroup | None):
         self.selected_color = color
@@ -157,11 +123,3 @@ class TagColorSelection(ModalContent):
                 button.setChecked(True)
                 self.select_color(color)
                 break
-
-    def _get_primary_color(self, tag_color_group: TagColorGroup | None) -> QColor:
-        primary_color = QColor(
-            get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-            if not tag_color_group
-            else tag_color_group.primary
-        )
-        return primary_color

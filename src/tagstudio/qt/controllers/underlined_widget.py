@@ -4,9 +4,12 @@
 
 from typing import override
 
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.underlined_widget_view import UnderlinedWidgetView
 
 
@@ -26,4 +29,19 @@ class UnderlinedWidget(QWidget):
 
     @override
     def layout(self) -> UnderlinedWidgetView:
-        return super().layout()  # pyright: ignore[reportReturnType]
+        layout = super().layout()
+        assert isinstance(layout, UnderlinedWidgetView)
+        return layout
+
+    @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        underline = self.layout().underline
+        if underline.isHidden():
+            return
+        radius = underline.height() / 2
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(Palette.accent())
+        painter.drawRoundedRect(QRectF(underline.geometry()), radius, radius)
+        painter.end()

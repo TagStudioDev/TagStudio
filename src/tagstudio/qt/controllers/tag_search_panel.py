@@ -20,6 +20,7 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
 from tagstudio.qt.views.search_panel_view import SearchPanelView
+from tagstudio.qt.views.styles.tag_icons import tag_icon
 
 logger = structlog.get_logger(__name__)
 
@@ -128,6 +129,7 @@ class TagSearchPanel(SearchPanel[Tag]):
 
         capsule.set_text(self._lib.tag_display_name(item))
         capsule.set_color_group(item.color)
+        capsule.set_icon(tag_icon(item.id))
         capsule.has_remove = not self._is_chooser and item.id not in range(
             RESERVED_TAG_START, RESERVED_TAG_END
         )
@@ -186,7 +188,11 @@ class TagSearchPanel(SearchPanel[Tag]):
         if self.layout().scroll_layout.count() <= index:
             while self.layout().scroll_layout.count() <= index:
                 pad_capsule = Capsule(
-                    has_edit=True, has_remove=True, search_label=Translations["tag.search_for_tag"]
+                    has_edit=True,
+                    has_remove=True,
+                    search_label=Translations["tag.search_for_tag"],
+                    is_tag=True,
+                    is_stretched=True,
                 )
                 pad_capsule.setHidden(True)
                 self.layout().scroll_layout.addWidget(pad_capsule)

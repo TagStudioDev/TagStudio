@@ -11,12 +11,16 @@ from PySide6.QtGui import QColor, QGuiApplication
 from tagstudio.core.enums import ThemePalette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.utils.singleton import Singleton
 from tagstudio.qt.views.styles.palette import (
     ColorType,
     Palette,
     UiColor,
+    blend,
+    burn,
     get_tag_color,
     get_ui_color,
+    screen,
 )
 
 # TODO: There's plenty of good opportunities here to consolidate similar styles.
@@ -30,12 +34,23 @@ INNER_RADIUS = RADIUS // 2  # Inner/small corder radius
 OUTLINE_WIDTH = 2  # Hover/selection outlines
 RESIZE_HANDLE_LENGTH = 24  # Length of each side of splitter and corner handles
 RESIZE_HANDLE_WIDTH = 3
+MED_HEIGHT = 30  # Height for medium-sized widgets (all line edits, some buttons)
 CHECKBOX_SIZE = 24  # Checkboxes and radio buttons
 FLAT_ICON_SIZE = 24  # Icons on flat icon-only buttons, like the mode rail's
+CAPSULE_HEIGHT = 24
+SWATCH_SIZE = 24
 
 PAD = 6  # Standard padding value
 HALF_PAD = PAD // 2
 WIN_PAD = 12  # Padding used for window edge margins
+
+
+class TagShape(metaclass=Singleton):
+    """How tags and their badges are shaped."""
+
+    is_pill: bool = True
+    is_circle_badge: bool = True
+    PILL_INSET_REDUCTION = 2  # Pills tell tiles to have smaller margins for visual balance
 
 
 def container_style() -> str:
@@ -116,57 +131,57 @@ def list_button_style(
     """
 
 
-def tag_style(
-    primary_color: QColor,
+def capsule_text_style(
     text_color: QColor,
-    border_color: QColor,
-    highlight_color: QColor,
-    border_style: str = "solid",
+    pressed_text_color: QColor,
+    is_pill: bool,
+    left_padding: int | None = None,
+    right_padding: int | None = None,
 ) -> str:
-    """Style used for Capsules."""
+    """Style used for Capsule text."""
+    side_padding = 4 + (3 if is_pill else 0)
     return f"""
     QPushButton{{
-        background: rgba{primary_color.toTuple()};
+        background: transparent;
         color: rgba{text_color.toTuple()};
         font-weight: 600;
-        border-color: rgba{border_color.toTuple()};
+        border: 2px solid transparent;
         border-radius: {RADIUS}px;
-        border-style: {border_style};
-        border-width: 2px;
         font-size: 13px;
-        padding-right: 4px;
-        padding-left: 4px;
+        padding-right: {side_padding if right_padding is None else right_padding}px;
+        padding-left: {side_padding if left_padding is None else left_padding}px;
         padding-bottom: {2 if platform.system() == "Windows" else 1}px;
     }}
-    QPushButton::hover{{
-        border-color: rgba{highlight_color.toTuple()};
-    }}
     QPushButton::pressed{{
-        background: rgba{highlight_color.toTuple()};
-        color: rgba{primary_color.toTuple()};
-        border-color: rgba{primary_color.toTuple()};
+        color: rgba{pressed_text_color.toTuple()};
     }}
     QPushButton::focus{{
         outline: none;
-        border-width: 3px;
-        border-color: rgba{text_color.toTuple()};
     }}
     """
 
 
-def tag_remove_button_style(
-    primary_color: QColor, text_color: QColor, border_color: QColor, highlight_color: QColor
+def capsule_remove_button_style(
+    primary_color: QColor,
+    text_color: QColor,
+    border_color: QColor,
+    highlight_color: QColor,
+    radius: int | None = None,
 ) -> str:
     """Style used for "Remove" buttons on Capsules [-]."""
+    rest_radius = 5 if radius is None else radius
+    hover_radius = RADIUS if radius is None else radius
     return f"""
     QPushButton{{
         color: rgba{primary_color.toTuple()};
         background: rgba{text_color.toTuple()};
         font-weight: 800;
-        border-radius: 5px;
+        border-radius: {rest_radius}px;
         border-width: 4;
         border-color: rgba(0,0,0,0);
         padding-bottom: 4px;
+        padding-left: 0px;
+        padding-right: 0px;
         font-size: 14px
     }}
     QPushButton::hover{{
@@ -174,7 +189,7 @@ def tag_remove_button_style(
         color: rgba{text_color.toTuple()};
         border-color: rgba{highlight_color.toTuple()};
         border-width: 2;
-        border-radius: {RADIUS}px;
+        border-radius: {hover_radius}px;
     }}
     QPushButton::pressed{{
         background: rgba{border_color.toTuple()};
@@ -451,7 +466,7 @@ def tag_colors(color_group: TagColorGroup | None) -> tuple[QColor, QColor, QColo
     )
     border = get_tag_border_color(primary)
     highlight = get_tag_highlight_color(primary)
-    text = get_tag_text_color(primary, highlight)
+    text = get_tinted_tag_text_color(primary)
 
     if color_group and color_group.secondary:
         secondary = QColor(color_group.secondary)
@@ -506,6 +521,27 @@ def get_tag_highlight_color(primary_color: QColor) -> QColor:
     return highlight_color
 
 
+def get_tinted_tag_text_color(primary_color: QColor) -> QColor:
+    """A tag's color darkened or lightened for contrast, then tinted by burning or screening it."""
+    tag_text_darkness = 0.65  # Black blended with tag text color, for light background colors
+    tag_text_lightness = 0.75  # White blended with tag text color, for dark background colors
+    tag_text_tint = 0.5  # How much burning or screening tints the tag text
+
+    fill = QColor(primary_color.red(), primary_color.green(), primary_color.blue())
+    if primary_color.lightness() > 120:
+        base = blend(fill, QColor(Qt.GlobalColor.black), tag_text_darkness)
+        mode = burn
+    else:
+        base = blend(fill, QColor(Qt.GlobalColor.white), tag_text_lightness)
+        mode = screen
+    tinted = QColor(
+        mode(base.red(), fill.red()),
+        mode(base.green(), fill.green()),
+        mode(base.blue(), fill.blue()),
+    )
+    return blend(base, tinted, tag_text_tint)
+
+
 def get_tag_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
     if primary_color.lightness() > 120:
         text_color = QColor(primary_color)
@@ -514,37 +550,6 @@ def get_tag_text_color(primary_color: QColor, highlight_color: QColor) -> QColor
         return text_color.toRgb()
     else:
         return highlight_color
-
-
-def add_button_style() -> str:
-    """Style used for tag-like "Add" buttons [+]."""
-    return f"""
-    QPushButton{{
-        background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};
-        font-weight: 600;
-        border-color: {get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};
-        border-radius: {RADIUS}px;
-        border-style: solid;
-        border-width: 2px;
-        padding-right: 4px;
-        padding-bottom: 2px;
-        padding-left: 4px;
-        font-size: 15px
-    }}
-    QPushButton::hover{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-    }}
-    QPushButton::pressed{{
-        background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-        border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};
-    }}
-    QPushButton::focus{{
-        border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};
-        outline: none;
-    }}
-    """
 
 
 def button_style() -> str:
@@ -669,49 +674,6 @@ def colored_radio_button_style(
     """
 
 
-def color_swatch_style(
-    primary_color: QColor,
-    text_color: QColor,
-    border_color: QColor,
-    highlight_color: QColor,
-    bottom_color: QColor | None = None,
-) -> str:
-    """A style used for color swatches (aka special QRadioButtons)."""
-    bottom_color_str: str = (
-        f"border-bottom-color: rgba{bottom_color.toTuple()};" if bottom_color else ""
-    )
-
-    return f"""
-    QRadioButton{{
-        background: rgba{primary_color.toTuple()};
-        color: rgba{text_color.toTuple()};
-        border-color: rgba{border_color.toTuple()};
-        {bottom_color_str}
-        border-radius: {INNER_RADIUS}px;
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QRadioButton::indicator{{
-        width: 12px;
-        height: 12px;
-        border-radius: 1px;
-        margin: 4px;
-    }}
-    QRadioButton::indicator:checked{{
-        background: rgba{text_color.toTuple()};
-    }}
-    QRadioButton::hover{{
-        border-color: rgba{highlight_color.toTuple()};
-    }}
-    QRadioButton::focus{{
-        outline-style: solid;
-        outline-width: 2px;
-        outline-radius: {INNER_RADIUS}px;
-        outline-color: rgba{highlight_color.toTuple()};
-    }}
-    """
-
-
 def line_edit_style() -> str:
     """Style used for QLineEdits."""
     return f"""
@@ -739,106 +701,6 @@ def properties_style() -> str:
     padding-right: 1px;
     padding-bottom: 1px;
     padding-left: 1px;
-    """
-
-
-def widget_underline_style() -> str:
-    return f"""
-        background: rgba{Palette.accent().toTuple()};
-        border-radius: 2px;
-    """
-
-
-# TODO: Combine the autofill styles into one method?
-def autofill_scroll_top_style(object_name: str = "") -> str:
-    """Used autofill lists positioned on top of line edits."""
-    bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    )
-
-    return f"""
-    QWidget{"#" + object_name if object_name else ""}{{
-        background: {bg_color};
-        border-top-left-radius: {RADIUS}px;
-        border-top-right-radius: {RADIUS}px;
-        border: none;
-        }}
-    """
-
-
-def autofill_scroll_top_focus_style(object_name: str = "") -> str:
-    """Used autofill lists positioned on top of line edits."""
-    bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    )
-
-    return f"""
-    QWidget{"#" + object_name if object_name else ""}{{
-        background: {bg_color};
-        border-top-left-radius: {RADIUS}px;
-        border-top-right-radius: {RADIUS}px;
-        border: solid;
-        border-width: {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px 0px {OUTLINE_WIDTH}px;
-        border-color: rgba{Palette.accent().toTuple()};
-        }}
-    """
-
-
-def autofill_line_edit_style(is_invalid: bool = False) -> str:
-    """Used for QLineEdits."""
-    if is_invalid:
-        bg_color = ThemePalette.COLOR_FORBIDDEN_BG.value
-        focus_border_color = get_ui_color(ColorType.PRIMARY, UiColor.RED)
-    else:
-        bg_color = (
-            ThemePalette.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else ThemePalette.COLOR_BG_LIGHT.value
-        )
-        focus_border_color = f"rgba{Palette.accent().toTuple()}"
-
-    return f"""
-    QLineEdit{{
-        background: {bg_color};
-        border-radius: {RADIUS}px;
-        padding: {HALF_PAD}px {PAD}px;
-        }}
-    QLineEdit::focus{{
-        padding: 4px 4px;
-        border: solid;
-        border-width: {OUTLINE_WIDTH}px;
-        border-color: {focus_border_color};
-        }}
-    """
-
-
-def autofill_line_edit_top_style() -> str:
-    """Used for QLineEdits when there's a top autofill section present."""
-    bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    )
-
-    return f"""
-    QLineEdit{{
-        background: {bg_color};
-        border-top-left-radius: 0px;
-        border-top-right-radius: 0px;
-        border-bottom-left-radius: {RADIUS}px;
-        border-bottom-right-radius: {RADIUS}px;
-        padding: 0px 0px {OUTLINE_WIDTH}px {RADIUS}px;
-        }}
-    QLineEdit::focus{{
-        padding: 4px 4px;
-        border: solid;
-        border-width: 0px {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px {OUTLINE_WIDTH}px;
-        border-color: rgba{Palette.accent().toTuple()};
-        }}
     """
 
 

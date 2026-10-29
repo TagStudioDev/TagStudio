@@ -8,6 +8,7 @@ from typing import override
 
 import structlog
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
@@ -17,7 +18,8 @@ from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tile_data import TileData
 from tagstudio.qt.mixed.build_color import BuildColorPanel
-from tagstudio.qt.views.styles.stylesheets import add_button_style
+from tagstudio.qt.views.styles.stylesheets import CAPSULE_HEIGHT
+from tagstudio.qt.views.styles.tagstudio_style import set_color_group
 from tagstudio.qt.views.tiles.color_data_view import ColorDataView
 
 if typing.TYPE_CHECKING:
@@ -87,9 +89,12 @@ class ColorData(TileData):
         if is_mutable:
             add_button = QPushButton()
             add_button.setText("+")
-            add_button.setFlat(True)
-            add_button.setFixedSize(22, 22)
-            add_button.setStyleSheet(add_button_style())
+            add_button.setFixedSize(CAPSULE_HEIGHT, CAPSULE_HEIGHT)
+            font = add_button.font()
+            font.setWeight(QFont.Weight.DemiBold)
+            font.setPixelSize(15)
+            add_button.setFont(font)
+            set_color_group(add_button, None)
             add_button.clicked.connect(
                 lambda: self.edit_color(
                     TagColorGroup(

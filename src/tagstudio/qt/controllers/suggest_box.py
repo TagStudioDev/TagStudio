@@ -7,7 +7,7 @@ from typing import Any, override
 import structlog
 from PIL import Image
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QAction, QPixmap, QShowEvent, Qt
+from PySide6.QtGui import QAction, QPainter, QPaintEvent, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -19,17 +19,15 @@ from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
-from tagstudio.qt.views.styles.stylesheets import (
-    autofill_line_edit_style,
-    autofill_line_edit_top_style,
-)
+from tagstudio.qt.views.styles.stylesheets import RADIUS
+from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
 logger = structlog.get_logger(__name__)
 
 
 def _item_id(item: object) -> int:
-    item_id: Any = getattr(item, "id")  # noqa: B009  # pyright: ignore[reportExplicitAny]
+    item_id: Any = getattr(item, "id")  # noqa: B009
 
     if isinstance(item_id, int):
         return item_id
@@ -38,7 +36,7 @@ def _item_id(item: object) -> int:
 
 
 def _item_name(item: object) -> str:
-    item_name: Any = getattr(item, "name")  # noqa: B009  # pyright: ignore[reportExplicitAny]
+    item_name: Any = getattr(item, "name")  # noqa: B009
 
     if isinstance(item_name, str):
         return item_name
@@ -61,6 +59,7 @@ class SuggestBox[T](QWidget):
         self._selection_index = 0
         self.added: list[int] = []
         self.excluded: list[int] = []
+        self._effect = WidgetEffects()
 
         self.setLayout(SuggestBoxView(placeholder_text))
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -153,7 +152,7 @@ class SuggestBox[T](QWidget):
             ):
                 underlined_widget.widget.setGraphicsEffect(None)  # pyright: ignore[reportArgumentType]
         self._update_hint_icon()
-        self._update_search_field_style()
+        self.update()
 
     def _on_index_updated(self, delta: int) -> None:
         # Initialize the widget count (non-hidden)
@@ -307,22 +306,19 @@ class SuggestBox[T](QWidget):
             item: T | None = all_results[i] if i < len(all_results) else None
             self._set_item_widget(item=item, index=i)
 
-        if self.layout().content_layout.isEmpty():
-            self.layout().scroll_area.setHidden(True)
-            self.layout().content_layout.setContentsMargins(0, 0, 0, 0)
-        else:
-            self.layout().scroll_area.setHidden(False)
-            self.layout().content_layout.setContentsMargins(4, 6, 4, 6)
-        self._update_search_field_style()
+        view = self.layout()
+        view.set_suggestions_visible(not view.content_layout.isEmpty())
 
-    def _update_search_field_style(self) -> None:
-        if self.layout().content_layout.isEmpty():
-            style = autofill_line_edit_style(is_invalid=self._is_query_invalid())
-        else:
-            style = autofill_line_edit_top_style()
-
-        if style != self.layout().search_field.styleSheet():
-            self.layout().search_field.setStyleSheet(style)
+    @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        view = self.layout()
+        painter = QPainter(self)
+        self._effect.paint_surface(painter, self.rect(), RADIUS, style=SurfaceStyle.DEBOSSED)
+        if self._is_query_invalid():
+            self._effect.paint_invalid_ring(painter, self.rect(), RADIUS)
+        elif view.search_field.hasFocus():
+            self._effect.paint_focus_ring(painter, self.rect(), RADIUS)
+        painter.end()
 
     def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()

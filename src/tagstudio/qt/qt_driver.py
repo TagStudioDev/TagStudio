@@ -90,7 +90,7 @@ from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.styles.palette import ColorType, Palette, UiColor, get_ui_color
-from tagstudio.qt.views.styles.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import TagShape, header
 from tagstudio.qt.views.styles.tagstudio_style import TagStudioStyle
 
 # SIGQUIT is not defined on Windows
@@ -292,6 +292,7 @@ class QtDriver(DriverMixin, QObject):
         self.app = QApplication(sys.argv)
         self.app_style = TagStudioStyle()
         self.app.setStyle(self.app_style)
+        TagShape.is_pill = self.settings.pill_shaped_tags
 
         # Apply theme color if explicitly set to DARK or LIGHT by the user.
         # For SYSTEM, we let Qt decide based on OS theme.

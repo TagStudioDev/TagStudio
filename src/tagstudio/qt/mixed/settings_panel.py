@@ -8,6 +8,7 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QFormLayout,
@@ -29,8 +30,10 @@ from tagstudio.qt.app_settings import (
     MIN_THUMB_CACHE_SIZE,
     Splash,
 )
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
+from tagstudio.qt.views.styles.stylesheets import TagShape
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -395,6 +398,13 @@ class SettingsPanel(ModalContent):
         self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
         form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
 
+        # Pill-Shaped Tags
+        self.pill_shaped_tags_checkbox = QCheckBox()
+        self.pill_shaped_tags_checkbox.setChecked(self.driver.settings.pill_shaped_tags)
+        form_layout.addRow(
+            Translations["settings.pill_shaped_tags"], self.pill_shaped_tags_checkbox
+        )
+
     def get_settings(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         return {
             "language": self.language_combobox.currentData(),
@@ -418,6 +428,7 @@ class SettingsPanel(ModalContent):
             "infinite_scroll": self.infinite_scroll.isChecked(),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
+            "pill_shaped_tags": self.pill_shaped_tags_checkbox.isChecked(),
             "tag_click_action": self.tag_click_action_combobox.currentData(),
             "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
             "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
@@ -446,6 +457,7 @@ class SettingsPanel(ModalContent):
         driver.settings.infinite_scroll = settings["infinite_scroll"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
+        driver.settings.pill_shaped_tags = settings["pill_shaped_tags"]
         driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
         driver.settings.edit_field_on_add = settings["edit_field_on_add"]
@@ -461,6 +473,11 @@ class SettingsPanel(ModalContent):
         driver.settings.save()
 
         # Apply changes
+        TagShape.is_pill = settings["pill_shaped_tags"]
+        # Restyle displayed tags so they take the new shape
+        for widget in QApplication.allWidgets():
+            if isinstance(widget, Capsule):
+                widget.restyle()
         # Show File Path
         driver.update_recent_lib_menu()
         driver.main_window.inspector.update_from_selection()

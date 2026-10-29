@@ -74,6 +74,7 @@ class AppSettings(BaseModel):
     sort_added_tags_last: bool = Field(default=True)
     invert_suggest_box_scroll: bool = Field(default=False)
     theme: Theme = Field(default=Theme.SYSTEM)
+    pill_shaped_tags: bool = Field(default=True)
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
 
