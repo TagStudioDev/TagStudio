@@ -7,6 +7,7 @@
 from collections.abc import Callable
 from typing import cast
 
+import pytest
 from PySide6.QtWidgets import QCheckBox
 from pytestqt.qtbot import QtBot
 
@@ -16,6 +17,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import CustomTableItem, EditTagPanel
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -571,6 +573,70 @@ def test_edit_tag_panel_remove_category_inherited_directly_and_indirectly(
     panel._remove_parent_tag_callback(child.id)
     capsule = _find_category_capsule(panel)
     assert capsule is None
+
+
+def test_edit_tag_panel_add_category_by_editing_parent(
+    qtbot: QtBot,
+    library: Library,
+    generate_tag: Callable[..., Tag],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    category = unwrap(library.add_tag(generate_tag("category", id=122, is_category=True)))
+    parent = unwrap(library.add_tag(generate_tag("parent", id=123)))
+    child = unwrap(library.add_tag(generate_tag("child", id=124, parent_tags={parent})))
+
+    panel: EditTagPanel = EditTagPanel(library, child)
+    qtbot.addWidget(panel)
+
+    assert _find_category_capsule(panel) is None
+
+    modal = _open_parent_edit_modal(panel, monkeypatch)
+    nested_panel = cast(EditTagPanel, modal.layout().content_widget)
+    nested_panel._add_parent_tag_callback(category.id)
+    modal.saved.emit()
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == category.name
+
+
+def test_edit_tag_panel_remove_category_by_editing_parent(
+    qtbot: QtBot,
+    library: Library,
+    generate_tag: Callable[..., Tag],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    category = unwrap(library.add_tag(generate_tag("category", id=122, is_category=True)))
+    parent = unwrap(library.add_tag(generate_tag("parent", id=123, parent_tags={category})))
+    child = unwrap(library.add_tag(generate_tag("child", id=124, parent_tags={parent})))
+
+    panel: EditTagPanel = EditTagPanel(library, child)
+    qtbot.addWidget(panel)
+
+    capsule = _find_category_capsule(panel)
+    assert capsule is not None
+    assert capsule.layout().button.text() == category.name
+
+    modal = _open_parent_edit_modal(panel, monkeypatch)
+    nested_panel = cast(EditTagPanel, modal.layout().content_widget)
+    nested_panel._remove_parent_tag_callback(category.id)
+    modal.saved.emit()
+
+    assert _find_category_capsule(panel) is None
+
+
+def _open_parent_edit_modal(panel: EditTagPanel, monkeypatch: pytest.MonkeyPatch) -> Modal:
+    """Click "Edit" on the first parent tag and return the nested modal it opens."""
+    shown: list[Modal] = []
+    monkeypatch.setattr(Modal, "show", lambda self: shown.append(self))  # pyright: ignore
+
+    parent_rows = panel.layout().parent_tags_scroll_layout.itemAt(0).widget().layout()
+    capsule = parent_rows.itemAt(0).widget().layout().itemAt(0).widget()
+    assert isinstance(capsule, Capsule)
+    capsule.on_edit.emit()
+
+    assert len(shown) == 1
+    return shown[0]
 
 
 def _find_category_capsule(panel: EditTagPanel, index: int = 0) -> Capsule | None:
