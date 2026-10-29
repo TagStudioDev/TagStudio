@@ -100,7 +100,8 @@ class FlowLayout(QLayout):
             QSizePolicy.ControlType.PushButton,
             Qt.Orientation.Vertical,
         )
-        return spacing_x, spacing_y
+        # NOTE: Styles return -1 for no preferred spacing
+        return max(spacing_x, 0), max(spacing_y, 0)
 
     def _do_layout(self, rect: QRect, test_only: bool) -> int:
         x = rect.x()

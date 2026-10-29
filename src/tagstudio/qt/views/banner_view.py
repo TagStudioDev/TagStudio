@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.rounded_progress_bar import RoundedProgressBar
 from tagstudio.qt.controllers.stable_label import StableLabel
+from tagstudio.qt.views.styles.widget_effects import DEBOSSED_OUTLINE_WIDTH
 
 
 class BannerView(QVBoxLayout):
@@ -15,11 +16,15 @@ class BannerView(QVBoxLayout):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(0, 0, 0, 0)
+        self.setContentsMargins(
+            DEBOSSED_OUTLINE_WIDTH, 0, DEBOSSED_OUTLINE_WIDTH, DEBOSSED_OUTLINE_WIDTH
+        )
         self.setSpacing(0)
 
         content_row = QHBoxLayout()
-        content_row.setContentsMargins(6, 6, 6, 2)
+        content_row.setContentsMargins(
+            6 - DEBOSSED_OUTLINE_WIDTH, 6, 6 - DEBOSSED_OUTLINE_WIDTH, 2 - DEBOSSED_OUTLINE_WIDTH
+        )
         content_row.setSpacing(8)
 
         self.close_button = QPushButton("×")

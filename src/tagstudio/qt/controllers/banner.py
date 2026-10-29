@@ -9,14 +9,13 @@ from typing import Literal, override
 
 from PySide6.QtCore import (
     QEasingCurve,
-    QRectF,
     Qt,
     QTimer,
     QVariantAnimation,
     Signal,
     SignalInstance,
 )
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPaintEvent
+from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from tagstudio.qt.views.banner_view import BannerView
@@ -28,7 +27,9 @@ from tagstudio.qt.views.styles.stylesheets import (
     banner_progress_bg_color,
     banner_progress_chunk_color,
     banner_progress_style,
+    get_tag_highlight_color,
 )
+from tagstudio.qt.views.styles.widget_effects import DEBOSSED_OUTLINE_WIDTH, WidgetEffects
 
 BannerMode = Literal["progress", "notice", "fleeting_notice"]
 
@@ -39,6 +40,8 @@ class _BannerBackground(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._bg_color = QColor(Qt.GlobalColor.transparent)
+        self._raised = 1.0
+        self._effect = WidgetEffects()
 
     @property
     def bg_color(self) -> QColor:
@@ -48,14 +51,40 @@ class _BannerBackground(QWidget):
         self._bg_color = color
         self.update()
 
+    @property
+    def raised(self) -> float:
+        """How raised the edges are, from 0 for debossed to 1 for embossed.
+
+        Used for transitioning during animations from one raised state to another.
+
+        NOTE: The embossed style matches colored tags instead of other controls, since the banner
+        could be any user accent color.
+        """
+        return self._raised
+
+    def set_raised(self, raised: float) -> None:
+        self._raised = raised
+        self.update()
+
     @override
     def paintEvent(self, event: QPaintEvent) -> None:
         del event
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        path = QPainterPath()
-        path.addRoundedRect(QRectF(self.rect()), RADIUS, RADIUS)
-        painter.fillPath(path, self._bg_color)
+        if self._raised < 1:
+            painter.setOpacity(1 - self._raised)
+            self._effect.paint_debossed(painter, self.rect(), RADIUS, self._bg_color)
+        if self._raised > 0:
+            painter.setOpacity(self._raised)
+            # NOTE: The embossed style here matches colored tags instead of embossed controls
+            self._effect.paint_capsule(
+                painter,
+                self.rect(),
+                RADIUS,
+                self._bg_color,
+                None,
+                get_tag_highlight_color(self._bg_color),
+            )
         painter.end()
 
 
@@ -103,13 +132,17 @@ class Banner(QWidget):
         self._progress_bg_color = banner_progress_bg_color()
         self._background.setStyleSheet(self._notice_style)
         self._background.set_bg_color(self._notice_bg_color)
-        self.view.progress_bar.set_corner_radius(RADIUS)
+        self.view.progress_bar.set_corner_radius(RADIUS - DEBOSSED_OUTLINE_WIDTH)
         self.view.progress_bar.set_chunk_color(banner_progress_chunk_color())
 
         self._card_color_anim = QVariantAnimation(self)
         self._card_color_anim.setDuration(self.COLOR_ANIMATION_MS)
         self._card_color_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._card_color_anim.valueChanged.connect(self._background.set_bg_color)
+        self._card_edge_anim = QVariantAnimation(self)
+        self._card_edge_anim.setDuration(self.COLOR_ANIMATION_MS)
+        self._card_edge_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._card_edge_anim.valueChanged.connect(self._background.set_raised)
 
         self._connect_callbacks()
         self._set_mode("notice")
@@ -275,7 +308,7 @@ class Banner(QWidget):
         self.view.action_button.setVisible(mode == "notice")
         self.view.progress_bar.setVisible(mode == "progress")
 
-        # The progress bar state gets a darkened background, while notices get the accent color.
+        # Progress states get a debossed darkened fill, notices get an embossed accent color fill
         is_progress = mode == "progress"
         self._background.setStyleSheet(self._progress_style if is_progress else self._notice_style)
 
@@ -284,6 +317,10 @@ class Banner(QWidget):
         self._card_color_anim.setStartValue(self._background.bg_color)
         self._card_color_anim.setEndValue(target_color)
         self._card_color_anim.start()
+        self._card_edge_anim.stop()
+        self._card_edge_anim.setStartValue(self._background.raised)
+        self._card_edge_anim.setEndValue(0.0 if is_progress else 1.0)
+        self._card_edge_anim.start()
 
     def _on_dismiss(self):
         if self._mode == "progress":

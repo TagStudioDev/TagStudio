@@ -47,6 +47,18 @@ class Palette(metaclass=Singleton):
         return QPalette.color(Palette._palette, role)
 
     @staticmethod
+    def icon() -> QColor:
+        """The translucent gray of default file icons and resize handles."""
+        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        return QColor(ICON_COLORS[UiColor.THEME_DARK if is_dark else UiColor.THEME_LIGHT])
+
+    @staticmethod
+    def contrast() -> QColor:
+        """Solid white in dark mode and solid black in light mode."""
+        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        return QColor(Qt.GlobalColor.white if is_dark else Qt.GlobalColor.black)
+
+    @staticmethod
     def accent_alt() -> QColor:
         """An alternate accent color variant that's lighter in dark mode."""
         return QColor(
@@ -142,6 +154,43 @@ UI_COLORS: dict[UiColor, dict[ColorType, Any]] = {
         ColorType.DARK_ACCENT: "#888888",
     },
 }
+
+ICON_COLORS = {
+    UiColor.THEME_DARK: QColor(255, 255, 255, 56),
+    UiColor.THEME_LIGHT: QColor(0, 0, 0, 112),
+}
+
+
+def blend(a: QColor, b: QColor, amount: float) -> QColor:
+    """The color `amount` of the way from a to b."""
+    return QColor(
+        round(a.red() + (b.red() - a.red()) * amount),
+        round(a.green() + (b.green() - a.green()) * amount),
+        round(a.blue() + (b.blue() - a.blue()) * amount),
+        round(a.alpha() + (b.alpha() - a.alpha()) * amount),
+    )
+
+
+def burn(base: int, top: int) -> int:
+    """One channel of a color burn blend."""
+    return 0 if top == 0 else max(0, 255 - (255 - base) * 255 // top)
+
+
+def screen(base: int, top: int) -> int:
+    """One channel of a screen blend."""
+    return 255 - (255 - base) * (255 - top) // 255
+
+
+def shade(color: QColor, darkness: float, burn_amount: float) -> QColor:
+    """The color taken toward black, then tinted by color burning the color over it."""
+    darkened = blend(color, QColor(Qt.GlobalColor.black), darkness)
+    burned = QColor(
+        burn(darkened.red(), color.red()),
+        burn(darkened.green(), color.green()),
+        burn(darkened.blue(), color.blue()),
+        darkened.alpha(),
+    )
+    return blend(darkened, burned, burn_amount)
 
 
 def get_tag_color(color_type: ColorType, color_id: TagColorEnum) -> str:

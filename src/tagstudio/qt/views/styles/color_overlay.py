@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
-# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: MIT
 
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPixmap
+from PySide6.QtGui import QColor, QGuiApplication, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
+
+from tagstudio.qt.views.styles.palette import Palette
 
 # TODO: Consolidate the built-in QT theme values with the values
 # here, in enums.py, and in palette.py.
@@ -20,10 +22,10 @@ def theme_foreground_color() -> QColor:
     return QColor(0, 0, 0, 120)
 
 
-def svg_to_pixmap(
+def svg_color_overlay(
     svg: bytes, color: QColor, device_pixel_ratio: float, size: QSize | None = None
 ) -> QPixmap:
-    """Render an SVG with a color and size to a QPixmap."""
+    """An SVG overlaid with a color."""
     renderer = QSvgRenderer(QByteArray(svg))
     size = size if size is not None else renderer.defaultSize()
     bounds = QRectF(0, 0, size.width(), size.height())
@@ -39,7 +41,31 @@ def svg_to_pixmap(
     return pixmap
 
 
-def auto_theme_overlay(
+def toggle_icon(svg: bytes, size: QSize, device_pixel_ratio: float) -> QIcon:
+    """An SVG icon in the theme's foreground color and in the accent color while checked."""
+    icon = QIcon(svg_color_overlay(svg, theme_foreground_color(), device_pixel_ratio, size))
+    icon.addPixmap(
+        svg_color_overlay(svg, Palette.accent_alt(), device_pixel_ratio, size),
+        QIcon.Mode.Normal,
+        QIcon.State.On,
+    )
+    return icon
+
+
+def pixmap_color_overlay(pixmap: QPixmap, color: QColor) -> QPixmap:
+    """A pixmap overlaid with a color."""
+    overlaid = QPixmap(pixmap.size())
+    overlaid.setDevicePixelRatio(pixmap.devicePixelRatio())
+    overlaid.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(overlaid)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(overlaid.rect(), color)
+    painter.end()
+    return overlaid
+
+
+def image_theme_color_overlay(
     image: Image.Image, inverse: bool = False, use_alpha: bool = True
 ) -> QPixmap:
     """Overlay the current foreground theme color onto an image.
@@ -55,19 +81,14 @@ def auto_theme_overlay(
     color = QColor(_THEME_DARK_FG if is_dark else _THEME_LIGHT_FG)
     if not use_alpha:
         color.setAlpha(255)
-    return apply_overlay(image, color)
+    return image_color_overlay(image, color)
 
 
-def apply_overlay(image: Image.Image, color: QColor) -> QPixmap:
+def image_color_overlay(image: Image.Image, color: QColor) -> QPixmap:
     """Apply a color overlay on top of an image using the image's alpha channel as a mask.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
         color (QColor): The color of the overlay.
     """
-    overlaid = ImageQt.ImageQt(image).convertToFormat(QImage.Format.Format_ARGB32_Premultiplied)
-    painter = QPainter(overlaid)
-    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-    painter.fillRect(overlaid.rect(), color)
-    painter.end()
-    return QPixmap.fromImage(overlaid)
+    return pixmap_color_overlay(QPixmap.fromImage(ImageQt.ImageQt(image)), color)

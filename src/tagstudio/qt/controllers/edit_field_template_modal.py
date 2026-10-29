@@ -11,7 +11,7 @@ from tagstudio.core.library.alchemy.fields import (
 )
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.views.edit_field_template_modal_view import EditFieldTemplateModalView
-from tagstudio.qt.views.styles.stylesheets import line_edit_style
+from tagstudio.qt.views.styles.tagstudio_style import set_invalid
 
 logger = structlog.get_logger(__name__)
 
@@ -72,7 +72,7 @@ class EditFieldTemplateModal(EditFieldTemplateModalView):
     def __on_name_changed(self):
         is_empty = not self.name_field.text().strip()
 
-        self.name_field.setStyleSheet(line_edit_style() if is_empty else "")
+        set_invalid(self.name_field, is_empty)
 
         if self.save_button is not None:
             self.save_button.setDisabled(is_empty)

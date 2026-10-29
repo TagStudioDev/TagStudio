@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import svg_to_pixmap, theme_foreground_color
+from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.stylesheets import header, info_popover_text_style
 
 
@@ -46,7 +46,7 @@ class InfoPopoverView(QVBoxLayout):
     def _icon_label(self, svg: bytes, size: QSize | None = None) -> QLabel:
         label = QLabel()
         label.setPixmap(
-            svg_to_pixmap(svg, theme_foreground_color(), label.devicePixelRatioF(), size)
+            svg_color_overlay(svg, theme_foreground_color(), label.devicePixelRatioF(), size)
         )
         return label
 

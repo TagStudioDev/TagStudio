@@ -15,9 +15,9 @@ from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import (
+    boxed_label_style,
     item_thumb_check_badge_style,
     item_thumb_filename_style,
-    item_thumb_label_style,
 )
 
 
@@ -115,7 +115,7 @@ class ItemThumbView(QVBoxLayout):
         # Mutually exclusive with the Item Type Icon.
         self.ext_label = QLabel()
         self.ext_label.setObjectName("extLabel")
-        self.ext_label.setStyleSheet(item_thumb_label_style())
+        self.ext_label.setStyleSheet(boxed_label_style())
         bottom_layout.addWidget(self.ext_label)
         bottom_layout.addStretch(2)
 
@@ -124,7 +124,7 @@ class ItemThumbView(QVBoxLayout):
         self.count_label = QLabel()
         self.count_label.setObjectName("countLabel")
         self.count_label.setText("-:--")
-        self.count_label.setStyleSheet(item_thumb_label_style())
+        self.count_label.setStyleSheet(boxed_label_style())
         bottom_layout.addWidget(self.count_label, alignment=Qt.AlignmentFlag.AlignBottom)
         top_layout.addStretch(2)
 

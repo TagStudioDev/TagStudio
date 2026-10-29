@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceErr
 from tagstudio.core.library.alchemy.models import Namespace
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import line_edit_style
+from tagstudio.qt.views.styles.tagstudio_style import set_invalid
 
 logger = structlog.get_logger(__name__)
 
@@ -113,9 +113,9 @@ class BuildNamespacePanel(ModalContent):
         is_slug_empty = not slug
         is_invalid = False
 
-        self.name_field.setStyleSheet(line_edit_style() if is_name_empty else "")
+        set_invalid(self.name_field, is_name_empty)
 
-        self.slug_field.setStyleSheet(line_edit_style() if is_slug_empty or is_invalid else "")
+        set_invalid(self.slug_field, is_slug_empty or is_invalid)
 
         self.slug_field.setText(slug)
 

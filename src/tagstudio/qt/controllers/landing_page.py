@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.landing_page_view import LandingPageView
-from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
 
 
 class LandingPage(QWidget):
@@ -83,7 +83,7 @@ class LandingPage(QWidget):
             style (str): The style of the logo. Either "mono" or "color".
         """
         if style == "mono":
-            pixmap = auto_theme_overlay(self._rm.ts_logo_text_mono)
+            pixmap = image_theme_color_overlay(self._rm.ts_logo_text_mono)
         else:
             pixmap = QPixmap.fromImage(ImageQt.ImageQt(self._rm.ts_logo_text_color))
 

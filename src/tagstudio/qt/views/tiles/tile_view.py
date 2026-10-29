@@ -6,7 +6,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
 from tagstudio.qt.views.styles.stylesheets import HALF_PAD
 
 # TODO: There should be a global button theme somewhere.
@@ -48,7 +48,7 @@ class TileView(QVBoxLayout):
         self.copy_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(auto_theme_overlay(self._rm.copy))
+        self.copy_button.setIcon(image_theme_color_overlay(self._rm.copy))
         self.copy_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
@@ -58,7 +58,7 @@ class TileView(QVBoxLayout):
         self.edit_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setFlat(True)
-        self.edit_button.setIcon(auto_theme_overlay(self._rm.edit))
+        self.edit_button.setIcon(image_theme_color_overlay(self._rm.edit))
         self.edit_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.edit_button)
@@ -68,7 +68,7 @@ class TileView(QVBoxLayout):
         self.remove_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(auto_theme_overlay(self._rm.trash))
+        self.remove_button.setIcon(image_theme_color_overlay(self._rm.trash))
         self.remove_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)

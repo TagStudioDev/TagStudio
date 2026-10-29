@@ -309,6 +309,7 @@ class ChangelogModal(ModalContent):
         window.setFixedWidth(_WINDOW_WIDTH)
         window.setMaximumHeight(_WINDOW_MAX_HEIGHT)
         window.setStyleSheet("QLabel {color: white}")
+        window.ensurePolished()  # Applies the stylesheet now so it can't reset the palette below
 
         modal_view = window.layout()
         assert isinstance(modal_view, ModalView)

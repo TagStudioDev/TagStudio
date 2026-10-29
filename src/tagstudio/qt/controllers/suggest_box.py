@@ -18,7 +18,7 @@ from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
+from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
 from tagstudio.qt.views.styles.stylesheets import (
     autofill_line_edit_style,
     autofill_line_edit_top_style,
@@ -133,7 +133,7 @@ class SuggestBox[T](QWidget):
 
     def set_hint_icon(self, icon: Image.Image | None) -> None:
         if icon:
-            self.layout().hint_icon_action.setIcon(auto_theme_overlay(icon))
+            self.layout().hint_icon_action.setIcon(image_theme_color_overlay(icon))
         else:
             self.layout().hint_icon_action.setIcon(QPixmap())
 

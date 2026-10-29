@@ -5,12 +5,20 @@
 from typing import override
 
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QIntValidator, Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
+from PySide6.QtGui import QIntValidator, QPainter, QPaintEvent, QPalette, Qt
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QStyle,
+    QStyleOptionFrame,
+    QWidget,
+)
 
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import auto_theme_overlay
-from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
+from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, RADIUS
 
 
 class PageValidator(QIntValidator):
@@ -18,6 +26,35 @@ class PageValidator(QIntValidator):
     def fixup(self, input: str) -> str:
         input = input.strip("0")
         return super().fixup(str(self.top()) if input else "1")
+
+
+class _PageField(QLineEdit):
+    """The current page number, drawn to match the page buttons until it's edited.
+
+    This exists because text isn't aligned the same way for buttons and line edits, so navigating
+    pages doesn't cause the page numbers to jiggle as they switch between widgets.
+    """
+
+    @override
+    def paintEvent(self, arg__1: QPaintEvent) -> None:
+        if self.hasFocus():
+            super().paintEvent(arg__1)
+            return
+        painter = QPainter(self)
+        option = QStyleOptionFrame()
+        self.initStyleOption(option)
+        style = self.style()
+        style.drawPrimitive(QStyle.PrimitiveElement.PE_PanelLineEdit, option, painter, self)
+        style.drawItemText(
+            painter,
+            self.rect(),
+            Qt.AlignmentFlag.AlignCenter,
+            self.palette(),
+            self.isEnabled(),
+            self.text(),
+            QPalette.ColorRole.Text,
+        )
+        painter.end()
 
 
 class PaginationView(QHBoxLayout):
@@ -31,13 +68,13 @@ class PaginationView(QHBoxLayout):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(0, PAD, 0, PAD)
+        self.setContentsMargins(PAD, PAD, PAD, PAD)
         self.setSpacing(HALF_PAD)
         _rm = ResourceManager()
 
         # [<] ----------------------------------
         self.prev_button = QPushButton()
-        self.prev_button.setIcon(auto_theme_overlay(_rm.bxs_left_arrow, use_alpha=False))
+        self.prev_button.setIcon(image_theme_color_overlay(_rm.bxs_left_arrow, use_alpha=False))
         self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.BUTTON_SIZE)
         self.prev_button.setMaximumSize(self.BUTTON_SIZE)
@@ -61,7 +98,7 @@ class PaginationView(QHBoxLayout):
         self.start_buffer_layout.setSpacing(3)
 
         # ---------------- [5] -----------------
-        self.current_page_field = QLineEdit()
+        self.current_page_field = _PageField()
         self.current_page_field.setMinimumSize(self.BUTTON_SIZE)
         self.current_page_field.setMaximumSize(self.BUTTON_SIZE)
         self.current_page_field.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -88,7 +125,7 @@ class PaginationView(QHBoxLayout):
 
         # ---------------------------------- [>]
         self.next_button = QPushButton()
-        self.next_button.setIcon(auto_theme_overlay(_rm.bxs_right_arrow, use_alpha=False))
+        self.next_button.setIcon(image_theme_color_overlay(_rm.bxs_right_arrow, use_alpha=False))
         self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.BUTTON_SIZE)
         self.next_button.setMaximumSize(self.BUTTON_SIZE)
@@ -107,16 +144,21 @@ class PaginationView(QHBoxLayout):
         self.addStretch(1)
         self._populate_buffer_buttons()
 
+        for button in (self.prev_button, self.start_button, self.end_button, self.next_button):
+            button.setProperty("radius", RADIUS)
+
     def _populate_buffer_buttons(self) -> None:
         for _ in range(max(self.BUFFER_PAGE_COUNT * 2, 5)):
             button = QPushButton()
             button.setMinimumSize(self.BUTTON_SIZE)
             button.setMaximumSize(self.BUTTON_SIZE)
             button.setHidden(True)
+            button.setProperty("radius", RADIUS)
             self.start_buffer_layout.addWidget(button)
 
             end_button = QPushButton()
             end_button.setMinimumSize(self.BUTTON_SIZE)
             end_button.setMaximumSize(self.BUTTON_SIZE)
             end_button.setHidden(True)
+            end_button.setProperty("radius", RADIUS)
             self.end_buffer_layout.addWidget(end_button)

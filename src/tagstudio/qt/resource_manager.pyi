@@ -30,6 +30,7 @@ class ResourceManager:
     broken_link_icon: Image.Image
     bxs_left_arrow: Image.Image
     bxs_right_arrow: Image.Image
+    chevron_down: bytes
     copy: Image.Image
     database: Image.Image
     document: Image.Image

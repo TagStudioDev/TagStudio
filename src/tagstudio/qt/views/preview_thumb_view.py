@@ -12,7 +12,7 @@ from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.views.styles.corner_radius_effect import CornerRadiusEffect
-from tagstudio.qt.views.styles.stylesheets import RADIUS
+from tagstudio.qt.views.styles.stylesheets import RADIUS, icon_button_style
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -38,6 +38,7 @@ class PreviewThumbView(QStackedLayout):
         self.button_wrapper = QPushButton()
         self.button_wrapper.setMinimumSize(*self.MINIMUM_SIZE)
         self.button_wrapper.setFlat(True)
+        self.button_wrapper.setStyleSheet(icon_button_style())
         self.button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.button_wrapper.addAction(self.open_file_action)
         self.button_wrapper.addAction(self.open_explorer_action)

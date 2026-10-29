@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
@@ -28,7 +27,6 @@ from PySide6.QtGui import (
     QGuiApplication,
     QMouseEvent,
     QPainter,
-    QPainterPath,
     QPaintEvent,
     QPen,
     QPixmap,
@@ -49,33 +47,18 @@ from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import (
     OUTLINE_WIDTH,
     RADIUS,
+    boxed_label_style,
     item_thumb_faded_select_color,
     item_thumb_filename_style,
     item_thumb_hover_color,
-    item_thumb_label_style,
 )
+from tagstudio.qt.views.styles.widget_effects import WidgetEffects, rounded_rect_path
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.models import Entry
     from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
-
-_DARK_SHADOW = QColor(0, 0, 0, 255)
-_LIGHT_SHADOW = QColor(0, 0, 0, 115)
-
-
-@lru_cache(maxsize=16)
-def _rounded_path(width: float, height: float, inset: float, edge_width: float = 0) -> QPainterPath:
-    """A thumbnail's rounded rect shrunk by `inset`, or only its `edge_width` edge."""
-    rect = QRectF(0, 0, width, height).adjusted(inset, inset, -inset, -inset)
-    path = QPainterPath()
-    path.addRoundedRect(rect, RADIUS - inset, RADIUS - inset)
-    if edge_width:
-        inner = rect.adjusted(edge_width, edge_width, -edge_width, -edge_width)
-        inner_radius = RADIUS - inset - edge_width
-        path.addRoundedRect(inner, inner_radius, inner_radius)
-    return path
 
 
 class ItemThumb(QWidget):
@@ -95,6 +78,7 @@ class ItemThumb(QWidget):
         self._driver = driver
         self._lib = library
         self._opener = FileOpenerHelper(Path())
+        self._effect = WidgetEffects()
 
         self._hover_color = item_thumb_hover_color()
         self._select_color = Palette.accent_alt()
@@ -174,14 +158,14 @@ class ItemThumb(QWidget):
             view.badge_container.setHidden(False)
             # Count Label depends on file extension (video length, word count)
             view.item_type_icon.setHidden(True)
-            view.count_label.setStyleSheet(item_thumb_label_style())
+            view.count_label.setStyleSheet(boxed_label_style())
             view.count_label.setHidden(True)
             view.ext_label.setHidden(True)
         elif mode == ItemType.ENTRY_GROUP:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
             view.badge_container.setHidden(True)
             view.ext_label.setHidden(True)
-            view.count_label.setStyleSheet(item_thumb_label_style(is_large=True))
+            view.count_label.setStyleSheet(boxed_label_style(is_large=True))
             view.count_label.setHidden(False)
             view.item_type_icon.setHidden(False)
         self._mode = mode
@@ -380,14 +364,17 @@ class ItemThumb(QWidget):
                 self._fade_from_brush is not None
                 and self._fade.state() == QAbstractAnimation.State.Running
             ):
-                self._paint_decorated_image(painter, self._fade_from_brush)
+                self._effect.paint_image(painter, self._image_rect(), RADIUS, self._fade_from_brush)
                 painter.setOpacity(float(self._fade.currentValue()))
-            self._paint_decorated_image(painter, self._image_brush)
+            self._effect.paint_image(painter, self._image_rect(), RADIUS, self._image_brush)
             painter.setOpacity(1)
 
         if self._image_hovered or self._selected:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            outline = _rounded_path(*self._thumb_size, OUTLINE_WIDTH / 2)
+            inset = OUTLINE_WIDTH / 2
+            outline = rounded_rect_path(
+                QRectF(self._image_rect()).adjusted(inset, inset, -inset, -inset), RADIUS - inset
+            )
 
             color: QColor = self._hover_color
             if self._selected:
@@ -403,37 +390,6 @@ class ItemThumb(QWidget):
             painter.drawPath(outline)
 
         painter.end()
-
-    def _paint_decorated_image(self, painter: QPainter, image_brush: QBrush) -> None:
-        """Paint an image with rounded corners and edge decorations."""
-        opacity = painter.opacity()
-        width, height = self._thumb_size
-        painter.save()
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        painter.setPen(Qt.PenStyle.NoPen)
-
-        # Image
-        painter.setBrush(image_brush)
-        painter.drawPath(_rounded_path(width, height, 1))
-
-        # Pre-highlight background for dark images + alpha backgrounds
-        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), QColor(255, 255, 255, 25))
-
-        # Edge Highlight
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
-        painter.setOpacity(opacity * 0.15)
-        painter.fillPath(_rounded_path(width, height, 1, edge_width=1), image_brush)
-        painter.setOpacity(opacity)
-
-        # Edge Shadow
-        shadow = _rounded_path(width, height, 0, edge_width=1)
-        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
-        painter.fillPath(shadow, _DARK_SHADOW if is_dark else _LIGHT_SHADOW)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Multiply)
-        painter.fillPath(shadow, image_brush)
-        painter.restore()
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

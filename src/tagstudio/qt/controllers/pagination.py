@@ -6,29 +6,29 @@ from typing import override
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import QEvent, QObject, Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from PySide6.QtCore import QEvent, QObject, Signal
+from PySide6.QtGui import QColor, QPainter, QPaintEvent
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QStyle, QWidget
 
 from tagstudio.qt.views.pagination_view import PaginationView
-from tagstudio.qt.views.styles.stylesheets import pagination_style
+from tagstudio.qt.views.styles.stylesheets import LARGE_RADIUS, is_dark_theme
+from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects, fill_path
 
 logger = structlog.get_logger(__name__)
 
 
 class Pagination(QWidget):
-    HEIGHT = 36
+    _BACKGROUND_OPACITY = 0.9
     _RIGHT_MARGIN = 6
-    _SCROLLBAR_WIDTH = 14
+    HEIGHT = 36
 
     index = Signal(int)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setHidden(True)
-        self.setObjectName("pagination")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setFixedHeight(self.HEIGHT)
-        self.setStyleSheet(pagination_style())
+        self._effect = WidgetEffects()
 
         self.setLayout(PaginationView())
         self._connect_callbacks()
@@ -202,10 +202,33 @@ class Pagination(QWidget):
         return super().eventFilter(watched, event)
 
     def _sync_geometry(self):
+        """Fit the bar to its buttons and center it along the bottom of the browsing area."""
         parent = self.parentWidget()
         if parent is None:
             return
-        # Stays out of the way of the entry view scrollbar
-        right_inset = max(self._RIGHT_MARGIN, self._SCROLLBAR_WIDTH)
-        width = max(0, parent.width() - right_inset)
-        self.setGeometry(0, parent.height() - self.HEIGHT, width, self.HEIGHT)
+        view = self.layout()
+        # Lay out the page buttons first since their containers' sizes are cached until then
+        view.start_buffer_layout.activate()
+        view.end_buffer_layout.activate()
+        # Don't obscure the browsing area scrollbar
+        scroll_bar_width = self.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)
+        available_width = max(0, parent.width() - max(self._RIGHT_MARGIN, scroll_bar_width))
+        width = min(view.sizeHint().width(), available_width)
+        x = (available_width - width) // 2
+        self.setGeometry(x, parent.height() - self.HEIGHT, width, self.HEIGHT)
+
+    @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # No edge on the bottom
+        rect = self.rect().adjusted(0, 0, 0, LARGE_RADIUS)
+        path = fill_path(rect, LARGE_RADIUS)
+        self._effect.paint_window_background(painter, path, self.window(), self._BACKGROUND_OPACITY)
+
+        # Darken the window background in dark mode
+        if is_dark_theme():
+            painter.fillPath(path, QColor(0, 0, 0, 100))
+
+        self._effect.paint_outlines(painter, rect, LARGE_RADIUS, style=SurfaceStyle.EMBOSSED)
+        painter.end()

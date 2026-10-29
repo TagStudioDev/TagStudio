@@ -55,6 +55,10 @@
         "mode": "pil",
         "path": "qt/images/bxs-right-arrow.png"
     },
+    "chevron_down": {
+        "mode": "rb",
+        "path": "qt/images/bxs-chevron-down.svg"
+    },
     "copy": {
         "mode": "pil",
         "path": "qt/images/bxs-clipboard-regular.png"

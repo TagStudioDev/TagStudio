@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import svg_to_pixmap, theme_foreground_color
+from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.views.styles.stylesheets import info_popover_style
 
@@ -141,7 +141,7 @@ class InfoButton(QAbstractButton):
             if hovered
             else theme_foreground_color()
         )
-        self._icon: QPixmap = svg_to_pixmap(svg, color, self.devicePixelRatioF(), self.size())
+        self._icon: QPixmap = svg_color_overlay(svg, color, self.devicePixelRatioF(), self.size())
         self.update()
 
     @override

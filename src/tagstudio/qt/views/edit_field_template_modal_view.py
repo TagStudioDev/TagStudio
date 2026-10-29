@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import PAD, checkbox_style
+from tagstudio.qt.views.styles.stylesheets import CHECKBOX_SIZE, PAD
 
 logger = structlog.get_logger(__name__)
 
@@ -75,8 +75,7 @@ class EditFieldTemplateModalView(ModalContent):
         self._multiline_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self._multiline_title = ClickableLabel(Translations["field.text.is_multiline"])
         self._multiline_checkbox = QCheckBox()
-        self._multiline_checkbox.setFixedSize(22, 22)
-        self._multiline_checkbox.setStyleSheet(checkbox_style())
+        self._multiline_checkbox.setFixedSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
         self._multiline_title.clicked.connect(self._multiline_checkbox.click)
         self._multiline_layout.addWidget(self._multiline_checkbox)
         self._multiline_layout.addWidget(self._multiline_title)
