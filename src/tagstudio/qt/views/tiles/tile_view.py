@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
-from tagstudio.qt.views.styles.stylesheets import HALF_PAD
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, icon_button_style
 
 # TODO: There should be a global button theme somewhere.
 _BUTTON_SIZE = 22
@@ -48,7 +48,7 @@ class TileView(QVBoxLayout):
         self.copy_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(image_theme_color_overlay(self._rm.copy))
+        self.copy_button.setStyleSheet(icon_button_style())
         self.copy_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
@@ -58,7 +58,7 @@ class TileView(QVBoxLayout):
         self.edit_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.edit_button.setFlat(True)
-        self.edit_button.setIcon(image_theme_color_overlay(self._rm.edit))
+        self.edit_button.setStyleSheet(icon_button_style())
         self.edit_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.edit_button)
@@ -68,14 +68,22 @@ class TileView(QVBoxLayout):
         self.remove_button.setMinimumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setMaximumSize(_BUTTON_SIZE, _BUTTON_SIZE)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(image_theme_color_overlay(self._rm.trash))
+        self.remove_button.setStyleSheet(icon_button_style())
         self.remove_button.setIconSize(QSize(_ICON_SIZE, _ICON_SIZE))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)
+
+        self.set_button_icons()
 
         self.data = QWidget()
         self.data_layout = QHBoxLayout()
         self.data_layout.setContentsMargins(0, 0, 0, 0)
         self.data.setLayout(self.data_layout)
         self.inner_layout.addWidget(self.data)
+
+    def set_button_icons(self) -> None:
+        """Color the buttons' icons for the current theme."""
+        self.copy_button.setIcon(image_theme_color_overlay(self._rm.copy))
+        self.edit_button.setIcon(image_theme_color_overlay(self._rm.edit))
+        self.remove_button.setIcon(image_theme_color_overlay(self._rm.trash))

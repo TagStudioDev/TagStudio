@@ -7,11 +7,11 @@ from typing import override
 from warnings import catch_warnings
 
 from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QEnterEvent, QResizeEvent
-from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QEnterEvent
+from PySide6.QtWidgets import QPushButton, QWidget
 
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.views.styles.stylesheets import container_style, header
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, container_style, header
 from tagstudio.qt.views.tiles.tile_view import TileView
 
 
@@ -41,6 +41,7 @@ class Tile(QWidget):
             self.layout().copy_button.clicked.disconnect()
 
         self.copy_callback = callback
+        self._keep_button_space(self.layout().copy_button, keep=callback is not None)
         if callback:
             self.layout().copy_button.clicked.connect(callback)
 
@@ -49,6 +50,7 @@ class Tile(QWidget):
             self.layout().edit_button.clicked.disconnect()
 
         self.edit_callback = callback
+        self._keep_button_space(self.layout().edit_button, keep=callback is not None)
         if callback:
             self.layout().edit_button.clicked.connect(callback)
 
@@ -57,21 +59,37 @@ class Tile(QWidget):
             self.layout().remove_button.clicked.disconnect()
 
         self.remove_callback = callback
+        self._keep_button_space(self.layout().remove_button, keep=callback is not None)
         if callback:
             self.layout().remove_button.clicked.connect(callback)
+
+    def _keep_button_space(self, button: QPushButton, keep: bool) -> None:
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(keep)
+        button.setSizePolicy(policy)
 
     def set_inner_widget(self, widget: QWidget) -> None:
         if item := self.layout().data_layout.itemAt(0):
             old: QWidget = unwrap(item.widget())
             self.layout().data_layout.removeWidget(old)
+            # NOTE: Hide before deleteLater() or it paints over the new widget
+            old.hide()
             old.deleteLater()
 
         self.layout().data_layout.addWidget(widget)
+        # NOTE: Show now or the Tile is sized without it for a frame
+        widget.show()
 
     def get_inner_widget(self) -> QWidget | None:
         if item := self.layout().data_layout.itemAt(0):
             return item.widget()
         return None
+
+    def set_content_inset(self, inset: int) -> None:
+        """Inset the tile's content from its left edge."""
+        layout = self.layout()
+        layout.inner_layout.setContentsMargins(inset, 0, 0, HALF_PAD)
+        layout.title_layout.setContentsMargins(HALF_PAD - inset, 0, 0, 0)
 
     def set_title(self, title: str) -> None:
         self.title = header(title, 4)
@@ -87,6 +105,8 @@ class Tile(QWidget):
             layout.edit_button.setHidden(False)
         if self.remove_callback:
             layout.remove_button.setHidden(False)
+        # NOTE: Leaving for a context menu skips hover events
+        self.update()
         return super().enterEvent(event)
 
     @override
@@ -98,9 +118,5 @@ class Tile(QWidget):
             layout.edit_button.setHidden(True)
         if self.remove_callback:
             layout.remove_button.setHidden(True)
+        self.update()
         return super().leaveEvent(event)
-
-    @override
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        self.layout().title_widget.setMaximumWidth(int(event.size().width() // 1.5))
-        return super().resizeEvent(event)

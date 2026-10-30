@@ -9,6 +9,8 @@ from functools import partial
 from typing import override
 
 import structlog
+from PySide6.QtCore import QCoreApplication, QEvent, Qt
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from tagstudio.core.library.alchemy.fields import (
@@ -22,11 +24,13 @@ from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
+from tagstudio.qt.controllers.inset_frame import InsetFrame
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tag_data import TagData
 from tagstudio.qt.controllers.tiles.text_data import TextData
 from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, TagShape
 from tagstudio.qt.views.tiles.tile_list_view import TileListView
 
 if typing.TYPE_CHECKING:
@@ -35,7 +39,7 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class TileList(QWidget):
+class TileList(InsetFrame):
     """A styled list of Tile widgets."""
 
     def __init__(self, library: Library, driver: QtDriver) -> None:
@@ -49,10 +53,34 @@ class TileList(QWidget):
         # TODO: Reimplement mixed entry editing
 
         self.setLayout(TileListView())
+        scroll_bar = self.layout().scroll_area.verticalScrollBar()
+        scroll_bar.rangeChanged.connect(self._toggle_scroll_bar)
 
     @override
     def layout(self) -> TileListView:
         return super().layout()  # pyright: ignore[reportReturnType]
+
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        # NOTE: The scroll area's resize can leave a stale scroll bar showing
+        scroll_bar = self.layout().scroll_area.verticalScrollBar()
+        self._toggle_scroll_bar(scroll_bar.minimum(), scroll_bar.maximum())
+
+    def _toggle_scroll_bar(self, minimum: int, maximum: int) -> None:
+        """Show the scroll bar only while the tiles overflow."""
+        view = self.layout()
+        is_overflowing = maximum > minimum
+        margins = view.scroll_layout.contentsMargins()
+        margins.setRight(0 if is_overflowing else HALF_PAD)
+        view.scroll_layout.setContentsMargins(margins)
+        # NOTE: The as-needed policy waits a frame which can screw with rendering, so show/hide now
+        view.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+            if is_overflowing
+            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        view.scroll_layout.activate()
 
     @property
     def top_entry_id(self) -> int:
@@ -88,6 +116,18 @@ class TileList(QWidget):
             for i, c in enumerate(self._tiles):
                 if i > (container_len - 1):
                     c.setHidden(True)
+
+        self._lay_out_now()
+
+    def _lay_out_now(self) -> None:
+        """Lay out the tiles and scroll area now."""
+        view = self.layout()
+        # Lay out children first so no frame paints between their queued layout passes
+        for widget in reversed(unwrap(view.scroll_area.widget()).findChildren(QWidget)):
+            if (layout := QWidget.layout(widget)) is not None:
+                layout.activate()
+        QCoreApplication.sendEvent(view.scroll_area, QEvent(QEvent.Type.LayoutRequest))
+        view.scroll_layout.activate()
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
@@ -312,6 +352,8 @@ class TileList(QWidget):
         else:
             container = self._tiles[index]
 
+        container.set_content_inset(HALF_PAD)
+
         # Set field title
         field_type = field_type_name(field.class_name)
         title = f"{field.name} ({field_type})"
@@ -347,6 +389,8 @@ class TileList(QWidget):
             container = self._tiles[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
+        reduction = TagShape.PILL_INSET_REDUCTION if TagShape.is_pill else 0
+        container.set_content_inset(HALF_PAD - reduction)
 
         if not is_mixed:
             inner_widget = container.get_inner_widget()
