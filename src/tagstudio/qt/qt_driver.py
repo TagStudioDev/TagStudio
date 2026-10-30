@@ -169,7 +169,7 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     tag_manager: Modal | None = None
-    color_manager_panel: TagColorManager | None = None
+    color_manager: Modal | None = None
     field_template_manager: Modal | None = None
     ignore_modal: Modal | None = None
     add_tag_modal: Modal | None = None
@@ -383,7 +383,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Initialize the Color Group Manager panel
-        self.color_manager_panel = TagColorManager(self)
+        self.color_manager = Modal(TagColorManager(self), Translations["color_manager.title"])
 
         # Initialize the Field Template Manager panel
         self.field_template_manager = Modal(
@@ -598,8 +598,8 @@ class QtDriver(DriverMixin, QObject):
         self.frame_content.clear()
         self._results_state = None
         self.selection.clear()
-        if self.color_manager_panel:
-            self.color_manager_panel.reset()
+        if self.color_manager:
+            self.color_manager.layout().content_widget.reset()
 
         if hasattr(self, "library_info_window"):
             self.library_info_window.close()

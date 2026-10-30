@@ -115,6 +115,7 @@ class ColorData(TileData):
             build_color_panel,
             Translations["color.edit"],
             is_savable=True,
+            inline_title=False,
         )
 
         self.edit_modal.saved.connect(

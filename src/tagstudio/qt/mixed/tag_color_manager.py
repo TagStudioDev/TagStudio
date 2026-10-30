@@ -6,13 +6,12 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, override
 
 import structlog
-from PySide6 import QtCore, QtGui
+from PySide6 import QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
+    QDialogButtonBox,
     QFrame,
     QHBoxLayout,
-    QLabel,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -22,14 +21,15 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
-from tagstudio.core.enums import ThemePalette
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.inset_frame import InsetFrame
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.tiles.color_data import ColorData
 from tagstudio.qt.controllers.tiles.tile import Tile
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
-from tagstudio.qt.views.styles.stylesheets import header
+from tagstudio.qt.views.modal_view import ModalView
 
 logger = structlog.get_logger(__name__)
 
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 # TODO: Split to use MVC guidelines.
-class TagColorManager(QWidget):
+class TagColorManager(ModalContent):
     create_namespace_modal: Modal | None = None
 
     def __init__(
@@ -48,30 +48,16 @@ class TagColorManager(QWidget):
         super().__init__()
         self.driver = driver
         self.lib = driver.lib
-        self.setWindowTitle(Translations["color_manager.title"])
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(800, 600)
         self.is_initialized = False
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 6, 6, 6)
-
-        panel_bg_color = (
-            ThemePalette.COLOR_BG_DARK.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else ThemePalette.COLOR_BG_LIGHT.value
-        )
-
-        self.title_label = QLabel()
-        self.title_label.setObjectName("titleLabel")
-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setText(header(Translations["color_manager.title"], 3))
+        self.root_layout.setContentsMargins(0, 0, 0, 0)
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_layout.setContentsMargins(3, 3, 3, 3)
         self.scroll_layout.setSpacing(6)
 
-        scroll_container: QWidget = QWidget()
+        scroll_container: QWidget = InsetFrame()
         scroll_container.setObjectName("entryScrollContainer")
         scroll_container.setLayout(self.scroll_layout)
 
@@ -84,34 +70,35 @@ class TagColorManager(QWidget):
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
-        self.scroll_area.setStyleSheet(
-            f"QWidget#entryScrollContainer{{background:{panel_bg_color};border-radius:6px;}}"
-        )
+        self.scroll_area.setStyleSheet("QScrollArea { background: transparent; }")
         self.scroll_area.setWidget(scroll_container)
+        # NOTE: setWidget() turns this on
+        scroll_container.setAutoFillBackground(False)
 
         self.setup_color_groups()
 
-        self.button_container = QWidget()
-        self.button_layout = QHBoxLayout(self.button_container)
-        self.button_layout.setContentsMargins(6, 6, 6, 6)
-
         self.new_namespace_button = QPushButton(Translations["namespace.new.button"])
         self.new_namespace_button.clicked.connect(self.create_namespace)
-        self.button_layout.addWidget(self.new_namespace_button)
+
+        self.root_layout.addWidget(self.scroll_area)
+
+    @override
+    def parent_post_init(self) -> None:
+        window = self.window()
+        window.setMinimumSize(800, 600)
+
+        modal_view = window.layout()
+        assert isinstance(modal_view, ModalView)
+        # NOTE: Qt keeps only ResetRole on the left on every platform
+        modal_view.button_box.addButton(
+            self.new_namespace_button, QDialogButtonBox.ButtonRole.ResetRole
+        )
 
         # self.import_pack_button = QPushButton()
         # Translations.translate_qobject(self.import_pack_button, "color.import_pack")
-        # self.button_layout.addWidget(self.import_pack_button)
-
-        self.button_layout.addStretch(1)
-
-        self.done_button = QPushButton(Translations["generic.done_alt"])
-        self.done_button.clicked.connect(self.hide)
-        self.button_layout.addWidget(self.done_button)
-
-        self.root_layout.addWidget(self.title_label)
-        self.root_layout.addWidget(self.scroll_area)
-        self.root_layout.addWidget(self.button_container)
+        # modal_view.button_box.addButton(
+        #     self.import_pack_button, QDialogButtonBox.ButtonRole.ResetRole
+        # )
 
     def setup_color_groups(self):
         all_default = True
@@ -212,11 +199,3 @@ class TagColorManager(QWidget):
         if not self.is_initialized:
             self.setup_color_groups()
         return super().showEvent(event)
-
-    @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        if event.key() == QtCore.Qt.Key.Key_Escape:  # noqa SIM114
-            self.done_button.click()
-        elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
-            self.done_button.click()
-        return super().keyPressEvent(event)

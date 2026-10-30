@@ -320,9 +320,7 @@ class MenuBar(QMenuBar):
         self.delete_file_action.triggered.connect(lambda: driver.delete_files_callback(""))
         self.ignore_modal_action.triggered.connect(lambda: unwrap(driver.ignore_modal).show())
         self.tag_manager_action.triggered.connect(lambda: unwrap(driver.tag_manager).show())
-        self.color_manager_action.triggered.connect(
-            lambda: unwrap(driver.color_manager_panel).show()
-        )
+        self.color_manager_action.triggered.connect(lambda: unwrap(driver.color_manager).show())
         self.field_template_manager_action.triggered.connect(
             lambda: unwrap(driver.field_template_manager).show()
         )
