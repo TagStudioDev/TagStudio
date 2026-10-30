@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
@@ -91,6 +92,8 @@ class ItemThumb(QWidget):
         self._fade_from_brush: QBrush | None = None
         self._image_hovered: bool = False
         self._image_brush: QBrush | None = None
+        self._decorated_image: QPixmap | None = None
+        self._decorated_image_key: tuple[float, bool] | None = None
         self._item_path: Path | None = None
         self._mode: ItemType | None = mode
         self._press_pos: QPoint | None = None
@@ -273,6 +276,7 @@ class ItemThumb(QWidget):
         self.setFixedSize(size, size)
         if self._image_brush is not None:
             self._image_brush = self._scaled_image_brush(self._image_brush.texture())
+            self._decorated_image = None
             self._set_badge_underlays()
         self._apply_filename_style()
         self.set_filename_visibility(self._show_filename_label)
@@ -285,6 +289,7 @@ class ItemThumb(QWidget):
         else:
             self._fade.stop()
         self._image_brush = self._scaled_image_brush(image)
+        self._decorated_image = None
         self._set_badge_underlays()
         self.rendered_path = file_path
         self._apply_filename_style()
@@ -304,6 +309,7 @@ class ItemThumb(QWidget):
     def clear_image(self) -> None:
         self._fade.stop()
         self._image_brush = None
+        self._decorated_image = None
         self._set_badge_underlays()
         self.rendered_path = None
         self._apply_filename_style()
@@ -378,7 +384,7 @@ class ItemThumb(QWidget):
             ):
                 self._effect.paint_image(painter, self._image_rect(), RADIUS, self._fade_from_brush)
                 painter.setOpacity(float(self._fade.currentValue()))
-            self._effect.paint_image(painter, self._image_rect(), RADIUS, self._image_brush)
+            painter.drawPixmap(0, 0, self._decorated_image_pixmap(self._image_brush))
             painter.setOpacity(1)
 
         if self._image_hovered or self._selected:
@@ -402,6 +408,23 @@ class ItemThumb(QWidget):
             painter.drawPath(outline)
 
         painter.end()
+
+    def _decorated_image_pixmap(self, image_brush: QBrush) -> QPixmap:
+        """The image painted with its decorations."""
+        pixel_ratio = self.devicePixelRatioF()
+        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        key = (pixel_ratio, is_dark)
+        if self._decorated_image is None or self._decorated_image_key != key:
+            width, height = self._thumb_size
+            pixmap = QPixmap(math.ceil(width * pixel_ratio), math.ceil(height * pixel_ratio))
+            pixmap.setDevicePixelRatio(pixel_ratio)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(pixmap)
+            self._effect.paint_image(painter, self._image_rect(), RADIUS, image_brush)
+            painter.end()
+            self._decorated_image = pixmap
+            self._decorated_image_key = key
+        return self._decorated_image
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:
