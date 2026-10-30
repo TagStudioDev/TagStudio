@@ -33,8 +33,8 @@ class ThumbGridLayout[W: QWidget](QLayout):
         self._free: list[W] = []
         self._item_count = 0
         self._items: list[QLayoutItem] = []
-        # [start, end, per_row, item size]
-        self._last_layout: tuple[int, int, int, QSize] | None = None
+        # [start, end, per_row, column spacing, item size]
+        self._last_layout: tuple[int, int, int, float, QSize] | None = None
         # Widgets by [row from the first visible row, column] from before the items were replaced
         self._previous_slots: dict[tuple[int, int], W] = {}
         self._previous_offset = 0
@@ -59,7 +59,7 @@ class ThumbGridLayout[W: QWidget](QLayout):
     def ensure_visible(self, index: int, bottom_padding: int = 0) -> None:
         """Scroll just enough to fully show the item at `index` above `bottom_padding` pixels."""
         per_row, cell = self._grid_metrics(self.geometry().width())
-        top = index // per_row * cell.height() - self.spacing()
+        top = self.geometry().top() + index // per_row * cell.height() - self.spacing()
         bottom = top + self._item_size().height() + 2 * self.spacing()
         scroll_bar = self._scroll_area.verticalScrollBar()
         visible_height = self._scroll_area.viewport().height() - bottom_padding
@@ -83,20 +83,24 @@ class ThumbGridLayout[W: QWidget](QLayout):
 
         # Remove the grid padding so the first cell is at (0, 0)
         rect = rect.translated(-self.geometry().topLeft())
-        per_row, cell = self._grid_metrics(self.geometry().width())
+        width = self.geometry().width()
+        per_row, cell = self._grid_metrics(width)
+        col_spacing = self._column_spacing(width, per_row)
         item_size = self._item_size()
 
         # Only check the cells the rect overlaps with and clamp to the grid's rows and columns
         first_row = max(0, rect.top() // cell.height())
         last_row = min(rect.bottom() // cell.height(), (self._item_count - 1) // per_row)
-        first_column = max(0, rect.left() // cell.width())
-        last_column = min(rect.right() // cell.width(), per_row - 1)
+        first_column = max(0, math.floor(rect.left() / col_spacing))
+        last_column = min(math.floor(rect.right() / col_spacing), per_row - 1)
         indices: list[int] = []
         for row in range(first_row, last_row + 1):
             for column in range(first_column, last_column + 1):
                 index = row * per_row + column
                 # A rect in the spacing after an item shouldn't count
-                item_rect = QRect(QPoint(column * cell.width(), row * cell.height()), item_size)
+                item_rect = QRect(
+                    QPoint(round(column * col_spacing), row * cell.height()), item_size
+                )
                 # The last row may not be fully filled
                 if index < self._item_count and item_rect.intersects(rect):
                     indices.append(index)
@@ -141,6 +145,15 @@ class ThumbGridLayout[W: QWidget](QLayout):
         size = self._item_size()
         cell = QSize(size.width() + self.spacing(), size.height() + self.spacing())
         return max(1, int(width / cell.width())), cell
+
+    def _column_spacing(self, width: int, per_row: int) -> float:
+        """How far apart columns start, spreading a row's spare width between its items."""
+        cell_width = self._grid_metrics(width)[1].width()
+        if per_row == 1:
+            return cell_width
+        # The spacing after the last item stays as the grid's right padding
+        spare = width - per_row * cell_width
+        return cell_width + spare / (per_row - 1)
 
     @override
     def setGeometry(self, arg__1: QRect) -> None:
@@ -197,11 +210,12 @@ class ThumbGridLayout[W: QWidget](QLayout):
         start = max(0, (first_row - self._BUFFER_ROWS) * per_row)
         end = min(self._item_count, (first_row + visible_rows + self._BUFFER_ROWS) * per_row)
         item_size = self._item_size()
+        col_spacing = self._column_spacing(arg__1.width(), per_row)
 
-        # Nothing moves if the assigned range, columns, and item size are all unchanged
-        if (start, end, per_row, item_size) == self._last_layout:
+        # Nothing moves if the assigned range, columns, spacing, and item size are all unchanged
+        if (start, end, per_row, col_spacing, item_size) == self._last_layout:
             return
-        self._last_layout = (start, end, per_row, item_size)
+        self._last_layout = (start, end, per_row, col_spacing, item_size)
 
         # Free the widgets whose items exit the assigned range
         moved_out = [
@@ -224,7 +238,7 @@ class ThumbGridLayout[W: QWidget](QLayout):
                     widget = self._free.pop() if self._free else self._new_widget()
                 self._assigned[index] = widget
                 newly_assigned.append((index, widget))
-            position = arg__1.topLeft() + QPoint(column * cell.width(), row * cell.height())
+            position = arg__1.topLeft() + QPoint(round(column * col_spacing), row * cell.height())
             widget.setGeometry(QRect(position, item_size))
 
         # Free unused widgets and move every free widget way off the screen (32_000, 32_000)

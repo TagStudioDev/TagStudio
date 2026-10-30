@@ -11,6 +11,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6 import QtCore
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QResizeEvent, QShortcut
 from PySide6.QtWidgets import QSplitter, QWidget
 
@@ -38,6 +39,8 @@ if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
 logger = structlog.get_logger(__name__)
+
+_STARTING_WIDTH = 280  # Its starting width, before it's dragged
 
 
 class _ItemMode(IntEnum):
@@ -377,3 +380,7 @@ class Inspector(QWidget):
         layout = super().layout()
         assert isinstance(layout, InspectorView)
         return layout
+
+    @override
+    def sizeHint(self) -> QSize:
+        return QSize(_STARTING_WIDTH, super().sizeHint().height())

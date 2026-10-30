@@ -108,6 +108,7 @@ class ThumbGrid(QWidget):
         scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll_area.setWidget(self)
 
     @override
