@@ -207,7 +207,8 @@ class ThumbGrid(QWidget):
         self._duration_timer.timeout.connect(self._queue_durations)
         self._entries_fetched.connect(self._on_entries_fetched)
         self._duration_loaded.connect(self._on_duration_loaded)
-        self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+        self._driver.entry_state.entry_tags_changed.connect(self._on_tags_changed)
+        self._driver.entry_state.tags_edited.connect(self._on_tags_edited)
         self._driver.selection.changed.connect(self._update_selected)
 
     def set_entries(self, entry_ids: list[int]) -> None:
@@ -462,6 +463,12 @@ class ThumbGrid(QWidget):
                 and thumb not in self._held
             ):
                 self._assign_badges(thumb, thumb.item_id)
+
+    def _on_tags_edited(self, tag_ids: set[int]) -> None:
+        badge_tag_ids = tag_ids.intersection(self._driver.entry_state.badge_tag_ids)
+        for _, thumb in self.layout().assigned_items():
+            for tag_id in badge_tag_ids:
+                thumb.update_badge_tag(tag_id)
 
     def _fetch_entries(self, entry_ids: list[int]) -> None:
         """Read entries and their badge tags on a worker thread."""

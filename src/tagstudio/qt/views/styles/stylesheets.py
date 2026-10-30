@@ -3,7 +3,6 @@
 
 
 import platform
-from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
@@ -719,12 +718,3 @@ def info_popover_style() -> str:
         padding: 9px;
     }}
     """
-
-
-def item_thumb_check_badge_style(size: int, icon: Path, checked_icon: Path) -> str:
-    """Style used for checkable tag badges on item thumbnails, like Favorite and Archived."""
-    return (
-        f"QCheckBox::indicator{{width: {size}px;height: {size}px;}}"
-        f'QCheckBox::indicator::unchecked{{image: url("{icon.as_posix()}")}}'
-        f'QCheckBox::indicator::checked{{image: url("{checked_icon.as_posix()}")}}'
-    )

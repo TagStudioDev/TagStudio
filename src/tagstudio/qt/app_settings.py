@@ -75,6 +75,7 @@ class AppSettings(BaseModel):
     invert_suggest_box_scroll: bool = Field(default=False)
     theme: Theme = Field(default=Theme.SYSTEM)
     pill_shaped_tags: bool = Field(default=True)
+    circular_badges: bool = Field(default=True)
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
 

@@ -17,7 +17,7 @@ from tagstudio.qt.qt_driver import QtDriver
 def test_badge_tags_update_state_and_emit(library: Library):
     entry_state = EntryState(library)
     changed: list[set[int]] = []
-    entry_state.tags_changed.connect(changed.append)
+    entry_state.entry_tags_changed.connect(changed.append)
 
     entry_state.add_tags([1, 2], TAG_FAVORITE)
     assert entry_state.has_badge(1, TAG_FAVORITE)
@@ -34,7 +34,7 @@ def test_badge_tags_update_state_and_emit(library: Library):
 def test_non_badge_tags_emit(library: Library):
     entry_state = EntryState(library)
     changed: list[set[int]] = []
-    entry_state.tags_changed.connect(changed.append)
+    entry_state.entry_tags_changed.connect(changed.append)
 
     non_badge_tag = 2000
     entry_state.add_tags(1, non_badge_tag)

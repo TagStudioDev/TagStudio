@@ -8,7 +8,7 @@ import sqlite3
 import sys
 import time
 import unicodedata
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -229,6 +229,27 @@ class Library:
         self.unlinked_entries_count: int = -1
         # TODO: Make this dependant on the filesystem(s) of the library root directories.
         self.is_fs_case_sensitive = is_fs_case_sensitive()
+        self.tag_edit_callbacks: list[Callable[[set[int]], None]] = []
+
+    def _on_tags_edited(self, tag_ids: set[int]) -> None:
+        """Call functions registered to run when one or more tags are edited."""
+        if tag_ids:
+            for callback in self.tag_edit_callbacks:
+                callback(tag_ids)
+
+    @staticmethod
+    def _tag_ids_with_colors(session: Session, colors: Iterable[TagColorGroup]) -> set[int]:
+        """The IDs of tags that use any of the given colors."""
+        tag_ids: set[int] = set()
+        for color in colors:
+            tag_ids.update(
+                session.scalars(
+                    select(Tag.id).where(
+                        and_(Tag.color_namespace == color.namespace, Tag.color_slug == color.slug)
+                    )
+                )
+            )
+        return tag_ids
 
     def close(self):
         if self.engine:
@@ -1295,6 +1316,7 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return False
+        self._on_tags_edited({tag_id})
         return True
 
     def remove_entry_field(
@@ -1475,9 +1497,12 @@ class Library:
                 session.delete(namespace_)
                 session.flush()
 
-                colors = session.scalars(
-                    select(TagColorGroup).where(TagColorGroup.namespace == namespace_.namespace)
+                colors = list(
+                    session.scalars(
+                        select(TagColorGroup).where(TagColorGroup.namespace == namespace_.namespace)
+                    )
                 )
+                edited_tag_ids = self._tag_ids_with_colors(session, colors)
                 for color in colors:
                     session.delete(color)
                     session.flush()
@@ -1488,6 +1513,7 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return None
+        self._on_tags_edited(edited_tag_ids)
 
     def add_tag(
         self,
@@ -1611,6 +1637,7 @@ class Library:
     def delete_color(self, color: TagColorGroup):
         with Session(self.engine, expire_on_commit=False) as session:
             try:
+                edited_tag_ids = self._tag_ids_with_colors(session, [color])
                 session.delete(color)
                 session.commit()
 
@@ -1618,6 +1645,7 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return None
+        self._on_tags_edited(edited_tag_ids)
 
     @staticmethod
     def save_library_backup_to_disk(library_dir: Path) -> Path:
@@ -1801,6 +1829,7 @@ class Library:
     ) -> None:
         """Edit a Tag in the Library."""
         self.add_tag(tag, parent_ids, aliases, exclusion_ids)
+        self._on_tags_edited({tag.id})
 
     def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
         """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
@@ -1814,6 +1843,7 @@ class Library:
                 )
             )
             if existing_color:
+                edited_tag_ids = self._tag_ids_with_colors(session, [old_color_group])
                 update_color_stmt = (
                     update(TagColorGroup)
                     .where(
@@ -1848,6 +1878,7 @@ class Library:
                 )
                 session.execute(update_tags_stmt)
                 session.commit()
+                self._on_tags_edited(edited_tag_ids)
                 return
 
         # "if not existing_color", out of the session context

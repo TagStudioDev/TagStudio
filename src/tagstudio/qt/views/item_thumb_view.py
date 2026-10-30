@@ -3,34 +3,21 @@
 
 
 from collections.abc import Iterable
-from typing import NamedTuple
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QBoxLayout, QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QBoxLayout, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import open_file_str, trash_term
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.controllers.badge import Badge
 from tagstudio.qt.views.styles.stylesheets import (
+    HALF_PAD,
     boxed_label_style,
-    item_thumb_check_badge_style,
     item_thumb_filename_style,
 )
-
-
-class _BadgeStyle(NamedTuple):
-    name: str
-    icon: str
-    icon_checked: str
-
-
-_BADGE_STYLES: dict[int, _BadgeStyle] = {
-    TAG_FAVORITE: _BadgeStyle("Favorite", "star_icon_empty", "star_icon_filled"),
-    TAG_ARCHIVED: _BadgeStyle("Archived", "box_icon_empty", "box_icon_filled"),
-}
+from tagstudio.qt.views.styles.tag_icons import tag_icon
 
 _ICON_SIZE = 24
 
@@ -133,26 +120,13 @@ class ItemThumbView(QVBoxLayout):
         badge_layout = QHBoxLayout()
         badge_layout.setDirection(QBoxLayout.Direction.RightToLeft)
         badge_layout.setContentsMargins(0, 0, 0, 0)
-        badge_layout.setSpacing(6)
+        badge_layout.setSpacing(HALF_PAD)
         self.badge_container.setLayout(badge_layout)
         top_layout.addWidget(self.badge_container)
 
-        rm = ResourceManager()
-        self.badges: dict[int, QCheckBox] = {}
+        self.badges: dict[int, Badge] = {}
         for tag_id in badge_tag_ids:
-            style = _BADGE_STYLES[tag_id]
-            badge = QCheckBox()
-            badge.setObjectName(f"{style.name.lower()}_badge")
-            badge.setToolTip(style.name)
-            badge.setStyleSheet(
-                item_thumb_check_badge_style(
-                    _ICON_SIZE,
-                    unwrap(rm.get_path(style.icon)),
-                    unwrap(rm.get_path(style.icon_checked)),
-                )
-            )
-            badge.setMinimumSize(_ICON_SIZE, _ICON_SIZE)
-            badge.setMaximumSize(_ICON_SIZE, _ICON_SIZE)
+            badge = Badge(unwrap(tag_icon(tag_id)))
             badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             badge.setHidden(True)
             self.badges[tag_id] = badge

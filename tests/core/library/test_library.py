@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
+from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
@@ -601,3 +601,40 @@ def test_compound_ext_search(query: str, paths: set[str]):
 
     results = lib.search_library(BrowsingState.from_search_query(query), page_size=500)
     assert {str(unwrap(lib.get_entry(entry_id)).path) for entry_id in results.ids} == paths
+
+
+def test_update_tag_reports_edited_tag(library: Library, generate_tag: Callable[..., Tag]):
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    edited: list[set[int]] = []
+    library.tag_edit_callbacks.append(edited.append)
+
+    tag.name = "yyy"
+    library.update_tag(tag)
+
+    assert edited == [{123}]
+
+
+def test_remove_tag_reports_edited_tag(library: Library, generate_tag: Callable[..., Tag]):
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    edited: list[set[int]] = []
+    library.tag_edit_callbacks.append(edited.append)
+
+    library.remove_tag(tag.id)
+
+    assert edited == [{123}]
+
+
+def test_update_color_reports_tags_using_it(library: Library, generate_tag: Callable[..., Tag]):
+    red = unwrap(library.get_tag_color("red", "tagstudio-standard"))
+    library.add_tag(generate_tag("red tag", id=123, color_slug="red"))
+    library.add_tag(generate_tag("blue tag", id=124, color_slug="blue"))
+    edited: list[set[int]] = []
+    library.tag_edit_callbacks.append(edited.append)
+
+    new_red = TagColorGroup(
+        slug=red.slug, namespace=red.namespace, name=red.name, primary="#ff0000"
+    )
+    library.update_color(red, new_red)
+
+    assert 123 in edited[0]
+    assert 124 not in edited[0]

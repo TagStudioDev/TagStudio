@@ -333,6 +333,7 @@
     "select.inverse": "Invert Selection",
     "settings.appearance": "Appearance",
     "settings.cached_thumb_resolution.label": "Cached Thumbnail Resolution",
+    "settings.circular_badges": "Circular Badges",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
     "settings.dateformat.english": "English",
     "settings.dateformat.international": "International",

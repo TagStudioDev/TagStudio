@@ -9,6 +9,7 @@ from PySide6.QtCore import QObject, Signal
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Tag
 
 logger = structlog.get_logger(__name__)
 
@@ -24,7 +25,8 @@ class EntryState(QObject):
     trigger relevant UI updates like item thumbnail badge updates.
     """
 
-    tags_changed = Signal(set)
+    entry_tags_changed = Signal(set)  # IDs of entries that have had their applied tags updated
+    tags_edited = Signal(set)  # IDs of tags that have been edited
 
     def __init__(self, library: Library) -> None:
         super().__init__()
@@ -34,6 +36,8 @@ class EntryState(QObject):
             tag_id: set() for tag_id in self._badge_tag_ids
         }
         self._badges_loaded: set[int] = set()
+        self._badge_tags: dict[int, Tag | None] = {}
+        library.tag_edit_callbacks.append(self._on_tags_edited)
 
     @property
     def badge_tag_ids(self) -> tuple[int, ...]:
@@ -58,6 +62,18 @@ class EntryState(QObject):
         for entries in self._entries_with_badge.values():
             entries.clear()
         self._badges_loaded.clear()
+        self._badge_tags.clear()
+
+    def _on_tags_edited(self, tag_ids: set[int]) -> None:
+        for tag_id in tag_ids:
+            self._badge_tags.pop(tag_id, None)
+        self.tags_edited.emit(tag_ids)
+
+    def badge_tag(self, tag_id: int) -> Tag | None:
+        """The tag a badge represents, for its name and color."""
+        if tag_id not in self._badge_tags:
+            self._badge_tags[tag_id] = self._lib.get_tag(tag_id)
+        return self._badge_tags[tag_id]
 
     def has_badge(self, entry_id: int, tag_id: int) -> bool:
         if tag_id not in self._entries_with_badge:
@@ -91,4 +107,4 @@ class EntryState(QObject):
                 self._entries_with_badge[tag_id].update(entry_ids)
             else:
                 self._entries_with_badge[tag_id].difference_update(entry_ids)
-        self.tags_changed.emit(entry_ids)
+        self.entry_tags_changed.emit(entry_ids)

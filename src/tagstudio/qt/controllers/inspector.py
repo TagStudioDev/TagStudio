@@ -91,7 +91,7 @@ class Inspector(QWidget):
         self.layout().preview_thumb.aspect_ratio_changed.connect(self._fit_preview_height)
         self.layout().preview_splitter.splitterMoved.connect(self._on_preview_splitter_moved)
 
-        self._driver.entry_state.tags_changed.connect(self._on_tags_changed)
+        self._driver.entry_state.entry_tags_changed.connect(self._on_tags_changed)
         self._driver.selection.changed.connect(self.update_from_selection)
 
     def _on_tags_changed(self, entry_ids: set[int]) -> None:

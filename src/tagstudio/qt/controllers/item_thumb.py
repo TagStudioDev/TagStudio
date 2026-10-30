@@ -273,6 +273,7 @@ class ItemThumb(QWidget):
         self.setFixedSize(size, size)
         if self._image_brush is not None:
             self._image_brush = self._scaled_image_brush(self._image_brush.texture())
+            self._set_badge_underlays()
         self._apply_filename_style()
         self.set_filename_visibility(self._show_filename_label)
         self.update()
@@ -284,6 +285,7 @@ class ItemThumb(QWidget):
         else:
             self._fade.stop()
         self._image_brush = self._scaled_image_brush(image)
+        self._set_badge_underlays()
         self.rendered_path = file_path
         self._apply_filename_style()
         self.update()
@@ -302,6 +304,7 @@ class ItemThumb(QWidget):
     def clear_image(self) -> None:
         self._fade.stop()
         self._image_brush = None
+        self._set_badge_underlays()
         self.rendered_path = None
         self._apply_filename_style()
         self.update()
@@ -315,8 +318,17 @@ class ItemThumb(QWidget):
         self.item_id = item_id
         self._item_path = None
 
+    def _set_badge_underlays(self) -> None:
+        for badge in self.layout().badges.values():
+            badge.set_underlay(self._image_brush, self)
+
+    def update_badge_tag(self, tag_id: int) -> None:
+        """Update the current name and color of a badge's tag."""
+        self.layout().badges[tag_id].set_tag(self._driver.entry_state.badge_tag(tag_id))
+
     def assign_badge(self, tag_id: int, value: bool) -> None:
         badge = self.layout().badges[tag_id]
+        self.update_badge_tag(tag_id)
         if badge.isChecked() != value:
             with QSignalBlocker(badge):
                 badge.setChecked(value)

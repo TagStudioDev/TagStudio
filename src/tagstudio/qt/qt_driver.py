@@ -293,6 +293,7 @@ class QtDriver(DriverMixin, QObject):
         self.app_style = TagStudioStyle()
         self.app.setStyle(self.app_style)
         TagShape.is_pill = self.settings.pill_shaped_tags
+        TagShape.is_circle_badge = self.settings.circular_badges
 
         # Apply theme color if explicitly set to DARK or LIGHT by the user.
         # For SYSTEM, we let Qt decide based on OS theme.

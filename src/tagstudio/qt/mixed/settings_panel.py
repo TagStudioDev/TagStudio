@@ -405,6 +405,11 @@ class SettingsPanel(ModalContent):
             Translations["settings.pill_shaped_tags"], self.pill_shaped_tags_checkbox
         )
 
+        # Circular Badges
+        self.circular_badges_checkbox = QCheckBox()
+        self.circular_badges_checkbox.setChecked(self.driver.settings.circular_badges)
+        form_layout.addRow(Translations["settings.circular_badges"], self.circular_badges_checkbox)
+
     def get_settings(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         return {
             "language": self.language_combobox.currentData(),
@@ -429,6 +434,7 @@ class SettingsPanel(ModalContent):
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
             "pill_shaped_tags": self.pill_shaped_tags_checkbox.isChecked(),
+            "circular_badges": self.circular_badges_checkbox.isChecked(),
             "tag_click_action": self.tag_click_action_combobox.currentData(),
             "edit_tag_on_create": self.edit_tag_on_create_checkbox.isChecked(),
             "edit_field_on_add": self.edit_field_on_add_checkbox.isChecked(),
@@ -458,6 +464,7 @@ class SettingsPanel(ModalContent):
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
         driver.settings.pill_shaped_tags = settings["pill_shaped_tags"]
+        driver.settings.circular_badges = settings["circular_badges"]
         driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
         driver.settings.edit_field_on_add = settings["edit_field_on_add"]
@@ -474,10 +481,13 @@ class SettingsPanel(ModalContent):
 
         # Apply changes
         TagShape.is_pill = settings["pill_shaped_tags"]
+        TagShape.is_circle_badge = settings["circular_badges"]
         # Restyle displayed tags so they take the new shape
         for widget in QApplication.allWidgets():
             if isinstance(widget, Capsule):
                 widget.restyle()
+        # Update main_window to refresh badge shape
+        driver.main_window.update()
         # Show File Path
         driver.update_recent_lib_menu()
         driver.main_window.inspector.update_from_selection()
