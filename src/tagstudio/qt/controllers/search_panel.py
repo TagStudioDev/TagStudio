@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QWidget
 
@@ -14,6 +14,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.search_panel_view import SearchPanelView
+from tagstudio.qt.views.styles.stylesheets import PAD
 
 logger = structlog.get_logger(__name__)
 
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def _item_id(item: object) -> int:
-    item_id: Any = getattr(item, "id")  # noqa: B009  # pyright: ignore[reportExplicitAny]
+    item_id: Any = getattr(item, "id")  # noqa: B009
 
     if isinstance(item_id, int):
         return item_id
@@ -32,7 +33,7 @@ def _item_id(item: object) -> int:
 
 
 def _item_name(item: object) -> str:
-    item_name: Any = getattr(item, "name")  # noqa: B009  # pyright: ignore[reportExplicitAny]
+    item_name: Any = getattr(item, "name")  # noqa: B009
 
     if isinstance(item_name, str):
         return item_name
@@ -73,12 +74,15 @@ class SearchPanel[T](ModalContent):
         self._previous_limit_index: int = self._default_limit_index
 
         self.setLayout(view)
+        scroll_bar = view.scroll_area.verticalScrollBar()
+        scroll_bar.rangeChanged.connect(self._toggle_scroll_bar)
+        self._toggle_scroll_bar(scroll_bar.minimum(), scroll_bar.maximum())
         self.set_limit_items(self._limit_items)
         self.set_limit_index(self._default_limit_index)
         self.setMinimumSize(300, 400)
         self.connect_callbacks(self)
 
-    def connect_callbacks(self, controller: SearchPanel[Any]) -> None:  # pyright: ignore[reportExplicitAny]
+    def connect_callbacks(self, controller: SearchPanel[Any]) -> None:
         self.layout().limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
         self.layout().search_field.textChanged.connect(controller.on_search_query_changed)
         self.layout().search_field.returnPressed.connect(
@@ -133,7 +137,21 @@ class SearchPanel[T](ModalContent):
         self.layout().create_and_add_button.hide()
         self._create_and_add_button_in_layout = False
 
-    def get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore[reportExplicitAny]
+    def _toggle_scroll_bar(self, minimum: int, maximum: int) -> None:
+        """Show the scroll bar when needed."""
+        view = self.layout()
+        is_overflowing = maximum > minimum
+        if view.results_layout:
+            margins = view.results_layout.contentsMargins()
+            margins.setRight(0 if is_overflowing else PAD)
+            view.results_layout.setContentsMargins(margins)
+        view.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+            if is_overflowing
+            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+
+    def get_item_widget(self, index: int, library: Library) -> Any:
         return self.get_item_widget(index, library)
 
     def on_limit_changed(self, index: int) -> None:
@@ -221,18 +239,20 @@ class SearchPanel[T](ModalContent):
             all_results = all_results[: self._get_limit()[1]]
 
         self._search_results = all_results
-        logger.info("[SearchPanel] Search results", results=self._search_results)
-
-        # Update every item widget with the new search result data
-        for i in range(max(len(all_results), self.layout().scroll_layout.count())):
-            item: T | None = all_results[i] if i < len(all_results) else None
-            self.set_item_widget(item=item, index=i)
+        logger.info("[SearchPanel] Search results", count=len(self._search_results))
+        self._update_item_widgets()
 
         self._previous_limit_index = self.get_limit_index()
 
         # Add back the "Create & Add" button
         if query and query.strip():
             self.add_create_and_add_button()
+
+    def _update_item_widgets(self) -> None:
+        """Show the search results in the item widgets."""
+        for i in range(max(len(self._search_results), self.layout().scroll_layout.count())):
+            item: T | None = self._search_results[i] if i < len(self._search_results) else None
+            self.set_item_widget(item=item, index=i)
 
     def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()

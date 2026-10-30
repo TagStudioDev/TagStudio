@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.inset_frame import InsetFrame
 from tagstudio.qt.views.styles.stylesheets import PAD, list_button_style
 
 if TYPE_CHECKING:
@@ -25,7 +26,12 @@ if TYPE_CHECKING:
 
 class SearchPanelView(QVBoxLayout):
     def __init__(
-        self, placeholder_text: str, create_text: str = "", is_chooser: bool = True
+        self,
+        placeholder_text: str,
+        create_text: str = "",
+        is_chooser: bool = True,
+        has_view_limit: bool = True,
+        is_results_debossed: bool = False,
     ) -> None:
         self.is_chooser: bool = is_chooser
         super().__init__()
@@ -39,6 +45,7 @@ class SearchPanelView(QVBoxLayout):
         self.limit_layout.addStretch(1)
         self.limit_title = QLabel(Translations["home.search.view_limit"])
         self.limit_layout.addWidget(self.limit_title)
+        self.limit_container.setHidden(not has_view_limit)
         self.addWidget(self.limit_container)
 
         # Limit dropdown
@@ -60,12 +67,23 @@ class SearchPanelView(QVBoxLayout):
         self.scroll_layout.setContentsMargins(PAD, 0, PAD, 0)
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.scroll_area = QScrollArea()
+        self.scroll_area.setStyleSheet("QScrollArea { background: transparent; }")
         self.scroll_area.setWidget(self.scroll_contents)
+        # NOTE: setWidget() turns this on
+        self.scroll_contents.setAutoFillBackground(False)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.addWidget(self.scroll_area)
+        self.results_layout: QVBoxLayout | None = None
+        if is_results_debossed:
+            results_box = InsetFrame()
+            self.results_layout = QVBoxLayout(results_box)
+            self.results_layout.setContentsMargins(PAD, PAD, 0, PAD)
+            self.results_layout.addWidget(self.scroll_area)
+            self.addWidget(results_box)
+        else:
+            self.addWidget(self.scroll_area)
 
         # Create button
         self.create_button = QPushButton(create_text)

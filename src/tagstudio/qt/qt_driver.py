@@ -151,6 +151,10 @@ class History[T]:
         self.__history.append(value)
         self.__index = len(self.__history) - 1
 
+    def can_move(self, delta: int) -> bool:
+        """Whether the history goes this far from the current value."""
+        return 0 <= self.__index + delta < len(self.__history)
+
     def move(self, delta: int) -> bool:
         """Move through the history, returning whether the current value changed."""
         index = clamp(self.__index + delta, 0, len(self.__history) - 1)
@@ -253,8 +257,9 @@ class QtDriver(DriverMixin, QObject):
 
         Translations.change_language(self.settings.language)
 
-    def __reset_navigation(self) -> None:
-        self.browsing_history = History(BrowsingState.show_all())
+    def __reset_navigation(self, state: BrowsingState | None = None) -> None:
+        """Start the browsing history over at this state, or at showing everything."""
+        self.browsing_history = History(state or BrowsingState.show_all())
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -609,6 +614,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.browsing_area.landing_page.animate_logo_in()
         self.main_window.browsing_area.pagination.setHidden(True)
         self.main_window.menu_bar.set_library_actions_enabled(False)
+        self.main_window.search_bar.set_nav_buttons_enabled(False)
         self.main_window.menu_bar.update_select_actions()
 
     def backup_library(self):
@@ -1102,6 +1108,10 @@ class QtDriver(DriverMixin, QObject):
         if state:
             self.browsing_history.push(state)
         current = self.browsing_history.current
+        self.main_window.search_bar.set_nav_buttons_enabled(True)
+        self.main_window.search_bar.set_history_available(
+            self.browsing_history.can_move(-1), self.browsing_history.can_move(1)
+        )
 
         self.main_window.search_bar.set_query(current.query or "")
 
@@ -1352,7 +1362,13 @@ class QtDriver(DriverMixin, QObject):
         assert self.lib.library_dir
         self.init_workers()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        self.__reset_navigation()
+        # Start the history at the current sort, so back doesn't lead to the default one
+        initial_state = BrowsingState(
+            page_index=0,
+            sorting_mode=self.main_window.sorting_mode,
+            ascending=self.main_window.sorting_direction,
+        )
+        self.__reset_navigation(initial_state)
 
         if self.settings.scan_files_on_open:
             self.sync_library_callback()
@@ -1386,12 +1402,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.inspector.update_from_selection()
 
         # page (re)rendering, extract eventually
-        initial_state = BrowsingState(
-            page_index=0,
-            sorting_mode=self.main_window.sorting_mode,
-            ascending=self.main_window.sorting_direction,
-        )
-        self.update_browsing_state(initial_state)
+        self.update_browsing_state()
 
         self.main_window.toggle_landing_page(enabled=False)
         self.main_window.thumb_grid.scroll_area.setFocus()

@@ -12,6 +12,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.qt.views.search_bar_view import SearchBarView
+from tagstudio.qt.views.styles.tagstudio_style import set_icon_faded
 
 
 class SearchBar(QWidget):
@@ -27,12 +28,29 @@ class SearchBar(QWidget):
         self._lib = library
         self.setLayout(SearchBarView())
         self._connect_callbacks()
+        self.set_nav_buttons_enabled(False)
 
     @override
     def layout(self) -> SearchBarView:
         layout = super().layout()
         assert isinstance(layout, SearchBarView)
         return layout
+
+    def set_nav_buttons_enabled(self, enabled: bool) -> None:
+        """Enable the back and forward navigation buttons."""
+        for button in (self.layout().back_button, self.layout().forward_button):
+            button.setEnabled(enabled)
+            set_icon_faded(button, faded=False)
+
+    def set_history_available(self, can_go_back: bool, can_go_forward: bool) -> None:
+        """Enable the back and forward buttons by whether there's history in their direction."""
+        view = self.layout()
+        for button, is_available in (
+            (view.back_button, can_go_back),
+            (view.forward_button, can_go_forward),
+        ):
+            button.setEnabled(is_available)
+            set_icon_faded(button, faded=not is_available)
 
     def set_query(self, query: str) -> None:
         self.layout().search_field.setText(query)
