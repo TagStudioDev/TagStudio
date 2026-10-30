@@ -6,7 +6,7 @@ from datetime import datetime as dt
 from enum import IntEnum
 from functools import partial
 from pathlib import Path
-from typing import override
+from typing import cast, override
 from warnings import catch_warnings
 
 import structlog
@@ -27,11 +27,12 @@ from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
+from tagstudio.qt.controllers.file_attributes import FileAttributeData
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tile_list import TileList
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.views.inspector_view import InspectorView
+from tagstudio.qt.views.styles.tagstudio_style import set_at_limit
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -169,6 +170,7 @@ class Inspector(QWidget):
 
         entry = unwrap(self._lib.get_entry(selected[0]))
         self.layout().file_attrs.update_stats(filepath, self._current_stats, entry)
+        self._lay_out_info_now()
 
     def _set_selection_callback(self) -> None:
         with catch_warnings(record=True):
@@ -248,7 +250,7 @@ class Inspector(QWidget):
                 self.layout().preview_thumb.hide_preview()
                 self._current_stats = None
                 self.layout().file_attrs.update_stats()
-                self.layout().file_attrs.update_date_label()
+                self.layout().file_attrs.update_dates()
                 self.layout().containers.hide_containers()
                 self.layout().add_tag_button.setEnabled(False)
                 self.layout().add_field_button.setEnabled(False)
@@ -272,7 +274,7 @@ class Inspector(QWidget):
                     self.layout().file_attrs.update_stats(
                         filepath, self._current_stats, entry, reserve_stat_space=True
                     )
-                self.layout().file_attrs.update_date_label(entry)
+                self.layout().file_attrs.update_dates(entry)
                 self.layout().containers.update_from_entry(entry_id)
                 self._set_selection_callback()
 
@@ -282,13 +284,23 @@ class Inspector(QWidget):
                 self.layout().preview_thumb.hide_preview()  # TODO: Render mixed selection
                 self._current_stats = None
                 self.layout().file_attrs.update_multi_selection(len(selected))
-                self.layout().file_attrs.update_date_label()
+                self.layout().file_attrs.update_dates()
                 self.layout().containers.hide_containers()  # TODO: Allow for mixed editing
                 self._set_selection_callback()
 
         except Exception as e:
             logger.error("[Inspector] Error updating selection", error=e)
+        self._lay_out_info_now()
         self._fit_preview_height()
+
+    def _lay_out_info_now(self) -> None:
+        """Lay out the file's details now."""
+        file_attrs = self.layout().file_attrs
+        # Lay out children first so no frame paints between their queued layout passes
+        for widget in [*reversed(file_attrs.findChildren(QWidget)), file_attrs]:
+            if (layout := QWidget.layout(widget)) is not None:
+                layout.activate()
+        unwrap(QWidget.layout(unwrap(file_attrs.parentWidget()))).activate()
 
     def stop_media_playback(self) -> None:
         """Stop any media playback in the inspector."""
@@ -311,13 +323,24 @@ class Inspector(QWidget):
             return
         splitter = self.layout().preview_splitter
         preview_height, info_height = splitter.sizes()
+        height = self._preview_height()
+        content_height = self._content_height()
+        if height != preview_height:
+            splitter.setSizes([height, preview_height + info_height - height])
+
+        lowest, highest = cast(tuple[int, int], splitter.getRange(1))
+        position = splitter.handle(1).y()
+        is_at_content_height = content_height is not None and height >= content_height
+        set_at_limit(splitter, position <= lowest or position >= highest or is_at_content_height)
+
+    def _preview_height(self) -> int:
+        """The preview area's height for its content."""
         height = self._preview_height_limit
         if height is None:
             height = self.layout().preview_thumb.width()
         if (content_height := self._content_height()) is not None:
             height = min(height, content_height)
-        if height != preview_height:
-            splitter.setSizes([height, preview_height + info_height - height])
+        return height
 
     def _on_preview_splitter_moved(self) -> None:
         preview_height = self.layout().preview_splitter.sizes()[0]

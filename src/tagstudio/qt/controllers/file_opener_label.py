@@ -6,50 +6,63 @@ from pathlib import Path
 from typing import override
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtGui import QEnterEvent, QFont, QMouseEvent, QResizeEvent
+from PySide6.QtWidgets import QLabel, QSizePolicy, QWidget
 
-from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
 
 logger = structlog.get_logger(__name__)
 
 
 class FileOpenerLabel(QLabel):
+    """A file's name that opens the file when clicked."""
+
     def __init__(self, parent: QWidget | None = None) -> None:
-        """Initialize the FileOpenerLabel.
-
-        Args:
-            parent (QWidget, optional): The parent widget. Defaults to None.
-        """
-        self.filepath: Path | None = None
-
         super().__init__(parent)
+        self.filepath: Path | None = None
+        self._name = ""
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        font = self.font()
+        font.setWeight(QFont.Weight.DemiBold)
+        self.setFont(font)
 
     def set_file_path(self, filepath: Path) -> None:
-        """Set the filepath to open.
-
-        Args:
-            filepath (Path): The path to the file to open.
-        """
+        """Set the file to name and open."""
         self.filepath = filepath
+        self._name = filepath.name
+        self.setToolTip(self._name)
+        self._fit_name()
+
+    def _fit_name(self) -> None:
+        self.setText(
+            self.fontMetrics().elidedText(self._name, Qt.TextElideMode.ElideMiddle, self.width())
+        )
+
+    def _set_underlined(self, underlined: bool) -> None:
+        font = self.font()
+        font.setUnderline(underlined)
+        self.setFont(font)
+
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._fit_name()
+
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self._set_underlined(underlined=True)
+        super().enterEvent(event)
+
+    @override
+    def leaveEvent(self, event: QEvent) -> None:
+        self._set_underlined(underlined=False)
+        super().leaveEvent(event)
 
     @override
     def mousePressEvent(self, ev: QMouseEvent) -> None:
-        """Handle mouse press events.
-
-        On a left click, open the file in the default file explorer.
-        On a right click, show a context menu.
-
-        Args:
-            ev (QMouseEvent): The mouse press event.
-        """
-        if ev.button() == Qt.MouseButton.LeftButton:
-            opener = FileOpenerHelper(unwrap(self.filepath))
-            opener.open_explorer()
-        elif ev.button() == Qt.MouseButton.RightButton:
-            # Show context menu
-            pass
+        if ev.button() == Qt.MouseButton.LeftButton and self.filepath is not None:
+            FileOpenerHelper(self.filepath).open_file()
         else:
             super().mousePressEvent(ev)

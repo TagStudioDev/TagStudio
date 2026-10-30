@@ -3,13 +3,12 @@
 
 # pyright: reportPrivateUsage=false, reportAttributeAccessIssue=false
 
-import os
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QTextDocument
 from PySide6.QtWidgets import QMenu, QMenuBar
 from pytestqt.qtbot import QtBot
 
@@ -47,20 +46,26 @@ def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: Sh
 
 # Tests to see if the file paths are being displayed correctly
 @pytest.mark.parametrize(
-    "filepath_option, expected_path",
+    "filepath_option, expected_folders",
     [
         (
             ShowFilepathOption.SHOW_FULL_PATHS,
-            lambda library: Path(library.library_dir / "one/two/bar.md"),
+            lambda library: [*Path(library.library_dir).parts[1:], "one", "two"],
         ),
-        (ShowFilepathOption.SHOW_RELATIVE_PATHS, lambda _: Path("one/two/bar.md")),
-        (ShowFilepathOption.SHOW_FILENAMES_ONLY, lambda _: Path("bar.md")),
+        (
+            ShowFilepathOption.SHOW_RELATIVE_PATHS,
+            lambda library: [Path(library.library_dir).name, "one", "two"],
+        ),
+        (
+            ShowFilepathOption.SHOW_FILENAMES_ONLY,
+            lambda library: [Path(library.library_dir).name, "one", "two"],
+        ),
     ],
 )
 def test_file_path_display(
     qt_driver: QtDriver,
     filepath_option: ShowFilepathOption,
-    expected_path: Callable[[Library], Path],
+    expected_folders: Callable[[Library], list[str]],
 ):
     panel = Inspector(qt_driver)
 
@@ -75,23 +80,12 @@ def test_file_path_display(
     filename = entry.path
     panel.layout().file_attrs.update_stats(filepath=unwrap(qt_driver.lib.library_dir) / filename)
 
-    # Generate the expected file string.
-    # This is copied directly from the file_attributes.py file
-    # can be imported as a function in the future
-    display_path: Path = expected_path(qt_driver.lib)
-    file_str: str = ""
-    separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
-    for i, part in enumerate(display_path.parts):
-        part_ = part.strip(os.path.sep)
-        if i != len(display_path.parts) - 1:
-            file_str += f"{'\u200b'.join(part_)}{separator}</b>"
-        else:
-            if file_str != "":
-                file_str += "<br>"
-            file_str += f"<b>{'\u200b'.join(part_)}</b>"
-
-    # Assert the file path is displayed correctly
-    assert panel.layout().file_attrs.file_label.text() == file_str
+    view = panel.layout().file_attrs.layout()
+    folder_text = QTextDocument()
+    folder_text.setHtml(view.folder_label.text())
+    folders = folder_text.toPlainText().replace("\u200b", "").split(" › ")
+    assert folders == expected_folders(qt_driver.lib)
+    assert view.name_label.toolTip() == "bar.md"
 
 
 @pytest.mark.parametrize(

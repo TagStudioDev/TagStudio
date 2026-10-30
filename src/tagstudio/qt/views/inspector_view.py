@@ -13,17 +13,18 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QSplitter, QVBoxLayout, QWidg
 from tagstudio.core.constants import FFMPEG_HELP_URL
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.field_suggest_box import FieldSuggestBox
+from tagstudio.qt.controllers.file_attributes import FileAttributes
 from tagstudio.qt.controllers.preview_thumb import PreviewThumb
 from tagstudio.qt.controllers.return_button import ReturnButton
 from tagstudio.qt.controllers.tag_suggest_box import TagSuggestBox
 from tagstudio.qt.controllers.tiles.tile_list import TileList
-from tagstudio.qt.mixed.file_attributes import FileAttributes
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import (
     HALF_PAD,
+    MED_HEIGHT,
     PAD,
+    RADIUS,
     WIN_PAD,
-    button_style,
     preview_warning_style,
 )
 
@@ -36,19 +37,19 @@ logger = structlog.get_logger(__name__)
 class InspectorView(QVBoxLayout):
     def __init__(self, driver: QtDriver, pixel_ratio: float) -> None:
         super().__init__()
-        self.setContentsMargins(0, 0, WIN_PAD, WIN_PAD)
+        self.setContentsMargins(0, 0, 0, WIN_PAD)
         self.setSpacing(PAD)
         rm = ResourceManager()
 
         # Search/Create Boxes
-        def ph_text(key: str) -> str:
+        def placeholder_text(key: str) -> str:
             return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
 
         self.field_search_box = FieldSuggestBox(
-            driver.lib, driver.settings, ph_text("home.search_or_create_fields")
+            driver.lib, driver.settings, placeholder_text("home.search_or_create_fields")
         )
         self.tag_search_box = TagSuggestBox(
-            driver.lib, driver.settings, ph_text("home.search_or_create_tags")
+            driver.lib, driver.settings, placeholder_text("home.search_or_create_tags")
         )
 
         self.preview_thumb = PreviewThumb(driver)
@@ -96,7 +97,7 @@ class InspectorView(QVBoxLayout):
 
         self.preview_splitter = QSplitter()
         self.preview_splitter.setOrientation(Qt.Orientation.Vertical)
-        self.preview_splitter.setHandleWidth(PAD * 2)
+        self.preview_splitter.setHandleWidth(PAD)
 
         # Add Tag/Field Buttons
         add_buttons_container = QWidget()
@@ -105,16 +106,16 @@ class InspectorView(QVBoxLayout):
         add_buttons_layout.setSpacing(PAD)
 
         self.add_tag_button = ReturnButton(Translations["tag.add"])
+        self.add_tag_button.setProperty("radius", RADIUS)
         self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.add_tag_button.setMinimumHeight(30)
-        self.add_tag_button.setStyleSheet(button_style())
+        self.add_tag_button.setMinimumHeight(MED_HEIGHT)
 
         self.add_field_button = ReturnButton(Translations["field.add"])
+        self.add_field_button.setProperty("radius", RADIUS)
         self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.add_field_button.setMinimumHeight(30)
-        self.add_field_button.setStyleSheet(button_style())
+        self.add_field_button.setMinimumHeight(MED_HEIGHT)
 
         add_buttons_layout.addWidget(self.add_tag_button)
         add_buttons_layout.addWidget(self.add_field_button)
@@ -129,6 +130,8 @@ class InspectorView(QVBoxLayout):
 
         self.preview_splitter.addWidget(self.preview_section)
         self.preview_splitter.addWidget(info_section)
+        for index in range(self.preview_splitter.count()):
+            self.preview_splitter.setCollapsible(index, False)  # noqa: FBT003
         self.preview_splitter.setStretchFactor(1, 2)
 
         self.addWidget(self.preview_splitter)

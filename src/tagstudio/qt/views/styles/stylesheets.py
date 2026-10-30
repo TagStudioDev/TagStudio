@@ -351,10 +351,13 @@ def banner_progress_style() -> str:
     """
 
 
-def boxed_label_style(is_large: bool = False) -> str:
-    """Style used for boxed text labels, like file extensions and durations on item thumbnails."""
+def boxed_label_style(is_large: bool = False, color: UiColor | None = None) -> str:
+    """Style used for boxed text labels, like file extensions and durations on item thumbnails.
+
+    With a color it's styled as a clickable QPushButton, like a file's Ignored and Unlinked labels.
+    """
     font_size = 18 if is_large else 12
-    return (
+    style = (
         "background-color: rgba(0, 0, 0, 192);"
         "color: #FFFFFF;"
         "font-family: Oxanium;"
@@ -366,6 +369,25 @@ def boxed_label_style(is_large: bool = False) -> str:
         "padding-bottom: 1px;"
         "padding-left: 1px;"
     )
+    if color is None:
+        return style
+    dark_accent = QColor(get_ui_color(ColorType.DARK_ACCENT, color))
+    return f"""
+    QPushButton{{
+        {style}
+        color: {get_ui_color(ColorType.PRIMARY, color)};
+        border: none;
+        padding-left: 4px;
+        padding-right: 4px;
+    }}
+    QPushButton:hover{{
+        background-color: {dark_accent.darker(150).name()};
+    }}
+    QPushButton:pressed{{
+        background-color: {dark_accent.lighter(150).name()};
+        color: #FFFFFF;
+    }}
+    """
 
 
 def icon_button_style() -> str:
@@ -551,44 +573,6 @@ def get_tag_text_color(primary_color: QColor, highlight_color: QColor) -> QColor
         return highlight_color
 
 
-def button_style() -> str:
-    """Style used for common QPushButtons."""
-    return f"""
-    QPushButton{{
-        background-color: {ThemePalette.COLOR_BG.value};
-        border-radius: {RADIUS}px;
-        font-weight: 500;
-        text-align: center;
-        padding: 0px 12px;
-    }}
-    QPushButton::hover{{
-        background-color: {ThemePalette.COLOR_HOVER.value};
-        border-style: solid;
-        border-width: 2px;
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        padding: 0px 8px;
-    }}
-    QPushButton::pressed{{
-        outline: none;
-        background-color: palette(light);
-        border-style: solid;
-        border-width: 2px;
-        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
-        padding: 0px 8px;
-    }}
-    QPushButton::focus{{
-        outline: none;
-        border: solid;
-        border-width: 2px;
-        border-color: rgba{Palette.accent().toTuple()};
-        padding: 0px 8px;
-    }}
-    QPushButton::disabled{{
-        background-color: {ThemePalette.COLOR_DISABLED_BG.value};
-    }}
-"""
-
-
 def checkbox_style() -> str:
     """Style used for common QCheckBoxes."""
     return colored_checkbox_style(*tag_colors(None))
@@ -678,28 +662,6 @@ def line_edit_style() -> str:
     return f"""
     border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)};
     border-radius: 2px
-    """
-
-
-def properties_style() -> str:
-    """Style used for small labels such as file properties."""
-    label_bg_color = (
-        ThemePalette.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_DARK_LABEL.value
-    )
-
-    return f"""
-    background-color: {label_bg_color};
-    color: #FFFFFF;
-    font-family: Oxanium;
-    font-weight: bold;
-    font-size: 12px;
-    border-radius: {INNER_RADIUS}px;
-    padding-top: 4px;
-    padding-right: 1px;
-    padding-bottom: 1px;
-    padding-left: 1px;
     """
 
 

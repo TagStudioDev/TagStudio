@@ -30,7 +30,7 @@ from tagstudio.previews.media_probe import (
     has_audio_stream,
     is_readable_video,
 )
-from tagstudio.qt.mixed.file_attributes import FileAttributeData
+from tagstudio.qt.controllers.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.qt_file_renderer import QtFileRenderer, paint_fallback_icon_border
 from tagstudio.qt.utils.file_opener import open_file
