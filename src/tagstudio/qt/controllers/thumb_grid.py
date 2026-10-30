@@ -571,7 +571,12 @@ class ThumbGrid(QWidget):
         self._renders = {path: image for path, image in self._renders.items() if image is not None}
 
     def _on_rendered(
-        self, timestamp: float, image: QPixmap, file_path: Path, _border_color: QColor | None
+        self,
+        timestamp: float,
+        image: QPixmap,
+        file_path: Path,
+        _border_color: QColor | None,
+        _is_loading: bool,
     ) -> None:
         if timestamp < self._render_cutoff:
             return

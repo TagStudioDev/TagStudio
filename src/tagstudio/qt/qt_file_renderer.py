@@ -78,7 +78,7 @@ def _icon(name: str, color: UiColor, theme: Theme, side: int, pixel_ratio: float
     glyph = glyph.convertToFormat(QImage.Format.Format_ARGB32_Premultiplied)
     painter = QPainter(glyph)
     painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-    painter.fillRect(glyph.rect(), QColor(foreground))
+    painter.fillRect(glyph.rect(), foreground)
     painter.end()
 
     image = QImage(side, side, QImage.Format.Format_ARGB32_Premultiplied)
@@ -103,7 +103,8 @@ def _with_corner_icon(image: QImage, name: str) -> QImage:
 class QtFileRenderer(QObject):
     """A Qt-specific wrapper for rendering image previews and thumbnails from files."""
 
-    updated = Signal(float, QPixmap, Path, object)  # Timestamp, image, path, border color
+    # Timestamp, image, path, border color, and whether the image is the loading graphic
+    updated = Signal(float, QPixmap, Path, object, bool)
 
     def __init__(self, library: Library, settings: AppSettings) -> None:
         super().__init__()
@@ -128,33 +129,15 @@ class QtFileRenderer(QObject):
         pixmap.setDevicePixelRatio(pixel_ratio)
         return pixmap
 
-    def _placeholder(
-        self,
-        cache: CacheManager | None,
-        filepath: Path,
-        side: int,
-        pixel_ratio: float,
-        date_modified: float | None,
-    ) -> QImage | None:
-        """What to show while a file's preview renders, or `None` if it won't render."""
-        renderer = FileRenderer.find_renderer(filepath)
-        if (
-            renderer is None
-            or not filepath.is_file()
-            or FileRenderer.previously_failed(filepath, self.theme, date_modified, is_small=False)
-        ):
-            return None
-        cached = FileRenderer.cached_thumbnail(
-            cache, filepath, self.theme, date_modified, is_small=False
+    def _will_render(self, filepath: Path, date_modified: float | None) -> bool:
+        """Whether a file's preview is expected to render, so a placeholder should show."""
+        return (
+            FileRenderer.find_renderer(filepath) is not None
+            and filepath.is_file()
+            and not FileRenderer.previously_failed(
+                filepath, self.theme, date_modified, is_small=False
+            )
         )
-        if cached is not None:
-            return ImageQt.ImageQt(cached)
-        if renderer.has_small_variant:
-            # The thumbnail looks different, so stay blank until the preview renders
-            blank = QImage(side, side, QImage.Format.Format_ARGB32_Premultiplied)
-            blank.fill(Qt.GlobalColor.transparent)
-            return blank
-        return _icon("thumb_loading", self._theme_color, self.theme, side, pixel_ratio)
 
     def render(
         self,
@@ -182,8 +165,16 @@ class QtFileRenderer(QObject):
             )
 
         image = None if result.image is None else ImageQt.ImageQt(result.image)
-        if is_placeholder:
-            image = self._placeholder(cache, filepath, side, pixel_ratio, date_modified)
+        is_loading = False
+        if is_placeholder and self._will_render(filepath, date_modified):
+            cached = FileRenderer.cached_thumbnail(
+                cache, filepath, self.theme, date_modified, is_small=False
+            )
+            if cached is not None:
+                image = ImageQt.ImageQt(cached)
+            else:
+                image = _icon("thumb_loading", self._theme_color, self.theme, side, pixel_ratio)
+                is_loading = True
 
         border_color = None
         if image is None:
@@ -214,4 +205,4 @@ class QtFileRenderer(QObject):
             image = _with_corner_icon(image, "ignored")
         pixmap = QPixmap.fromImage(image)
         pixmap.setDevicePixelRatio(pixel_ratio)
-        self.updated.emit(timestamp, pixmap, filepath, border_color)
+        self.updated.emit(timestamp, pixmap, filepath, border_color, is_loading)

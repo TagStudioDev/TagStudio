@@ -83,6 +83,7 @@ class PreviewThumb(QWidget):
         self._should_render_on_resize: bool = False
         self._source_pixmap: QPixmap = QPixmap()
         self._border_color: QColor | None = None
+        self._is_loading = False
 
         self.setMinimumSize(*self._preview_size)
         self.setLayout(PreviewThumbView(driver))
@@ -176,14 +177,21 @@ class PreviewThumb(QWidget):
             self._display_image(filepath, is_new_file=False)
 
     def _file_renderer_updated_callback(
-        self, timestamp: float, img: QPixmap, path: Path, border_color: QColor | None
+        self,
+        timestamp: float,
+        img: QPixmap,
+        path: Path,
+        border_color: QColor | None,
+        is_loading: bool,
     ) -> None:
         if path != self._current_file or timestamp < self._render_timestamp:
             return
 
         self._source_pixmap = img
         self._border_color = border_color
-        self._set_image_ratio(img.width() / img.height())
+        self._is_loading = is_loading
+        if not is_loading:
+            self._set_image_ratio(img.width() / img.height())
         self._update_image_size((self.size().width(), self.size().height()), refresh_icon=True)
 
     def _set_image_ratio(self, ratio: float) -> None:
@@ -198,6 +206,9 @@ class PreviewThumb(QWidget):
             return
 
         ratio = self.devicePixelRatio()
+        if self._is_loading:
+            button.setIcon(self._centered_loading_icon(button.iconSize(), ratio))
+            return
         scaled = self._source_pixmap.scaled(
             button.iconSize() * ratio,
             Qt.AspectRatioMode.IgnoreAspectRatio,
@@ -216,6 +227,26 @@ class PreviewThumb(QWidget):
         painter.end()
         pixmap.setDevicePixelRatio(ratio)
         button.setIcon(pixmap)
+
+    def _centered_loading_icon(self, size: QSize, ratio: float) -> QPixmap:
+        """The loading graphic as a square in the middle of the preview area."""
+        pixmap = QPixmap(size * ratio)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        side = min(pixmap.width(), pixmap.height())
+        icon = self._source_pixmap.scaled(
+            side,
+            side,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        icon.setDevicePixelRatio(1)
+        painter = QPainter(pixmap)
+        painter.drawPixmap(
+            (pixmap.width() - icon.width()) // 2, (pixmap.height() - icon.height()) // 2, icon
+        )
+        painter.end()
+        pixmap.setDevicePixelRatio(ratio)
+        return pixmap
 
     def _update_image_size(self, size: tuple[int, int], refresh_icon: bool = False) -> None:
         view = self.layout()
@@ -319,7 +350,6 @@ class PreviewThumb(QWidget):
 
         If a file is already known to not be renderable, it'll display the default icon for it
         right away instead of a loading graphic.
-        Some filetypes shouldn't display a loading graphic ever, like fonts.
         """
         side = min(self.width(), self.height())
         self._file_renderer.render(
