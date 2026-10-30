@@ -5,7 +5,6 @@
 # pyright: reportOptionalMemberAccess=false
 
 from collections.abc import Callable
-from typing import cast
 
 from PySide6.QtWidgets import QCheckBox
 from pytestqt.qtbot import QtBot
@@ -574,22 +573,13 @@ def test_edit_tag_panel_remove_category_inherited_directly_and_indirectly(
 
 
 def _find_category_capsule(panel: EditTagPanel, index: int = 0) -> Capsule | None:
-    item = panel.layout().category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
-    while item is not None:
-        if isinstance(item.widget(), Capsule):
-            break
-        item = item.widget().layout().itemAt(0)
-
-    if item is not None:
-        return cast(Capsule, item.widget())
-    return None
+    row = panel.layout().category_scroll_layout.itemAt(0).widget().layout().itemAt(index)
+    if row is None:
+        return None
+    return row.widget().findChild(Capsule)
 
 
 def _find_include_checkbox(capsule: Capsule) -> QCheckBox:
-    layout_item = capsule.parentWidget().layout().itemAt(1)
-    assert layout_item is not None
-
-    widget = layout_item.widget()
-    assert isinstance(widget, QCheckBox)
-
-    return widget
+    checkbox = capsule.parentWidget().findChild(QCheckBox)
+    assert checkbox is not None
+    return checkbox

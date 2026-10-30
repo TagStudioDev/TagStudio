@@ -4,13 +4,14 @@
 
 from typing import override
 
-from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QVariantAnimation
+from PySide6.QtCore import QEvent, QObject, QPoint, QRect, QRectF, Qt, QVariantAnimation
 from PySide6.QtGui import (
     QColor,
     QEnterEvent,
     QKeyEvent,
     QMouseEvent,
     QPainter,
+    QPainterPath,
     QPaintEvent,
     QPixmap,
 )
@@ -19,19 +20,23 @@ from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
-    QLayout,
+    QGraphicsOpacityEffect,
+    QVBoxLayout,
+    QWidget,
 )
 
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.views.info_popovers.info_popover_view import InfoPopoverView
 from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.views.styles.stylesheets import info_popover_style
+from tagstudio.qt.views.styles.stylesheets import RADIUS, WIN_PAD
+from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects, fill_path
 
 
 class _FadingPopoverEffect(QGraphicsDropShadowEffect):
-    """Effect to fade the entire popover, including the drop shadow."""
+    """Effect to fade the popover's drop shadow."""
 
     def __init__(self, parent: QObject) -> None:
         super().__init__(parent)
@@ -40,7 +45,44 @@ class _FadingPopoverEffect(QGraphicsDropShadowEffect):
     @override
     def draw(self, painter: QPainter) -> None:
         painter.setOpacity(self.opacity)
+        # NOTE: Clip out the shadow's source or it darkens the fading popover
+        popover = QPainterPath()
+        popover.addRoundedRect(QRectF(self.sourceBoundingRect()), RADIUS, RADIUS)
+        outside = QPainterPath()
+        outside.addRect(self.boundingRect())
+        painter.setClipPath(outside.subtracted(popover))
         super().draw(painter)
+
+
+class _PopoverShadow(QWidget):
+    """A popover-sized shape that casts the popover's shadow."""
+
+    @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(Qt.GlobalColor.black)
+        painter.drawRoundedRect(QRectF(self.rect()), RADIUS, RADIUS)
+
+
+class _Popover(QFrame):
+    """A popover with the window's background."""
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.opacity: float = 0.0
+        self._effect = WidgetEffects()
+
+    @override
+    def paintEvent(self, arg__1: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self._effect.paint_window_background(
+            painter, fill_path(self.rect(), RADIUS), self.window(), self.opacity
+        )
+        painter.setOpacity(self.opacity)
+        self._effect.paint_outlines(painter, self.rect(), RADIUS, style=SurfaceStyle.EMBOSSED)
 
 
 class InfoButton(QAbstractButton):
@@ -52,7 +94,7 @@ class InfoButton(QAbstractButton):
     _SHADOW_ALPHA = 160
     _WINDOW_MARGIN = 12
 
-    def __init__(self, content: QLayout, title: str, popover_width: int = 360) -> None:
+    def __init__(self, content: InfoPopoverView, title: str, popover_width: int = 360) -> None:
         super().__init__()
         self.setToolTip(Translations.format("info.tooltip.about", title=title))
         self.setAccessibleName(self.toolTip())
@@ -60,18 +102,29 @@ class InfoButton(QAbstractButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self._popover = QFrame(self)
+        self._popover = _Popover(self)
         self._popover.setObjectName("info_popover")
         self._popover.setFixedWidth(popover_width)
-        self._popover.setStyleSheet(info_popover_style())
-        self._popover.setLayout(content)
         self._popover.hide()
+        # The popover can't have an effect itself, since effects draw it separately from the
+        # widgets it needs to erase. The content and shadow fade with their own effects instead.
+        self._content = content
+        content_widget = QWidget()
+        content_widget.setLayout(content)
+        self._content_effect = QGraphicsOpacityEffect(content_widget)
+        self._content_effect.setOpacity(0.0)
+        content_widget.setGraphicsEffect(self._content_effect)
+        popover_layout = QVBoxLayout(self._popover)
+        popover_layout.setContentsMargins(WIN_PAD, WIN_PAD, WIN_PAD, WIN_PAD)
+        popover_layout.addWidget(content_widget)
 
-        self._fade_effect = _FadingPopoverEffect(self._popover)
+        self._shadow = _PopoverShadow(self)
+        self._shadow.hide()
+        self._fade_effect = _FadingPopoverEffect(self._shadow)
         self._fade_effect.setBlurRadius(48)
         self._fade_effect.setOffset(0, 3)
         self._fade_effect.setColor(QColor(0, 0, 0, self._SHADOW_ALPHA))
-        self._popover.setGraphicsEffect(self._fade_effect)
+        self._shadow.setGraphicsEffect(self._fade_effect)
 
         self._is_open = False
         self._update_icon(hovered=False)
@@ -92,6 +145,7 @@ class InfoButton(QAbstractButton):
         window = self.window()
         if self._popover.parent() is not window:
             self._popover.setParent(window)
+            self._shadow.setParent(window)
         width = self._popover.width()
         height = self._popover.heightForWidth(width)
         self._popover.resize(width, height)
@@ -104,7 +158,10 @@ class InfoButton(QAbstractButton):
         pos.setY(max(self._WINDOW_MARGIN, pos.y()))
 
         self._popover.move(pos)
+        self._shadow.setGeometry(self._popover.geometry())
         self._popover.raise_()
+        self._shadow.stackUnder(self._popover)
+        self._shadow.show()
         self._popover.show()
         self._is_open = True
         self._update_icon(self.underMouse())
@@ -128,10 +185,14 @@ class InfoButton(QAbstractButton):
         # This cubes the opacity to use for the shadow alpha so it's faint until near the end.
         self._fade_effect.setColor(QColor(0, 0, 0, round(self._SHADOW_ALPHA * opacity**3)))
         self._fade_effect.update()
+        self._content_effect.setOpacity(opacity)
+        self._popover.opacity = opacity
+        self._popover.update()
 
     def _on_fade_finished(self) -> None:
         if not self._is_open:
             self._popover.hide()
+            self._shadow.hide()
 
     def _update_icon(self, hovered: bool) -> None:
         rm = ResourceManager()

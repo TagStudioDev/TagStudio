@@ -51,6 +51,14 @@
         "mode": "pil",
         "path": "qt/images/bxs-right-arrow.png"
     },
+    "card_text": {
+        "mode": "rb",
+        "path": "qt/images/card-text.svg"
+    },
+    "card_text_outline": {
+        "mode": "rb",
+        "path": "qt/images/card-text-outline.svg"
+    },
     "chevron_down": {
         "mode": "rb",
         "path": "qt/images/bxs-chevron-down.svg"
@@ -78,6 +86,14 @@
     "edit": {
         "mode": "pil",
         "path": "qt/images/bxs-pencil-solid.png"
+    },
+    "eye": {
+        "mode": "rb",
+        "path": "qt/images/eye.svg"
+    },
+    "eye_closed": {
+        "mode": "rb",
+        "path": "qt/images/eye-off-outline.svg"
     },
     "favorite_icon": {
         "mode": "rb",

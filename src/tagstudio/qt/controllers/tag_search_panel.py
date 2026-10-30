@@ -71,12 +71,7 @@ class TagSearchPanel(SearchPanel[Tag]):
     @override
     def on_item_edit(self, item: Tag) -> None:
         panel = edit_tag_panel.EditTagPanel(self._lib, tag=item)
-        modal: Modal = Modal(
-            panel,
-            self._lib.tag_display_name(item),
-            Translations["tag.edit"],
-            is_savable=True,
-        )
+        modal: Modal = Modal(panel, Translations["tag.edit"], is_savable=True, inline_title=False)
         modal.saved.connect(lambda: self.edit_item(panel))
         modal.show()
 

@@ -4,12 +4,12 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
-    QLayout,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -22,15 +22,25 @@ from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.info_button import InfoButton
 from tagstudio.qt.views.info_popovers.categories_info_view import CategoriesInfoView
+from tagstudio.qt.views.info_popovers.info_popover_view import InfoPopoverView
 from tagstudio.qt.views.info_popovers.parent_tags_info_view import ParentTagsInfoView
-from tagstudio.qt.views.styles.stylesheets import checkbox_style, header
+from tagstudio.qt.views.styles.stylesheets import (
+    CHECKBOX_SIZE,
+    MED_HEIGHT,
+    PAD,
+    header,
+)
 
 
-class EditTagPanelView(QHBoxLayout):
+class EditTagPanelView(QVBoxLayout):
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(6, 0, 6, 0)
-        self.setSpacing(6)
+        self.setContentsMargins(PAD, 0, PAD, 0)
+        self.setSpacing(PAD * 2)
+
+        # Tag Preview ----------------------------------------------------------
+        self.preview_capsule = Capsule(is_tag=True)
+        self.preview_capsule.setEnabled(False)
 
         # Name -----------------------------------------------------------------
         name_widget = QWidget()
@@ -40,7 +50,7 @@ class EditTagPanelView(QHBoxLayout):
         name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         name_layout.addWidget(QLabel(Translations["tag.name"]))
         self.name_field = QLineEdit()
-        self.name_field.setFixedHeight(24)
+        self.name_field.setFixedHeight(MED_HEIGHT)
         self.name_field.setPlaceholderText(Translations["tag.tag_name_required"])
         name_layout.addWidget(self.name_field)
 
@@ -52,6 +62,7 @@ class EditTagPanelView(QHBoxLayout):
         shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         shorthand_layout.addWidget(QLabel(Translations["tag.shorthand"]))
         self.shorthand_field = QLineEdit()
+        self.shorthand_field.setFixedHeight(MED_HEIGHT)
         shorthand_layout.addWidget(self.shorthand_field)
 
         # Aliases --------------------------------------------------------------
@@ -61,9 +72,12 @@ class EditTagPanelView(QHBoxLayout):
         self.aliases_table.horizontalHeader().setVisible(False)
         self.aliases_table.verticalHeader().setVisible(False)
         self.aliases_table.horizontalHeader().setStretchLastSection(True)
-        self.aliases_table.setColumnWidth(0, 32)
+        self.aliases_table.setColumnWidth(0, MED_HEIGHT)
         self.aliases_table.setTabKeyNavigation(False)
         self.aliases_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # Hide the focused row's highlight
+        self.aliases_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.aliases_table.setStyleSheet("QTableWidget { background: transparent; }")
 
         self.aliases_add_button = QPushButton("+")
 
@@ -79,7 +93,7 @@ class EditTagPanelView(QHBoxLayout):
 
         parent_tags_scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(parent_tags_scroll_contents)
-        self.parent_tags_scroll_layout.setContentsMargins(6, 6, 6, 0)
+        self.parent_tags_scroll_layout.setContentsMargins(PAD, PAD, PAD, 0)
         self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         parent_tags_layout.addWidget(self._scroll_area(parent_tags_scroll_contents))
 
@@ -100,7 +114,7 @@ class EditTagPanelView(QHBoxLayout):
 
         category_scroll_contents = QWidget()
         self.category_scroll_layout = QVBoxLayout(category_scroll_contents)
-        self.category_scroll_layout.setContentsMargins(6, 6, 6, 0)
+        self.category_scroll_layout.setContentsMargins(PAD, PAD, PAD, 0)
         self.category_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         category_layout.addWidget(self._scroll_area(category_scroll_contents))
 
@@ -108,7 +122,7 @@ class EditTagPanelView(QHBoxLayout):
         color_widget = QWidget()
         color_layout = QVBoxLayout(color_widget)
         color_layout.setContentsMargins(0, 0, 0, 6)
-        color_layout.setSpacing(6)
+        color_layout.setSpacing(PAD)
         color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         color_layout.addWidget(QLabel(header(Translations["tag.color"], 3)))
         self.color_button = Capsule()
@@ -150,9 +164,14 @@ class EditTagPanelView(QHBoxLayout):
         self._add_spaced_separator(right_layout)
         right_layout.addWidget(category_widget, stretch=1)
 
-        self.addWidget(left_widget, stretch=1)
-        self.addWidget(self._separator(QFrame.Shape.VLine))
-        self.addWidget(right_widget, stretch=1)
+        columns_layout = QHBoxLayout()
+        columns_layout.setSpacing(PAD)
+        columns_layout.addWidget(left_widget, stretch=1)
+        columns_layout.addWidget(self._separator(QFrame.Shape.VLine))
+        columns_layout.addWidget(right_widget, stretch=1)
+
+        self.addWidget(self.preview_capsule, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.addLayout(columns_layout, stretch=1)
 
     def _scroll_area(self, contents: QWidget) -> QScrollArea:
         scroll_area = QScrollArea()
@@ -160,10 +179,13 @@ class EditTagPanelView(QHBoxLayout):
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setStyleSheet("QScrollArea { background: transparent; }")
         scroll_area.setWidget(contents)
+        # NOTE: setWidget() turns this on
+        contents.setAutoFillBackground(False)
         return scroll_area
 
-    def _title_row(self, title: str, info: QLayout) -> QWidget:
+    def _title_row(self, title: str, info: InfoPopoverView) -> QWidget:
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -184,10 +206,9 @@ class EditTagPanelView(QHBoxLayout):
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(PAD)
         layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        checkbox.setFixedSize(22, 22)
-        checkbox.setStyleSheet(checkbox_style())
+        checkbox.setFixedSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
         layout.addWidget(checkbox)
         layout.addWidget(QLabel(title))
         return widget
@@ -202,6 +223,6 @@ class EditTagPanelView(QHBoxLayout):
         return sep
 
     def _add_spaced_separator(self, layout: QVBoxLayout) -> None:
-        layout.addSpacing(6)
+        layout.addSpacing(PAD)
         layout.addWidget(self._separator(QFrame.Shape.HLine))
-        layout.addSpacing(6)
+        layout.addSpacing(PAD)

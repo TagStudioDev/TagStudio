@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QPushButton,
-    QRadioButton,
     QVBoxLayout,
     QWidget,
 )
@@ -26,20 +25,27 @@ from tagstudio.core.library.alchemy.models import Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers import tag_search_panel  # Module import due to circular import
+from tagstudio.qt.controllers.badge import Badge
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.edit_tag_panel_view import EditTagPanelView
 from tagstudio.qt.views.search_panel_view import SearchPanelView
-from tagstudio.qt.views.styles.stylesheets import (
-    colored_checkbox_style,
-    colored_radio_button_style,
-    line_edit_style,
-    tag_colors,
-)
+from tagstudio.qt.views.styles.stylesheets import RADIUS
+from tagstudio.qt.views.styles.tag_icons import tag_icon
+from tagstudio.qt.views.styles.tagstudio_style import set_invalid
 
 logger = structlog.get_logger(__name__)
+
+
+def _match_capsule_widths(section: QWidget) -> None:
+    """Widen every capsule in the section to the widest one."""
+    capsules = section.findChildren(Capsule)
+    width = max((capsule.sizeHint().width() for capsule in capsules), default=0)
+    for capsule in capsules:
+        capsule.setFixedWidth(width)
 
 
 class CustomTableItem(QLineEdit):
@@ -74,7 +80,7 @@ class EditTagPanel(ModalContent):
         self.tag: Tag  # NOTE: This gets set at the end of the init.
         self._color_namespace: str | None
         self._color_slug: str | None
-        self._disambiguation_id: int | None
+        self._disambiguation_id: int | None = None
         self.parent_ids: set[int] = set()
         self.exclusion_ids: set[int] = set()
         self.aliases: list[TagAlias] = []
@@ -152,6 +158,8 @@ class EditTagPanel(ModalContent):
 
     def _remove_parent_tag_callback(self, tag_id: int):
         self.parent_ids.remove(tag_id)
+        if tag_id == self._disambiguation_id:
+            self._disambiguation_id = None
         self._set_parent_tags()
         self._set_categories(removed_parent=True)
 
@@ -177,9 +185,11 @@ class EditTagPanel(ModalContent):
         else:
             self._color_namespace = None
             self._color_slug = None
-        self._set_color_button(tag_color_group)
+        self._show_color(tag_color_group)
 
-    def _set_color_button(self, color_group: TagColorGroup | None) -> None:
+    def _show_color(self, color_group: TagColorGroup | None) -> None:
+        """Show a color on the color button and the tag preview."""
+        self.layout().preview_capsule.set_color_group(color_group)
         color_button = self.layout().color_button
         color_button.set_color_group(color_group)
         color_button.set_text(
@@ -191,12 +201,7 @@ class EditTagPanel(ModalContent):
     def _edit_tag(self, tag: Tag, on_saved: Callable[[], None]) -> None:
         """Open a nested modal to edit another tag, such as a parent or category."""
         panel = EditTagPanel(self._lib, tag=tag)
-        edit_modal = Modal(
-            panel,
-            self._lib.tag_display_name(tag),
-            Translations["tag.edit"],
-            is_savable=True,
-        )
+        edit_modal = Modal(panel, Translations["tag.edit"], is_savable=True, inline_title=False)
 
         def update_tag():
             self._lib.update_tag(
@@ -257,9 +262,10 @@ class EditTagPanel(ModalContent):
                 last_tab, next_tab, row = self._build_category_row_widget(tag)
                 layout.addWidget(row)
                 self.setTabOrder(last_tab, next_tab)
+        _match_capsule_widths(container)
         category_scroll_layout.addWidget(container)
 
-    def _build_category_row_widget(self, category: Tag) -> tuple[QPushButton, QCheckBox, QWidget]:
+    def _build_category_row_widget(self, category: Tag) -> tuple[QCheckBox, QPushButton, QWidget]:
         container = QWidget()
         row = QHBoxLayout(container)
         row.setContentsMargins(0, 0, 0, 0)
@@ -271,19 +277,12 @@ class EditTagPanel(ModalContent):
             else:
                 self.exclusion_ids.add(category_tag.id)
 
-        # Add Tag Capsule
-        capsule = Capsule(has_edit=True)
-        capsule.set_edit_enabled(category != self.tag)  # Disable edit menu if it's THIS tag
-        capsule.set_text(self._lib.tag_display_name(category))
-        capsule.set_color_group(category.color)
-        capsule.on_edit.connect(partial(self._edit_tag, category, self._set_categories))
-        row.addWidget(capsule)
-
         # Add Category Exclusion Tag Button
-        include_checkbox = QCheckBox()
-        include_checkbox.setFixedSize(22, 22)
+        include_checkbox = Badge(
+            ResourceManager().eye, is_circular=False, unchecked_icon=ResourceManager().eye_closed
+        )
         include_checkbox.setToolTip(Translations["tag.categories.tooltip"])
-        include_checkbox.setStyleSheet(colored_checkbox_style(*tag_colors(category.color)))
+        include_checkbox.set_color_group(category.color)
 
         if category.id not in self.exclusion_ids:
             include_checkbox.setChecked(True)
@@ -291,7 +290,17 @@ class EditTagPanel(ModalContent):
 
         row.addWidget(include_checkbox)
 
-        return capsule.layout().button, include_checkbox, container
+        # Add Tag Capsule
+        capsule = Capsule(has_edit=True, is_tag=True)
+        capsule.set_edit_enabled(category != self.tag)  # Disable edit menu if it's THIS tag
+        capsule.set_text(self._lib.tag_display_name(category))
+        capsule.set_color_group(category.color)
+        capsule.set_icon(tag_icon(category.id))
+        capsule.on_edit.connect(partial(self._edit_tag, category, self._set_categories))
+        row.addWidget(capsule)
+        row.addStretch()
+
+        return include_checkbox, capsule.layout().button, container
 
     def _set_parent_tags(self):
         view = self.layout()
@@ -317,7 +326,9 @@ class EditTagPanel(ModalContent):
             self.setTabOrder(last_tab, next_tab)
 
         self.setTabOrder(next_tab, view.name_field)
+        _match_capsule_widths(c)
         view.parent_tags_scroll_layout.addWidget(c)
+        self._set_preview_text()
 
     def _build_parent_row_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
         container = QWidget()
@@ -325,21 +336,15 @@ class EditTagPanel(ModalContent):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
 
-        # Add Tag Capsule
-        capsule = Capsule(has_edit=True, has_remove=True)
-        capsule.set_text(self._lib.tag_display_name(tag))
-        capsule.set_color_group(tag.color)
-        capsule.on_remove.connect(lambda t=parent_id: self._remove_parent_tag_callback(t))
-        capsule.on_edit.connect(partial(self._edit_tag, tag, self._set_parent_tags))
-
-        row.addWidget(capsule)
-
         # Add Disambiguation Tag Button
-        disam_button = QRadioButton()
+        disam_button = Badge(
+            ResourceManager().card_text,
+            is_circular=True,
+            unchecked_icon=ResourceManager().card_text_outline,
+        )
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
-        disam_button.setFixedSize(22, 22)
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
-        disam_button.setStyleSheet(colored_radio_button_style(*tag_colors(tag.color)))
+        disam_button.set_color_group(tag.color)
 
         self._disam_button_group.addButton(disam_button)
         if is_disambiguation:
@@ -348,7 +353,17 @@ class EditTagPanel(ModalContent):
         disam_button.clicked.connect(lambda checked=False: self._toggle_disam_id(parent_id))
         row.addWidget(disam_button)
 
-        return capsule.layout().button, disam_button, container
+        # Add Tag Capsule
+        capsule = Capsule(has_edit=True, has_remove=True, is_tag=True)
+        capsule.set_text(self._lib.tag_display_name(tag))
+        capsule.set_color_group(tag.color)
+        capsule.set_icon(tag_icon(tag.id))
+        capsule.on_remove.connect(lambda t=parent_id: self._remove_parent_tag_callback(t))
+        capsule.on_edit.connect(partial(self._edit_tag, tag, self._set_parent_tags))
+        row.addWidget(capsule)
+        row.addStretch()
+
+        return disam_button, capsule.layout().button, container
 
     def _toggle_disam_id(self, disambiguation_id: int | None):
         if self._disambiguation_id == disambiguation_id:
@@ -361,6 +376,13 @@ class EditTagPanel(ModalContent):
                 button.setChecked(True)
             else:
                 button.setChecked(False)
+        self._set_preview_text()
+
+    def _set_preview_text(self) -> None:
+        """Show the tag's name in the preview, including unsaved edits."""
+        name = self.layout().name_field.text().strip() or Translations["tag.placeholder"]
+        preview_tag = Tag(name=name, disambiguation_id=self._disambiguation_id)
+        self.layout().preview_capsule.set_text(self._lib.tag_display_name(preview_tag))
 
     def _set_aliases(self):
         aliases_table = self.layout().aliases_table
@@ -381,6 +403,7 @@ class EditTagPanel(ModalContent):
 
         for alias in sorted_aliases:
             remove_button = QPushButton("-")
+            remove_button.setProperty("radius", RADIUS)
             remove_button.clicked.connect(partial(self._remove_alias_callback, alias))
 
             row = aliases_table.rowCount()
@@ -408,6 +431,7 @@ class EditTagPanel(ModalContent):
         logger.info("[EditTagPanel] Setting Tag", tag_id=tag.id)
         view = self.layout()
         self.tag = tag
+        view.preview_capsule.set_icon(tag_icon(tag.id))
         view.name_field.setText(tag.name)
         view.shorthand_field.setText(tag.shorthand or "")
 
@@ -427,12 +451,12 @@ class EditTagPanel(ModalContent):
         try:
             self._color_namespace = tag.color_namespace
             self._color_slug = tag.color_slug
-            self._set_color_button(tag.color)
+            self._show_color(tag.color)
             self._color_selection.select_radio_button(tag.color)
         except Exception as e:
             # TODO: Investigate why this happens during tests
             logger.error("[EditTagPanel] Could not access Tag member attributes", error=e)
-            self._set_color_button(None)
+            self._show_color(None)
 
         view.is_category_checkbox.setChecked(tag.is_category)
         view.is_hidden_checkbox.setChecked(tag.is_hidden)
@@ -443,7 +467,8 @@ class EditTagPanel(ModalContent):
     def _on_name_change(self):
         name_field = self.layout().name_field
         is_empty = not name_field.text().strip()
-        name_field.setStyleSheet(line_edit_style() if is_empty else "")
+        set_invalid(name_field, is_empty)
+        self._set_preview_text()
 
         if self.save_button is not None:
             self.save_button.setDisabled(is_empty)

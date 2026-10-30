@@ -3,13 +3,13 @@
 
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QRadioButton, QWidget
+from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.badge import Badge
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.info_popovers.info_popover_view import InfoPopoverView
-from tagstudio.qt.views.styles.stylesheets import radio_button_style
 
 
 class ParentTagsInfoView(InfoPopoverView):
@@ -53,8 +53,8 @@ class ParentTagsInfoView(InfoPopoverView):
             arrow.setFixedHeight(capsule.sizeHint().height())
             disambiguation_rows.append(
                 self._example_row(
+                    self._example_badge(),
                     capsule,
-                    self._example_radio(),
                     arrow,
                     self._example_capsule(f"{king} ({parent})"),
                 )
@@ -80,10 +80,8 @@ class ParentTagsInfoView(InfoPopoverView):
         )
         self.addWidget(self._example(*disambiguation_rows))
 
-    def _example_radio(self) -> QRadioButton:
-        radio = QRadioButton()
-        radio.setFixedSize(22, 22)
-        radio.setChecked(True)
-        radio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        radio.setStyleSheet(radio_button_style())
-        return radio
+    def _example_badge(self) -> Badge:
+        badge = Badge(ResourceManager().card_text, is_circular=True)
+        badge.setChecked(True)
+        badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        return badge

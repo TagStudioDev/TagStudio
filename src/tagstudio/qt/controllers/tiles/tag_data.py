@@ -107,10 +107,7 @@ class TagData(TileData):
         edit_tag_panel = EditTagPanel(self._driver.lib, tag=tag)
 
         edit_modal = Modal(
-            edit_tag_panel,
-            self._driver.lib.tag_display_name(tag),
-            Translations["tag.edit"],
-            is_savable=True,
+            edit_tag_panel, Translations["tag.edit"], is_savable=True, inline_title=False
         )
         edit_modal.saved.connect(partial(self._update_tag_callback, edit_tag_panel))
         edit_modal.show()

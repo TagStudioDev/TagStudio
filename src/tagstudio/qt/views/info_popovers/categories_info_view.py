@@ -3,13 +3,16 @@
 
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QCheckBox, QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.badge import Badge
 from tagstudio.qt.controllers.capsule import Capsule
+from tagstudio.qt.controllers.inset_frame import InsetFrame
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.info_popovers.info_popover_view import InfoPopoverView
-from tagstudio.qt.views.styles.stylesheets import checkbox_style, inset_container_style
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, inset_container_style
 
 
 class CategoriesInfoView(InfoPopoverView):
@@ -37,12 +40,8 @@ class CategoriesInfoView(InfoPopoverView):
 
         # Category Visibility Visual
         visibility = self._example(
-            self._example_row(
-                self._example_capsule(food, min_width=78), self._example_checkbox(checked=False)
-            ),
-            self._example_row(
-                self._example_capsule(fruit, min_width=78), self._example_checkbox(checked=True)
-            ),
+            self._example_row(self._example_badge(checked=False), self._example_capsule(food)),
+            self._example_row(self._example_badge(checked=True), self._example_capsule(fruit)),
         )
         visible = self._example_inspector((fruit, self._example_capsule(banana, yellow)))
 
@@ -70,26 +69,26 @@ class CategoriesInfoView(InfoPopoverView):
 
     def _example_inspector(self, *sections: tuple[str, Capsule]) -> QWidget:
         """A mock Inspector tile showing each category heading with its tag(s)."""
-        frame = QFrame()
+        frame = InsetFrame()
         frame.setObjectName("example_inspector")
         frame.setStyleSheet(inset_container_style("example_inspector"))
         layout = QVBoxLayout(frame)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(PAD, PAD, PAD, PAD)
+        layout.setSpacing(PAD)
         for title, capsule in sections:
             section = QWidget()
             section_layout = QVBoxLayout(section)
             section_layout.setContentsMargins(0, 0, 0, 0)
-            section_layout.setSpacing(3)
+            section_layout.setSpacing(HALF_PAD)
             section_layout.addWidget(QLabel(f"<b>{title}</b>"))
             section_layout.addWidget(self._example_row(capsule))
             layout.addWidget(section)
         return self._example(frame)
 
-    def _example_checkbox(self, checked: bool) -> QCheckBox:
-        checkbox = QCheckBox()
-        checkbox.setFixedSize(22, 22)
-        checkbox.setChecked(checked)
-        checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        checkbox.setStyleSheet(checkbox_style())
-        return checkbox
+    def _example_badge(self, checked: bool) -> Badge:
+        badge = Badge(
+            ResourceManager().eye, is_circular=False, unchecked_icon=ResourceManager().eye_closed
+        )
+        badge.setChecked(checked)
+        badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        return badge

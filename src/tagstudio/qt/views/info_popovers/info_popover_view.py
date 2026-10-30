@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
-from tagstudio.qt.views.styles.stylesheets import header, info_popover_text_style
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, header, info_popover_text_style
 
 
 class InfoPopoverView(QVBoxLayout):
@@ -18,12 +18,25 @@ class InfoPopoverView(QVBoxLayout):
     Includes some common visual examples and helper functions.
     """
 
-    _ROW_SPACING = 3  # TODO: Use future constant from stylesheets.py
+    _ROW_SPACING = HALF_PAD
 
     def __init__(self) -> None:
         super().__init__()
         self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(6)
+        self._icon_labels: list[tuple[QLabel, bytes]] = []
+        self._dim_labels: list[QLabel] = []
+
+    def set_label_colors(self) -> None:
+        """Color the icons and dim notes for the current theme."""
+        for label, svg in self._icon_labels:
+            label.setPixmap(
+                svg_color_overlay(svg, theme_foreground_color(), label.devicePixelRatioF())
+            )
+        for label in self._dim_labels:
+            label.setStyleSheet(
+                f"color: rgba{theme_foreground_color().getRgb()}; padding-left: {HALF_PAD}px;"
+            )
 
     def _text_label(self, text: str) -> QLabel:
         label = QLabel(info_popover_text_style() + text)
@@ -34,7 +47,7 @@ class InfoPopoverView(QVBoxLayout):
     def _add_section(self, title: str, description: str, header_level: int = 4) -> None:
         """Add a text section to the info popover."""
         if self.count():
-            self.addSpacing(6)  # Add to the layout's spacing for 12px total between sections
+            self.addSpacing(PAD)  # Add to the layout's spacing for 12px total between sections
         section = QWidget()
         layout = QVBoxLayout(section)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -43,17 +56,17 @@ class InfoPopoverView(QVBoxLayout):
         layout.addWidget(self._text_label(description))
         self.addWidget(section)
 
-    def _icon_label(self, svg: bytes, size: QSize | None = None) -> QLabel:
+    def _icon_label(self, svg: bytes) -> QLabel:
         label = QLabel()
-        label.setPixmap(
-            svg_color_overlay(svg, theme_foreground_color(), label.devicePixelRatioF(), size)
-        )
+        self._icon_labels.append((label, svg))
+        self.set_label_colors()
         return label
 
     def _dim_label(self, text: str) -> QLabel:
         """A dim italic label, used best as a note next to a widget."""
         label = QLabel(f"<i>{text}</i>")
-        label.setStyleSheet(f"color: rgba{theme_foreground_color().getRgb()}; padding-left: 3px;")
+        self._dim_labels.append(label)
+        self.set_label_colors()
         label.setIndent(0)
         return label
 
@@ -63,7 +76,7 @@ class InfoPopoverView(QVBoxLayout):
         widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(3)
+        layout.setSpacing(HALF_PAD)
         for row in rows:
             layout.addWidget(row)
         return widget
@@ -81,7 +94,7 @@ class InfoPopoverView(QVBoxLayout):
     def _example_capsule(
         self, text: str, color_group: TagColorGroup | None = None, min_width: int = 0
     ) -> Capsule:
-        capsule = Capsule()
+        capsule = Capsule(is_tag=True)
         capsule.set_text(text)
         capsule.set_color_group(color_group)
         capsule.layout().button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -112,7 +125,7 @@ class InfoPopoverView(QVBoxLayout):
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(9)  # Adds to the arrow's own 3px padding for 12px on each side
+        layout.setSpacing((PAD * 2) - 3)  # Adds to the arrow's 3px padding for 12px on each side
         layout.addWidget(example, alignment=Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self._icon_label(ResourceManager().arrow_right))
         layout.addWidget(result, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)

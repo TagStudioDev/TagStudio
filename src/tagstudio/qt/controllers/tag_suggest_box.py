@@ -94,10 +94,7 @@ class TagSuggestBox(SuggestBox[Tag]):
     def _on_item_edit(self, item: Tag) -> None:
         edit_tag_panel: EditTagPanel = EditTagPanel(self._lib, tag=item)
         modal: Modal = Modal(
-            edit_tag_panel,
-            self._lib.tag_display_name(item),
-            Translations["tag.edit"],
-            is_savable=True,
+            edit_tag_panel, Translations["tag.edit"], is_savable=True, inline_title=False
         )
         modal.saved.connect(lambda: self._edit_item(edit_tag_panel))
         modal.show()

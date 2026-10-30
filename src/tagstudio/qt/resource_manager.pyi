@@ -31,6 +31,8 @@ class ResourceManager:
     broken_link_icon: Image.Image
     bxs_left_arrow: Image.Image
     bxs_right_arrow: Image.Image
+    card_text: bytes
+    card_text_outline: bytes
     chevron_down: bytes
     copy: Image.Image
     database: Image.Image
@@ -38,6 +40,8 @@ class ResourceManager:
     dupe_file_stat: Image.Image
     ebook: Image.Image
     edit: Image.Image
+    eye: bytes
+    eye_closed: bytes
     favorite_icon: bytes
     file_generic: Image.Image
     font: Image.Image

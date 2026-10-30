@@ -578,11 +578,6 @@ def checkbox_style() -> str:
     return colored_checkbox_style(*tag_colors(None))
 
 
-def radio_button_style() -> str:
-    """Style used for common QRadioButtons."""
-    return colored_radio_button_style(*tag_colors(None))
-
-
 def colored_checkbox_style(
     primary_color: QColor,
     border_color: QColor,
@@ -616,67 +611,3 @@ def colored_checkbox_style(
             outline: none;
         }}
         """
-
-
-def colored_radio_button_style(
-    primary_color: QColor,
-    border_color: QColor,
-    highlight_color: QColor,
-    text_color: QColor,
-) -> str:
-    return f"""
-    QRadioButton{{
-        background: rgba{primary_color.toTuple()};
-        color: rgba{text_color.toTuple()};
-        border-color: rgba{border_color.toTuple()};
-        border-radius: {RADIUS}px;
-        border-style: solid;
-        border-width: 2px;
-    }}
-    QRadioButton::indicator{{
-        width: 10px;
-        height: 10px;
-        border-radius: 2px;
-        margin: 4px;
-    }}
-    QRadioButton::indicator:checked{{
-        background: rgba{text_color.toTuple()};
-    }}
-    QRadioButton::hover{{
-        border-color: rgba{highlight_color.toTuple()};
-    }}
-    QRadioButton::pressed{{
-        background: rgba{border_color.toTuple()};
-        color: rgba{primary_color.toTuple()};
-        border-color: rgba{primary_color.toTuple()};
-    }}
-    QRadioButton::focus{{
-        border-color: rgba{highlight_color.toTuple()};
-        outline: none;
-    }}
-    """
-
-
-def line_edit_style() -> str:
-    """Style used for QLineEdits."""
-    return f"""
-    border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)};
-    border-radius: 2px
-    """
-
-
-def info_popover_style() -> str:
-    """Style used for popovers shown by info buttons."""
-    border_color = (
-        "#404040"
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else "#808080"
-    )
-    return f"""
-    #info_popover{{
-        background: palette(window);
-        border: 1px solid {border_color};
-        border-radius: 6px;
-        padding: 9px;
-    }}
-    """

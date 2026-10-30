@@ -440,6 +440,7 @@
     "tag.parent_tags.info.is_a_both": "<b><u>is</u></b> a {parent} and a {grandparent}",
     "tag.parent_tags.info.searches.description": "Files tagged with \"{child}\" will also show up in searches for \"{parent}\" and \"{grandparent}\", so you don't need to apply those parent tags directly to files.<br>This only works one way: searching for \"{child}\" won't find everything tagged with \"{parent}\".",
     "tag.parent_tags.info.searches.title": "Searches",
+    "tag.placeholder": "Tag",
     "tag.properties": "Properties",
     "tag.remove": "Delete Tag",
     "tag.search_for_tag": "Search for Tag",

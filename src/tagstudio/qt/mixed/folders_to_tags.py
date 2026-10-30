@@ -269,7 +269,7 @@ class TreeItem(QWidget):
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
         tag = unwrap(data.tag)
-        self.capsule = Capsule()
+        self.capsule = Capsule(is_tag=True)
         self.capsule.set_text(f"{tag.name} ({parent_tag.name})" if parent_tag else tag.name)
         self.capsule.on_click.connect(self.hide_show)
         self.tag_layout.addWidget(self.capsule)
