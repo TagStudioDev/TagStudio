@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import math
 import typing
 from typing import override
 
 import structlog
-from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QMainWindow, QWidget
 
@@ -55,7 +54,6 @@ class MainWindow(QMainWindow):
             self.inspector.preview_splitter,
             self._corner_handle_content_widget,
             central_widget,
-            snap_outer=self._snapped_splitter_position,
         )
 
         self._connect_callbacks()
@@ -86,9 +84,7 @@ class MainWindow(QMainWindow):
         view.thumb_size_combobox.currentIndexChanged.connect(
             lambda: self.thumb_grid.set_thumb_size(self.thumb_size)
         )
-        view.content_splitter.splitterMoved.connect(self._snap_content_splitter)
         self._driver.selection.changed.connect(self._corner_handle.queue_update)
-        self.thumb_grid.scroll_area.installEventFilter(self)
 
     @property
     def search_bar(self) -> SearchBar:
@@ -151,54 +147,10 @@ class MainWindow(QMainWindow):
         if not (new_val + 1) > len(MainWindowView.THUMB_SIZES):
             combobox.setCurrentIndex(new_val)
 
-    def _snap_content_splitter(self) -> None:
-        """Snap the splitter so it fits a whole number of thumbnail grid columns."""
-        splitter = self.layout().content_splitter
-        position = splitter.handle(1).x()
-        extra = position - self._snapped_splitter_position(position)
-        if extra:
-            grid_size, inspector_size = splitter.sizes()
-            splitter.setSizes([grid_size - extra, inspector_size + extra])
-
-    def _snapped_splitter_position(self, position: int) -> int:
-        """The nearest splitter position that fits a whole number of thumbnail grid columns."""
-        if not self.thumb_grid.isVisible():
-            return position
-        view = self.layout()
-        shift = position - view.content_splitter.handle(1).x()
-        grid_size, inspector_size = view.content_splitter.sizes()
-        grid_size += shift
-        inspector_size -= shift
-        if inspector_size <= 0:  # Collapsed by dragging the splitter all the way
-            return position
-        grid_width = self.thumb_grid.layout().geometry().width() + shift
-        cell_width = self.thumb_grid.layout().cell_width()
-        columns = max(1, round(grid_width / cell_width))
-        # Round down when the Inspector can't shrink enough to fit another column
-        if (
-            inspector_size + grid_width - columns * cell_width
-            < self.inspector.minimumSizeHint().width()
-        ):
-            columns = max(1, grid_width // cell_width)
-        # Round up when the grid's side can't shrink enough to lose a column
-        elif (
-            grid_size - grid_width + columns * cell_width
-            < view.central_content.minimumSizeHint().width()
-        ):
-            columns = math.ceil(grid_width / cell_width)
-        return position - (grid_width - columns * cell_width)
-
     def _corner_handle_content_widget(self) -> QWidget | None:
         if not self.inspector.is_preview_showing:
             return None
         return self.inspector.preview_section
-
-    @override
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # Snap once the grid has been laid out
-        if watched is self.thumb_grid.scroll_area and event.type() == QEvent.Type.Show:
-            QTimer.singleShot(0, self._snap_content_splitter)
-        return super().eventFilter(watched, event)
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
