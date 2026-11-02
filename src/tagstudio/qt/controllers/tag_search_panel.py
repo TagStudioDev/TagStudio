@@ -42,30 +42,27 @@ class TagSearchPanel(SearchPanel[Tag]):
         )
         self._lib = library
         self._unlimited_limit_item_label = Translations["tag.all_tags"]
-        self._create_and_add_button_key = "tag.create_add"
+        self.layout().create_from_query_button.set_is_tag(True)
 
     @override
-    def on_item_create(self, add_to_entry: bool = False) -> None:
-        """Opens panel to create a new tag and optionally add it to an entry.
+    def on_item_create(self) -> None:
+        """Opens panel to create a new tag.
 
         Populates name field using current search query.
-
-        Args:
-            add_to_entry (bool): Should this item be added to currently selected entries?
         """
         query: str = self.get_search_query()
         panel = edit_tag_panel.EditTagPanel(self._lib)
         modal: Modal = Modal(
             panel,
             Translations["tag.new"],
-            Translations["tag.add"] if add_to_entry else Translations["tag.new"],
+            Translations["tag.new"],
             is_savable=True,
         )
 
         if query.strip():
             panel.set_name(query)
 
-        modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
+        modal.saved.connect(lambda: self.create_item(panel))
         modal.show()
 
     @override
@@ -146,19 +143,14 @@ class TagSearchPanel(SearchPanel[Tag]):
         capsule.on_search.connect(lambda tag_id=item.id: self.search_for_tag.emit(tag_id))
 
     @override
-    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
+    def create_item(self, edit_item_panel: ModalContent) -> None:
         if isinstance(edit_item_panel, edit_tag_panel.EditTagPanel):
-            tag: Tag = edit_item_panel.build_tag()
             self._lib.add_tag(
-                tag,
+                edit_item_panel.build_tag(),
                 parent_ids=edit_item_panel.parent_ids,
                 aliases=edit_item_panel.aliases,
                 exclusion_ids=edit_item_panel.exclusion_ids,
             )
-
-            if choose_item:
-                self._on_item_chosen(tag)
-                self.clear_search_query()
 
         edit_item_panel.hide()
         self.on_search_query_changed(self.get_search_query())

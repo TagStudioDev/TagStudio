@@ -17,8 +17,9 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.inset_frame import InsetFrame
-from tagstudio.qt.views.styles.stylesheets import PAD, list_button_style
+from tagstudio.qt.views.styles.stylesheets import PAD
 
 if TYPE_CHECKING:
     pass
@@ -90,9 +91,5 @@ class SearchPanelView(QVBoxLayout):
         if not self.is_chooser:
             self.addWidget(self.create_button)
 
-        # Create and add button
-        self.create_and_add_button_in_layout: bool = False
-        self.create_and_add_button = QPushButton()
-        self.create_and_add_button.setFlat(True)
-        self.create_and_add_button.setMinimumSize(22, 22)
-        self.create_and_add_button.setStyleSheet(list_button_style(border_style="dashed"))
+        # Create from query button
+        self.create_from_query_button = Capsule(is_stretched=True, is_dashed=True)

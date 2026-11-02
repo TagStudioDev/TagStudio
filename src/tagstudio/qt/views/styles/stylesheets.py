@@ -83,53 +83,6 @@ def form_content_style() -> str:
     """
 
 
-def list_button_style(
-    color: QColor | None = None,
-    border_style: str = "solid",
-    italic: bool = False,
-) -> str:
-    """Style used for special QPushButtons found in lists."""
-    if color is None:
-        color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-
-    highlight_color = get_tag_highlight_color(color)
-    text_color = get_tag_text_color(color, highlight_color)
-    border_color = get_tag_border_color(color)
-
-    return f"""
-    QPushButton{{
-        background: rgba{color.toTuple()};
-        color: rgba{text_color.toTuple()};
-        font-weight: 600;
-        {"font: italic;" if italic else ""}
-        border-color: rgba{border_color.toTuple()};
-        border-radius: {RADIUS}px;
-        border-style: {border_style};
-        border-width: 2px;
-        padding-right: 4px;
-        padding-bottom: 1px;
-        padding-left: 4px;
-        font-size: 13px
-    }}
-    QPushButton::hover{{
-        border-color: rgba{highlight_color.toTuple()};
-    }}
-    QPushButton::pressed{{
-        background: rgba{highlight_color.toTuple()};
-        color: rgba{color.toTuple()};
-        border-color: rgba{color.toTuple()};
-    }}
-    QPushButton::focus{{
-        padding-right: 0px;
-        padding-left: 0px;
-        outline-style: solid;
-        outline-width: 1px;
-        outline-radius: 4px;
-        outline-color: rgba{text_color.toTuple()};
-    }}
-    """
-
-
 def capsule_text_style(
     text_color: QColor,
     pressed_text_color: QColor,

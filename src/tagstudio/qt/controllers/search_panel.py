@@ -53,8 +53,7 @@ class SearchPanel[T](ModalContent):
         super().__init__()
         self._driver: QtDriver | None = None
         self._is_chooser = is_chooser
-        self._create_and_add_button_in_layout = False
-        self._create_and_add_button_key: str = ""
+        self._is_create_from_query_button_in_layout = False
 
         # Items
         self._excluded: list[int] = exclude or []
@@ -89,9 +88,7 @@ class SearchPanel[T](ModalContent):
             lambda: controller.on_search_query_submitted(self.get_search_query())
         )
         self.layout().create_button.clicked.connect(controller.on_item_create)
-        self.layout().create_and_add_button.clicked.connect(
-            lambda: controller.on_item_create(add_to_entry=True)
-        )
+        self.layout().create_from_query_button.on_click.connect(controller.on_item_create)
 
     def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
         # Remove existing limit items
@@ -123,19 +120,20 @@ class SearchPanel[T](ModalContent):
     def scroll_to(self, position: int) -> None:
         self.layout().scroll_area.verticalScrollBar().setValue(position)
 
-    def add_create_and_add_button(self) -> None:
-        if self._create_and_add_button_in_layout:
+    def add_create_from_query_button(self) -> None:
+        if self._is_create_from_query_button_in_layout:
             return
-        self.layout().scroll_layout.addWidget(self.layout().create_and_add_button)
-        self.layout().create_and_add_button.show()
-        self._create_and_add_button_in_layout = True
+        self.layout().scroll_layout.addWidget(self.layout().create_from_query_button)
+        self.layout().create_from_query_button.restyle()
+        self.layout().create_from_query_button.show()
+        self._is_create_from_query_button_in_layout = True
 
-    def remove_create_and_add_button(self) -> None:
-        if not self._create_and_add_button_in_layout:
+    def remove_create_from_query_button(self) -> None:
+        if not self._is_create_from_query_button_in_layout:
             return
-        self.layout().scroll_layout.removeWidget(self.layout().create_and_add_button)
-        self.layout().create_and_add_button.hide()
-        self._create_and_add_button_in_layout = False
+        self.layout().scroll_layout.removeWidget(self.layout().create_from_query_button)
+        self.layout().create_from_query_button.hide()
+        self._is_create_from_query_button_in_layout = False
 
     def _toggle_scroll_bar(self, minimum: int, maximum: int) -> None:
         """Show the scroll bar when needed."""
@@ -168,8 +166,8 @@ class SearchPanel[T](ModalContent):
         return self._limit_items[self.get_limit_index()]
 
     def on_search_query_changed(self, query: str) -> None:
-        self.layout().create_and_add_button.setText(
-            Translations.format(self._create_and_add_button_key, query=query)
+        self.layout().create_from_query_button.set_text(
+            Translations.format("item.create_from_query", query=query)
         )
         self.update_items(query)
 
@@ -182,16 +180,18 @@ class SearchPanel[T](ModalContent):
                 parent.hide()
             return
 
-        # Create and add item if no search results
+        # Create item if no search results
         if len(self._search_results) <= 0:
-            self.on_item_create(add_to_entry=True)
-        elif self._is_chooser:
+            self.on_item_create()
+            return
+
+        if self._is_chooser:
             self._on_item_chosen(self._search_results[0])
 
         self.clear_search_query()
         self.update_items()
 
-    def on_item_create(self, add_to_entry: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
+    def on_item_create(self) -> None:
         raise NotImplementedError()
 
     def on_item_edit(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
@@ -210,8 +210,8 @@ class SearchPanel[T](ModalContent):
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items", limit=self._get_limit()[1])
 
-        # Remove the "Create & Add" button if one exists
-        self.remove_create_and_add_button()
+        # Remove the create from query button if one exists
+        self.remove_create_from_query_button()
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
@@ -244,9 +244,9 @@ class SearchPanel[T](ModalContent):
 
         self._previous_limit_index = self.get_limit_index()
 
-        # Add back the "Create & Add" button
+        # Add back the create from query button
         if query and query.strip():
-            self.add_create_and_add_button()
+            self.add_create_from_query_button()
 
     def _update_item_widgets(self) -> None:
         """Show the search results in the item widgets."""
@@ -282,7 +282,7 @@ class SearchPanel[T](ModalContent):
             else:
                 self.focus_search_box(select_all=True)
 
-    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:  # pyright: ignore[reportUnusedParameter]
+    def create_item(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def edit_item(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]

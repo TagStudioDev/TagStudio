@@ -31,6 +31,8 @@ from tagstudio.qt.views.styles.palette import (
 from tagstudio.qt.views.styles.stylesheets import INNER_RADIUS, RADIUS, is_dark_theme
 
 # Embossed Surfaces
+_DASHED_CAPSULE_LINE_WIDTH = 2
+_DASHED_CAPSULE_PATTERN = [3, 2]
 _EMBOSSED_GRADIENT_FULL_HEIGHT = 24
 _EMBOSSED_FILL_ALPHA_DARK = 15
 _EMBOSSED_FILL_ALPHA_LIGHT = 170
@@ -470,6 +472,28 @@ class WidgetEffects:
         )
         if border_color is None:
             self._paint_capsule_highlight(painter, rect, radius, fill_color, is_down, is_colorless)
+
+    def paint_dashed_capsule(
+        self,
+        painter: QPainter,
+        rect: QRect,
+        radius: float,
+        fill_color: QColor | None,
+        line_color: QColor,
+    ) -> None:
+        """Paint a capsule's shape as a dashed outline."""
+        pen = QPen(line_color, _DASHED_CAPSULE_LINE_WIDTH)
+        pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+        pen.setDashPattern(_DASHED_CAPSULE_PATTERN)
+        inset = _DASHED_CAPSULE_LINE_WIDTH / 2
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(pen)
+        painter.setBrush(fill_color if fill_color is not None else Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(
+            QRectF(rect).adjusted(inset, inset, -inset, -inset), radius - inset, radius - inset
+        )
+        painter.restore()
 
     def _paint_capsule_body(
         self,

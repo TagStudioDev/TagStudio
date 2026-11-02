@@ -4,9 +4,9 @@
 
 from typing import override
 
-from PySide6.QtCore import QEvent, QRect, QSize, Qt, Signal, SignalInstance
-from PySide6.QtGui import QAction, QEnterEvent, QPainter, QPaintEvent
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtCore import QEvent, QObject, QRect, QSize, Qt, Signal, SignalInstance
+from PySide6.QtGui import QAction, QColor, QEnterEvent, QMouseEvent, QPainter, QPaintEvent
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
@@ -15,6 +15,8 @@ from tagstudio.qt.views.capsule_view import CapsuleView
 from tagstudio.qt.views.styles.stylesheets import RADIUS, TagShape, capsule_colors
 from tagstudio.qt.views.styles.tag_icons import icon_shrink, paint_icon
 from tagstudio.qt.views.styles.widget_effects import WidgetEffects
+
+_DASHED_LINE_REST_OPACITY = 0.4
 
 
 class Capsule(QWidget):
@@ -32,12 +34,15 @@ class Capsule(QWidget):
         search_label: str | None = None,
         is_tag: bool = False,
         is_stretched: bool = False,
+        is_dashed: bool = False,
     ) -> None:
         super().__init__()
         self._colors = capsule_colors(None)
         self._effect = WidgetEffects()
         self._icon: bytes | None = None
+        self._is_clickable = True
         self._is_colorless = True
+        self._is_dashed = is_dashed
         self._is_pill = False
         self._is_stretched = is_stretched
         self._is_tag = is_tag
@@ -46,6 +51,11 @@ class Capsule(QWidget):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.setLayout(CapsuleView())
+
+        self._fade = QGraphicsOpacityEffect(self)
+        self._fade.setOpacity(0.5)
+        self._fade.setEnabled(False)
+        self.setGraphicsEffect(self._fade)
 
         self.layout().button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self._edit_action: QAction | None = None
@@ -59,7 +69,8 @@ class Capsule(QWidget):
 
     def _connect_callbacks(self) -> None:
         view = self.layout()
-        view.button.clicked.connect(self.on_click.emit)
+        view.button.clicked.connect(self._on_button_clicked)
+        view.button.installEventFilter(self)
         view.remove_button.clicked.connect(self.on_remove.emit)
 
     def _add_action(self, text: str, signal: SignalInstance) -> QAction:
@@ -67,6 +78,31 @@ class Capsule(QWidget):
         action.triggered.connect(signal.emit)
         self.layout().button.addAction(action)
         return action
+
+    def _on_button_clicked(self) -> None:
+        if self._is_clickable:
+            self.on_click.emit()
+
+    @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            not self._is_clickable
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            return True
+        return super().eventFilter(watched, event)
+
+    def set_clickable(self, clickable: bool) -> None:
+        self._is_clickable = clickable
+        self._fade.setEnabled(not clickable)
+        self.setCursor(
+            Qt.CursorShape.PointingHandCursor if clickable else Qt.CursorShape.ArrowCursor
+        )
+
+    def set_is_tag(self, is_tag: bool) -> None:
+        self._is_tag = is_tag
+        self.restyle()
 
     def set_edit_enabled(self, enabled: bool) -> None:
         if self._edit_action is not None:
@@ -114,21 +150,29 @@ class Capsule(QWidget):
         radius = self._radius()
 
         painter = QPainter(self)
-        self._effect.paint_capsule(
-            painter,
-            rect,
-            radius,
-            primary,
-            border,
-            highlight,
-            is_down=button.isDown(),
-            is_hovered=button.underMouse(),
-            is_colorless=self._is_colorless,
-        )
+        is_down = self._is_clickable and button.isDown()
+        is_hovered = self._is_clickable and button.underMouse()
+        if self._is_dashed:
+            fill = highlight if is_down else primary if is_hovered else None
+            line = QColor(text)
+            line.setAlphaF(1.0 if is_down or is_hovered else _DASHED_LINE_REST_OPACITY)
+            self._effect.paint_dashed_capsule(painter, rect, radius, fill, line)
+        else:
+            self._effect.paint_capsule(
+                painter,
+                rect,
+                radius,
+                primary,
+                border,
+                highlight,
+                is_down=is_down,
+                is_hovered=is_hovered,
+                is_colorless=self._is_colorless,
+            )
         view = self.layout()
         if self._icon is not None and view.remove_button.isHidden():
             icon_slot = QRect(rect.topLeft(), QSize(view.HEIGHT, view.HEIGHT))
-            icon_color = primary if button.isDown() else text
+            icon_color = primary if is_down else text
             paint_icon(painter, icon_slot, radius, self._icon, icon_color)
         if button.hasFocus() and self.window().testAttribute(
             Qt.WidgetAttribute.WA_KeyboardFocusChange

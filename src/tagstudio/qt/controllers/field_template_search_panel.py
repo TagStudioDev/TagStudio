@@ -41,19 +41,15 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.__lib = library
 
         self._unlimited_limit_item_label = Translations["field_template.all_field_templates"]
-        self._create_and_add_button_key = "field_template.create_add"
 
     @override
-    def on_item_create(self, add_to_entry: bool = False) -> None:
-        """Opens panel to create a new field template and optionally add it to an entry.
+    def on_item_create(self) -> None:
+        """Opens panel to create a new field template.
 
         Populates name field using current search query.
-
-        Args:
-            add_to_entry (bool): Should this item be added to currently selected entries?
         """
         query: str = self.get_search_query()
-        logger.info("[FieldTemplateSearch] Create and Add Field Template", name=query)
+        logger.info("[FieldTemplateSearch] Create Field Template", name=query)
 
         panel: EditFieldTemplateModal = EditFieldTemplateModal()
         modal: Modal = Modal(
@@ -66,7 +62,7 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         if query.strip():
             panel.name_field.setText(query)
 
-        modal.saved.connect(lambda: self.create_item(panel, choose_item=add_to_entry))
+        modal.saved.connect(lambda: self.create_item(panel))
         modal.show()
 
     @override
@@ -142,15 +138,10 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         capsule.on_click.connect(lambda item_=item: self._on_item_chosen(item_))
 
     @override
-    def create_item(self, edit_item_panel: ModalContent, choose_item: bool = False) -> None:
+    def create_item(self, edit_item_panel: ModalContent) -> None:
 
         if isinstance(edit_item_panel, EditFieldTemplateModal):
-            template: BaseFieldTemplate = edit_item_panel.build_field_template()
-            self.__lib.add_field_template(template)
-
-            if choose_item:
-                self._on_item_chosen(template)
-                self.clear_search_query()
+            self.__lib.add_field_template(edit_item_panel.build_field_template())
 
         edit_item_panel.hide()
         self.on_search_query_changed(self.get_search_query())
