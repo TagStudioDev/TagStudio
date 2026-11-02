@@ -9,12 +9,16 @@ from typing import Any
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QGuiApplication, QPalette
+from PySide6.QtGui import QColor, QColorSpace, QGuiApplication, QPalette
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger(__name__)
+
+_MACOS_ACCENT_BRIGHTENING = QColorSpace(QColorSpace.Primaries.SRgb, 1.8).transformationToColorSpace(
+    QColorSpace(QColorSpace.NamedColorSpace.SRgb)
+)
 
 # TODO: Completely rework the color palette system, including this file.
 
@@ -44,7 +48,12 @@ class Palette(metaclass=Singleton):
             else QPalette.ColorRole.Accent
         )
 
-        return QPalette.color(Palette._palette, role)
+        color = QPalette.color(Palette._palette, role)
+        # NOTE: The accent color comes out darker than it shows in other macOS apps
+        # TODO: See if other platforms have incorrect accent color handling
+        if platform.system() == "Darwin":
+            return _MACOS_ACCENT_BRIGHTENING.map(color).toRgb()
+        return color
 
     @staticmethod
     def icon() -> QColor:
