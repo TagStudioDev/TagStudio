@@ -81,7 +81,7 @@ class LibrarySyncEngine:
 
         case_sensitive = self.library.is_fs_case_sensitive
         cache = self.library.get_or_build_path_cache()
-        unvisited = set(cache.keys())
+        unvisited = dict(cache)  # Copy the cache in case it's modified during the scan
         ignore_patterns = Ignore.get_patterns(library_dir)
 
         start_time = time()
@@ -94,7 +94,7 @@ class LibrarySyncEngine:
             key = norm_path(raw_path, case_sensitive=case_sensitive)
             entry_id = cache.get(key)
             if entry_id is not None:
-                unvisited.discard(key)
+                unvisited.pop(key, None)
                 self.paths_to_restat.append((entry_id, raw_path))
             else:
                 self.new_paths.append(raw_path)
@@ -107,7 +107,7 @@ class LibrarySyncEngine:
 
         # NOTE: Ignored files are skipped during the scan.
         if not self.cancelled:
-            for entry in self.library.get_entries([cache[key] for key in unvisited]):
+            for entry in self.library.get_entries(list(unvisited.values())):
                 if self.cancelled:
                     break
                 if not (library_dir / entry.path).is_file():

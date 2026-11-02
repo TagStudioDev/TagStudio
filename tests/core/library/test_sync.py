@@ -6,6 +6,7 @@
 import os
 import platform
 import unicodedata
+from collections.abc import Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -291,6 +292,26 @@ def test_sync_auto_relink_deleted_file(library: Library):
     assert engine.relinked_entries_count == 0
     assert engine.new_paths == []
     assert Path("gone.txt") in {e.path for e in engine.unlinked_entries}
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_entry_removed_during_scan(library: Library, monkeypatch: pytest.MonkeyPatch):
+    """An unlinked entry removed while the scan runs must not break or stay in the results."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    removed_id, kept_id = library.add_entries(
+        [Entry(path=Path("removed.txt"), fields=[]), Entry(path=Path("kept.txt"), fields=[])]
+    )
+
+    def scan_while_removing(*_: object) -> Iterator[Path]:
+        library.remove_entries([removed_id])
+        yield from ()
+
+    monkeypatch.setattr("tagstudio.core.library.sync.scan_paths", scan_while_removing)
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    assert kept_id in {e.id for e in engine.unlinked_entries}
+    assert removed_id not in {e.id for e in engine.unlinked_entries}
 
 
 def add_tracked_files(library: Library, paths: list[Path], ts_ignore: str) -> list[int]:
