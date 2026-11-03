@@ -25,22 +25,22 @@ def test_removed_tag_capsules_hidden(qtbot: QtBot, library: Library):
     """Regression test for #1523."""
     panel = TagSearchPanel(library, is_chooser=False)
     qtbot.addWidget(panel)
+    panel.resize(300, 2000)
+    panel.show()
+    qtbot.waitExposed(panel)
 
-    # 1. Set view limit to "All Items"
-    panel.set_limit_index(panel.layout().limit_combobox.count() - 1)
-    panel.update_items()
-
-    # 2. Delete a tag
+    # 1. Delete a tag
     library.remove_tag(library.tags[-1].id)
     panel.update_items()
 
-    # 3. Assert that there's the correct number of visible capsules and no duplicates
-    visible_capsules = [
-        i
-        for i in range(panel.layout().scroll_layout.count())
-        if not panel.get_item_widget(i, library).isHidden()
+    # 2. Assert that there's the correct number of visible capsules and no duplicates
+    visible_texts = [
+        panel.get_item_widget(i).layout().button.text()
+        for i in range(len(library.tags))
+        if not panel.get_item_widget(i).isHidden()
     ]
-    assert len(visible_capsules) == len(library.tags)
+    assert len(visible_texts) == len(library.tags)
+    assert len(set(visible_texts)) == len(visible_texts)
 
 
 def test_capsule_actions_replaced_correctly(qtbot: QtBot, library: Library):
@@ -49,8 +49,9 @@ def test_capsule_actions_replaced_correctly(qtbot: QtBot, library: Library):
 
     # Set the widget
     tags = library.tags
+    panel.update_items()
     panel.set_item_widget(tags[0], 0)
-    capsule: Capsule = panel.get_item_widget(0, library)
+    capsule: Capsule = panel.get_item_widget(0)
 
     should_replace_actions = {
         capsule: ["on_click()", "on_edit()", "on_remove()", "on_search()"],

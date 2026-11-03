@@ -7,7 +7,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.library.alchemy.fields import BaseFieldTemplate
 from tagstudio.core.library.alchemy.library import Library
@@ -39,8 +39,6 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
             is_chooser=is_chooser,
         )
         self.__lib = library
-
-        self._unlimited_limit_item_label = Translations["field_template.all_field_templates"]
 
     @override
     def on_item_create(self) -> None:
@@ -112,17 +110,12 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
 
     @override
     def search_items(self, query: str) -> tuple[list[BaseFieldTemplate], list[BaseFieldTemplate]]:
-        return self.__lib.search_field_templates(name=query, limit=self._get_limit()[1]), []
+        return self.__lib.search_field_templates(name=query, limit=-1), []
 
     @override
-    def set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
+    def set_item_widget(self, item: BaseFieldTemplate, index: int) -> None:
         """Set the field template for a capsule widget at a specific index."""
-        capsule = self.get_item_widget(index, self.__lib)
-        capsule.setHidden(item is None)
-
-        if item is None:
-            return
-
+        capsule = self.get_item_widget(index)
         capsule.set_text(f"{item.name} ({field_type_name(item.class_name)})")
         capsule.has_remove = not self._is_chooser
 
@@ -157,16 +150,5 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.update_items(self.layout().search_field.text())
 
     @override
-    def get_item_widget(self, index: int, library: Library | None) -> Capsule:
-        """Gets the item widget at a specific index."""
-        # Create any new item widgets needed up to the given index
-        if self.layout().scroll_layout.count() <= index:
-            while self.layout().scroll_layout.count() <= index:
-                pad_capsule = Capsule(has_edit=True)
-                pad_capsule.setHidden(True)
-                self.layout().scroll_layout.addWidget(pad_capsule)
-
-        item = unwrap(self.layout().scroll_layout.itemAt(index))
-        capsule: QWidget = unwrap(item.widget())
-        assert isinstance(capsule, Capsule)
-        return capsule
+    def _new_item_widget(self) -> Capsule:
+        return Capsule(has_edit=True)

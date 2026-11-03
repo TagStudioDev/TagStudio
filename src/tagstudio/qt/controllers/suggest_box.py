@@ -197,7 +197,7 @@ class SuggestBox[T](QWidget):
     def _clear_search_query(self) -> None:
         self.layout().search_field.setText("")
 
-    def _get_item_widget(self, index: int, library: Library) -> Any:  # pyright: ignore
+    def _get_item_widget(self, index: int) -> QWidget:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def _on_search_query_changed(self, query: str) -> None:

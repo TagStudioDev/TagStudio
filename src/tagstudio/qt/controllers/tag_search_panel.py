@@ -7,7 +7,8 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtGui import QHideEvent, QShowEvent
+from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from tagstudio.core.library.alchemy.library import Library
@@ -20,6 +21,7 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
 from tagstudio.qt.views.search_panel_view import SearchPanelView
+from tagstudio.qt.views.styles.stylesheets import PAD, TagShape
 from tagstudio.qt.views.styles.tag_icons import tag_icon
 
 logger = structlog.get_logger(__name__)
@@ -41,8 +43,25 @@ class TagSearchPanel(SearchPanel[Tag]):
             is_chooser=is_chooser,
         )
         self._lib = library
-        self._unlimited_limit_item_label = Translations["tag.all_tags"]
         self.layout().create_from_query_button.set_is_tag(True)
+
+    @override
+    def showEvent(self, event: QShowEvent) -> None:
+        # NOTE: hideEvent() removes this again, so hidden panels don't search on every tag edit
+        if self._on_tags_edited not in self._lib.tag_edit_callbacks:
+            self._lib.tag_edit_callbacks.append(self._on_tags_edited)
+        super().showEvent(event)
+
+    @override
+    def hideEvent(self, event: QHideEvent) -> None:
+        # NOTE: showEvent() adds this again, so hidden panels don't search on every tag edit
+        if self._on_tags_edited in self._lib.tag_edit_callbacks:
+            self._lib.tag_edit_callbacks.remove(self._on_tags_edited)
+        super().hideEvent(event)
+
+    def _on_tags_edited(self, tag_ids: set[int]) -> None:  # pyright: ignore[reportUnusedParameter]
+        """Search again after tags are edited or deleted."""
+        self.update_items(self.get_search_query())
 
     @override
     def on_item_create(self) -> None:
@@ -100,7 +119,6 @@ class TagSearchPanel(SearchPanel[Tag]):
             return
 
         self._lib.remove_tag(item.id)
-        self.update_items(self.get_search_query())
 
     @override
     def _on_item_chosen(self, item: Tag) -> None:
@@ -108,17 +126,20 @@ class TagSearchPanel(SearchPanel[Tag]):
 
     @override
     def search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
-        return self._lib.search_tags(name=query, limit=self._get_limit()[1])
+        return self._lib.search_tags(name=query, limit=-1)
 
     @override
-    def set_item_widget(self, item: Tag | None, index: int) -> None:
+    def _update_item_widgets(self) -> None:
+        results_layout = self.layout().results_layout
+        margins = results_layout.contentsMargins()
+        margins.setLeft(PAD - (TagShape.PILL_INSET_REDUCTION if TagShape.is_pill else 0))
+        results_layout.setContentsMargins(margins)
+        super()._update_item_widgets()
+
+    @override
+    def set_item_widget(self, item: Tag, index: int) -> None:
         """Set the tag for a capsule widget at a specific index."""
-        capsule = self.get_item_widget(index, self._lib)
-        capsule.setHidden(item is None)
-
-        if item is None:
-            return
-
+        capsule = self.get_item_widget(index)
         capsule.set_text(self._lib.tag_display_name(item))
         capsule.set_color_group(item.color)
         capsule.set_icon(tag_icon(item.id))
@@ -166,25 +187,13 @@ class TagSearchPanel(SearchPanel[Tag]):
             aliases=edit_item_panel.aliases,
             exclusion_ids=edit_item_panel.exclusion_ids,
         )
-        self.update_items(self.layout().search_field.text())
 
     @override
-    def get_item_widget(self, index: int, library: Library | None) -> Capsule:
-        """Gets the item widget at a specific index."""
-        # Create any new item widgets needed up to the given index
-        if self.layout().scroll_layout.count() <= index:
-            while self.layout().scroll_layout.count() <= index:
-                pad_capsule = Capsule(
-                    has_edit=True,
-                    has_remove=True,
-                    search_label=Translations["tag.search_for_tag"],
-                    is_tag=True,
-                    is_stretched=True,
-                )
-                pad_capsule.setHidden(True)
-                self.layout().scroll_layout.addWidget(pad_capsule)
-
-        item = unwrap(self.layout().scroll_layout.itemAt(index))
-        capsule: QWidget = unwrap(item.widget())
-        assert isinstance(capsule, Capsule)
-        return capsule
+    def _new_item_widget(self) -> Capsule:
+        return Capsule(
+            has_edit=True,
+            has_remove=True,
+            search_label=Translations["tag.search_for_tag"],
+            is_tag=True,
+            is_stretched=True,
+        )

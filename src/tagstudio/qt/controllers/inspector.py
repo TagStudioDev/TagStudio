@@ -96,6 +96,7 @@ class Inspector(QWidget):
         self.layout().preview_splitter.splitterMoved.connect(self._on_preview_splitter_moved)
 
         self._driver.entry_state.entry_tags_changed.connect(self._on_tags_changed)
+        self._driver.entry_state.tags_edited.connect(self._on_tags_edited)
         self._driver.selection.changed.connect(self.update_from_selection)
 
     def _on_tags_changed(self, entry_ids: set[int]) -> None:
@@ -103,6 +104,9 @@ class Inspector(QWidget):
         if len(selected) == 1 and selected[0] in entry_ids:
             self.layout().containers.update_from_entry(selected[0])
             self.layout().tag_search_box.added = self.layout().containers.tags
+
+    def _on_tags_edited(self, tag_ids: set[int]) -> None:  # pyright: ignore[reportUnusedParameter]
+        self._on_tags_changed(set(self._driver.selection.selected))
 
     def _set_item_mode(self, mode: _ItemMode | None):
         def hide_and_disable_buttons():
@@ -316,9 +320,10 @@ class Inspector(QWidget):
     def _content_height(self) -> int | None:
         """How tall the current preview is when it fills the preview area's width."""
         thumb = self.layout().preview_thumb
-        if thumb.current_file is None or thumb.width() == 0:
+        width = self.layout().preview_splitter.width()
+        if thumb.current_file is None or width == 0:
             return None
-        return round(thumb.width() / thumb.aspect_ratio)
+        return round(width / thumb.aspect_ratio)
 
     def _fit_preview_height(self) -> None:
         """Resize the preview area to its content, up to the dragged height or else a square."""
@@ -340,7 +345,7 @@ class Inspector(QWidget):
         """The preview area's height for its content."""
         height = self._preview_height_limit
         if height is None:
-            height = self.layout().preview_thumb.width()
+            height = self.layout().preview_splitter.width()
         if (content_height := self._content_height()) is not None:
             height = min(height, content_height)
         return height

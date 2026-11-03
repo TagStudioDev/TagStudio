@@ -105,7 +105,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
     @override
     def _set_item_widget(self, item: BaseFieldTemplate | None, index: int) -> None:
         """Set the field template of a field template capsule at a specific index."""
-        underlined_widget: UnderlinedWidget = self._get_item_widget(index, self._lib)
+        underlined_widget: UnderlinedWidget = self._get_item_widget(index)
         capsule = underlined_widget.widget
         assert isinstance(capsule, Capsule)
         capsule.has_remove = False
@@ -151,7 +151,7 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self._update_items(self.layout().search_field.text())
 
     @override
-    def _get_item_widget(self, index: int, library: Library | None) -> UnderlinedWidget:
+    def _get_item_widget(self, index: int) -> UnderlinedWidget:
         """Gets the item widget at a specific index."""
         # Create any new item widgets needed up to the given index
         if self.layout().content_layout.count() <= index:

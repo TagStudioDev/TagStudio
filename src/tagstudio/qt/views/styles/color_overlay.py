@@ -41,11 +41,11 @@ def svg_color_overlay(
     return pixmap
 
 
-def toggle_icon(svg: bytes, size: QSize, device_pixel_ratio: float) -> QIcon:
-    """An SVG icon in the theme's foreground color and in the accent color while checked."""
+def toggle_icon(svg: bytes, checked_svg: bytes, size: QSize, device_pixel_ratio: float) -> QIcon:
+    """An SVG icon in the foreground color, and another in the accent color while checked."""
     icon = QIcon(svg_color_overlay(svg, theme_foreground_color(), device_pixel_ratio, size))
     icon.addPixmap(
-        svg_color_overlay(svg, Palette.accent_alt(), device_pixel_ratio, size),
+        svg_color_overlay(checked_svg, Palette.accent_alt(), device_pixel_ratio, size),
         QIcon.Mode.Normal,
         QIcon.State.On,
     )

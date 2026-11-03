@@ -6,17 +6,21 @@ from typing import TYPE_CHECKING, Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QSizePolicy
 
-from tagstudio.core.library.alchemy.library import Library
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.controllers.capsule import Capsule
+from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
+from tagstudio.qt.views.capsule_view import CapsuleView
 from tagstudio.qt.views.search_panel_view import SearchPanelView
-from tagstudio.qt.views.styles.stylesheets import PAD
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
 
 logger = structlog.get_logger(__name__)
+
+_ROW_HEIGHT = CapsuleView.HEIGHT + HALF_PAD  # Each capsule and the gap below it
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -58,51 +62,27 @@ class SearchPanel[T](ModalContent):
         # Items
         self._excluded: list[int] = exclude or []
         self._search_results: list[T] = []
-
-        # Limits
-        self._unlimited_limit_item_label: str = "All Items"
-        self._limit_items: list[tuple[str, int]] = [
-            ("25", 25),
-            ("50", 50),
-            ("100", 100),
-            ("250", 250),
-            ("500", 500),
-            (self._unlimited_limit_item_label, -1),
-        ]
-        self._default_limit_index: int = 0  # 25 Limit (Default)
-        self._previous_limit_index: int = self._default_limit_index
+        self._item_widgets: list[Capsule] = []
+        self._are_capsules_clickable = True
+        self._first_row = 0
+        self._filled_first_row: int | None = None
 
         self.setLayout(view)
         scroll_bar = view.scroll_area.verticalScrollBar()
         scroll_bar.rangeChanged.connect(self._toggle_scroll_bar)
         self._toggle_scroll_bar(scroll_bar.minimum(), scroll_bar.maximum())
-        self.set_limit_items(self._limit_items)
-        self.set_limit_index(self._default_limit_index)
+        scroll_bar.valueChanged.connect(self._fill_item_widgets)
+        view.scroll_area.viewport().installEventFilter(self)
         self.setMinimumSize(300, 400)
-        self.connect_callbacks(self)
+        self._connect_callbacks()
 
-    def connect_callbacks(self, controller: SearchPanel[Any]) -> None:
-        self.layout().limit_combobox.currentIndexChanged.connect(controller.on_limit_changed)
-        self.layout().search_field.textChanged.connect(controller.on_search_query_changed)
+    def _connect_callbacks(self) -> None:
+        self.layout().search_field.textChanged.connect(self.on_search_query_changed)
         self.layout().search_field.returnPressed.connect(
-            lambda: controller.on_search_query_submitted(self.get_search_query())
+            lambda: self.on_search_query_submitted(self.get_search_query())
         )
-        self.layout().create_button.clicked.connect(controller.on_item_create)
-        self.layout().create_from_query_button.on_click.connect(controller.on_item_create)
-
-    def set_limit_items(self, limit_items: list[tuple[str, int]]) -> None:
-        # Remove existing limit items
-        for i in reversed(range(self.layout().limit_combobox.count())):
-            self.layout().limit_combobox.removeItem(i)
-
-        # Add new limit items
-        self.layout().limit_combobox.addItems([limit_item[0] for limit_item in limit_items])
-
-    def get_limit_index(self) -> int:
-        return self.layout().limit_combobox.currentIndex()
-
-    def set_limit_index(self, index: int) -> None:
-        self.layout().limit_combobox.setCurrentIndex(index)
+        self.layout().create_button.clicked.connect(self.on_item_create)
+        self.layout().create_from_query_button.on_click.connect(self.on_item_create)
 
     def focus_search_box(self, select_all: bool = False) -> None:
         self.layout().search_field.setFocus()
@@ -139,50 +119,50 @@ class SearchPanel[T](ModalContent):
         """Show the scroll bar when needed."""
         view = self.layout()
         is_overflowing = maximum > minimum
-        if view.results_layout:
-            margins = view.results_layout.contentsMargins()
-            margins.setRight(0 if is_overflowing else PAD)
-            view.results_layout.setContentsMargins(margins)
+        margins = view.results_layout.contentsMargins()
+        margins.setRight(0 if is_overflowing else PAD)
+        view.results_layout.setContentsMargins(margins)
+        view.results_layout.activate()
         view.scroll_area.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOn
             if is_overflowing
             else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
 
-    def get_item_widget(self, index: int, library: Library) -> Any:
-        return self.get_item_widget(index, library)
+    def get_item_widget(self, index: int) -> Capsule:
+        """The item widget showing the result at this row, which must be in view."""
+        return self._item_widgets[index - self._first_row]
 
-    def on_limit_changed(self, index: int) -> None:
-        # Method was called outside the limit_combobox callback
-        if index != self.get_limit_index():
-            self.set_limit_index(index)
+    def _new_item_widget(self) -> Capsule:
+        raise NotImplementedError()
 
-        if self._previous_limit_index == index:
-            return
-
-        self.update_items(self.layout().search_field.text())
-
-    def _get_limit(self) -> tuple[str, int]:
-        return self._limit_items[self.get_limit_index()]
+    def set_capsules_clickable(self, clickable: bool) -> None:
+        self._are_capsules_clickable = clickable
+        for capsule in self._item_widgets:
+            capsule.set_clickable(clickable)
 
     def on_search_query_changed(self, query: str) -> None:
         self.layout().create_from_query_button.set_text(
             Translations.format("item.create_from_query", query=query)
         )
         self.update_items(query)
+        self.scroll_to(0)
 
     def on_search_query_submitted(self, query: str) -> None:
         # Focus search field if no query
         if not query:
             self.layout().search_field.setFocus()
-            parent: QWidget | None = self.parentWidget()
-            if parent is not None:
-                parent.hide()
+            window = self.window()
+            if isinstance(window, Modal):
+                window.hide()
             return
 
         # Create item if no search results
         if len(self._search_results) <= 0:
             self.on_item_create()
+            return
+
+        if not self._are_capsules_clickable:
             return
 
         if self._is_chooser:
@@ -208,7 +188,7 @@ class SearchPanel[T](ModalContent):
 
     def update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
-        logger.info("[SearchPanel] Updating items", limit=self._get_limit()[1])
+        logger.info("[SearchPanel] Updating items")
 
         # Remove the create from query button if one exists
         self.remove_create_from_query_button()
@@ -235,14 +215,10 @@ class SearchPanel[T](ModalContent):
         all_results: list[T] = sorted(list(priority_results), key=lambda i: len(_item_name(i))) + [
             item for item in raw_results if item not in priority_results
         ]
-        if self._get_limit()[1] > 0:
-            all_results = all_results[: self._get_limit()[1]]
 
         self._search_results = all_results
         logger.info("[SearchPanel] Search results", count=len(self._search_results))
         self._update_item_widgets()
-
-        self._previous_limit_index = self.get_limit_index()
 
         # Add back the create from query button
         if query and query.strip():
@@ -250,14 +226,47 @@ class SearchPanel[T](ModalContent):
 
     def _update_item_widgets(self) -> None:
         """Show the search results in the item widgets."""
-        for i in range(max(len(self._search_results), self.layout().scroll_layout.count())):
-            item: T | None = self._search_results[i] if i < len(self._search_results) else None
-            self.set_item_widget(item=item, index=i)
+        view = self.layout()
+        view.rows_spacer.changeSize(
+            0, len(self._search_results) * _ROW_HEIGHT, QSizePolicy.Policy.Minimum
+        )
+        view.scroll_layout.invalidate()
+        self._filled_first_row = None
+        self._fill_item_widgets()
+
+    def _fill_item_widgets(self) -> None:
+        """Fill item widgets for the rows in view, reusing them as other rows scroll in."""
+        view = self.layout()
+        viewport = view.scroll_area.viewport()
+        margins = view.scroll_layout.contentsMargins()
+        scroll_position = view.scroll_area.verticalScrollBar().value()
+        self._first_row = max(0, scroll_position - margins.top()) // _ROW_HEIGHT
+        if self._first_row == self._filled_first_row:
+            return
+        self._filled_first_row = self._first_row
+
+        # Two extra rows for the partly shown rows at the top and bottom
+        while len(self._item_widgets) < viewport.height() // _ROW_HEIGHT + 2:
+            item_widget = self._new_item_widget()
+            item_widget.setParent(view.scroll_contents)
+            item_widget.set_clickable(self._are_capsules_clickable)
+            self._item_widgets.append(item_widget)
+
+        width = viewport.width() - margins.left() - margins.right()
+        for slot, item_widget in enumerate(self._item_widgets):
+            row = self._first_row + slot
+            if row >= len(self._search_results):
+                item_widget.setHidden(True)
+                continue
+            top = margins.top() + row * _ROW_HEIGHT
+            item_widget.setGeometry(margins.left(), top, width, CapsuleView.HEIGHT)
+            item_widget.setHidden(False)
+            self.set_item_widget(self._search_results[row], row)
 
     def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
+    def set_item_widget(self, item: T, index: int) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     @override
@@ -266,14 +275,24 @@ class SearchPanel[T](ModalContent):
         return super().layout()  # pyright: ignore[reportReturnType]
 
     @override
-    def showEvent(self, event: QShowEvent) -> None:  # noqa N802
-        self.update_items()
-        self.scroll_to(0)
-        self.clear_search_query()
+    def showEvent(self, event: QShowEvent) -> None:
+        if isinstance(self.window(), Modal):
+            self.update_items()
+            self.scroll_to(0)
+            self.clear_search_query()
+        else:
+            self.update_items(self.get_search_query())
         return super().showEvent(event)
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Resize:
+            self._filled_first_row = None
+            self._fill_item_widgets()
+        return super().eventFilter(watched, event)
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         # When Escape is pressed, focus back on the search box.
         # If focus is already on the search box, close the modal.
         if event.key() == QtCore.Qt.Key.Key_Escape:

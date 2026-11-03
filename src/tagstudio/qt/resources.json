@@ -203,6 +203,10 @@
         "mode": "pil",
         "path": "qt/images/pause.png"
     },
+    "pinned_tags_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/pin.svg"
+    },
     "presentation": {
         "mode": "pil",
         "path": "qt/images/file_icons/presentation.png"
@@ -214,6 +218,10 @@
     "program": {
         "mode": "pil",
         "path": "qt/images/file_icons/program.png"
+    },
+    "recent_tags_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/clock.svg"
     },
     "shader": {
         "mode": "pil",
@@ -271,6 +279,10 @@
         "mode": "pil",
         "path": "qt/images/file_icons/spreadsheet.png"
     },
+    "tag_search_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/tag-search.svg"
+    },
     "plaintext": {
         "mode": "pil",
         "path": "qt/images/file_icons/text.png"
@@ -278,6 +290,10 @@
     "thumb_loading": {
         "mode": "pil",
         "path": "qt/images/thumb_loading.png"
+    },
+    "top_tags_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/trophy.svg"
     },
     "trash": {
         "mode": "pil",

@@ -41,12 +41,10 @@ from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import (
     pixmap_color_overlay,
     svg_color_overlay,
-    toggle_icon,
 )
 from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import (
     CHECKBOX_SIZE,
-    FLAT_ICON_SIZE,
     INNER_RADIUS,
     PAD,
     RADIUS,
@@ -55,7 +53,6 @@ from tagstudio.qt.views.styles.stylesheets import (
     capsule_colors,
     control_capsule_colors,
     get_tag_highlight_color,
-    icon_button_style,
     is_dark_theme,
 )
 from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects
@@ -150,17 +147,6 @@ def set_checked_by_icon(button: QPushButton, by_icon: bool) -> None:
     """Show a checkable button's checked state only through its icon."""
     button.setProperty("checked_by_icon", by_icon)
     button.update()
-
-
-def set_flat_icon(button: QPushButton, svg: bytes) -> None:
-    """Show a button as just an icon in the accent color while checked."""
-    size = QSize(FLAT_ICON_SIZE, FLAT_ICON_SIZE)
-    button.setFlat(True)
-    button.setStyleSheet(icon_button_style())
-    button.setIconSize(size)
-    button.setCursor(Qt.CursorShape.PointingHandCursor)
-    button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    button.setIcon(toggle_icon(svg, size, button.devicePixelRatioF()))
 
 
 def set_swatch(button: QAbstractButton) -> None:
@@ -676,21 +662,24 @@ class TagStudioStyle(QProxyStyle):
         if widget is not None:
             span = widget.property("handle_span_insets")
         is_horizontal = bool(option.state & _State.State_Horizontal)
-        is_at_rest = not option.state & (_State.State_Sunken | _State.State_MouseOver)
+        is_enabled = bool(option.state & _State.State_Enabled)
+        is_at_rest = not is_enabled or not option.state & (
+            _State.State_Sunken | _State.State_MouseOver
+        )
 
         if span is not None and is_at_rest:
-            if widget is not None and widget.property("shown_at_rest") is False:
+            if is_enabled and widget is not None and widget.property("shown_at_rest") is False:
                 return
-            color = option.palette.color(QPalette.ColorRole.WindowText)
+            color = option.palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.WindowText)
             color.setAlphaF(_HANDLE_HAIRLINE_OPACITY)
-            rect = option.rect
+            rect = QRectF(option.rect)
             start, end = span
             if is_horizontal:
-                line = QRect(rect.center().x(), rect.top() + start, 1, rect.height())
-                line.setBottom(rect.bottom() - end)
+                line_length = rect.height() - start - end
+                line = QRectF(rect.center().x() - 0.5, rect.top() + start, 1, line_length)
             else:
-                line = QRect(rect.left() + start, rect.center().y(), rect.width(), 1)
-                line.setRight(rect.right() - end)
+                line_length = rect.width() - start - end
+                line = QRectF(rect.left() + start, rect.center().y() - 0.5, line_length, 1)
             painter.fillRect(line, color)
             return
 

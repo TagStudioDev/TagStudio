@@ -381,11 +381,6 @@ class QtDriver(DriverMixin, QObject):
         tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
-        self.tag_manager.done.connect(
-            lambda checked=False: self.main_window.inspector.update_from_selection(
-                update_preview=False
-            )
-        )
 
         # Initialize the Color Group Manager panel
         self.color_manager = Modal(TagColorManager(self), Translations["color_manager.title"])
@@ -395,7 +390,11 @@ class QtDriver(DriverMixin, QObject):
             content_widget=FieldTemplateSearchPanel(
                 self.lib,
                 is_chooser=False,
-                view=SearchPanelView(Translations["home.search_field_templates"], is_chooser=False),
+                view=SearchPanelView(
+                    Translations["home.search_field_templates"],
+                    create_text=Translations["field_template.create"],
+                    is_chooser=False,
+                ),
             ),
             title=Translations["field_template_manager.title"],
             is_savable=False,

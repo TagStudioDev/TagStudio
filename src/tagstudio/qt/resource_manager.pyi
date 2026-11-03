@@ -69,10 +69,12 @@ class ResourceManager:
     model: Image.Image
     mute_icon: Image.Image
     pause_icon: Image.Image
+    pinned_tags_icon_solid: bytes
     plaintext: Image.Image
     presentation: Image.Image
     preview_icon_solid: bytes
     program: Image.Image
+    recent_tags_icon_solid: bytes
     shader: Image.Image
     shortcut: Image.Image
     sort_alphabetical_ascending_icon: bytes
@@ -87,7 +89,9 @@ class ResourceManager:
     splash_classic: QPixmap
     splash_goo_gears: QPixmap
     spreadsheet: Image.Image
+    tag_search_icon_solid: bytes
     thumb_loading: Image.Image
+    top_tags_icon_solid: bytes
     trash: Image.Image
     ts_logo_text_color: Image.Image
     ts_logo_text_mono: Image.Image
