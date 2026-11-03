@@ -40,6 +40,7 @@ path = [
     "src/tagstudio/resources/qt/images/bxs-trash-solid.png",
     "src/tagstudio/resources/qt/images/bxs-volume-full-solid.png",
     "src/tagstudio/resources/qt/images/file_icons/database.png",
+    "src/tagstudio/resources/qt/images/search/bx-shuffle.svg",
 ]
 SPDX-FileCopyrightText = "(c) 2026 Boxicons"
 SPDX-License-Identifier = "MIT"
@@ -53,6 +54,8 @@ SPDX-License-Identifier = "MIT"
 path = [
     "src/tagstudio/resources/qt/images/hint_field_add.png",
     "src/tagstudio/resources/qt/images/hint_tag_add.png",
+    "src/tagstudio/resources/qt/images/panels/image.svg",
+    "src/tagstudio/resources/qt/images/search/folder.svg",
 ]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
 SPDX-License-Identifier = "Apache-2.0"
@@ -79,6 +82,9 @@ path = [
     "src/tagstudio/resources/qt/images/hint_tag_issue.png",
     "src/tagstudio/resources/qt/images/information-slab-circle-outline.svg",
     "src/tagstudio/resources/qt/images/information-slab-circle.svg",
+    "src/tagstudio/resources/qt/images/search/file-tree.svg",
+    "src/tagstudio/resources/qt/images/search/sort-*.svg",
+    "src/tagstudio/resources/qt/images/search/view-*.svg",
 ]
 SPDX-FileCopyrightText = "(c) github:Templarian/MaterialDesign Contributors"
 SPDX-License-Identifier = "Apache-2.0"

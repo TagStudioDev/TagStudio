@@ -10,7 +10,7 @@ from typing import override
 
 import structlog
 import toml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
 
@@ -30,6 +30,8 @@ DEFAULT_CACHED_THUMB_QUALITY = 80  # WebP Compression Quality
 MIN_CACHED_THUMB_RES = 32  # Pixels
 MAX_CACHED_THUMB_RES = 1024  # Pixels
 DEFAULT_CACHED_THUMB_RES = 256  # Pixels
+
+PAGE_SIZES = (50, 100, 250, 500, 1000, 5000)
 
 
 class Splash(StrEnum):
@@ -84,6 +86,15 @@ class AppSettings(BaseModel):
     zero_padding: bool = Field(default=True)
 
     loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
+
+    @field_validator("page_size")
+    @classmethod
+    def _round_page_size(cls, page_size: int) -> int:
+        """Round page size in settings file to the closest preconfigured internal size.
+
+        NOTE: Implicitly used by pydantic.
+        """
+        return min(PAGE_SIZES, key=lambda size: abs(size - page_size))
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> AppSettings:

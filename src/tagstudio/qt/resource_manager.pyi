@@ -44,7 +44,11 @@ class ResourceManager:
     eye_closed: bytes
     favorite_icon: bytes
     file_generic: Image.Image
+    file_system_icons_view_icon: bytes
+    file_system_list_view_icon: bytes
     font: Image.Image
+    gallery_view_icon: bytes
+    grid_view_icon: bytes
     hint_field_add: Image.Image
     hint_field_create: Image.Image
     hint_field_issue: Image.Image
@@ -59,15 +63,25 @@ class ResourceManager:
     image: Image.Image
     info_outline: bytes
     info_solid: bytes
+    list_view_icon: bytes
+    masonry_view_icon: bytes
     material: Image.Image
     model: Image.Image
     mute_icon: Image.Image
     pause_icon: Image.Image
     plaintext: Image.Image
     presentation: Image.Image
+    preview_icon_solid: bytes
     program: Image.Image
     shader: Image.Image
     shortcut: Image.Image
+    sort_alphabetical_ascending_icon: bytes
+    sort_alphabetical_descending_icon: bytes
+    sort_calendar_ascending_icon: bytes
+    sort_calendar_descending_icon: bytes
+    sort_numeric_ascending_icon: bytes
+    sort_numeric_descending_icon: bytes
+    sort_random_icon: bytes
     splash_95: QPixmap
     splash_aurora: QPixmap
     splash_classic: QPixmap

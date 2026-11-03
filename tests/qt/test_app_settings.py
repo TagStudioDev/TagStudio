@@ -28,7 +28,7 @@ def test_read_settings(library_dir: Path):
     assert settings.open_last_loaded_on_startup
     assert settings.autoplay
     assert settings.show_filenames_in_grid
-    assert settings.page_size == 1337
+    assert settings.page_size == 1000
     assert settings.show_filepath == 0
     assert settings.theme == Theme.SYSTEM
     assert settings.date_format == "%x"
@@ -52,3 +52,7 @@ def test_read_settings(library_dir: Path):
         """)
     settings = AppSettings.read_settings(settings_path)
     assert settings.language == "en"
+
+
+def test_page_size_snaps_to_nearest_preset():
+    assert AppSettings(page_size=300).page_size == 250

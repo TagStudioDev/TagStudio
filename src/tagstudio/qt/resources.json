@@ -103,9 +103,25 @@
         "mode": "pil",
         "path": "qt/images/file_icons/file_generic.png"
     },
+    "file_system_icons_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/folder.svg"
+    },
+    "file_system_list_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/file-tree.svg"
+    },
     "font": {
         "mode": "pil",
         "path": "qt/images/file_icons/font.png"
+    },
+    "gallery_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/view-gallery.svg"
+    },
+    "grid_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/view-grid.svg"
     },
     "hint_field_add": {
         "mode": "pil",
@@ -163,6 +179,14 @@
         "mode": "rb",
         "path": "qt/images/information-slab-circle.svg"
     },
+    "list_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/view-list.svg"
+    },
+    "masonry_view_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/view-dashboard.svg"
+    },
     "material": {
         "mode": "pil",
         "path": "qt/images/file_icons/material.png"
@@ -183,6 +207,10 @@
         "mode": "pil",
         "path": "qt/images/file_icons/presentation.png"
     },
+    "preview_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/image.svg"
+    },
     "program": {
         "mode": "pil",
         "path": "qt/images/file_icons/program.png"
@@ -194,6 +222,34 @@
     "shortcut": {
         "mode": "pil",
         "path": "qt/images/file_icons/shortcut.png"
+    },
+    "sort_alphabetical_ascending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-alphabetical-ascending.svg"
+    },
+    "sort_alphabetical_descending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-alphabetical-descending.svg"
+    },
+    "sort_calendar_ascending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-calendar-ascending.svg"
+    },
+    "sort_calendar_descending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-calendar-descending.svg"
+    },
+    "sort_numeric_ascending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-numeric-ascending.svg"
+    },
+    "sort_numeric_descending_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/sort-numeric-descending.svg"
+    },
+    "sort_random_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/bx-shuffle.svg"
     },
     "splash_95": {
         "mode": "qpixmap",

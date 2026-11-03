@@ -5,7 +5,16 @@
 from typing import override
 
 from PySide6.QtCore import QPointF, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPalette, QPen, QPixmap
+from PySide6.QtGui import (
+    QColor,
+    QIcon,
+    QImage,
+    QPainter,
+    QPainterPath,
+    QPalette,
+    QPen,
+    QPixmap,
+)
 from PySide6.QtWidgets import (
     QAbstractButton,
     QApplication,
@@ -16,6 +25,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QScrollBar,
+    QSlider,
     QSplitter,
     QStyle,
     QStyleOption,
@@ -44,6 +54,7 @@ from tagstudio.qt.views.styles.stylesheets import (
     RESIZE_HANDLE_WIDTH,
     capsule_colors,
     control_capsule_colors,
+    get_tag_highlight_color,
     icon_button_style,
     is_dark_theme,
 )
@@ -63,8 +74,11 @@ _SCROLL_CAPSULE_HELD_OPACITY = 0.75
 _SCROLL_GUTTER_OPACITY = 0.08
 _SCROLL_GUTTER_LIGHT_OPACITY = 0.16
 
+_SLIDER_HANDLE_SIZE = 18
+_SLIDER_TRACK_HEIGHT = 6
+
 _CHECK_MARK_SIZE = CHECKBOX_SIZE // 2
-_COMBO_BOX_CHEVRON_SIZE = 16
+_MENU_ARROW_SIZE = 16
 _CHECK_MARK_RADIUS = INNER_RADIUS - 1
 _JOINT_DIVIDER_OPACITY = 0.15
 _HANDLE_HAIRLINE_OPACITY = 0.1
@@ -120,10 +134,10 @@ def set_color_group(button: QAbstractButton, color_group: TagColorGroup | None) 
     button.update()
 
 
-def set_joined_edges(button: QAbstractButton, edges: Qt.Edge) -> None:
-    """Join a button to its neighbors along these edges."""
-    button.setProperty("joined_edges", edges)
-    button.update()
+def set_joined_edges(widget: QAbstractButton | QComboBox, edges: Qt.Edge) -> None:
+    """Join a button or combobox to its neighbors along these edges."""
+    widget.setProperty("joined_edges", edges)
+    widget.update()
 
 
 def set_icon_faded(button: QAbstractButton, faded: bool) -> None:
@@ -170,7 +184,7 @@ class TagStudioStyle(QProxyStyle):
 
     @override
     def polish(self, arg__1: QWidget | QApplication | QPalette | Qt.GlobalColor | QColor) -> None:
-        if isinstance(arg__1, QPushButton | QLineEdit | QComboBox):
+        if isinstance(arg__1, QPushButton | QLineEdit | QComboBox | QSlider):
             arg__1.setAttribute(Qt.WidgetAttribute.WA_Hover)
         # Skip buttons that set their own cursor, since polishing happens after their constructor
         if isinstance(arg__1, QPushButton) and not arg__1.testAttribute(
@@ -241,6 +255,11 @@ class TagStudioStyle(QProxyStyle):
             widget, QCheckBox | QRadioButton
         ):
             return  # Their indicators draw the focus ring instead
+        elif element == QStyle.PrimitiveElement.PE_IndicatorArrowDown and isinstance(
+            widget, QPushButton
+        ):
+            center = QPointF(QRectF(option.rect).center().x(), widget.height() / 2)
+            self._draw_menu_arrow(option, painter, center)
         else:
             super().drawPrimitive(element, option, painter, widget)
 
@@ -281,6 +300,12 @@ class TagStudioStyle(QProxyStyle):
             option, QStyleOptionComboBox
         ):
             self._draw_combo_box(option, painter, widget)
+        elif (
+            control == QStyle.ComplexControl.CC_Slider
+            and isinstance(option, QStyleOptionSlider)
+            and option.orientation == Qt.Orientation.Horizontal
+        ):
+            self._draw_slider(option, painter, widget)
         else:
             super().drawComplexControl(control, option, painter, widget)
 
@@ -294,7 +319,16 @@ class TagStudioStyle(QProxyStyle):
     ) -> QRect:
         if control == QStyle.ComplexControl.CC_ScrollBar and isinstance(option, QStyleOptionSlider):
             return self._scroll_bar_rect(option, sub_control, widget)
-        return super().subControlRect(control, option, sub_control, widget)  # pyright: ignore[reportArgumentType]
+        rect = super().subControlRect(control, option, sub_control, widget)  # pyright: ignore[reportArgumentType]
+        if (
+            control == QStyle.ComplexControl.CC_Slider
+            and sub_control == _Control.SC_SliderHandle
+            and isinstance(option, QStyleOptionSlider)
+            and option.orientation == Qt.Orientation.Horizontal
+        ):
+            # Fix top of slider handle from being cutoff
+            rect.moveTop(option.rect.top() + (option.rect.height() - rect.height()) // 2)
+        return rect
 
     @override
     def pixelMetric(
@@ -305,6 +339,8 @@ class TagStudioStyle(QProxyStyle):
     ) -> int:
         if metric == QStyle.PixelMetric.PM_ScrollBarExtent:
             return _SCROLL_BAR_EXTENT
+        if metric in (QStyle.PixelMetric.PM_SliderLength, QStyle.PixelMetric.PM_SliderThickness):
+            return _SLIDER_HANDLE_SIZE
         if metric in (
             QStyle.PixelMetric.PM_IndicatorWidth,
             QStyle.PixelMetric.PM_IndicatorHeight,
@@ -468,28 +504,36 @@ class TagStudioStyle(QProxyStyle):
     ) -> None:
         """Draw a combobox."""
         radius = INNER_RADIUS if widget is None else self._radius(widget, INNER_RADIUS)
-        self._draw_panel(option, painter, radius)
+        joined_edges: Qt.Edge | None = None if widget is None else widget.property("joined_edges")
+        if joined_edges:
+            self._draw_joined_panel(option, painter, radius, joined_edges)
+        else:
+            self._draw_panel(option, painter, radius)
 
         arrow = QRectF(
             self.subControlRect(
                 QStyle.ComplexControl.CC_ComboBox, option, _Control.SC_ComboBoxArrow, widget
             )
         )
-        side = _COMBO_BOX_CHEVRON_SIZE
-        chevron = svg_color_overlay(
+        self._draw_menu_arrow(option, painter, arrow.center())
+        if self._has_keyboard_focus(option):
+            self._effect.paint_focus_ring(painter, option.rect, radius, joined_edges)
+
+    def _draw_menu_arrow(self, option: QStyleOption, painter: QPainter, center: QPointF) -> None:
+        """Draw the arrow of a control that opens a menu, like a combobox."""
+        side = _MENU_ARROW_SIZE
+        arrow_icon = svg_color_overlay(
             ResourceManager().chevron_down,
             option.palette.color(QPalette.ColorRole.ButtonText),
             painter.device().devicePixelRatioF(),
             QSize(side, side),
         )
         target = QRectF(0, 0, side, side)
-        target.moveCenter(arrow.center())
+        target.moveCenter(center)
         painter.save()
         self._fade_if_disabled(option, painter)
-        painter.drawPixmap(target.topLeft().toPoint(), chevron)
+        painter.drawPixmap(target.topLeft().toPoint(), arrow_icon)
         painter.restore()
-        if self._has_keyboard_focus(option):
-            self._effect.paint_focus_ring(painter, option.rect, radius)
 
     def _scroll_bar_rect(
         self, option: QStyleOptionSlider, sub_control: QStyle.SubControl, widget: QWidget | None
@@ -575,6 +619,49 @@ class TagStudioStyle(QProxyStyle):
 
         painter.setBrush(color)
         painter.drawRoundedRect(capsule, radius, radius)
+        painter.restore()
+
+    def _draw_slider(
+        self, option: QStyleOptionSlider, painter: QPainter, widget: QWidget | None
+    ) -> None:
+        """Draw a slider widget."""
+        handle = self.subControlRect(
+            QStyle.ComplexControl.CC_Slider, option, _Control.SC_SliderHandle, widget
+        )
+        top = handle.top() + (handle.height() - _SLIDER_TRACK_HEIGHT) // 2
+        track = QRect(option.rect.left(), top, option.rect.width(), _SLIDER_TRACK_HEIGHT)
+        track_radius = _SLIDER_TRACK_HEIGHT / 2
+        # Cut the handle out of the track so it doesn't show through the translucency
+        handle_cutout = QPainterPath()
+        handle_cutout.addEllipse(QRectF(handle).adjusted(0.5, 0.5, -0.5, -0.5))
+        filled_side = QRectF(option.rect)
+        filled_side.setRight(handle.center().x())
+        filled = QPainterPath()
+        filled.addRect(filled_side)
+        unfilled_side = QRectF(option.rect)
+        unfilled_side.setLeft(handle.center().x())
+        unfilled = QPainterPath()
+        unfilled.addRect(unfilled_side)
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self._fade_if_disabled(option, painter)
+        painter.setClipPath(filled.subtracted(handle_cutout))
+        accent = Palette.accent_alt()
+        self._effect.paint_capsule(
+            painter, track, track_radius, accent, None, get_tag_highlight_color(accent)
+        )
+        painter.setClipPath(unfilled.subtracted(handle_cutout))
+        self._effect.paint_surface(painter, track, track_radius, style=SurfaceStyle.DEBOSSED)
+        painter.setClipping(False)
+
+        is_on_handle = bool(option.activeSubControls & _Control.SC_SliderHandle)
+        is_down = is_on_handle and bool(option.state & _State.State_Sunken)
+        under_mouse = is_on_handle and bool(option.state & _State.State_MouseOver)
+        handle_radius = handle.height() / 2
+        self._effect.paint_surface(painter, handle, handle_radius, is_down, under_mouse)
+        if self._has_keyboard_focus(option):
+            self._effect.paint_focus_ring(painter, handle, handle_radius)
         painter.restore()
 
     @staticmethod
