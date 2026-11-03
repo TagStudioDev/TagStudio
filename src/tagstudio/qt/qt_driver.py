@@ -63,6 +63,7 @@ from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controllers.about_modal import AboutModal
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
@@ -76,7 +77,6 @@ from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
 from tagstudio.qt.entry_state import EntryState
-from tagstudio.qt.mixed.about_modal import AboutModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
@@ -179,7 +179,7 @@ class QtDriver(DriverMixin, QObject):
     add_tag_modal: Modal | None = None
     add_field_modal: Modal | None = None
     folders_modal: FoldersToTagsModal
-    about_modal: AboutModal
+    about_modal: Modal
     unlinked_modal: FixUnlinkedEntriesModal
     ignored_modal: FixIgnoredEntriesModal
     dupe_modal: FixDupeFilesModal
@@ -932,7 +932,11 @@ class QtDriver(DriverMixin, QObject):
 
     def open_about_modal(self):
         if not hasattr(self, "about_modal"):
-            self.about_modal = AboutModal(self.global_settings_path)
+            self.about_modal = Modal(
+                AboutModal(self.global_settings_path),
+                window_title=Translations["about.title"],
+                inline_title=False,
+            )
         self.about_modal.show()
 
     def open_fix_unlinked_entries_modal(self):

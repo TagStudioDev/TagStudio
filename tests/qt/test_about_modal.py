@@ -4,7 +4,7 @@
 
 from pytestqt.qtbot import QtBot
 
-from tagstudio.qt.mixed.about_modal import AboutModal
+from tagstudio.qt.controllers.about_modal import AboutModal
 
 
 def test_github_api_unavailable(qtbot: QtBot, mocker) -> None:
