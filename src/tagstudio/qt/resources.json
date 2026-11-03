@@ -63,6 +63,14 @@
         "mode": "rb",
         "path": "qt/images/bxs-chevron-down.svg"
     },
+    "colors_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/bx-palette.svg"
+    },
+    "colors_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/rail/bxs-palette.svg"
+    },
     "copy": {
         "mode": "pil",
         "path": "qt/images/bxs-clipboard-regular.png"
@@ -86,6 +94,14 @@
     "edit": {
         "mode": "pil",
         "path": "qt/images/bxs-pencil-solid.png"
+    },
+    "entries_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/file-outline.svg"
+    },
+    "entries_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/rail/file.svg"
     },
     "eye": {
         "mode": "rb",
@@ -179,6 +195,14 @@
         "mode": "rb",
         "path": "qt/images/information-slab-circle.svg"
     },
+    "library_stats_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/chart-box-outline.svg"
+    },
+    "library_stats_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/rail/chart-box.svg"
+    },
     "list_view_icon": {
         "mode": "rb",
         "path": "qt/images/search/view-list.svg"
@@ -222,6 +246,14 @@
     "recent_tags_icon_solid": {
         "mode": "rb",
         "path": "qt/images/panels/clock.svg"
+    },
+    "settings_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/bx-cog.svg"
+    },
+    "settings_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/rail/bxs-cog.svg"
     },
     "shader": {
         "mode": "pil",
@@ -279,9 +311,21 @@
         "mode": "pil",
         "path": "qt/images/file_icons/spreadsheet.png"
     },
+    "sync_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/sync.svg"
+    },
     "tag_search_icon_solid": {
         "mode": "rb",
         "path": "qt/images/panels/tag-search.svg"
+    },
+    "tags_icon": {
+        "mode": "rb",
+        "path": "qt/images/rail/tag-text-outline.svg"
+    },
+    "tags_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/rail/tag-text.svg"
     },
     "plaintext": {
         "mode": "pil",
