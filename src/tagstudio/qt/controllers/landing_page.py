@@ -5,13 +5,25 @@
 from typing import Literal, override
 
 from PIL import ImageQt
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, Signal
+from PySide6.QtCore import (
+    QCoreApplication,
+    QEasingCurve,
+    QEvent,
+    QPoint,
+    QPropertyAnimation,
+    Qt,
+    QVariantAnimation,
+    Signal,
+)
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.landing_page_view import LandingPageView
 from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
+from tagstudio.qt.views.styles.image_background import ImageBackground
+
+_BACKGROUND_BLUR_RADIUS = 3  # In the source image's pixels
 
 
 class LandingPage(QWidget):
@@ -21,10 +33,13 @@ class LandingPage(QWidget):
     """
 
     open_library_requested = Signal()
+    background_changed = Signal()
 
     def __init__(self, pixel_ratio: float) -> None:
         super().__init__()
         self._rm = ResourceManager()
+        self._background = ImageBackground(self._rm.aurora_bg, _BACKGROUND_BLUR_RADIUS)
+        self._background.opacity = 0.0
 
         self._logo_width = int(480 * pixel_ratio)
         self._pixel_ratio = pixel_ratio
@@ -51,8 +66,23 @@ class LandingPage(QWidget):
         self._logo_special_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._logo_special_anim.setDuration(500)
 
+        self._background_fade = QVariantAnimation(self)
+        self._background_fade.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._background_fade.setDuration(1000)
+        self._background_fade.setStartValue(0.0)
+        self._background_fade.setEndValue(1.0)
+        self._background_fade.valueChanged.connect(self._set_background_opacity)
+
         logo_label.clicked.connect(self._update_special_click)
         self.layout().open_button.clicked.connect(self.open_library_requested)
+
+    @property
+    def background(self) -> ImageBackground:
+        return self._background
+
+    def _set_background_opacity(self, opacity: float) -> None:
+        self._background.opacity = opacity
+        self.background_changed.emit()
 
     @override
     def layout(self) -> LandingPageView:
@@ -70,11 +100,13 @@ class LandingPage(QWidget):
 
     def animate_logo_in(self) -> None:
         """Animate the TagStudio logo in."""
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.LayoutRequest)
         logo_label = self.layout().logo_label
         self._logo_pos_anim.setStartValue(QPoint(logo_label.x(), logo_label.y() - 100))
         self._logo_pos_anim.setEndValue(logo_label.pos())
         self._logo_pos_anim.start()
         self._logo_opacity_anim.start()
+        self._background_fade.start()
 
     def _update_logo_color(self, style: Literal["mono", "color"] = "mono") -> None:
         """Update the color of the TagStudio logo.

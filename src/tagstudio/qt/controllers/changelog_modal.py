@@ -2,20 +2,16 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-import math
 import re
 from pathlib import Path
 from typing import override
 
 import structlog
-from PySide6.QtCore import QSize, Qt, QTimer, QUrl
+from PySide6.QtCore import QEvent, Qt, QTimer, QUrl
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
     QImage,
-    QPainter,
-    QPalette,
-    QPixmap,
     QShowEvent,
     QTextBlockFormat,
     QTextCharFormat,
@@ -30,13 +26,12 @@ from tagstudio.core.constants import DOCS_URL, GITHUB_REPO_URL
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.changelog_modal_view import ChangelogModalView
 from tagstudio.qt.views.modal_view import ModalView
 from tagstudio.qt.views.styles.palette import (
     MUTED_PURPLE,
-    MUTED_PURPLE_OPAQUE,
     ColorType,
+    Palette,
     UiColor,
     get_ui_color,
 )
@@ -53,8 +48,7 @@ _USER_MENTION = re.compile(r"(?<![\w@/])@([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9]
 # Size Constraints
 _IMAGE_MAX_HEIGHT = 300
 _IMAGE_MAX_WIDTH = 0.8  # % of window width
-_WINDOW_MAX_HEIGHT = 900
-_WINDOW_WIDTH = 600
+_WINDOW_WIDTH = 800
 
 # Spacing
 # TODO: Use future constants for some of these (currently on dev branch)
@@ -80,6 +74,7 @@ class ChangelogModal(ModalContent):
         self._network = QNetworkAccessManager(self)
         self._network.finished.connect(self._on_image_downloaded)
         self._image_widths: dict[str, float] = {}  # The original width of each <img> tag
+        self._small_spans: list[tuple[int, int]] = []
 
         path = self._find_changelog()
         if path:
@@ -182,7 +177,7 @@ class ChangelogModal(ModalContent):
         link_format = QTextCharFormat()
         link_format.setForeground(QColor(get_ui_color(ColorType.PRIMARY, UiColor.BLUE)))
         small_format = QTextCharFormat()
-        small_format.setForeground(QColor(MUTED_PURPLE_OPAQUE))
+        small_format.setForeground(Palette.logo_accent())
         small_format.setProperty(QTextFormat.Property.FontSizeAdjustment, 1)
         italic_format = QTextCharFormat()
         italic_format.setFontUnderline(False)  # Read "_text_" as italic, not underlined
@@ -257,6 +252,7 @@ class ChangelogModal(ModalContent):
                 cursor.setPosition(position)
                 cursor.setPosition(position + length, QTextCursor.MoveMode.KeepAnchor)
                 cursor.mergeCharFormat(small_format)
+            self._small_spans.extend(smalls)
 
             # Use correct italics/underline formatting
             for position, length in underlines:
@@ -306,10 +302,7 @@ class ChangelogModal(ModalContent):
     @override
     def parent_post_init(self) -> None:
         window = self.window()
-        window.setFixedWidth(_WINDOW_WIDTH)
-        window.setMaximumHeight(_WINDOW_MAX_HEIGHT)
-        window.setStyleSheet("QLabel {color: white}")
-        window.ensurePolished()  # Applies the stylesheet now so it can't reset the palette below
+        window.resize(_WINDOW_WIDTH, window.sizeHint().height())
 
         modal_view = window.layout()
         assert isinstance(modal_view, ModalView)
@@ -319,31 +312,20 @@ class ChangelogModal(ModalContent):
             self.layout().view_more_button, QDialogButtonBox.ButtonRole.ActionRole
         )
 
-        # NOTE: A lot of the styling is similar to the "About" window, which eventually needs to be
-        # refactored to use the Modal class anyway, and can likely share a lot of this code
-        pixel_ratio = window.devicePixelRatio()
-        background = ResourceManager().about_bg
-        background.setDevicePixelRatio(pixel_ratio)
-        background = background.scaled(
-            QSize(
-                math.floor(_WINDOW_WIDTH * pixel_ratio),
-                math.floor(_WINDOW_MAX_HEIGHT * pixel_ratio * 0.8),
-            ),
-            Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
+    def _set_small_text_color(self) -> None:
+        cursor = QTextCursor(self.layout().text_browser.document())
+        small_format = QTextCharFormat()
+        small_format.setForeground(Palette.logo_accent())
+        for position, length in self._small_spans:
+            cursor.setPosition(position)
+            cursor.setPosition(position + length, QTextCursor.MoveMode.KeepAnchor)
+            cursor.mergeCharFormat(small_format)
 
-        # NOTE: This stops the bg image from tiling and fills in the rest with a black background
-        canvas = QPixmap(background.width(), math.floor(_WINDOW_MAX_HEIGHT * pixel_ratio))
-        canvas.setDevicePixelRatio(pixel_ratio)
-        canvas.fill(Qt.GlobalColor.black)
-        painter = QPainter(canvas)
-        painter.drawPixmap(0, 0, background)
-        painter.end()
-
-        palette = window.palette()
-        palette.setBrush(QPalette.ColorRole.Window, canvas)
-        window.setPalette(palette)
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._set_small_text_color()
+        super().changeEvent(event)
 
     @override
     def showEvent(self, event: QShowEvent) -> None:

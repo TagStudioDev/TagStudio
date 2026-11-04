@@ -21,8 +21,9 @@ from tagstudio.core.library.alchemy.constants import DB_VERSION
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_label import ClickableLabel
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.palette import MUTED_PURPLE
+from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import form_content_style, header
+from tagstudio.qt.views.styles.widget_effects import boxed_text_background_color, widget_drop_shadow
 
 _TOP_SPACING = 60
 _LOGO_WIDTH = 384
@@ -45,6 +46,7 @@ class AboutModalView(QVBoxLayout):
             )
         )
         self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        widget_drop_shadow(self.logo_label)
 
         # Version --------------------------------------------------------------
         version_str = " ".join(
@@ -59,7 +61,6 @@ class AboutModalView(QVBoxLayout):
         # Copyright ------------------------------------------------------------
         self.copyright_label = QLabel(COPYRIGHT)
         self.copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.copyright_label.setStyleSheet(f"QLabel {{color: {MUTED_PURPLE}}}")
 
         # Description ----------------------------------------------------------
         self.desc_label = QLabel(Translations["about.description"])
@@ -71,6 +72,9 @@ class AboutModalView(QVBoxLayout):
         # System Info ----------------------------------------------------------
         self.system_info_widget = QWidget()
         self.system_info_layout = QFormLayout(self.system_info_widget)
+        self.system_info_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
+        )
         self.system_info_layout.setSpacing(4)
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -79,17 +83,14 @@ class AboutModalView(QVBoxLayout):
         self.system_info_layout.addRow(QLabel(Translations["about.version"]), self.version_content)
 
         # Library DB Version
-        db_version_content = QLabel(f"{DB_VERSION}")
-        db_version_content.setStyleSheet(form_content_style())
+        self.db_version_content = QLabel(f"{DB_VERSION}")
         self.system_info_layout.addRow(
-            QLabel(Translations["about.library_version"]), db_version_content
+            QLabel(Translations["about.library_version"]), self.db_version_content
         )
 
         # Config Path
         self.config_path_content = ClickableLabel()
         self.config_path_content.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.config_path_content.setWordWrap(True)
-        self.config_path_content.setStyleSheet(form_content_style())
         self.system_info_layout.addRow(
             QLabel(f"{Translations['about.config_path']}"), self.config_path_content
         )
@@ -107,6 +108,9 @@ class AboutModalView(QVBoxLayout):
 
         self.optional_modules_widget = QWidget()
         self.optional_modules_layout = QFormLayout(self.optional_modules_widget)
+        self.optional_modules_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
+        )
         self.optional_modules_layout.setSpacing(4)
         self.optional_modules_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -119,7 +123,6 @@ class AboutModalView(QVBoxLayout):
             ("FFprobe", self.ffprobe_path_content),
             ("ripgrep", self.ripgrep_path_content),
         ):
-            content.setStyleSheet(form_content_style())
             self.optional_modules_layout.addRow(QLabel(title), content)
 
         self.parent_optional_modules_layout.addWidget(self.optional_modules_label)
@@ -131,7 +134,6 @@ class AboutModalView(QVBoxLayout):
             f'<a href="{DOCS_URL}">{Translations["about.documentation"]}</a> | '
             f'<a href="{DISCORD_URL}">Discord</a></p>'
         )
-        self.links_label.setStyleSheet(f"QLabel {{color: {MUTED_PURPLE}}}")
         self.links_label.setWordWrap(True)
         self.links_label.setOpenExternalLinks(True)
         self.links_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -147,3 +149,18 @@ class AboutModalView(QVBoxLayout):
         self.addWidget(self.links_label)
         self.addWidget(self.copyright_label)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.set_label_colors()
+
+    def set_label_colors(self) -> None:
+        """Color the labels for the current theme."""
+        for label in (
+            self.version_content,
+            self.db_version_content,
+            self.config_path_content,
+            self.ffmpeg_path_content,
+            self.ffprobe_path_content,
+            self.ripgrep_path_content,
+        ):
+            label.setStyleSheet(form_content_style(boxed_text_background_color()))
+        for label in (self.copyright_label, self.links_label):
+            label.setStyleSheet(f"QLabel {{color: {Palette.logo_accent().name()}}}")

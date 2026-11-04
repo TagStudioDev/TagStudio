@@ -89,6 +89,7 @@ from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.search_panel_view import SearchPanelView
+from tagstudio.qt.views.styles.image_background import ImageBackground
 from tagstudio.qt.views.styles.palette import ColorType, Palette, UiColor, get_ui_color
 from tagstudio.qt.views.styles.stylesheets import TagShape, header
 from tagstudio.qt.views.styles.tagstudio_style import TagStudioStyle
@@ -936,6 +937,7 @@ class QtDriver(DriverMixin, QObject):
                 AboutModal(self.global_settings_path),
                 window_title=Translations["about.title"],
                 inline_title=False,
+                background=ImageBackground(self.rm.aurora_bg),
             )
         self.about_modal.show()
 
@@ -1295,6 +1297,7 @@ class QtDriver(DriverMixin, QObject):
                 ChangelogModal(),
                 window_title=Translations["changelog.window_title"],
                 inline_title=False,
+                background=ImageBackground(self.rm.aurora_bg),
             )
         self.changelog_modal.show()
 

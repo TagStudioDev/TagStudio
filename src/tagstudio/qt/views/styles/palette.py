@@ -25,6 +25,7 @@ _MACOS_ACCENT_BRIGHTENING = QColorSpace(QColorSpace.Primaries.SRgb, 1.8).transfo
 # A translucent purple for de-emphasized text and lines, like the copyright and version dates
 MUTED_PURPLE = "#809782ff"
 MUTED_PURPLE_OPAQUE = "#9782ff"
+MUTED_PURPLE_DEEP = "#6A5BB3"
 
 
 class Palette(metaclass=Singleton):
@@ -66,6 +67,15 @@ class Palette(metaclass=Singleton):
         """Solid white in dark mode and solid black in light mode."""
         is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         return QColor(Qt.GlobalColor.white if is_dark else Qt.GlobalColor.black)
+
+    @staticmethod
+    def logo_accent() -> QColor:
+        """An accent color in the same color scheme as the TagStudio logo.
+
+        Not to be confused with the user's system accent color.
+        """
+        is_dark = QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        return QColor(MUTED_PURPLE_OPAQUE if is_dark else MUTED_PURPLE_DEEP)
 
     @staticmethod
     def accent_alt() -> QColor:

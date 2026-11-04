@@ -44,6 +44,10 @@ HALF_PAD = PAD // 2
 WIN_PAD = 12  # Padding used for window edge margins
 
 
+# Shade for the background of special windows, like those with aurora image backgrounds
+WINDOW_BG_SHADE_DARK = "#88000000"
+
+
 class TagShape(metaclass=Singleton):
     """How tags and their badges are shaped."""
 
@@ -68,14 +72,10 @@ def container_style() -> str:
     """
 
 
-def form_content_style() -> str:
+def form_content_style(background: QColor) -> str:
     return f"""
     QLabel{{
-        background-color: {
-        ThemePalette.COLOR_BG.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else ThemePalette.COLOR_BG_LIGHT.value
-    };
+        background-color: rgba{background.toTuple()};
         border-radius: {INNER_RADIUS}px;
         font-weight: 500;
         padding: 1px;

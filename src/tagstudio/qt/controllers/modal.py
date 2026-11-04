@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QWidget
 
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.modal_view import ModalView
+from tagstudio.qt.views.styles.image_background import ImageBackground
 
 logger = structlog.get_logger(__name__)
 
@@ -31,8 +32,10 @@ class Modal(QWidget):
         is_savable: bool = False,
         inline_title: bool = True,
         inline_title_level: int = 3,
+        background: ImageBackground | None = None,
     ):
         super().__init__()
+        self._background = background
         self.setWindowTitle(title if window_title is None else window_title)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setLayout(
@@ -68,6 +71,13 @@ class Modal(QWidget):
                 )
 
         content_widget.parent_post_init()
+
+    @override
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        if self._background is not None:
+            painter = QtGui.QPainter(self)
+            self._background.paint(painter, self.rect())
+            painter.end()
 
     @override
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:

@@ -18,7 +18,7 @@ from PySide6.QtGui import (
     QPen,
     QRegion,
 )
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
 from tagstudio.qt.views.styles.palette import (
     ColorType,
@@ -157,6 +157,26 @@ def _capsule_shadow_color(shadow_source_color: QColor, is_colorless: bool) -> QC
         if not is_dark_theme():
             darkness *= _CAPSULE_SHADOW_DARKNESS_SCALE_LIGHT
     return shade(shadow_source_color, darkness, _CAPSULE_SHADOW_BURN)
+
+
+def boxed_text_background_color() -> QColor:
+    """The background color for boxed text labels, like in the About screen.
+
+    Derived from the debossed colors, and separate from file extension labels.
+    """
+    top_alpha, bottom_alpha = (
+        _DEBOSSED_GRADIENT_ALPHAS_DARK if is_dark_theme() else _DEBOSSED_GRADIENT_ALPHAS_LIGHT
+    )
+    return QColor(0, 0, 0, round((top_alpha + bottom_alpha) / 2))
+
+
+def widget_drop_shadow(widget: QWidget) -> None:
+    """Give a widget a drop shadow effect."""
+    shadow = QGraphicsDropShadowEffect(widget)
+    shadow.setBlurRadius(18)
+    shadow.setOffset(0, 1)
+    shadow.setColor(QColor(0, 0, 0, 100))
+    widget.setGraphicsEffect(shadow)
 
 
 def _embossed_fill(is_down: bool, under_mouse: bool) -> QColor:

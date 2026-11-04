@@ -7,7 +7,15 @@ from typing import override
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QKeyEvent, QMouseEvent
+from PySide6.QtGui import (
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QKeyEvent,
+    QMouseEvent,
+    QPainter,
+    QPaintEvent,
+)
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
@@ -60,6 +68,15 @@ class MainWindow(QMainWindow):
         self.toggle_landing_page(enabled=True)
 
     @override
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        if self.browsing_area.landing_page.isVisible():
+            content_top = unwrap(self.centralWidget()).y()
+            self.browsing_area.landing_page.background.paint(painter, self.rect(), content_top)
+        painter.end()
+
+    @override
     def layout(self) -> MainWindowView:
         # NOTE: Returns the built-in centralWidget's view, not the QMainWindow's own layout
         layout = unwrap(self.centralWidget()).layout()
@@ -67,6 +84,7 @@ class MainWindow(QMainWindow):
         return layout
 
     def _connect_callbacks(self) -> None:
+        self.browsing_area.landing_page.background_changed.connect(self.update)
         self.menu_bar.increase_thumbnail_size_action.triggered.connect(self.increase_thumb_size)
         self.menu_bar.decrease_thumbnail_size_action.triggered.connect(self.decrease_thumb_size)
 
@@ -128,6 +146,7 @@ class MainWindow(QMainWindow):
         view.extra_input_bar.setHidden(enabled)
         view.inspector.setHidden(enabled)
         view.browsing_area.toggle_landing_page(enabled)
+        self.update()
 
     def set_sorting_mode(self, mode: SortingModeEnum) -> None:
         self.layout().sorting_mode_combobox.setCurrentIndex(list(SortingModeEnum).index(mode))

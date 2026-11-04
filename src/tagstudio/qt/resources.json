@@ -1,7 +1,7 @@
 {
-    "about_bg": {
+    "aurora_bg": {
         "mode": "qpixmap",
-        "path": "qt/images/about_bg.jpg"
+        "path": "qt/images/aurora_bg.png"
     },
     "adobe_illustrator": {
         "mode": "pil",
