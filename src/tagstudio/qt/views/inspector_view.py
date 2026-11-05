@@ -41,15 +41,11 @@ class InspectorView(QVBoxLayout):
         self.setSpacing(PAD)
         rm = ResourceManager()
 
-        # Search/Create Boxes
-        def placeholder_text(key: str) -> str:
-            return " ".join([Translations[key], Translations["home.search.how_to_exit"]])
-
         self.field_search_box = FieldSuggestBox(
-            driver.lib, driver.settings, placeholder_text("home.search_or_create_fields")
+            driver.lib, driver.settings, Translations["home.search_or_create_fields"]
         )
         self.tag_search_box = TagSuggestBox(
-            driver.lib, driver.settings, placeholder_text("home.search_or_create_tags")
+            driver.lib, driver.settings, Translations["home.search_or_create_tags"]
         )
 
         self.preview_thumb = PreviewThumb(driver)
@@ -100,8 +96,8 @@ class InspectorView(QVBoxLayout):
         self.preview_splitter.setHandleWidth(PAD)
 
         # Add Tag/Field Buttons
-        add_buttons_container = QWidget()
-        add_buttons_layout = QHBoxLayout(add_buttons_container)
+        self.add_buttons_container = QWidget()
+        add_buttons_layout = QHBoxLayout(self.add_buttons_container)
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(PAD)
 
@@ -126,7 +122,8 @@ class InspectorView(QVBoxLayout):
         preview_layout.addWidget(self.preview_thumb)
         info_layout.addWidget(self.warning_banner)
         info_layout.addWidget(self.file_attrs)
-        info_layout.addWidget(self.containers)
+        info_layout.addWidget(self.containers, stretch=1)
+        info_layout.addStretch()
 
         self.preview_splitter.addWidget(self.preview_section)
         self.preview_splitter.addWidget(info_section)
@@ -135,4 +132,4 @@ class InspectorView(QVBoxLayout):
         self.preview_splitter.setStretchFactor(1, 2)
 
         self.addWidget(self.preview_splitter)
-        self.addWidget(add_buttons_container)
+        self.addWidget(self.add_buttons_container)

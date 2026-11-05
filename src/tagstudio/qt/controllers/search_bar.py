@@ -5,7 +5,7 @@
 import re
 from typing import override
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Signal
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -20,6 +20,7 @@ class SearchBar(QWidget):
 
     search_submitted = Signal(str)
     navigation_requested = Signal(int)
+    show_hidden_entries_changed = Signal(bool)
 
     def __init__(self, library: Library) -> None:
         super().__init__()
@@ -31,10 +32,21 @@ class SearchBar(QWidget):
         self.set_nav_buttons_enabled(False)
 
     @override
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() in (QEvent.Type.Enter, QEvent.Type.Leave):
+            self.layout().set_options_hovered(event.type() == QEvent.Type.Enter)
+        return super().eventFilter(watched, event)
+
+    @override
     def layout(self) -> SearchBarView:
         layout = super().layout()
         assert isinstance(layout, SearchBarView)
         return layout
+
+    @property
+    def show_hidden_entries(self) -> bool:
+        """Whether to show entries tagged with "is_hidden" tags."""
+        return self.layout().show_hidden_entries_action.isChecked()
 
     def set_nav_buttons_enabled(self, enabled: bool) -> None:
         """Enable the back and forward navigation buttons."""
@@ -59,9 +71,20 @@ class SearchBar(QWidget):
         view = self.layout()
         view.back_button.clicked.connect(lambda: self.navigation_requested.emit(-1))
         view.forward_button.clicked.connect(lambda: self.navigation_requested.emit(1))
-        view.search_button.clicked.connect(self._submit)
+        view.options_action.triggered.connect(self._show_options_menu)
+        view.options_button.installEventFilter(self)
+        view.options_menu.aboutToShow.connect(lambda: view.set_options_menu_open(True))
+        view.options_menu.aboutToHide.connect(lambda: view.set_options_menu_open(False))
+        view.show_hidden_entries_action.toggled.connect(self.show_hidden_entries_changed)
+        view.show_hidden_entries_action.toggled.connect(view.update_options_icon)
         view.search_field.returnPressed.connect(self._submit)
         view.search_field.textChanged.connect(self._update_completions)
+
+    def _show_options_menu(self) -> None:
+        view = self.layout()
+        field = view.search_field
+        right_edge = QPoint(field.width() - view.options_menu.sizeHint().width(), field.height())
+        view.options_menu.popup(field.mapToGlobal(right_edge))
 
     def _submit(self) -> None:
         self.search_submitted.emit(self.layout().search_field.text())

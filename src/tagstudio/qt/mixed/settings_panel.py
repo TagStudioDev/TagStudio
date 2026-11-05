@@ -166,34 +166,6 @@ class SettingsPanel(ModalContent):
             Translations["settings.scan_files_on_open"], self.scan_files_on_open_checkbox
         )
 
-        # Show Filenames in Grid
-        self.show_filenames_checkbox = QCheckBox()
-        self.show_filenames_checkbox.setChecked(self.driver.settings.show_filenames_in_grid)
-        form_layout.addRow(
-            Translations["settings.show_filenames_in_grid"], self.show_filenames_checkbox
-        )
-
-        # Infinite Scrolling
-        self.infinite_scroll = QCheckBox()
-        self.infinite_scroll.setChecked(self.driver.settings.infinite_scroll)
-        self.infinite_scroll.checkStateChanged.connect(
-            lambda checked: self.page_size_line_edit.setEnabled(not checked.value)
-        )
-        form_layout.addRow(Translations["settings.infinite_scroll"], self.infinite_scroll)
-
-        # Page Size
-        self.page_size_line_edit = QLineEdit()
-        self.page_size_line_edit.setText(str(self.driver.settings.page_size))
-        self.page_size_line_edit.setEnabled(not self.infinite_scroll.checkState().value)
-
-        def on_page_size_changed():
-            text = self.page_size_line_edit.text()
-            if not text.isdigit():
-                self.page_size_line_edit.setText(str(self.driver.settings.page_size))
-
-        self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
-        form_layout.addRow(Translations["settings.page_size"], self.page_size_line_edit)
-
         # Show Filepath
         self.filepath_combobox = QComboBox()
         for k in SettingsPanel.filepath_option_map:
@@ -428,9 +400,6 @@ class SettingsPanel(ModalContent):
             ),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "scan_files_on_open": self.scan_files_on_open_checkbox.isChecked(),
-            "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
-            "page_size": int(self.page_size_line_edit.text()),
-            "infinite_scroll": self.infinite_scroll.isChecked(),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
             "pill_shaped_tags": self.pill_shaped_tags_checkbox.isChecked(),
@@ -458,9 +427,6 @@ class SettingsPanel(ModalContent):
         driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.thumb_cache_size = settings["thumb_cache_size"]
         driver.settings.cached_thumb_resolution = settings["cached_thumb_resolution"]
-        driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
-        driver.settings.page_size = settings["page_size"]
-        driver.settings.infinite_scroll = settings["infinite_scroll"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
         driver.settings.pill_shaped_tags = settings["pill_shaped_tags"]

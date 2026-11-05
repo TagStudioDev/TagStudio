@@ -19,7 +19,7 @@ from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
-from tagstudio.qt.views.styles.stylesheets import RADIUS
+from tagstudio.qt.views.styles.stylesheets import FADED_OPACITY, RADIUS
 from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
@@ -144,7 +144,7 @@ class SuggestBox[T](QWidget):
 
             if held and i == self._selection_index:
                 opacity_effect = QGraphicsOpacityEffect(self)
-                opacity_effect.setOpacity(0.3)
+                opacity_effect.setOpacity(FADED_OPACITY)
                 underlined_widget.widget.setGraphicsEffect(opacity_effect)
             elif (
                 len(self._search_results) > i

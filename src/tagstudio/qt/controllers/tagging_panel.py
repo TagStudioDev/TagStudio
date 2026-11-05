@@ -34,6 +34,11 @@ class TaggingPanel(QWidget):
             section_splitter.toggle_collapsed(index)
             section.finish_contents()
 
+    def focus_tag_search(self) -> None:
+        """Focus the tag search field if its section is expanded."""
+        if not self.layout().section_splitter.sections[0].is_collapsed:
+            self.tag_search.focus_search_box(select_all=True)
+
     @override
     def layout(self) -> TaggingPanelView:
         layout = super().layout()

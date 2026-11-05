@@ -11,7 +11,7 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6 import QtCore
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QResizeEvent, QShortcut
 from PySide6.QtWidgets import QSplitter, QWidget
 
@@ -30,6 +30,7 @@ from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
 from tagstudio.qt.controllers.file_attributes import FileAttributeData
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.size_animation import SizeAnimation
 from tagstudio.qt.controllers.tiles.tile_list import TileList
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.views.inspector_view import InspectorView
@@ -40,7 +41,7 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-_STARTING_WIDTH = 280  # Its starting width, before it's dragged
+_STARTING_WIDTH = 276
 
 
 class _ItemMode(IntEnum):
@@ -49,11 +50,14 @@ class _ItemMode(IntEnum):
 
 
 class Inspector(QWidget):
+    can_add_tags_changed = Signal(bool)
+
     def __init__(self, driver: QtDriver) -> None:
         super().__init__()
         self._driver = driver
         self._lib = self._driver.lib
         self._settings = self._driver.settings
+        self._are_tags_fields_shown = True
 
         self._current_stats: FileAttributeData | None = None
         self._preview_height_limit: int | None = None  # Max dragged preview area height
@@ -75,6 +79,10 @@ class Inspector(QWidget):
         )
 
         self.setLayout(InspectorView(driver=driver, pixel_ratio=self.devicePixelRatio()))
+        self._preview_animation = SizeAnimation(self.layout().preview_section)
+        self._file_info_animation = SizeAnimation(self.layout().file_attrs)
+        self._tags_fields_animation = SizeAnimation(self.layout().containers)
+        self._add_buttons_animation = SizeAnimation(self.layout().add_buttons_container)
         self._set_item_mode(None)
         self._connect_callbacks()
 
@@ -116,10 +124,11 @@ class Inspector(QWidget):
             self.layout().add_field_button.setEnabled(False)
 
         def restore_buttons():
+            has_selection = bool(self._driver.selection.selected)
             self.layout().add_tag_button.setHidden(False)
-            self.layout().add_tag_button.setEnabled(True)
+            self.layout().add_tag_button.setEnabled(has_selection)
             self.layout().add_field_button.setHidden(False)
-            self.layout().add_field_button.setEnabled(True)
+            self.layout().add_field_button.setEnabled(has_selection)
 
         if mode == _ItemMode.TAG:
             self.layout().tag_search_box.added = self.layout().containers.tags
@@ -259,8 +268,6 @@ class Inspector(QWidget):
                 self.layout().file_attrs.update_stats()
                 self.layout().file_attrs.update_dates()
                 self.layout().containers.hide_containers()
-                self.layout().add_tag_button.setEnabled(False)
-                self.layout().add_field_button.setEnabled(False)
 
             # One Item Selected
             elif len(selected) == 1:
@@ -299,6 +306,12 @@ class Inspector(QWidget):
             logger.error("[Inspector] Error updating selection", error=e)
         self._lay_out_info_now()
         self._fit_preview_height()
+        self._emit_can_add_tags()
+
+    def _emit_can_add_tags(self) -> None:
+        self.can_add_tags_changed.emit(
+            self._are_tags_fields_shown and bool(self._driver.selection.selected)
+        )
 
     def _lay_out_info_now(self) -> None:
         """Lay out the file's details now."""
@@ -327,7 +340,7 @@ class Inspector(QWidget):
 
     def _fit_preview_height(self) -> None:
         """Resize the preview area to its content, up to the dragged height or else a square."""
-        if self.width() == 0:
+        if self.width() == 0 or self.layout().preview_section.isHidden():
             return
         splitter = self.layout().preview_splitter
         preview_height, info_height = splitter.sizes()
@@ -359,6 +372,22 @@ class Inspector(QWidget):
             self._preview_height_limit = max(self._preview_height_limit or 0, content_height)
         self._fit_preview_height()
 
+    def set_preview_shown(self, shown: bool) -> None:
+        self._preview_animation.set_shown(shown, self._preview_height())
+
+    def set_file_info_shown(self, shown: bool) -> None:
+        self._file_info_animation.set_shown(shown)
+
+    def set_tags_fields_shown(self, shown: bool) -> None:
+        self._are_tags_fields_shown = shown
+        if not shown:
+            self._set_item_mode(None)
+        self._tags_fields_animation.set_shown(shown)
+        self._add_buttons_animation.set_shown(shown)
+        self._open_tag_search_action.setEnabled(shown)
+        self._open_field_search_action.setEnabled(shown)
+        self._emit_can_add_tags()
+
     @property
     def is_preview_showing(self) -> bool:
         """Whether the Inspector is showing a file preview."""
@@ -367,6 +396,10 @@ class Inspector(QWidget):
     @property
     def preview_section(self) -> QWidget:
         return self.layout().preview_section
+
+    @property
+    def preview_widget(self) -> QWidget | None:
+        return self.layout().preview_thumb.preview_widget
 
     @property
     def preview_splitter(self) -> QSplitter:

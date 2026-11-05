@@ -39,6 +39,8 @@ FLAT_ICON_SIZE = 24  # Icons on flat icon-only buttons, like the mode rail's
 CAPSULE_HEIGHT = 24
 SWATCH_SIZE = 24
 
+FADED_OPACITY = 0.3
+
 PAD = 6  # Standard padding value
 HALF_PAD = PAD // 2
 WIN_PAD = 12  # Padding used for window edge margins
@@ -524,43 +526,3 @@ def get_tag_text_color(primary_color: QColor, highlight_color: QColor) -> QColor
         return text_color.toRgb()
     else:
         return highlight_color
-
-
-def checkbox_style() -> str:
-    """Style used for common QCheckBoxes."""
-    return colored_checkbox_style(*tag_colors(None))
-
-
-def colored_checkbox_style(
-    primary_color: QColor,
-    border_color: QColor,
-    highlight_color: QColor,
-    text_color: QColor,
-) -> str:
-    """Style used for QCheckBoxes."""
-    return f"""
-        QCheckBox{{
-            background: rgba{primary_color.toTuple()};
-            color: rgba{text_color.toTuple()};
-            border-color: rgba{border_color.toTuple()};
-            border-radius: {RADIUS}px;
-            border-style: solid;
-            border-width: 2px;
-        }}
-        QCheckBox::indicator{{
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-            margin: 4px;
-        }}
-        QCheckBox::indicator:checked{{
-            background: rgba{text_color.toTuple()};
-        }}
-        QCheckBox::hover{{
-            border-color: rgba{highlight_color.toTuple()};
-        }}
-        QCheckBox::focus{{
-            border-color: rgba{highlight_color.toTuple()};
-            outline: none;
-        }}
-        """

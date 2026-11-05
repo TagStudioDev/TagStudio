@@ -45,6 +45,7 @@ from tagstudio.qt.views.styles.color_overlay import (
 from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import (
     CHECKBOX_SIZE,
+    HALF_PAD,
     INNER_RADIUS,
     PAD,
     RADIUS,
@@ -62,6 +63,7 @@ _Control = QStyle.SubControl
 
 # QLineEdit always adds this much space between its contents rect and its text
 _LINE_EDIT_TEXT_MARGIN = 2
+_LINE_EDIT_ICON_SIZE = 18
 
 _SCROLL_BAR_EXTENT = 12
 _SCROLL_CAPSULE_WIDTH = 6
@@ -327,6 +329,10 @@ class TagStudioStyle(QProxyStyle):
             return _SCROLL_BAR_EXTENT
         if metric in (QStyle.PixelMetric.PM_SliderLength, QStyle.PixelMetric.PM_SliderThickness):
             return _SLIDER_HANDLE_SIZE
+        if metric == QStyle.PixelMetric.PM_LineEditIconSize:
+            return _LINE_EDIT_ICON_SIZE
+        if metric == QStyle.PixelMetric.PM_LineEditIconMargin:
+            return HALF_PAD
         if metric in (
             QStyle.PixelMetric.PM_IndicatorWidth,
             QStyle.PixelMetric.PM_IndicatorHeight,

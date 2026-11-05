@@ -34,11 +34,11 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 [[annotations]]
 path = [
     "src/tagstudio/resources/qt/images/bxs-clipboard-regular.png",
-    "src/tagstudio/resources/qt/images/bxs-left-arrow.png",
+    "src/tagstudio/resources/qt/images/search/bxs-left-arrow.png",
     "src/tagstudio/resources/qt/images/bxs-pencil-solid.png",
-    "src/tagstudio/resources/qt/images/bxs-right-arrow.png",
+    "src/tagstudio/resources/qt/images/search/bxs-right-arrow.png",
     "src/tagstudio/resources/qt/images/bxs-trash-solid.png",
-    "src/tagstudio/resources/qt/images/bxs-volume-full-solid.png",
+    "src/tagstudio/resources/qt/images/media/bxs-volume-full-solid.png",
     "src/tagstudio/resources/qt/images/file_icons/database.png",
     "src/tagstudio/resources/qt/images/rail/bx-cog.svg",
     "src/tagstudio/resources/qt/images/rail/bx-palette.svg",
@@ -56,10 +56,11 @@ SPDX-License-Identifier = "MIT"
 
 [[annotations]]
 path = [
-    "src/tagstudio/resources/qt/images/hint_field_add.png",
-    "src/tagstudio/resources/qt/images/hint_tag_add.png",
     "src/tagstudio/resources/qt/images/panels/image.svg",
+    "src/tagstudio/resources/qt/images/panels/text-box.svg",
     "src/tagstudio/resources/qt/images/search/folder.svg",
+    "src/tagstudio/resources/qt/images/search/hint_field_add.png",
+    "src/tagstudio/resources/qt/images/search/hint_tag_add.png",
 ]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
 SPDX-License-Identifier = "Apache-2.0"
@@ -67,7 +68,9 @@ SPDX-License-Identifier = "Apache-2.0"
 [[annotations]]
 path = [
     "src/tagstudio/resources/qt/images/alert.png",
-    "src/tagstudio/resources/qt/images/pause.png",
+    "src/tagstudio/resources/qt/images/media/pause.png",
+    "src/tagstudio/resources/qt/images/search/view-dashboard.svg",
+    "src/tagstudio/resources/qt/images/search/view-list.svg",
 ]
 SPDX-FileCopyrightText = [
     "(c) github:google/material-design-icons Contributors",
@@ -79,29 +82,70 @@ SPDX-License-Identifier = "Apache-2.0"
 path = [
     "src/tagstudio/resources/qt/images/arrow-right-bottom-bold.svg",
     "src/tagstudio/resources/qt/images/dupe_file_stat.png",
-    "src/tagstudio/resources/qt/images/hint_field_create.png",
-    "src/tagstudio/resources/qt/images/hint_field_issue.png",
-    "src/tagstudio/resources/qt/images/hint_tag_added.png",
-    "src/tagstudio/resources/qt/images/hint_tag_create.png",
-    "src/tagstudio/resources/qt/images/hint_tag_issue.png",
+    "src/tagstudio/resources/qt/images/search/hint_field_create.png",
+    "src/tagstudio/resources/qt/images/search/hint_field_issue.png",
+    "src/tagstudio/resources/qt/images/search/hint_tag_added.png",
+    "src/tagstudio/resources/qt/images/search/hint_tag_create.png",
+    "src/tagstudio/resources/qt/images/search/hint_tag_issue.png",
     "src/tagstudio/resources/qt/images/information-slab-circle-outline.svg",
     "src/tagstudio/resources/qt/images/information-slab-circle.svg",
     "src/tagstudio/resources/qt/images/panels/clock.svg",
+    "src/tagstudio/resources/qt/images/panels/collage.svg",
     "src/tagstudio/resources/qt/images/panels/pin.svg",
-    "src/tagstudio/resources/qt/images/panels/tag-search.svg",
-    "src/tagstudio/resources/qt/images/panels/trophy.svg",
     "src/tagstudio/resources/qt/images/rail/chart-box.svg",
     "src/tagstudio/resources/qt/images/rail/chart-box-outline.svg",
     "src/tagstudio/resources/qt/images/rail/file.svg",
     "src/tagstudio/resources/qt/images/rail/file-outline.svg",
     "src/tagstudio/resources/qt/images/rail/sync.svg",
+]
+SPDX-FileCopyrightText = "(c) github:Templarian/MaterialDesign Contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/panels/collapse-right-panel.svg",
+    "src/tagstudio/resources/qt/images/panels/show-right-panel.svg",
+]
+SPDX-FileCopyrightText = "(c) TagStudio Contributors"
+SPDX-License-Identifier = "GPL-3.0-only"
+
+[[annotations]]
+path = ["src/tagstudio/resources/qt/images/panels/collage-outline.svg"]
+SPDX-FileCopyrightText = [
+    "(c) github:Templarian/MaterialDesign Contributors",
+    "(c) TagStudio Contributors",
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/panels/image-outline.svg",
+    "src/tagstudio/resources/qt/images/panels/tag-search.svg",
+    "src/tagstudio/resources/qt/images/panels/text-box-outline.svg",
+    "src/tagstudio/resources/qt/images/panels/trophy.svg",
     "src/tagstudio/resources/qt/images/rail/tag-text.svg",
     "src/tagstudio/resources/qt/images/rail/tag-text-outline.svg",
     "src/tagstudio/resources/qt/images/search/file-tree.svg",
     "src/tagstudio/resources/qt/images/search/sort-*.svg",
-    "src/tagstudio/resources/qt/images/search/view-*.svg",
+    "src/tagstudio/resources/qt/images/search/tune-variant.svg",
 ]
-SPDX-FileCopyrightText = "(c) github:Templarian/MaterialDesign Contributors"
+SPDX-FileCopyrightText = [
+    "(c) github:google/material-design-icons Contributors",
+    "(c) github:Templarian/MaterialDesign Contributors",
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "src/tagstudio/resources/qt/images/search/tune-variant-solid.svg",
+    "src/tagstudio/resources/qt/images/search/view-gallery.svg",
+    "src/tagstudio/resources/qt/images/search/view-grid.svg",
+]
+SPDX-FileCopyrightText = [
+    "(c) github:google/material-design-icons Contributors",
+    "(c) github:Templarian/MaterialDesign Contributors",
+    "(c) TagStudio Contributors",
+]
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]

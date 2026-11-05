@@ -177,7 +177,6 @@ class QtDriver(DriverMixin, QObject):
     color_manager: Modal | None = None
     field_template_manager: Modal | None = None
     ignore_modal: Modal | None = None
-    add_tag_modal: Modal | None = None
     add_field_modal: Modal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: Modal
@@ -406,17 +405,12 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
-        # TODO: Remove/replace this with a suite of persistently visible tagging panels, including
-        # tag search. These will be docked on the left-hand side of the main window.
-
-        # Initialize the "Add Tag" panel
-        add_tag_tsp_view = SearchPanelView(placeholder_text=Translations["home.search_tags"])
-        add_tag_tsp = TagSearchPanel(self.lib, view=add_tag_tsp_view)
-        add_tag_tsp.search_for_tag.connect(self.search_for_tag_callback)
-        self.add_tag_modal = Modal(add_tag_tsp, Translations["tag.add.plural"])
-        add_tag_tsp.item_chosen.connect(
+        tag_search = self.main_window.tagging_panel.tag_search
+        tag_search.search_for_tag.connect(self.search_for_tag_callback)
+        tag_search.item_chosen.connect(
             lambda chosen_tag: self.add_tags_to_selected_callback([chosen_tag])
         )
+        self.main_window.inspector.can_add_tags_changed.connect(tag_search.set_capsules_clickable)
 
         self.update_recent_lib_menu()
         self.copy_buffer: dict[str, list[Any]] = {"fields": [], "tags": []}
@@ -431,27 +425,31 @@ class QtDriver(DriverMixin, QObject):
         )
 
         show_changelog = self._record_program_version()
-        self.init_library_window()
-        self.migration_modal: JsonMigrationModal | None = None
 
         startup_path: str | None = self.args.open.strip() if self.args.open else None
         if not startup_path and self.settings.open_last_loaded_on_startup:
             last_library = self.cached_values.value(AppCacheItems.LAST_LIBRARY)
             if last_library:
                 startup_path = str(last_library)
-
-        if not startup_path:
-            self.main_window.browsing_area.landing_page.animate_logo_in()
-        else:
+        startup_result = None
+        if startup_path:
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
             if startup_result.success and startup_result.library_path:
-                self.open_library(startup_result.library_path)
-            else:
-                self.show_error_message(
-                    error_name=startup_result.error_title
-                    or Translations["window.message.error_opening_library"],
-                    error_desc=startup_result.error_description,
-                )
+                self.main_window.toggle_landing_page(enabled=False)
+
+        self.init_library_window()
+        self.migration_modal: JsonMigrationModal | None = None
+
+        if startup_result is None:
+            self.main_window.browsing_area.landing_page.animate_logo_in()
+        elif startup_result.success and startup_result.library_path:
+            self.open_library(startup_result.library_path)
+        else:
+            self.show_error_message(
+                error_name=startup_result.error_title
+                or Translations["window.message.error_opening_library"],
+                error_desc=startup_result.error_description,
+            )
 
         if show_changelog:
             self.show_changelog()
@@ -495,6 +493,12 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.browsing_area.pagination.index.connect(
             lambda i: self.page_move(i, absolute=True)
         )
+        self.main_window.pagination_changed.connect(self.set_pagination)
+        self.main_window.set_pagination_actions_checked(
+            self.settings.infinite_scroll, self.settings.page_size
+        )
+        self.main_window.filenames_visible_changed.connect(self.show_grid_filenames)
+        self.main_window.set_show_filenames_action_checked(self.settings.show_filenames_in_grid)
         self.main_window.browsing_area.landing_page.open_library_requested.connect(
             self.open_library_from_dialog
         )
@@ -537,6 +541,9 @@ class QtDriver(DriverMixin, QObject):
         self.ignore_modal.saved.connect(panel.save)
 
     def show_grid_filenames(self, value: bool):
+        """Save and apply whether the grid shows filenames."""
+        self.settings.show_filenames_in_grid = value
+        self.settings.save()
         self.main_window.thumb_grid.set_filenames_visible(value)
 
     def call_if_library_open(self, func):
@@ -577,7 +584,7 @@ class QtDriver(DriverMixin, QObject):
         self.sync_engine.cancelled = True
         self._new_sync_session()
         self._wait_for_sync_stop()
-        self.file_scan_lock = False
+        self._set_sync_running(running=False)
         self.main_window.browsing_area.banners.clear()
 
         if not is_shutdown:
@@ -586,6 +593,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Reset library state
         self.main_window.search_bar.set_query("")
+        self.main_window.tagging_panel.tag_search.set_search_query("")
         self.main_window.set_results_text("")
         scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -783,6 +791,10 @@ class QtDriver(DriverMixin, QObject):
         runnable.done.connect(on_done)
         self._sync_pool.start(runnable)
 
+    def _set_sync_running(self, running: bool) -> None:
+        self.file_scan_lock = running
+        self.main_window.layout().mode_rail.set_sync_running(running)
+
     def _wait_for_sync_stop(self) -> None:
         """Block until a currently running sync is stopped, if any."""
         self._sync_pool.waitForDone()
@@ -792,7 +804,7 @@ class QtDriver(DriverMixin, QObject):
         if self.file_scan_lock:
             logger.info("[QtDriver] Sync already in progress, ignoring request")
             return
-        self.file_scan_lock = True
+        self._set_sync_running(running=True)
         session_id = self._new_sync_session()
         # Disable the "Fix Unlinked Entries" modal's relink/remove actions during the sync
         if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
@@ -841,7 +853,7 @@ class QtDriver(DriverMixin, QObject):
         if self._is_sync_stale(session_id):
             return
 
-        self.file_scan_lock = False
+        self._set_sync_running(running=False)
         self.lib.unlinked_entries_count = unlinked_count
         if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
             self.unlinked_modal.update_unlinked_count()
@@ -1046,6 +1058,14 @@ class QtDriver(DriverMixin, QObject):
         self.update_browsing_state(
             self.browsing_history.current.with_show_hidden_entries(show_hidden_entries)
         )
+
+    def set_pagination(self, is_infinite: bool, page_size: int) -> None:
+        """Save and apply pagination settings."""
+        self.settings.infinite_scroll = is_infinite
+        self.settings.page_size = page_size
+        self.settings.save()
+        current = self.browsing_history.current
+        self.update_browsing_state(current.with_page_index(0) if current.page_index else None)
 
     def page_move(self, value: int, absolute: bool = False) -> None:
         current = self.browsing_history.current
@@ -1352,12 +1372,14 @@ class QtDriver(DriverMixin, QObject):
                 lambda: self._init_library(path, self.lib.open_library(path))
             )
             self.main_window.browsing_area.landing_page.set_status_label("")
+            self.main_window.toggle_landing_page(enabled=True)
             self.migration_modal.paged_panel.show()
         else:
             self._init_library(path, open_status)
 
     def _init_library(self, path: Path, open_status: OpenLibraryResult):
         if not open_status.success:
+            self.main_window.toggle_landing_page(enabled=True)
             self.show_error_message(
                 error_name=open_status.error_title
                 or Translations["window.message.error_opening_library"],

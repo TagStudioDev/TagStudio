@@ -42,6 +42,7 @@ class ThumbGrid(QWidget):
     def __init__(self, driver: QtDriver, pagination: Pagination) -> None:
         super().__init__()
         self.setObjectName("thumb_grid")
+        self.setStyleSheet("QWidget#thumb_grid { background: transparent; }")
         self._driver = driver
         self._renderer = QtFileRenderer(driver.lib, driver.settings)
 
@@ -103,6 +104,7 @@ class ThumbGrid(QWidget):
     def _setup_scroll_area(self) -> None:
         scroll_area = self._scroll_area
         scroll_area.setObjectName("entry_scroll_area")
+        scroll_area.setStyleSheet("QScrollArea#entry_scroll_area { background: transparent; }")
         scroll_area.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         scroll_area.setFrameShadow(QFrame.Shadow.Plain)

@@ -49,13 +49,14 @@ class SuggestBoxView(QVBoxLayout):
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setViewportMargins(DEBOSSED_OUTLINE_WIDTH, 0, DEBOSSED_OUTLINE_WIDTH, 0)
 
         # Search Field
         self.search_field = AutofillLineEdit()
         self.search_field.setObjectName("search_field")
         self.search_field.setFrame(False)
         self.search_field.setFixedHeight(CapsuleView.HEIGHT)
-        self.search_field.setContentsMargins(side_inset, 0, side_inset, 0)
+        self.search_field.setContentsMargins(PAD, 0, PAD, 0)
         self.search_field.setStyleSheet("QLineEdit { background: transparent; }")
         self.search_field.setPlaceholderText(placeholder_text)
         self.hint_icon_action = self.search_field.addAction(
@@ -74,7 +75,5 @@ class SuggestBoxView(QVBoxLayout):
         """Show the suggestion row or shrink to just the search field."""
         field_margin = (MED_HEIGHT - CapsuleView.HEIGHT) // 2
         top_margin = PAD if visible else field_margin
-        self.setContentsMargins(
-            DEBOSSED_OUTLINE_WIDTH, top_margin, DEBOSSED_OUTLINE_WIDTH, field_margin
-        )
+        self.setContentsMargins(0, top_margin, 0, field_margin)
         self.scroll_area.setHidden(not visible)

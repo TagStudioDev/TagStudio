@@ -12,7 +12,12 @@ from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.views.capsule_view import CapsuleView
-from tagstudio.qt.views.styles.stylesheets import RADIUS, TagShape, capsule_colors
+from tagstudio.qt.views.styles.stylesheets import (
+    FADED_OPACITY,
+    RADIUS,
+    TagShape,
+    capsule_colors,
+)
 from tagstudio.qt.views.styles.tag_icons import icon_shrink, paint_icon
 from tagstudio.qt.views.styles.widget_effects import WidgetEffects
 
@@ -53,7 +58,7 @@ class Capsule(QWidget):
         self.setLayout(CapsuleView())
 
         self._fade = QGraphicsOpacityEffect(self)
-        self._fade.setOpacity(0.5)
+        self._fade.setOpacity(FADED_OPACITY)
         self._fade.setEnabled(False)
         self.setGraphicsEffect(self._fade)
 

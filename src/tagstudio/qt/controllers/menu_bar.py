@@ -34,7 +34,6 @@ class MenuBar(QMenuBar):
     new_tag_action: QAction
     copy_fields_action: QAction
     paste_fields_action: QAction
-    add_tag_to_selected_action: QAction
     delete_file_action: QAction
     ignore_modal_action: QAction
     tag_manager_action: QAction
@@ -48,7 +47,7 @@ class MenuBar(QMenuBar):
 
     view_menu: QMenu
     library_info_action: QAction
-    show_filenames_action: QAction
+    tagging_panel_action: QAction
     increase_thumbnail_size_action: QAction
     decrease_thumbnail_size_action: QAction
 
@@ -146,12 +145,6 @@ class MenuBar(QMenuBar):
         self.paste_fields_action.setShortcut(QKeySequence("Ctrl+V"))
         self.paste_fields_action.setEnabled(False)
         self.edit_menu.addAction(self.paste_fields_action)
-
-        # Add Tag to Selected
-        self.add_tag_to_selected_action = QAction(Translations["select.add_tag_to_selected"], self)
-        self.add_tag_to_selected_action.setShortcut(QKeySequence("Ctrl+Shift+T"))
-        self.add_tag_to_selected_action.setEnabled(False)
-        self.edit_menu.addAction(self.add_tag_to_selected_action)
         self.edit_menu.addSeparator()
 
         # Move Files to Trash
@@ -220,9 +213,11 @@ class MenuBar(QMenuBar):
         self.library_info_action.setEnabled(False)
         self.view_menu.addAction(self.library_info_action)
 
-        self.show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], self)
-        self.show_filenames_action.setCheckable(True)
-        self.view_menu.addAction(self.show_filenames_action)
+        self.tagging_panel_action = QAction(Translations["panel.tagging"], self)
+        self.tagging_panel_action.setShortcut(QKeySequence("Ctrl+Shift+T"))
+        self.tagging_panel_action.setEnabled(False)
+        self.view_menu.addAction(self.tagging_panel_action)
+
         self.view_menu.addSeparator()
 
         self.increase_thumbnail_size_action = QAction(
@@ -314,9 +309,6 @@ class MenuBar(QMenuBar):
         self.new_tag_action.triggered.connect(driver.add_tag_action_callback)
         self.copy_fields_action.triggered.connect(driver.copy_fields_action_callback)
         self.paste_fields_action.triggered.connect(driver.paste_fields_action_callback)
-        self.add_tag_to_selected_action.triggered.connect(
-            lambda: unwrap(driver.add_tag_modal).show()
-        )
         self.delete_file_action.triggered.connect(lambda: driver.delete_files_callback(""))
         self.ignore_modal_action.triggered.connect(lambda: unwrap(driver.ignore_modal).show())
         self.tag_manager_action.triggered.connect(lambda: unwrap(driver.tag_manager).show())
@@ -331,8 +323,6 @@ class MenuBar(QMenuBar):
         driver.selection.changed.connect(self._on_selection_changed)
 
         self.library_info_action.triggered.connect(driver.open_library_info_window)
-        self.show_filenames_action.setChecked(settings.show_filenames_in_grid)
-        self.show_filenames_action.triggered.connect(self._set_filenames_visible)
 
         self.fix_unlinked_entries_action.triggered.connect(driver.open_fix_unlinked_entries_modal)
         self.fix_ignored_entries_action.triggered.connect(driver.open_fix_ignored_entries_modal)
@@ -350,11 +340,6 @@ class MenuBar(QMenuBar):
     def _set_open_last_loaded_on_startup(self, checked: bool) -> None:
         self._driver.settings.open_last_loaded_on_startup = checked
         self._driver.settings.save()
-
-    def _set_filenames_visible(self, checked: bool) -> None:
-        self._driver.settings.show_filenames_in_grid = checked
-        self._driver.settings.save()
-        self._driver.show_grid_filenames(checked)
 
     def _on_selection_changed(self) -> None:
         self.update_clipboard_actions()
@@ -375,7 +360,6 @@ class MenuBar(QMenuBar):
         has_selection = bool(self._driver.selection.selected)
         self.select_all_action.setEnabled(has_results)
         self.select_inverse_action.setEnabled(has_results)
-        self.add_tag_to_selected_action.setEnabled(has_selection)
         self.clear_select_action.setEnabled(has_selection)
         self.delete_file_action.setEnabled(has_selection)
 
@@ -396,6 +380,7 @@ class MenuBar(QMenuBar):
             self.clear_thumb_cache_action,
             self.folders_to_tags_action,
             self.library_info_action,
+            self.tagging_panel_action,
         ):
             action.setEnabled(enabled)
 

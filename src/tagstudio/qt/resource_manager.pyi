@@ -78,9 +78,14 @@ class ResourceManager:
     pinned_tags_icon_solid: bytes
     plaintext: Image.Image
     presentation: Image.Image
+    preview_icon: bytes
     preview_icon_solid: bytes
     program: Image.Image
     recent_tags_icon_solid: bytes
+    right_side_panel_collapse_icon: bytes
+    right_side_panel_show_icon: bytes
+    search_settings_icon: bytes
+    search_settings_icon_solid: bytes
     settings_icon: bytes
     settings_icon_solid: bytes
     shader: Image.Image
@@ -99,6 +104,10 @@ class ResourceManager:
     spreadsheet: Image.Image
     sync_icon: bytes
     tag_search_icon_solid: bytes
+    tagging_panel_icon: bytes
+    tagging_panel_icon_solid: bytes
+    tags_fields_icon: bytes
+    tags_fields_icon_solid: bytes
     tags_icon: bytes
     tags_icon_solid: bytes
     thumb_loading: Image.Image

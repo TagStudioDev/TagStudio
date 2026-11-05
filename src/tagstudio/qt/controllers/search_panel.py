@@ -92,6 +92,9 @@ class SearchPanel[T](ModalContent):
     def get_search_query(self) -> str:
         return self.layout().search_field.text()
 
+    def set_search_query(self, query: str) -> None:
+        self.layout().search_field.setText(query)
+
     def clear_search_query(self) -> None:
         self.layout().search_field.setText("")
         self.focus_search_box()

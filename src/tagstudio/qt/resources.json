@@ -45,11 +45,11 @@
     },
     "bxs_left_arrow": {
         "mode": "pil",
-        "path": "qt/images/bxs-left-arrow.png"
+        "path": "qt/images/search/bxs-left-arrow.png"
     },
     "bxs_right_arrow": {
         "mode": "pil",
-        "path": "qt/images/bxs-right-arrow.png"
+        "path": "qt/images/search/bxs-right-arrow.png"
     },
     "card_text": {
         "mode": "rb",
@@ -141,31 +141,31 @@
     },
     "hint_field_add": {
         "mode": "pil",
-        "path": "qt/images/hint_field_add.png"
+        "path": "qt/images/search/hint_field_add.png"
     },
     "hint_field_create": {
         "mode": "pil",
-        "path": "qt/images/hint_field_create.png"
+        "path": "qt/images/search/hint_field_create.png"
     },
     "hint_field_issue": {
         "mode": "pil",
-        "path": "qt/images/hint_field_issue.png"
+        "path": "qt/images/search/hint_field_issue.png"
     },
     "hint_tag_add": {
         "mode": "pil",
-        "path": "qt/images/hint_tag_add.png"
+        "path": "qt/images/search/hint_tag_add.png"
     },
     "hint_tag_added": {
         "mode": "pil",
-        "path": "qt/images/hint_tag_added.png"
+        "path": "qt/images/search/hint_tag_added.png"
     },
     "hint_tag_create": {
         "mode": "pil",
-        "path": "qt/images/hint_tag_create.png"
+        "path": "qt/images/search/hint_tag_create.png"
     },
     "hint_tag_issue": {
         "mode": "pil",
-        "path": "qt/images/hint_tag_issue.png"
+        "path": "qt/images/search/hint_tag_issue.png"
     },
     "icon": {
         "mode": "pil",
@@ -221,19 +221,27 @@
     },
     "mute_icon": {
         "mode": "pil",
-        "path": "qt/images/bxs-volume-mute-solid.png"
+        "path": "qt/images/media/bxs-volume-mute-solid.png"
     },
     "pause_icon": {
         "mode": "pil",
-        "path": "qt/images/pause.png"
+        "path": "qt/images/media/pause.png"
     },
     "pinned_tags_icon_solid": {
         "mode": "rb",
         "path": "qt/images/panels/pin.svg"
     },
+    "plaintext": {
+        "mode": "pil",
+        "path": "qt/images/file_icons/text.png"
+    },
     "presentation": {
         "mode": "pil",
         "path": "qt/images/file_icons/presentation.png"
+    },
+    "preview_icon": {
+        "mode": "rb",
+        "path": "qt/images/panels/image-outline.svg"
     },
     "preview_icon_solid": {
         "mode": "rb",
@@ -246,6 +254,22 @@
     "recent_tags_icon_solid": {
         "mode": "rb",
         "path": "qt/images/panels/clock.svg"
+    },
+    "right_side_panel_collapse_icon": {
+        "mode": "rb",
+        "path": "qt/images/panels/collapse-right-panel.svg"
+    },
+    "right_side_panel_show_icon": {
+        "mode": "rb",
+        "path": "qt/images/panels/show-right-panel.svg"
+    },
+    "search_settings_icon": {
+        "mode": "rb",
+        "path": "qt/images/search/tune-variant.svg"
+    },
+    "search_settings_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/search/tune-variant-solid.svg"
     },
     "settings_icon": {
         "mode": "rb",
@@ -319,6 +343,22 @@
         "mode": "rb",
         "path": "qt/images/panels/tag-search.svg"
     },
+    "tagging_panel_icon": {
+        "mode": "rb",
+        "path": "qt/images/panels/collage-outline.svg"
+    },
+    "tagging_panel_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/collage.svg"
+    },
+    "tags_fields_icon": {
+        "mode": "rb",
+        "path": "qt/images/panels/text-box-outline.svg"
+    },
+    "tags_fields_icon_solid": {
+        "mode": "rb",
+        "path": "qt/images/panels/text-box.svg"
+    },
     "tags_icon": {
         "mode": "rb",
         "path": "qt/images/rail/tag-text-outline.svg"
@@ -326,10 +366,6 @@
     "tags_icon_solid": {
         "mode": "rb",
         "path": "qt/images/rail/tag-text.svg"
-    },
-    "plaintext": {
-        "mode": "pil",
-        "path": "qt/images/file_icons/text.png"
     },
     "thumb_loading": {
         "mode": "pil",
@@ -361,6 +397,6 @@
     },
     "volume_icon": {
         "mode": "pil",
-        "path": "qt/images/bxs-volume-full-solid.png"
+        "path": "qt/images/media/bxs-volume-full-solid.png"
     }
 }

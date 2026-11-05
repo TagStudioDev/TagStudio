@@ -474,6 +474,15 @@ class PreviewThumb(QWidget):
         return super().resizeEvent(event)
 
     @property
+    def preview_widget(self) -> QWidget | None:
+        """The widget showing the file preview."""
+        view = self.layout()
+        for widget in (view.media_player, view.preview_animation, view.button_wrapper):
+            if widget.isVisible():
+                return widget
+        return None
+
+    @property
     def aspect_ratio(self) -> float:
         return self._image_ratio
 
