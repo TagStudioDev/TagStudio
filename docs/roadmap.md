@@ -116,11 +116,11 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Basic Support
     - [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
-- [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
-    - [ ] Top Tags
-    - [ ] Recent Tags
-    - [ ] Tag Search
+- [x] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+    - [x] Tag Search
     - [ ] Pinned Tags
+    - [ ] Recent Tags
+    - [ ] Top Tags
 - [ ] New Tabbed Tag Building UI to Support New Tag Features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
 - [x] Media Duration Labels **[v9.7.0]**
 - [ ] Word/Line Count Labels :material-chevron-up:{ .priority-low title="Low Priority" }
@@ -138,8 +138,8 @@ A detailed specification written for the TagStudio tag and/or library format. In
 - [x] Configurable Page Size
 - [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.x]**
     - [ ] Stored in `.TagStudio` folder :material-chevron-triple-up:{ .priority-high title="High Priority" }
-- [ ] Toggle File Extension Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
-- [ ] Toggle Duration Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+- [x] Toggle File Extension Label :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.0]**
+- [x] Toggle Duration Label :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.0]**
 
 ---
 
@@ -156,9 +156,8 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [x] Detect Moves
     - [ ] Some way to safely handle unlinked entries presumed to be from deleted files automatically (deleted after X days?) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
     - [x] Performant
-- [ ] Background File Scanning :material-chevron-triple-up:{ .priority-high title="High Priority" }
+- [x] Non-Blocking File Scanning :material-chevron-triple-up:{ .priority-high title="High Priority" }
 - [x] Thumbnail Caching **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-    - [ ] Audio Waveform Caching :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
 
 ### :material-grid: Entries
 
