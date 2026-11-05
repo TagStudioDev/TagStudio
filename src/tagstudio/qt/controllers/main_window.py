@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.controllers.browsing_area import BrowsingArea
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.controllers.menu_bar import MenuBar
@@ -77,6 +78,8 @@ class MainWindow(QMainWindow):
     show_hidden_entries_changed = Signal(bool)
     pagination_changed = Signal(bool, int)  # (Infinite Scroll, Page Size)
     filenames_visible_changed = Signal(bool)
+    extension_visibility_changed = Signal(ShowLabelOption)
+    duration_visibility_changed = Signal(ShowLabelOption)
 
     def __init__(self, driver: QtDriver, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -231,6 +234,8 @@ class MainWindow(QMainWindow):
         controls.thumb_size_changed.connect(self.thumb_grid.set_thumb_size)
         controls.pagination_changed.connect(self.pagination_changed)
         controls.filenames_visible_changed.connect(self.filenames_visible_changed)
+        controls.extension_visibility_changed.connect(self.extension_visibility_changed)
+        controls.duration_visibility_changed.connect(self.duration_visibility_changed)
         view.content_splitter.splitterMoved.connect(self._update_content_splitter_limit)
         view.content_splitter.splitterMoved.connect(self.update)
         view.content_splitter.handle(1).installEventFilter(self)
@@ -480,6 +485,12 @@ class MainWindow(QMainWindow):
 
     def set_show_filenames_action_checked(self, checked: bool) -> None:
         self.layout().browsing_controls.set_show_filenames_action_checked(checked)
+
+    def set_show_extensions_action_checked(self, option: ShowLabelOption) -> None:
+        self.layout().browsing_controls.set_show_extensions_action_checked(option)
+
+    def set_show_durations_action_checked(self, option: ShowLabelOption) -> None:
+        self.layout().browsing_controls.set_show_durations_action_checked(option)
 
     def _update_content_splitter_limit(self) -> None:
         """Update whether the side panel's handle is at a limit."""

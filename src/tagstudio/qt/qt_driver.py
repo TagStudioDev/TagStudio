@@ -62,7 +62,12 @@ from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import DEFAULT_GLOBAL_SETTINGS_PATH, AppSettings, Theme
+from tagstudio.qt.app_settings import (
+    DEFAULT_GLOBAL_SETTINGS_PATH,
+    AppSettings,
+    ShowLabelOption,
+    Theme,
+)
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.about_modal import AboutModal
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
@@ -517,6 +522,10 @@ class QtDriver(DriverMixin, QObject):
         )
         self.main_window.filenames_visible_changed.connect(self.show_grid_filenames)
         self.main_window.set_show_filenames_action_checked(self.settings.show_filenames_in_grid)
+        self.main_window.extension_visibility_changed.connect(self.show_grid_extensions)
+        self.main_window.set_show_extensions_action_checked(self.settings.show_extensions_in_grid)
+        self.main_window.duration_visibility_changed.connect(self.show_grid_durations)
+        self.main_window.set_show_durations_action_checked(self.settings.show_durations_in_grid)
         self.main_window.browsing_area.landing_page.open_library_requested.connect(
             self.open_library_from_dialog
         )
@@ -563,6 +572,18 @@ class QtDriver(DriverMixin, QObject):
         self.settings.show_filenames_in_grid = value
         self.settings.save()
         self.main_window.thumb_grid.set_filenames_visible(value)
+
+    def show_grid_extensions(self, option: ShowLabelOption) -> None:
+        """Save and apply when the grid shows file extensions."""
+        self.settings.show_extensions_in_grid = option
+        self.settings.save()
+        self.main_window.thumb_grid.update_extension_visibility()
+
+    def show_grid_durations(self, option: ShowLabelOption) -> None:
+        """Save and apply when the grid shows durations."""
+        self.settings.show_durations_in_grid = option
+        self.settings.save()
+        self.main_window.thumb_grid.update_duration_visibility()
 
     def call_if_library_open(self, func):
         """Check if loaded library has valid path before executing the button function."""

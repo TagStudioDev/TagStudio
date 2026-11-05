@@ -15,6 +15,7 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import can_have_duration, get_duration
+from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
@@ -263,6 +264,15 @@ class ThumbGrid(QWidget):
         for thumb in self.layout().widgets():
             thumb.set_filename_visibility(visible)
         self.layout().activate()
+
+    def update_extension_visibility(self) -> None:
+        for thumb in self.layout().widgets():
+            thumb.update_extension_visibility()
+
+    def update_duration_visibility(self) -> None:
+        for thumb in self.layout().widgets():
+            thumb.update_duration_visibility()
+        self._queue_durations()
 
     @override
     def changeEvent(self, event: QEvent) -> None:
@@ -607,6 +617,8 @@ class ThumbGrid(QWidget):
             thumb.set_image(image, file_path)
 
     def _queue_durations(self) -> None:
+        if self._driver.settings.show_durations_in_grid == ShowLabelOption.NEVER:
+            return
         for entry in self._assigned_entries():
             path = self._path(entry)
             if (

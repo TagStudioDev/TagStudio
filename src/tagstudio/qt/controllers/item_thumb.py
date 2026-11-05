@@ -42,6 +42,7 @@ from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
 from tagstudio.qt.views.item_thumb_view import ItemThumbView
 from tagstudio.qt.views.styles.palette import Palette
@@ -92,6 +93,7 @@ class ItemThumb(QWidget):
         self._image_brush: QBrush | None = None
         self._decorated_image: QPixmap | None = None
         self._decorated_image_key: tuple[float, bool] | None = None
+        self._has_duration: bool = False
         self._item_path: Path | None = None
         self._mode: ItemType | None = mode
         self._press_pos: QPoint | None = None
@@ -143,6 +145,8 @@ class ItemThumb(QWidget):
             return
         self._image_hovered = hovered
         self._show_check_badges(show=hovered)
+        self.update_extension_visibility()
+        self.update_duration_visibility()
         if hovered:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
         else:
@@ -173,37 +177,37 @@ class ItemThumb(QWidget):
         self.update()
 
     def set_extension(self, filename: Path) -> None:
-        show_ext_label = False
-        show_count_label = False
-
-        # TODO: Make these configurable by the user (on, off, or custom)
         ext = get_display_ext(filename)
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if (
-            not MediaTypes.contains("image.raster", ext, SEARCH)
-            or MediaTypes.contains("image.raster.raw", ext, SEARCH)
-            or MediaTypes.contains("image.vector", ext, SEARCH)
-            or MediaTypes.contains("adobe.photoshop", ext, SEARCH)
-            or ext
-            in [
-                ".apng",
-                ".avif",
-                ".exr",
-                ".gif",
-                ".jxl",
-                ".webp",
-            ]
-        ) and (ext or filename.stem):
-            self.layout().ext_label.setText(ext.upper()[1:] or filename.stem.upper())
-            show_ext_label = True
+        self.layout().ext_label.setText(ext.upper()[1:] or filename.stem.upper())
 
+        self._has_duration = False
         if MediaTypes.contains("video", ext, SEARCH) or MediaTypes.contains("audio", ext, SEARCH):
-            show_count_label = True
+            self._has_duration = True
 
-        self.layout().ext_label.setHidden(not show_ext_label)
-        self.layout().count_label.setHidden(not show_count_label)
+        self.update_extension_visibility()
+        self.update_duration_visibility()
         self._apply_label_sizes()
+
+    def update_extension_visibility(self) -> None:
+        if self._mode != ItemType.ENTRY:
+            return
+        ext_label = self.layout().ext_label
+        is_shown = self._is_label_shown(self._driver.settings.show_extensions_in_grid)
+        ext_label.setHidden(not ext_label.text() or not is_shown)
+
+    def update_duration_visibility(self) -> None:
+        if self._mode != ItemType.ENTRY:
+            return
+        is_shown = self._is_label_shown(self._driver.settings.show_durations_in_grid)
+        self.layout().count_label.setHidden(not self._has_duration or not is_shown)
+
+    def _is_label_shown(self, option: ShowLabelOption) -> bool:
+        """Read a `ShowLabelOption` and hover state to determine if a label should be shown."""
+        return option == ShowLabelOption.ALWAYS or (
+            option == ShowLabelOption.ON_HOVER and self._image_hovered
+        )
 
     def set_count(self, count: str) -> None:
         view = self.layout()
@@ -223,7 +227,8 @@ class ItemThumb(QWidget):
             count_label.setText("-:--")
         else:
             count_label.setText(format_duration(duration))
-            count_label.setHidden(False)
+            self._has_duration = True
+        self.update_duration_visibility()
         self._apply_label_sizes()
 
     def _set_theme_colors(self) -> None:

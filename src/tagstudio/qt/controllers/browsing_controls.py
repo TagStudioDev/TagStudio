@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.views.browsing_controls_view import BrowsingControlsView
 from tagstudio.qt.views.styles.tagstudio_style import set_icon_faded
 
@@ -21,6 +22,8 @@ class BrowsingControls(QWidget):
     thumb_size_changed = Signal(int)
     pagination_changed = Signal(bool, int)  # (infinite scrolling, page size)
     filenames_visible_changed = Signal(bool)
+    extension_visibility_changed = Signal(ShowLabelOption)
+    duration_visibility_changed = Signal(ShowLabelOption)
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,6 +53,12 @@ class BrowsingControls(QWidget):
             lambda: self.thumb_size_changed.emit(self.thumb_size)
         )
         view.show_filenames_action.triggered.connect(self.filenames_visible_changed)
+        view.show_extensions_menu.triggered.connect(
+            lambda action: self.extension_visibility_changed.emit(action.data())
+        )
+        view.show_durations_menu.triggered.connect(
+            lambda action: self.duration_visibility_changed.emit(action.data())
+        )
         view.infinite_scroll_action.triggered.connect(self._on_pagination_chosen)
         view.page_size_menu.triggered.connect(self._on_pagination_chosen)
 
@@ -84,6 +93,14 @@ class BrowsingControls(QWidget):
 
     def set_show_filenames_action_checked(self, checked: bool) -> None:
         self.layout().show_filenames_action.setChecked(checked)
+
+    def set_show_extensions_action_checked(self, option: ShowLabelOption) -> None:
+        for action in self.layout().show_extensions_menu.actions():
+            action.setChecked(action.data() == option)
+
+    def set_show_durations_action_checked(self, option: ShowLabelOption) -> None:
+        for action in self.layout().show_durations_menu.actions():
+            action.setChecked(action.data() == option)
 
     def increase_thumb_size(self) -> None:
         slider = self.layout().thumb_size_slider

@@ -4,7 +4,7 @@
 
 import platform
 from datetime import datetime
-from enum import Enum, StrEnum
+from enum import Enum, IntEnum, StrEnum
 from pathlib import Path
 from typing import override
 
@@ -43,6 +43,14 @@ class Splash(StrEnum):
     AURORA = "aurora"
 
 
+class ShowLabelOption(IntEnum):
+    """Used for common options that can show labels in different states."""
+
+    ALWAYS = 0
+    ON_HOVER = 1
+    NEVER = 2
+
+
 class TomlEnumEncoder(toml.TomlEncoder):
     @override
     def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
@@ -65,6 +73,8 @@ class AppSettings(BaseModel):
     scan_files_on_open: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
+    show_extensions_in_grid: ShowLabelOption = Field(default=ShowLabelOption.ALWAYS)
+    show_durations_in_grid: ShowLabelOption = Field(default=ShowLabelOption.ALWAYS)
     page_size: int = Field(default=100)
     infinite_scroll: bool = Field(default=True)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)

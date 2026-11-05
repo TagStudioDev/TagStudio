@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import PAGE_SIZES
+from tagstudio.qt.app_settings import PAGE_SIZES, ShowLabelOption
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.stylesheets import MED_HEIGHT, PAD, RADIUS, WIN_PAD
@@ -92,6 +92,12 @@ class BrowsingControlsView(QHBoxLayout):
             Translations["settings.show_filenames_in_grid"]
         )
         self.show_filenames_action.setCheckable(True)
+        self.show_extensions_menu = self._add_show_label_menu(
+            Translations["settings.show_extensions_in_grid"]
+        )
+        self.show_durations_menu = self._add_show_label_menu(
+            Translations["settings.show_durations_in_grid"]
+        )
         self.view_options_menu.addSeparator()
         self.infinite_scroll_action = self.view_options_menu.addAction(
             Translations["settings.infinite_scroll"]
@@ -162,6 +168,20 @@ class BrowsingControlsView(QHBoxLayout):
         action.setCheckable(True)
         action.setChecked(is_available)
         action.setEnabled(is_available)
+
+    def _add_show_label_menu(self, title: str) -> QMenu:
+        menu = self.view_options_menu.addMenu(title)
+        group = QActionGroup(menu)
+        for option, key in (
+            (ShowLabelOption.ALWAYS, "settings.show_label.option.always"),
+            (ShowLabelOption.ON_HOVER, "settings.show_label.option.on_hover"),
+            (ShowLabelOption.NEVER, "settings.show_label.option.never"),
+        ):
+            action = menu.addAction(Translations[key])
+            action.setCheckable(True)
+            action.setData(option)
+            group.addAction(action)
+        return menu
 
     def _button(self, tooltip: str) -> QPushButton:
         button = QPushButton()
