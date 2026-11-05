@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import os
 from collections.abc import Callable, Hashable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -144,8 +145,15 @@ class LibrarySyncEngine:
         batch_size = 1000
         library_dir = unwrap(self.library.library_dir)
 
+        file_stats: dict[Path, os.stat_result] = {}
+        for new_path in self.new_paths:
+            try:
+                file_stats[new_path] = (library_dir / new_path).stat()
+            except OSError as e:
+                logger.error("[Sync] Could not stat new file", path=new_path, error=e)
+
         # Sort new files by date modified before adding to the library
-        self.new_paths.sort(key=lambda path: get_date_modified(library_dir / path))
+        self.new_paths = sorted(file_stats, key=lambda path: get_date_modified(file_stats[path]))
 
         index = 0
         while index < len(self.new_paths):
@@ -156,7 +164,7 @@ class LibrarySyncEngine:
             batch = self.new_paths[index:end]
             entries = []
             for entry_path in batch:
-                file_stat = (library_dir / entry_path).stat()
+                file_stat = file_stats[entry_path]
                 entries.append(
                     Entry(
                         path=entry_path,

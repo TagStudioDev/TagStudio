@@ -56,6 +56,22 @@ def test_sync_saves_new_files_oldest_modified_first(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_new_file_removed_before_save_is_skipped(library: Library):
+    """A new file that can't be found when saving must not stop the other new files saving."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    (library_dir / "kept.txt").touch()
+    (library_dir / "removed.txt").touch()
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    (library_dir / "removed.txt").unlink()
+    list(engine.save_new_entries())
+
+    assert library.get_entry_id_from_path(Path("kept.txt")) != -1
+    assert library.get_entry_id_from_path(Path("removed.txt")) == -1
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_multi_byte_filenames(library: Library):
     """Multi-byte and accented Unicode filenames must be scanned and added without errors."""
     library_dir = unwrap(library.library_dir)
