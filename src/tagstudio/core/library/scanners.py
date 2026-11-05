@@ -41,7 +41,7 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
     compiled_ignore_path.parent.mkdir(parents=True, exist_ok=True)
     compiled_ignore_path.write_text("\n".join(ignore_patterns), encoding="utf-8")
 
-    proc: subprocess.Popen[str] | None = None
+    proc: subprocess.Popen[bytes] | None = None
     # Writing to a temp file instead of a pipe so it doesn't get overloaded and lock up
     with tempfile.TemporaryFile(mode="w+", encoding="UTF-8") as stderr_file:
         try:
@@ -52,21 +52,21 @@ def _scan_with_ripgrep(scan_dir: Path, ignore_patterns: list[str]) -> Iterator[P
                     "--follow",  # Follow symlinks
                     "--hidden",  # Scan hidden folders and files
                     "--no-ignore",  # Ignore *literal* .gitignore files in paths
+                    "--null",  # Separate paths with null separators
                     "--ignore-file",  # Pass the .ts_ignore file:
                     str(compiled_ignore_path),
                 ],
+                bufsize=0,
                 cwd=scan_dir,
                 stdout=subprocess.PIPE,
                 stderr=stderr_file,
-                text=True,
-                encoding="UTF-8",
             )
             assert proc.stdout is not None
-            for line in proc.stdout:
-                line = line.rstrip("\n")
-                if not line:
-                    continue
-                yield Path(line)
+            remainder = b""
+            while chunk := proc.stdout.read(65536):
+                *raw_paths, remainder = (remainder + chunk).split(b"\0")
+                for raw_path in raw_paths:
+                    yield Path(os.fsdecode(raw_path))
 
             proc.wait()
             if proc.returncode not in (0, 1):  # 1 == "no matches", still successful

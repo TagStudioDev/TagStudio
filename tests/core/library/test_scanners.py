@@ -4,9 +4,25 @@
 # pyright: reportPrivateUsage=false
 
 import os
+import platform
 from pathlib import Path
 
-from tagstudio.core.library.scanners import _scan_with_internal_scanner
+import pytest
+
+from tagstudio.core.library.scanners import _scan_with_internal_scanner, _scan_with_ripgrep
+from tagstudio.core.utils.ripgrep_status import RipgrepStatus
+
+
+@pytest.mark.skipif(RipgrepStatus.which() is None, reason="ripgrep isn't installed")
+@pytest.mark.skipif(platform.system() == "Windows", reason="not valid in Windows filenames")
+def test_ripgrep_scan_keeps_line_breaks_in_filenames(tmp_path: Path):
+    """Filenames with carriage returns or newlines are found."""
+    (tmp_path / "Return\r").touch()
+    (tmp_path / "new\nline.txt").touch()
+    (tmp_path / "a.txt").touch()
+
+    results = set(_scan_with_ripgrep(tmp_path, [".TagStudio"]))
+    assert results == {Path("Return\r"), Path("new\nline.txt"), Path("a.txt")}
 
 
 def test_scan_finds_normal_files(tmp_path: Path):
