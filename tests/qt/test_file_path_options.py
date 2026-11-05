@@ -50,7 +50,12 @@ def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: Sh
     [
         (
             ShowFilepathOption.SHOW_FULL_PATHS,
-            lambda library: [*Path(library.library_dir).parts[1:], "one", "two"],
+            lambda library: [
+                *([Path(library.library_dir).drive] if Path(library.library_dir).drive else []),
+                *Path(library.library_dir).parts[1:],
+                "one",
+                "two",
+            ],
         ),
         (
             ShowFilepathOption.SHOW_RELATIVE_PATHS,
