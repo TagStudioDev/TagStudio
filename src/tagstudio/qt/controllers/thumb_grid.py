@@ -80,12 +80,12 @@ class ThumbGrid(QWidget):
         self._held: set[ItemThumb] = set()
         self._last_entries_time = 0.0
         self._loading_image: QPixmap | None = None
-        self._pagination = pagination
         self._pending_durations: set[Path] = set()
-        self._previous_size_renders: dict[Path, QPixmap] = {}
+        self._previous_renders: dict[Path, QPixmap] = {}
         self._render_cutoff = 0.0
         self._renders: dict[Path, QPixmap | None] = {}
         self._scroll_area = QScrollArea()
+        self._pagination = pagination
         self._scroll_to: int | None = None
 
         self.setLayout(ThumbGridLayout(self._scroll_area, self._create_thumb))
@@ -224,7 +224,7 @@ class ThumbGrid(QWidget):
         self._fetching.clear()
         self._changed_while_fetching.clear()
         self._driver.entry_state.unload_badges()
-        self._previous_size_renders.clear()
+        self._previous_renders.clear()
         self._reset_renders()
         if self._fetch_pool is not None:
             self._fetch_pool.clear()
@@ -249,10 +249,7 @@ class ThumbGrid(QWidget):
         self._scroll_to = entry_id
 
     def set_thumb_size(self, size: int) -> None:
-        self._previous_size_renders.update(
-            (path, image) for path, image in self._renders.items() if image is not None
-        )
-        self._reset_renders()
+        self._render_again()
         self._show_loading_images()
         self._resize_render_timer.start()
         first_visible = self.layout().first_visible_index()
@@ -266,6 +263,15 @@ class ThumbGrid(QWidget):
         for thumb in self.layout().widgets():
             thumb.set_filename_visibility(visible)
         self.layout().activate()
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._box_rect.setStyleSheet(box_selection_style())
+            self._renderer.refresh_current_theme()
+            self._render_again()
+            self._request_renders()
+        super().changeEvent(event)
 
     @override
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -439,7 +445,7 @@ class ThumbGrid(QWidget):
         thumb.set_duration(self._durations.get(path))
         self._assign_badges(thumb, entry.id)
 
-        image = self._renders.get(path) or self._previous_size_renders.get(path)
+        image = self._renders.get(path) or self._previous_renders.get(path)
         if image is not None:
             thumb.set_image(image, path)
         elif thumb.rendered_path != path:
@@ -511,6 +517,13 @@ class ThumbGrid(QWidget):
             if (thumb := self._thumb_for(entry.id)) is not None and thumb not in self._held:
                 self._assign_entry(thumb, entry)
         self._request_renders()
+
+    def _render_again(self) -> None:
+        """Clear the renders so they're rendered again, showing the old ones until then."""
+        self._previous_renders.update(
+            (path, image) for path, image in self._renders.items() if image is not None
+        )
+        self._reset_renders()
 
     def _reset_renders(self) -> None:
         self._render_cutoff = time.time()
@@ -585,7 +598,7 @@ class ThumbGrid(QWidget):
             return
 
         self._renders[file_path] = image
-        self._previous_size_renders.pop(file_path, None)
+        self._previous_renders.pop(file_path, None)
         thumb = self._thumb_for(self._entry_paths.get(file_path))
         if thumb in self._held:
             if self._held_renders_ready():

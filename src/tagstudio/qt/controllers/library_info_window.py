@@ -10,6 +10,7 @@ from warnings import catch_warnings
 import structlog
 from humanfriendly import format_size  # pyright: ignore[reportUnknownVariableType]
 from PySide6 import QtGui
+from PySide6.QtCore import QEvent, Qt
 
 from tagstudio.core.constants import BACKUP_FOLDER_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.constants import (
@@ -35,6 +36,7 @@ logger = structlog.get_logger(__name__)
 class LibraryInfoWindow(LibraryInfoWindowView):
     def __init__(self, library: Library, driver: QtDriver):
         super().__init__(library, driver)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         # Statistics Buttons
         self.manage_tags_button.clicked.connect(
@@ -165,6 +167,12 @@ class LibraryInfoWindow(LibraryInfoWindowView):
                 size += Path(f).stat().st_size
 
         return size
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.set_dupe_file_icon()
+        super().changeEvent(event)
 
     @override
     def showEvent(self, event: QtGui.QShowEvent):

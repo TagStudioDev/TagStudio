@@ -81,9 +81,7 @@ class ItemThumb(QWidget):
         self._opener = FileOpenerHelper(Path())
         self._effect = WidgetEffects()
 
-        self._hover_color = item_thumb_hover_color()
-        self._select_color = Palette.accent_alt()
-        self._select_color_faded = item_thumb_faded_select_color()
+        self._set_theme_colors()
 
         self._fade = QVariantAnimation(self)
         self._fade.setDuration(self._FADE_IN_MS)
@@ -227,6 +225,12 @@ class ItemThumb(QWidget):
             count_label.setText(format_duration(duration))
             count_label.setHidden(False)
         self._apply_label_sizes()
+
+    def _set_theme_colors(self) -> None:
+        """Set the hover and selection colors for the current theme."""
+        self._hover_color = item_thumb_hover_color()
+        self._select_color = Palette.accent_alt()
+        self._select_color_faded = item_thumb_faded_select_color()
 
     def set_filename_text(self, filename: Path):
         self.layout().file_label.setText(str(filename.name))
@@ -402,7 +406,7 @@ class ItemThumb(QWidget):
                 painter.drawPath(outline)
                 if not self._image_hovered:
                     color = self._select_color
-            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
             painter.setPen(QPen(color, OUTLINE_WIDTH))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(outline)
@@ -425,6 +429,14 @@ class ItemThumb(QWidget):
             self._decorated_image = pixmap
             self._decorated_image_key = key
         return self._decorated_image
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._set_theme_colors()
+            self._apply_filename_style()
+            self.update()
+        super().changeEvent(event)
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

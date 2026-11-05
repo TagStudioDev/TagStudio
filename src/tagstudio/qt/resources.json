@@ -44,12 +44,12 @@
         "path": "qt/images/broken_link_icon.png"
     },
     "bxs_left_arrow": {
-        "mode": "pil",
-        "path": "qt/images/search/bxs-left-arrow.png"
+        "mode": "rb",
+        "path": "qt/images/search/bxs-left-arrow.svg"
     },
     "bxs_right_arrow": {
-        "mode": "pil",
-        "path": "qt/images/search/bxs-right-arrow.png"
+        "mode": "rb",
+        "path": "qt/images/search/bxs-right-arrow.svg"
     },
     "card_text": {
         "mode": "rb",
@@ -140,32 +140,32 @@
         "path": "qt/images/search/view-grid.svg"
     },
     "hint_field_add": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_field_add.png"
+        "mode": "rb",
+        "path": "qt/images/search/text-box.svg"
     },
     "hint_field_create": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_field_create.png"
+        "mode": "rb",
+        "path": "qt/images/search/text-box-plus-outline.svg"
     },
     "hint_field_issue": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_field_issue.png"
+        "mode": "rb",
+        "path": "qt/images/search/text-box-remove.svg"
     },
     "hint_tag_add": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_tag_add.png"
+        "mode": "rb",
+        "path": "qt/images/search/tag.svg"
     },
     "hint_tag_added": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_tag_added.png"
+        "mode": "rb",
+        "path": "qt/images/search/tag-check.svg"
     },
     "hint_tag_create": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_tag_create.png"
+        "mode": "rb",
+        "path": "qt/images/search/tag-plus-outline.svg"
     },
     "hint_tag_issue": {
-        "mode": "pil",
-        "path": "qt/images/search/hint_tag_issue.png"
+        "mode": "rb",
+        "path": "qt/images/search/tag-remove.svg"
     },
     "icon": {
         "mode": "pil",
@@ -220,12 +220,12 @@
         "path": "qt/images/file_icons/model.png"
     },
     "mute_icon": {
-        "mode": "pil",
-        "path": "qt/images/media/bxs-volume-mute-solid.png"
+        "mode": "rb",
+        "path": "qt/images/media/bxs-volume-mute.svg"
     },
     "pause_icon": {
-        "mode": "pil",
-        "path": "qt/images/media/pause.png"
+        "mode": "rb",
+        "path": "qt/images/media/pause.svg"
     },
     "pinned_tags_icon_solid": {
         "mode": "rb",
@@ -396,7 +396,7 @@
         "path": "qt/images/file_icons/video.png"
     },
     "volume_icon": {
-        "mode": "pil",
-        "path": "qt/images/media/bxs-volume-full-solid.png"
+        "mode": "rb",
+        "path": "qt/images/media/bxs-volume-full.svg"
     }
 }

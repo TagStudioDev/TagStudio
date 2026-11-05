@@ -96,6 +96,13 @@ class Tile(QWidget):
         self.layout().title_widget.setText(self.title)
 
     @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.setStyleSheet(container_style())
+            self.layout().set_button_icons()
+        super().changeEvent(event)
+
+    @override
     def enterEvent(self, event: QEnterEvent) -> None:
         # NOTE: You could pass the hover event to the inner widget if needed.
         layout = self.layout()

@@ -32,6 +32,12 @@ class SearchBar(QWidget):
         self.set_nav_buttons_enabled(False)
 
     @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.layout().set_button_icons()
+        super().changeEvent(event)
+
+    @override
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() in (QEvent.Type.Enter, QEvent.Type.Leave):
             self.layout().set_options_hovered(event.type() == QEvent.Type.Enter)

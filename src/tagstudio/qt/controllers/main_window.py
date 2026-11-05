@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import platform
 import typing
 from typing import cast, override
 
@@ -46,6 +47,7 @@ from tagstudio.qt.views.styles.stylesheets import (
     MED_HEIGHT,
     PAD,
     WIN_PAD,
+    window_style,
 )
 from tagstudio.qt.views.styles.tagstudio_style import (
     set_at_limit,
@@ -82,6 +84,12 @@ class MainWindow(QMainWindow):
 
         self.setObjectName("main_window")
         self.resize(1280, 720)
+        self.setStyleSheet(window_style())
+        if platform.system() == "Darwin":
+            # Extend the drawable area under the translucent macOS titlebar so color from the
+            # landing page background image can be drawn under it.
+            self.setWindowFlag(Qt.WindowType.ExpandedClientAreaHint)
+            self.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea)
 
         self.menu_bar = MenuBar(driver, self)
         self.setMenuBar(self.menu_bar)
@@ -505,6 +513,12 @@ class MainWindow(QMainWindow):
         ):
             self._update_surface_top()
         return super().eventFilter(watched, event)
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.setStyleSheet(window_style())
+        super().changeEvent(event)
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:

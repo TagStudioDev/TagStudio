@@ -9,6 +9,7 @@ from typing import Literal, override
 
 from PySide6.QtCore import (
     QEasingCurve,
+    QEvent,
     Qt,
     QTimer,
     QVariantAnimation,
@@ -126,14 +127,10 @@ class Banner(QWidget):
         self._stage: Enum | None = None
         self._action_signal: SignalInstance | None = None
         self._mode: BannerMode = "progress"
-        self._notice_style = banner_notice_style()
-        self._progress_style = banner_progress_style()
-        self._notice_bg_color = banner_notice_bg_color()
-        self._progress_bg_color = banner_progress_bg_color()
+        self._set_theme_colors()
         self._background.setStyleSheet(self._notice_style)
         self._background.set_bg_color(self._notice_bg_color)
         self.view.progress_bar.set_corner_radius(RADIUS - DEBOSSED_OUTLINE_WIDTH)
-        self.view.progress_bar.set_chunk_color(banner_progress_chunk_color())
 
         self._card_color_anim = QVariantAnimation(self)
         self._card_color_anim.setDuration(self.COLOR_ANIMATION_MS)
@@ -157,6 +154,28 @@ class Banner(QWidget):
         self._hide_timer = QTimer(self)
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(lambda: self._start_height_animation(0))
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._set_theme_colors()
+            is_progress = self._mode == "progress"
+            self._background.setStyleSheet(
+                self._progress_style if is_progress else self._notice_style
+            )
+            self._card_color_anim.stop()
+            self._background.set_bg_color(
+                self._progress_bg_color if is_progress else self._notice_bg_color
+            )
+        super().changeEvent(event)
+
+    def _set_theme_colors(self) -> None:
+        """Set the colors for the current theme."""
+        self._notice_style = banner_notice_style()
+        self._progress_style = banner_progress_style()
+        self._notice_bg_color = banner_notice_bg_color()
+        self._progress_bg_color = banner_progress_bg_color()
+        self.view.progress_bar.set_chunk_color(banner_progress_chunk_color())
 
     @property
     def stage(self) -> Enum | None:

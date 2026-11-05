@@ -6,6 +6,7 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import QByteArray, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QGuiApplication, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtWidgets import QAbstractButton
 
 from tagstudio.qt.views.styles.palette import Palette
 
@@ -50,6 +51,11 @@ def toggle_icon(svg: bytes, checked_svg: bytes, size: QSize, device_pixel_ratio:
         QIcon.State.On,
     )
     return icon
+
+
+def set_svg_icon(button: QAbstractButton, svg: bytes, color: QColor) -> None:
+    pixmap = svg_color_overlay(svg, color, button.devicePixelRatioF(), button.iconSize())
+    button.setIcon(QIcon(pixmap))
 
 
 def pixmap_color_overlay(pixmap: QPixmap, color: QColor) -> QPixmap:

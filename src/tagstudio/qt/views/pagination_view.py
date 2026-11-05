@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
+from tagstudio.qt.views.styles.color_overlay import set_svg_icon
+from tagstudio.qt.views.styles.palette import Palette
 from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, RADIUS
 
 
@@ -70,11 +71,9 @@ class PaginationView(QHBoxLayout):
         super().__init__()
         self.setContentsMargins(PAD, PAD, PAD, PAD)
         self.setSpacing(HALF_PAD)
-        _rm = ResourceManager()
 
         # [<] ----------------------------------
         self.prev_button = QPushButton()
-        self.prev_button.setIcon(image_theme_color_overlay(_rm.bxs_left_arrow, use_alpha=False))
         self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.BUTTON_SIZE)
         self.prev_button.setMaximumSize(self.BUTTON_SIZE)
@@ -125,10 +124,10 @@ class PaginationView(QHBoxLayout):
 
         # ---------------------------------- [>]
         self.next_button = QPushButton()
-        self.next_button.setIcon(image_theme_color_overlay(_rm.bxs_right_arrow, use_alpha=False))
         self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.BUTTON_SIZE)
         self.next_button.setMaximumSize(self.BUTTON_SIZE)
+        self.set_button_icons()
 
         # Finalize Layout
         self.addStretch(1)
@@ -162,3 +161,8 @@ class PaginationView(QHBoxLayout):
             end_button.setHidden(True)
             end_button.setProperty("radius", RADIUS)
             self.end_buffer_layout.addWidget(end_button)
+
+    def set_button_icons(self) -> None:
+        rm = ResourceManager()
+        set_svg_icon(self.prev_button, rm.bxs_left_arrow, Palette.contrast())
+        set_svg_icon(self.next_button, rm.bxs_right_arrow, Palette.contrast())

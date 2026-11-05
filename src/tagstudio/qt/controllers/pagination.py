@@ -38,6 +38,12 @@ class Pagination(QWidget):
             self._sync_geometry()
 
     @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.layout().set_button_icons()
+        super().changeEvent(event)
+
+    @override
     def layout(self) -> PaginationView:
         return super().layout()  # pyright: ignore[reportReturnType]
 

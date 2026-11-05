@@ -11,14 +11,13 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QPushButton,
-    QStyle,
     QToolButton,
 )
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import (
-    image_theme_color_overlay,
+    set_svg_icon,
     svg_color_overlay,
     theme_foreground_color,
 )
@@ -29,7 +28,7 @@ from tagstudio.qt.views.styles.stylesheets import (
     WIN_PAD,
     item_thumb_hover_color,
 )
-from tagstudio.qt.views.styles.tagstudio_style import set_joined_edges
+from tagstudio.qt.views.styles.tagstudio_style import line_edit_icon_size, set_joined_edges
 
 
 class SearchBarView(QHBoxLayout):
@@ -87,8 +86,8 @@ class SearchBarView(QHBoxLayout):
     def set_button_icons(self) -> None:
         """Color the buttons' icons for the current theme."""
         rm = ResourceManager()
-        self.back_button.setIcon(image_theme_color_overlay(rm.bxs_left_arrow, use_alpha=False))
-        self.forward_button.setIcon(image_theme_color_overlay(rm.bxs_right_arrow, use_alpha=False))
+        set_svg_icon(self.back_button, rm.bxs_left_arrow, Palette.contrast())
+        set_svg_icon(self.forward_button, rm.bxs_right_arrow, Palette.contrast())
         self.update_options_icon()
 
     def set_options_hovered(self, hovered: bool) -> None:
@@ -106,10 +105,7 @@ class SearchBarView(QHBoxLayout):
         rm = ResourceManager()
         svg, solid_svg = rm.search_settings_icon, rm.search_settings_icon_solid
         ratio = self.search_field.devicePixelRatioF()
-        side = self.search_field.style().pixelMetric(
-            QStyle.PixelMetric.PM_LineEditIconSize, None, self.search_field
-        )
-        size = QSize(side, side)
+        size = line_edit_icon_size(self.search_field)
         if self._is_options_menu_open:
             svg, color = solid_svg, Palette.accent_alt()
         elif self.show_hidden_entries_action.isChecked():

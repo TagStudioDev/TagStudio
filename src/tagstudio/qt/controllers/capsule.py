@@ -42,6 +42,7 @@ class Capsule(QWidget):
         is_dashed: bool = False,
     ) -> None:
         super().__init__()
+        self._color_group: TagColorGroup | None = None
         self._colors = capsule_colors(None)
         self._effect = WidgetEffects()
         self._icon: bytes | None = None
@@ -118,6 +119,7 @@ class Capsule(QWidget):
 
     def set_color_group(self, color_group: TagColorGroup | None) -> None:
         """Set the colors from a tag color group, or the default tag colors if `None`."""
+        self._color_group = color_group
         self._colors = capsule_colors(color_group)
         self._is_colorless = color_group is None
         self.restyle()
@@ -188,6 +190,12 @@ class Capsule(QWidget):
     @override
     def layout(self) -> CapsuleView:
         return super().layout()  # pyright: ignore[reportReturnType]
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.set_color_group(self._color_group)
+        super().changeEvent(event)
 
     @override
     def enterEvent(self, event: QEnterEvent) -> None:

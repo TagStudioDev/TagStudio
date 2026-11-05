@@ -34,11 +34,12 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 [[annotations]]
 path = [
     "src/tagstudio/resources/qt/images/bxs-clipboard-regular.png",
-    "src/tagstudio/resources/qt/images/search/bxs-left-arrow.png",
+    "src/tagstudio/resources/qt/images/search/bxs-left-arrow.svg",
     "src/tagstudio/resources/qt/images/bxs-pencil-solid.png",
-    "src/tagstudio/resources/qt/images/search/bxs-right-arrow.png",
+    "src/tagstudio/resources/qt/images/search/bxs-right-arrow.svg",
     "src/tagstudio/resources/qt/images/bxs-trash-solid.png",
-    "src/tagstudio/resources/qt/images/media/bxs-volume-full-solid.png",
+    "src/tagstudio/resources/qt/images/media/bxs-volume-full.svg",
+    "src/tagstudio/resources/qt/images/media/bxs-volume-mute.svg",
     "src/tagstudio/resources/qt/images/file_icons/database.png",
     "src/tagstudio/resources/qt/images/rail/bx-cog.svg",
     "src/tagstudio/resources/qt/images/rail/bx-palette.svg",
@@ -50,7 +51,10 @@ SPDX-FileCopyrightText = "(c) 2026 Boxicons"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = ["src/tagstudio/resources/qt/images/bxs-chevron-down.svg"]
+path = [
+    "src/tagstudio/resources/qt/images/bxs-chevron-down.svg",
+    "src/tagstudio/resources/qt/images/media/pause.svg",
+]
 SPDX-FileCopyrightText = ["(c) 2026 Boxicons", "(c) TagStudio Contributors"]
 SPDX-License-Identifier = "MIT"
 
@@ -59,8 +63,8 @@ path = [
     "src/tagstudio/resources/qt/images/panels/image.svg",
     "src/tagstudio/resources/qt/images/panels/text-box.svg",
     "src/tagstudio/resources/qt/images/search/folder.svg",
-    "src/tagstudio/resources/qt/images/search/hint_field_add.png",
-    "src/tagstudio/resources/qt/images/search/hint_tag_add.png",
+    "src/tagstudio/resources/qt/images/search/tag.svg",
+    "src/tagstudio/resources/qt/images/search/text-box.svg",
 ]
 SPDX-FileCopyrightText = "(c) github:google/material-design-icons Contributors"
 SPDX-License-Identifier = "Apache-2.0"
@@ -68,7 +72,6 @@ SPDX-License-Identifier = "Apache-2.0"
 [[annotations]]
 path = [
     "src/tagstudio/resources/qt/images/alert.png",
-    "src/tagstudio/resources/qt/images/media/pause.png",
     "src/tagstudio/resources/qt/images/search/view-dashboard.svg",
     "src/tagstudio/resources/qt/images/search/view-list.svg",
 ]
@@ -82,11 +85,6 @@ SPDX-License-Identifier = "Apache-2.0"
 path = [
     "src/tagstudio/resources/qt/images/arrow-right-bottom-bold.svg",
     "src/tagstudio/resources/qt/images/dupe_file_stat.png",
-    "src/tagstudio/resources/qt/images/search/hint_field_create.png",
-    "src/tagstudio/resources/qt/images/search/hint_field_issue.png",
-    "src/tagstudio/resources/qt/images/search/hint_tag_added.png",
-    "src/tagstudio/resources/qt/images/search/hint_tag_create.png",
-    "src/tagstudio/resources/qt/images/search/hint_tag_issue.png",
     "src/tagstudio/resources/qt/images/information-slab-circle-outline.svg",
     "src/tagstudio/resources/qt/images/information-slab-circle.svg",
     "src/tagstudio/resources/qt/images/panels/clock.svg",
@@ -127,6 +125,11 @@ path = [
     "src/tagstudio/resources/qt/images/rail/tag-text-outline.svg",
     "src/tagstudio/resources/qt/images/search/file-tree.svg",
     "src/tagstudio/resources/qt/images/search/sort-*.svg",
+    "src/tagstudio/resources/qt/images/search/tag-check.svg",
+    "src/tagstudio/resources/qt/images/search/tag-plus-outline.svg",
+    "src/tagstudio/resources/qt/images/search/tag-remove.svg",
+    "src/tagstudio/resources/qt/images/search/text-box-plus-outline.svg",
+    "src/tagstudio/resources/qt/images/search/text-box-remove.svg",
     "src/tagstudio/resources/qt/images/search/tune-variant.svg",
 ]
 SPDX-FileCopyrightText = [

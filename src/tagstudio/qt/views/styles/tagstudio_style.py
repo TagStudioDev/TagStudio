@@ -119,6 +119,12 @@ def set_track_side_inset(scroll_bar: QScrollBar, inset: int) -> None:
     scroll_bar.update()
 
 
+def line_edit_icon_size(line_edit: QLineEdit) -> QSize:
+    """The size a line edit draws its action icons at."""
+    side = line_edit.style().pixelMetric(QStyle.PixelMetric.PM_LineEditIconSize, None, line_edit)
+    return QSize(side, side)
+
+
 def _set_handle_property(splitter: QSplitter, name: str, value: bool | tuple[int, int]) -> None:
     if splitter.property(name) == value:
         return
@@ -339,6 +345,9 @@ class TagStudioStyle(QProxyStyle):
             QStyle.PixelMetric.PM_ExclusiveIndicatorWidth,
             QStyle.PixelMetric.PM_ExclusiveIndicatorHeight,
         ) and isinstance(widget, QCheckBox | QRadioButton):
+            # Buttons without a label are all indicators, like the tag color swatches
+            if not widget.text():
+                return min(widget.width(), widget.height())
             return CHECKBOX_SIZE
         return super().pixelMetric(metric, option, widget)
 
@@ -358,16 +367,6 @@ class TagStudioStyle(QProxyStyle):
             inset = PAD - _LINE_EDIT_TEXT_MARGIN
             rect.setLeft(option.rect.left() + inset)
             rect.setRight(option.rect.right() - inset)
-        elif (
-            element
-            in (QStyle.SubElement.SE_CheckBoxIndicator, QStyle.SubElement.SE_RadioButtonIndicator)
-            and isinstance(widget, QCheckBox | QRadioButton)
-            and not widget.text()
-        ):
-            # Buttons without a label are all indicators, like the tag color swatches
-            side = min(option.rect.width(), option.rect.height())
-            top = option.rect.top() + (option.rect.height() - side) // 2
-            rect = QRect(option.rect.left(), top, side, side)
         return rect
 
     @override

@@ -210,6 +210,13 @@ class InfoButton(QAbstractButton):
         QPainter(self).drawPixmap(0, 0, self._icon)
 
     @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._update_icon(self.underMouse())
+            self._content.set_label_colors()
+        super().changeEvent(event)
+
+    @override
     def enterEvent(self, event: QEnterEvent) -> None:
         self._update_icon(hovered=True)
         super().enterEvent(event)

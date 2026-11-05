@@ -34,7 +34,7 @@ OUTLINE_WIDTH = 2  # Hover/selection outlines
 RESIZE_HANDLE_LENGTH = 24  # Length of each side of splitter and corner handles
 RESIZE_HANDLE_WIDTH = 3
 MED_HEIGHT = 30  # Height for medium-sized widgets (all line edits, some buttons)
-CHECKBOX_SIZE = 24  # Checkboxes and radio buttons
+CHECKBOX_SIZE = 18  # Checkboxes and radio buttons
 FLAT_ICON_SIZE = 24  # Icons on flat icon-only buttons, like the mode rail's
 CAPSULE_HEIGHT = 24
 SWATCH_SIZE = 24
@@ -45,6 +45,11 @@ PAD = 6  # Standard padding value
 HALF_PAD = PAD // 2
 WIN_PAD = 12  # Padding used for window edge margins
 
+# macOS supports tinting the window color with a color picked from the user's wallpaper,
+# which can be shown in Qt by setting the window to transparent.
+# The slight color overlays exactly match how macOS apps shade on top of backgrounds.
+MACOS_WINDOW_BG_DARK = "#22000000"
+MACOS_WINDOW_BG_LIGHT = "#00FFFFFF"
 
 # Shade for the background of special windows, like those with aurora image backgrounds
 WINDOW_BG_SHADE_DARK = "#88000000"
@@ -243,9 +248,7 @@ def banner_close_button_style() -> str:
 
 def banner_notice_bg_color() -> QColor:
     """Fill color for the banner card in "notice" and "fleeting_notice" modes."""
-    color = Palette.accent_alt()
-    color.setAlpha(235)
-    return color
+    return Palette.accent_alt()
 
 
 def banner_notice_style() -> str:
@@ -410,6 +413,17 @@ def banner_progress_chunk_color() -> QColor:
     """Fill color for the banner's custom-painted progress bar chunk."""
     chunk = Palette.accent_alt()
     return chunk
+
+
+def window_style() -> str:
+    if platform.system() == "Darwin":
+        background = MACOS_WINDOW_BG_DARK if is_dark_theme() else MACOS_WINDOW_BG_LIGHT
+        return f"""
+        QMainWindow {{ background: {background}; }}
+        QWidget#modal {{ background: {background}; }}
+        """.strip()
+    else:
+        return ""
 
 
 def header(string: str, level: int, color: str | None = None) -> str:

@@ -29,8 +29,8 @@ class ResourceManager:
     arrow_right_bottom: bytes
     audio: Image.Image
     broken_link_icon: Image.Image
-    bxs_left_arrow: Image.Image
-    bxs_right_arrow: Image.Image
+    bxs_left_arrow: bytes
+    bxs_right_arrow: bytes
     card_text: bytes
     card_text_outline: bytes
     chevron_down: bytes
@@ -53,13 +53,13 @@ class ResourceManager:
     font: Image.Image
     gallery_view_icon: bytes
     grid_view_icon: bytes
-    hint_field_add: Image.Image
-    hint_field_create: Image.Image
-    hint_field_issue: Image.Image
-    hint_tag_add: Image.Image
-    hint_tag_added: Image.Image
-    hint_tag_create: Image.Image
-    hint_tag_issue: Image.Image
+    hint_field_add: bytes
+    hint_field_create: bytes
+    hint_field_issue: bytes
+    hint_tag_add: bytes
+    hint_tag_added: bytes
+    hint_tag_create: bytes
+    hint_tag_issue: bytes
     icon: Image.Image
     ignored_stat: Image.Image
     ignored: Image.Image
@@ -73,8 +73,8 @@ class ResourceManager:
     masonry_view_icon: bytes
     material: Image.Image
     model: Image.Image
-    mute_icon: Image.Image
-    pause_icon: Image.Image
+    mute_icon: bytes
+    pause_icon: bytes
     pinned_tags_icon_solid: bytes
     plaintext: Image.Image
     presentation: Image.Image
@@ -117,4 +117,4 @@ class ResourceManager:
     ts_logo_text_mono: Image.Image
     unlinked_stat: Image.Image
     video: Image.Image
-    volume_icon: Image.Image
+    volume_icon: bytes

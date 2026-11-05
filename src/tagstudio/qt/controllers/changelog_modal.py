@@ -48,7 +48,7 @@ _USER_MENTION = re.compile(r"(?<![\w@/])@([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9]
 # Size Constraints
 _IMAGE_MAX_HEIGHT = 300
 _IMAGE_MAX_WIDTH = 0.8  # % of window width
-_WINDOW_WIDTH = 800
+_WINDOW_WIDTH = 820
 
 # Spacing
 # TODO: Use future constants for some of these (currently on dev branch)

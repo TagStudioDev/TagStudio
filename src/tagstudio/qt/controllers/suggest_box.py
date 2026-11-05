@@ -5,8 +5,7 @@ from functools import partial
 from typing import Any, override
 
 import structlog
-from PIL import Image
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QEvent, Signal
 from PySide6.QtGui import QAction, QPainter, QPaintEvent, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
@@ -18,8 +17,9 @@ from tagstudio.qt.controllers.autofill_line_edit import QtCore, QtGui
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.color_overlay import image_theme_color_overlay
+from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.stylesheets import FADED_OPACITY, RADIUS
+from tagstudio.qt.views.styles.tagstudio_style import line_edit_icon_size
 from tagstudio.qt.views.styles.widget_effects import SurfaceStyle, WidgetEffects
 from tagstudio.qt.views.suggest_box_view import SuggestBoxView
 
@@ -51,6 +51,7 @@ class SuggestBox[T](QWidget):
     def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
         super().__init__()
         self._lib = library
+        self._hint_icon: bytes | None = None
         self._settings = settings
         self._rm = ResourceManager()
         self._limit = 25
@@ -130,9 +131,18 @@ class SuggestBox[T](QWidget):
         self.layout().search_field.holding_shift.connect(partial(self._on_shift_held))
         self.layout().search_field.index_updated.connect(partial(self._on_index_updated))
 
-    def set_hint_icon(self, icon: Image.Image | None) -> None:
+    def set_hint_icon(self, icon: bytes | None) -> None:
+        self._hint_icon = icon
         if icon:
-            self.layout().hint_icon_action.setIcon(image_theme_color_overlay(icon))
+            field = self.layout().search_field
+            self.layout().hint_icon_action.setIcon(
+                svg_color_overlay(
+                    icon,
+                    theme_foreground_color(),
+                    field.devicePixelRatioF(),
+                    line_edit_icon_size(field),
+                )
+            )
         else:
             self.layout().hint_icon_action.setIcon(QPixmap())
 
@@ -337,6 +347,12 @@ class SuggestBox[T](QWidget):
 
     def _edit_item(self, edit_item_panel: ModalContent) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.set_hint_icon(self._hint_icon)
+        super().changeEvent(event)
 
     @override
     def showEvent(self, event: QShowEvent) -> None:

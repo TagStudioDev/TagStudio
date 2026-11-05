@@ -83,6 +83,7 @@ class Inspector(QWidget):
         self._file_info_animation = SizeAnimation(self.layout().file_attrs)
         self._tags_fields_animation = SizeAnimation(self.layout().containers)
         self._add_buttons_animation = SizeAnimation(self.layout().add_buttons_container)
+        self.setStyleSheet("QScrollArea { background: transparent; }")
         self._set_item_mode(None)
         self._connect_callbacks()
 

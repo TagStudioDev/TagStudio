@@ -14,7 +14,7 @@ import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QRectF, QSize, Qt, QThreadPool, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QEvent, QRectF, QSize, Qt, QThreadPool, Signal
 from PySide6.QtGui import QBrush, QColor, QMovie, QPainter, QPixmap, QResizeEvent
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import QWidget
@@ -459,6 +459,14 @@ class PreviewThumb(QWidget):
         self._switch_preview(None)
         self._current_file = None
         self._should_render_on_resize = False
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self._file_renderer.refresh_current_theme()
+            if self._current_file is not None and self._should_render_on_resize:
+                self._render_preview(self._current_file)
+        super().changeEvent(event)
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:

@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.clickable_slider import ClickableSlider
-from tagstudio.qt.views.styles.color_overlay import image_color_overlay
+from tagstudio.qt.views.styles.color_overlay import svg_color_overlay
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -55,10 +55,13 @@ class MediaPlayer(QGraphicsView):
         super().__init__()
         self.driver = driver
         white = QColor(Qt.GlobalColor.white)
-        self.play_icon = image_color_overlay(self.driver.rm.bxs_right_arrow, white)
-        self.pause_icon = image_color_overlay(self.driver.rm.pause_icon, white)
-        self.mute_icon = image_color_overlay(self.driver.rm.mute_icon, white)
-        self.volume_icon = image_color_overlay(self.driver.rm.volume_icon, white)
+        ratio = self.devicePixelRatioF()
+        icon_size = QSize(18, 18)
+        rm = self.driver.rm
+        self.play_icon = svg_color_overlay(rm.bxs_right_arrow, white, ratio, icon_size)
+        self.pause_icon = svg_color_overlay(rm.pause_icon, white, ratio, icon_size)
+        self.mute_icon = svg_color_overlay(rm.mute_icon, white, ratio, icon_size)
+        self.volume_icon = svg_color_overlay(rm.volume_icon, white, ratio, icon_size)
 
         slider_style = """
             QSlider {

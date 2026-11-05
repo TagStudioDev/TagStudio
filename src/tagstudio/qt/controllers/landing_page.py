@@ -85,6 +85,13 @@ class LandingPage(QWidget):
         self.background_changed.emit()
 
     @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            # Keep the color logo if it's already been activated
+            self._update_logo_color("color" if self._special_click_count < 0 else "mono")
+        super().changeEvent(event)
+
+    @override
     def layout(self) -> LandingPageView:
         layout = super().layout()
         assert isinstance(layout, LandingPageView)

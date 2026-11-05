@@ -27,6 +27,7 @@ import structlog
 from humanfriendly import format_size, format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import (
     QDeadlineTimer,
+    QEvent,
     QObject,
     QSettings,
     Qt,
@@ -290,23 +291,16 @@ class QtDriver(DriverMixin, QObject):
         signal(SIGTERM, self.signal_handler)
         signal(SIGQUIT, self.signal_handler)
 
-    def start(self) -> None:
-        """Launch the main Qt window."""
-        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
-            sys.argv += ["-platform", "windows:darkmode=2"]
-        self.app = QApplication(sys.argv)
-        self.app_style = TagStudioStyle()
-        self.app.setStyle(self.app_style)
-        TagShape.is_pill = self.settings.pill_shaped_tags
-        TagShape.is_circle_badge = self.settings.circular_badges
-
-        # Apply theme color if explicitly set to DARK or LIGHT by the user.
-        # For SYSTEM, we let Qt decide based on OS theme.
+    def apply_theme(self) -> None:
+        """Apply the set theme's color scheme and palette to the app."""
         if self.settings.theme == Theme.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
         elif self.settings.theme == Theme.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+        else:
+            self.app.styleHints().unsetColorScheme()
 
+        self.app.setPalette(QPalette())
         pal: QPalette = self.app.palette()
         # BUG: Changing the palette in any way here seems to affect the accent colors of certain
         # widgets, like QLineEdit focused borders and QComboBox highlighted items and borders.
@@ -336,6 +330,30 @@ class QtDriver(DriverMixin, QObject):
             )
         Palette.set_palette(pal)
         self.app.setPalette(pal)
+        for widget in QApplication.allWidgets():
+            if widget.styleSheet():
+                widget.setStyleSheet(widget.styleSheet())
+        theme_change = QEvent(QEvent.Type.ThemeChange)
+        for widget in QApplication.allWidgets():
+            QApplication.sendEvent(widget, theme_change)
+        self.applied_theme = self.settings.theme
+
+    def _on_color_scheme_changed(self) -> None:
+        if self.applied_theme == Theme.SYSTEM == self.settings.theme:
+            self.apply_theme()
+
+    def start(self) -> None:
+        """Launch the main Qt window."""
+        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
+            sys.argv += ["-platform", "windows:darkmode=2"]
+        self.app = QApplication(sys.argv)
+        self.app_style = TagStudioStyle()
+        self.app.setStyle(self.app_style)
+
+        self.apply_theme()
+        self.app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
+        TagShape.is_pill = self.settings.pill_shaped_tags
+        TagShape.is_circle_badge = self.settings.circular_badges
 
         # Handle OS signals
         self.setup_signals()

@@ -5,12 +5,13 @@
 from typing import TYPE_CHECKING, Any
 
 import structlog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QDoubleValidator, QIntValidator
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -43,6 +44,8 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Split to use MVC guidelines.
 class SettingsPanel(ModalContent):
+    edited = Signal()
+
     driver: QtDriver
 
     filepath_option_map: dict[ShowFilepathOption, str] = {
@@ -138,13 +141,17 @@ class SettingsPanel(ModalContent):
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.restart_label)
 
+        for checkbox in self.findChildren(QCheckBox):
+            checkbox.toggled.connect(self.edited)
+        for combobox in self.findChildren(QComboBox):
+            combobox.currentIndexChanged.connect(self.edited)
+        for line_edit in self.findChildren(QLineEdit):
+            line_edit.textChanged.connect(self.edited)
+
         self.__update_restart_label()
 
     def __update_restart_label(self):
-        show_label = (
-            self.language_combobox.currentData() != Translations.current_language
-            or self.theme_combobox.currentData() != self.driver.applied_theme
-        )
+        show_label = self.language_combobox.currentData() != Translations.current_language
         self.restart_label.setHidden(not show_label)
 
     def __build_global_settings(self):
@@ -357,7 +364,6 @@ class SettingsPanel(ModalContent):
         if theme not in SettingsPanel.theme_map:
             theme = Theme.DEFAULT
         self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
-        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
         # Splash Screen
@@ -382,7 +388,7 @@ class SettingsPanel(ModalContent):
         self.circular_badges_checkbox.setChecked(self.driver.settings.circular_badges)
         form_layout.addRow(Translations["settings.circular_badges"], self.circular_badges_checkbox)
 
-    def get_settings(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+    def get_settings(self) -> dict[str, Any]:
         return {
             "language": self.language_combobox.currentData(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
@@ -417,6 +423,14 @@ class SettingsPanel(ModalContent):
             "splash": self.splash_combobox.currentData(),
         }
 
+    def has_pending_changes(self) -> bool:
+        """Whether any setting here differs from the saved ones."""
+        try:
+            settings = self.get_settings()
+        except ValueError:
+            return False
+        return any(value != getattr(self.driver.settings, key) for key, value in settings.items())
+
     def update_settings(self, driver: QtDriver):
         settings = self.get_settings()
 
@@ -446,6 +460,8 @@ class SettingsPanel(ModalContent):
         driver.settings.save()
 
         # Apply changes
+        if driver.applied_theme != settings["theme"]:
+            driver.apply_theme()
         TagShape.is_pill = settings["pill_shaped_tags"]
         TagShape.is_circle_badge = settings["circular_badges"]
         # Restyle displayed tags so they take the new shape
@@ -476,6 +492,17 @@ class SettingsPanel(ModalContent):
             is_savable=True,
         )
         modal.saved.connect(lambda: settings_panel.update_settings(driver))
+        apply_button = modal.layout().button_box.addButton(
+            Translations["generic.apply"], QDialogButtonBox.ButtonRole.ApplyRole
+        )
+
+        def update_apply_button() -> None:
+            apply_button.setEnabled(settings_panel.has_pending_changes())
+
+        apply_button.clicked.connect(lambda: settings_panel.update_settings(driver))
+        apply_button.clicked.connect(update_apply_button)
+        settings_panel.edited.connect(update_apply_button)
+        update_apply_button()
         modal.layout().title_label.setVisible(False)
 
         return modal

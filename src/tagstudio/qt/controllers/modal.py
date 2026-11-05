@@ -7,12 +7,13 @@ from typing import Any, override
 
 import structlog
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.modal_view import ModalView
 from tagstudio.qt.views.styles.image_background import ImageBackground
+from tagstudio.qt.views.styles.stylesheets import window_style
 
 logger = structlog.get_logger(__name__)
 
@@ -47,6 +48,9 @@ class Modal(QWidget):
                 inline_title_level=inline_title_level,
             )
         )
+        self.setObjectName("modal")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
+        self.setStyleSheet(window_style())
 
         # [Done]
         # - OR -
@@ -71,6 +75,12 @@ class Modal(QWidget):
                 )
 
         content_widget.parent_post_init()
+
+    @override
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.ThemeChange:
+            self.setStyleSheet(window_style())
+        super().changeEvent(event)
 
     @override
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:

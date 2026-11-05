@@ -16,7 +16,7 @@ from tagstudio.previews.file_renderer import FileRenderer, RenderResult
 from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.views.styles.palette import ICON_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.qt.views.styles.stylesheets import OUTLINE_WIDTH, RADIUS
 
 
@@ -66,7 +66,11 @@ def _media_icon(filepath: Path) -> str:
 def _icon(name: str, color: UiColor, theme: Theme, side: int, pixel_ratio: float) -> QImage:
     """A default icon centered in a transparent square."""
     is_dark = theme == Theme.DARK
-    foreground = get_ui_color(ColorType.BORDER if is_dark else ColorType.LIGHT_ACCENT, color)
+    if color in ICON_COLORS:
+        foreground = ICON_COLORS[color]
+    else:
+        color_type = ColorType.BORDER if is_dark else ColorType.LIGHT_ACCENT
+        foreground = QColor(get_ui_color(color_type, color))
 
     glyph_side = int(side / 1.75)
     glyph = _resource_image(name).scaled(
@@ -109,6 +113,9 @@ class QtFileRenderer(QObject):
     def __init__(self, library: Library, settings: AppSettings) -> None:
         super().__init__()
         self.renderer = FileRenderer(library, settings)
+        self.refresh_current_theme()
+
+    def refresh_current_theme(self) -> None:
         self.theme = (
             Theme.DARK
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -117,6 +124,8 @@ class QtFileRenderer(QObject):
         self._theme_color = UiColor.THEME_DARK if self.theme == Theme.DARK else UiColor.THEME_LIGHT
 
     def _border_color(self, color: UiColor) -> QColor:
+        if color in ICON_COLORS:
+            return QColor(ICON_COLORS[color])
         color_type = ColorType.PRIMARY if self.theme == Theme.DARK else ColorType.LIGHT_ACCENT
         return QColor(get_ui_color(color_type, color))
 

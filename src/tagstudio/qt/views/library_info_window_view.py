@@ -290,14 +290,8 @@ class LibraryInfoWindowView(QWidget):
         self.ignored_icon.setPixmap(ignored_pixmap)
 
         self.dupe_file_icon = QLabel()
-        dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
-        dupe_file_pixmap = image_theme_color_overlay(dupe_file_image, use_alpha=False)
-        dupe_file_pixmap.setDevicePixelRatio(self.devicePixelRatio())
-        dupe_file_pixmap = dupe_file_pixmap.scaledToWidth(
-            math.floor((row_height - icon_margin) * self.devicePixelRatio()),
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        self.dupe_file_icon.setPixmap(dupe_file_pixmap)
+        self._icon_width = row_height - icon_margin
+        self.set_dupe_file_icon()
 
         self.cleanup_grid_layout.addWidget(
             self.unlinked_icon,
@@ -462,3 +456,13 @@ class LibraryInfoWindowView(QWidget):
         self.root_layout.addStretch(2)
         self.root_layout.addWidget(self.details_container)
         self.root_layout.addWidget(self.button_container)
+
+    def set_dupe_file_icon(self) -> None:
+        dupe_file_image: Image.Image = self.driver.rm.dupe_file_stat
+        dupe_file_pixmap = image_theme_color_overlay(dupe_file_image, use_alpha=False)
+        dupe_file_pixmap.setDevicePixelRatio(self.devicePixelRatio())
+        dupe_file_pixmap = dupe_file_pixmap.scaledToWidth(
+            math.floor(self._icon_width * self.devicePixelRatio()),
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.dupe_file_icon.setPixmap(dupe_file_pixmap)

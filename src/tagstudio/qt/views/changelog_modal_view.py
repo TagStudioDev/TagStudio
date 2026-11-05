@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QTextBrowser, QVBoxLayout
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.inset_frame import InsetFrame
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.stylesheets import header
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD, header
 from tagstudio.qt.views.styles.tagstudio_style import set_track_side_inset
 from tagstudio.qt.views.styles.widget_effects import DEBOSSED_OUTLINE_WIDTH, widget_drop_shadow
 
@@ -23,7 +23,7 @@ _LOGO_WIDTH = 384
 class ChangelogModalView(QVBoxLayout):
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(6, 0, 6, 0)
+        self.setContentsMargins(PAD, 0, PAD, 0)
 
         self.logo_label = QLabel()
         logo = QPixmap.fromImage(ImageQt.ImageQt(ResourceManager().ts_logo_text_color))
@@ -45,7 +45,7 @@ class ChangelogModalView(QVBoxLayout):
         # All links are opened by the controller class instead using the default browser.
         self.text_browser.setOpenLinks(False)
         self.text_browser.setStyleSheet("QTextBrowser { background: transparent; border: none; }")
-        self.text_browser.document().setDocumentMargin(6)
+        self.text_browser.document().setDocumentMargin(PAD)
         set_track_side_inset(self.text_browser.verticalScrollBar(), DEBOSSED_OUTLINE_WIDTH)
         text_box = InsetFrame()
         text_box_layout = QVBoxLayout(text_box)
@@ -57,8 +57,8 @@ class ChangelogModalView(QVBoxLayout):
         self.addSpacing(_TOP_SPACING)
         self.addWidget(self.logo_label)
         self.addWidget(self.title_label)
-        self.addSpacing(6)
+        self.addSpacing(PAD)
         self.addWidget(text_box)
 
         self.view_more_button = QPushButton(Translations["changelog.button.view_more"])
-        self.view_more_button.setStyleSheet("QPushButton {padding: 3px 16px;}")
+        self.view_more_button.setStyleSheet(f"QPushButton {{padding: {HALF_PAD}px 16px;}}")
