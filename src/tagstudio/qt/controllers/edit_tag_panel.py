@@ -330,7 +330,7 @@ class EditTagPanel(ModalContent):
         capsule.set_text(self._lib.tag_display_name(tag))
         capsule.set_color_group(tag.color)
         capsule.on_remove.connect(lambda t=parent_id: self._remove_parent_tag_callback(t))
-        capsule.on_edit.connect(partial(self._edit_tag, tag, self._set_parent_tags))
+        capsule.on_edit.connect(partial(self._edit_tag, tag, self._on_parent_tag_edited))
 
         row.addWidget(capsule)
 
@@ -349,6 +349,11 @@ class EditTagPanel(ModalContent):
         row.addWidget(disam_button)
 
         return capsule.layout().button, disam_button, container
+
+    def _on_parent_tag_edited(self) -> None:
+        # A parent's own parents determine which categories this tag inherits.
+        self._set_parent_tags()
+        self._set_categories()
 
     def _toggle_disam_id(self, disambiguation_id: int | None):
         if self._disambiguation_id == disambiguation_id:
