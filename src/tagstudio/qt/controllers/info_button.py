@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from collections.abc import Callable
 from typing import override
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QRect, Qt, QVariantAnimation
@@ -52,7 +53,16 @@ class InfoButton(QAbstractButton):
     _SHADOW_ALPHA = 160
     _WINDOW_MARGIN = 12
 
-    def __init__(self, content: QLayout, title: str, popover_width: int = 360) -> None:
+    def __init__(
+        self,
+        content: QLayout | Callable[[], QLayout],
+        title: str,
+        popover_width: int = 360,
+    ) -> None:
+        """Create the button.
+
+        `content` may be a layout factory, in which case the popover is only built on first open.
+        """
         super().__init__()
         self.setToolTip(Translations.format("info.tooltip.about", title=title))
         self.setAccessibleName(self.toolTip())
@@ -60,18 +70,9 @@ class InfoButton(QAbstractButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self._popover = QFrame(self)
-        self._popover.setObjectName("info_popover")
-        self._popover.setFixedWidth(popover_width)
-        self._popover.setStyleSheet(info_popover_style())
-        self._popover.setLayout(content)
-        self._popover.hide()
-
-        self._fade_effect = _FadingPopoverEffect(self._popover)
-        self._fade_effect.setBlurRadius(48)
-        self._fade_effect.setOffset(0, 3)
-        self._fade_effect.setColor(QColor(0, 0, 0, self._SHADOW_ALPHA))
-        self._popover.setGraphicsEffect(self._fade_effect)
+        self._content = content
+        self._popover_width = popover_width
+        self._popover: QFrame | None = None
 
         self._is_open = False
         self._update_icon(hovered=False)
@@ -82,19 +83,38 @@ class InfoButton(QAbstractButton):
 
         self.clicked.connect(self._toggle_popover)
 
+    def _build_popover(self) -> QFrame:
+        """Build the hidden popover, deferred until it is first shown."""
+        content = self._content if isinstance(self._content, QLayout) else self._content()
+        self._popover = QFrame(self)
+        self._popover.setObjectName("info_popover")
+        self._popover.setFixedWidth(self._popover_width)
+        self._popover.setStyleSheet(info_popover_style())
+        self._popover.setLayout(content)
+        self._popover.hide()
+
+        self._fade_effect = _FadingPopoverEffect(self._popover)
+        self._fade_effect.setBlurRadius(48)
+        self._fade_effect.setOffset(0, 3)
+        self._fade_effect.setColor(QColor(0, 0, 0, self._SHADOW_ALPHA))
+        self._popover.setGraphicsEffect(self._fade_effect)
+        return self._popover
+
     def _toggle_popover(self) -> None:
         if self._is_open:
             self._hide_popover()
             return
 
+        popover = self._popover or self._build_popover()
+
         # Overlay the popover inside the current window, below the button.
         # If there's no room below, flip it above.
         window = self.window()
-        if self._popover.parent() is not window:
-            self._popover.setParent(window)
-        width = self._popover.width()
-        height = self._popover.heightForWidth(width)
-        self._popover.resize(width, height)
+        if popover.parent() is not window:
+            popover.setParent(window)
+        width = popover.width()
+        height = popover.heightForWidth(width)
+        popover.resize(width, height)
         pos = self.mapTo(window, QPoint(self.width() - width, self.height() + self._BUTTON_GAP))
         if pos.y() + height > window.height() - self._WINDOW_MARGIN:
             pos.setY(self.mapTo(window, QPoint(0, 0)).y() - height - self._BUTTON_GAP)
@@ -103,9 +123,9 @@ class InfoButton(QAbstractButton):
         )
         pos.setY(max(self._WINDOW_MARGIN, pos.y()))
 
-        self._popover.move(pos)
-        self._popover.raise_()
-        self._popover.show()
+        popover.move(pos)
+        popover.raise_()
+        popover.show()
         self._is_open = True
         self._update_icon(self.underMouse())
         self._fade_to(1.0)
@@ -131,7 +151,7 @@ class InfoButton(QAbstractButton):
 
     def _on_fade_finished(self) -> None:
         if not self._is_open:
-            self._popover.hide()
+            unwrap(self._popover).hide()
 
     def _update_icon(self, hovered: bool) -> None:
         rm = ResourceManager()
@@ -163,7 +183,8 @@ class InfoButton(QAbstractButton):
         if isinstance(event, QMouseEvent) and event.type() == QEvent.Type.MouseButtonPress:
             click_pos = event.globalPosition().toPoint()
             button_rect = QRect(self.mapToGlobal(QPoint(0, 0)), self.size())
-            popover_rect = QRect(self._popover.mapToGlobal(QPoint(0, 0)), self._popover.size())
+            popover = unwrap(self._popover)
+            popover_rect = QRect(popover.mapToGlobal(QPoint(0, 0)), popover.size())
             # Clicks outside the popover or the ⓘ button will close it
             if not button_rect.contains(click_pos) and not popover_rect.contains(click_pos):
                 self._hide_popover()

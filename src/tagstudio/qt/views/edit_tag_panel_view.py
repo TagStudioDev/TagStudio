@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (c) TagStudio Contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
+from collections.abc import Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -74,7 +75,7 @@ class EditTagPanelView(QHBoxLayout):
         parent_tags_layout.setSpacing(0)
         parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         parent_tags_layout.addWidget(
-            self._title_row(Translations["tag.parent_tags"], ParentTagsInfoView())
+            self._title_row(Translations["tag.parent_tags"], ParentTagsInfoView)
         )
 
         parent_tags_scroll_contents = QWidget()
@@ -94,7 +95,7 @@ class EditTagPanelView(QHBoxLayout):
         category_layout.setSpacing(0)
         category_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         category_layout.addWidget(
-            self._title_row(Translations["tag.categories"], CategoriesInfoView())
+            self._title_row(Translations["tag.categories"], CategoriesInfoView)
         )
         category_layout.addWidget(self._subtitle(Translations["tag.categories.subtitle"]))
 
@@ -163,7 +164,7 @@ class EditTagPanelView(QHBoxLayout):
         scroll_area.setWidget(contents)
         return scroll_area
 
-    def _title_row(self, title: str, info: QLayout) -> QWidget:
+    def _title_row(self, title: str, info: Callable[[], QLayout]) -> QWidget:
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
