@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPen, QPixm
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import slugify
+from tagstudio.core.utils.normalization import is_file
 from tagstudio.previews.file_renderer import FileRenderer, RenderResult
 from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.cache_manager import CacheManager
@@ -142,7 +143,7 @@ class QtFileRenderer(QObject):
         """Whether a file's preview is expected to render, so a placeholder should show."""
         return (
             FileRenderer.find_renderer(filepath) is not None
-            and filepath.is_file()
+            and is_file(filepath)
             and not FileRenderer.previously_failed(
                 filepath, self.theme, date_modified, is_small=False
             )
@@ -187,7 +188,7 @@ class QtFileRenderer(QObject):
 
         border_color = None
         if image is None:
-            is_missing = result.is_unlinked or not filepath.is_file()
+            is_missing = result.is_unlinked or not is_file(filepath)
             cached = None
             if is_missing and not is_thumb:
                 cached = FileRenderer.cached_thumbnail(cache, filepath, self.theme, date_modified)

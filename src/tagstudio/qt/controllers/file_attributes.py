@@ -23,6 +23,7 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext, get_inner_ext
+from tagstudio.core.utils.normalization import exists
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -116,7 +117,7 @@ class FileAttributes(QWidget):
         view.details.setHidden(not self._is_expanded)
 
         ext = get_display_ext(filepath)
-        is_linked = filepath.exists()
+        is_linked = exists(filepath)
         view.ext_label.setText(ext.upper()[1:] or filepath.stem.upper())
         is_ignored = Ignore.matcher.is_ignored(filepath.relative_to(unwrap(self._lib.library_dir)))
         view.ignored_label.setHidden(not is_ignored)
