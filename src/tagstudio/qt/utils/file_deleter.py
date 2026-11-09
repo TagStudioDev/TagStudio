@@ -9,6 +9,8 @@ from platform import system
 import structlog
 from send2trash import send2trash
 
+from tagstudio.core.utils.normalization import exists
+
 logger = structlog.get_logger(__name__)
 
 
@@ -30,7 +32,7 @@ def delete_file(path: str | Path) -> bool:
     except FileNotFoundError:
         logger.error(f"[delete_file] File Not Found: {_path}")
     except OSError as e:
-        if system() == "Darwin" and _path.exists():
+        if system() == "Darwin" and exists(_path):
             logger.info(
                 f'[delete_file] Encountered "{e}" on macOS and file exists; '
                 "Assuming it's on a network volume and proceeding to delete..."

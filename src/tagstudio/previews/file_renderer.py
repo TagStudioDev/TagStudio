@@ -19,7 +19,7 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
-from tagstudio.core.utils.normalization import exists, exists_and_form
+from tagstudio.core.utils.normalization import exists, path_on_disk
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -282,22 +282,21 @@ class FileRenderer:
         scaled_size = math.ceil(max(size) * dpi_scale)
         image: Image.Image | None = None
 
-        exists, filepath_ = exists_and_form(filepath)
-        if exists:
-            assert filepath_ is not None
+        filepath = path_on_disk(filepath)
+        if filepath.exists():
             try:
-                renderer = FileRenderer._find_renderer(filepath_)
+                renderer = FileRenderer._find_renderer(filepath)
                 if renderer:
                     image = renderer.render(
-                        filepath=filepath_,
+                        filepath=filepath,
                         is_small=is_small,
                         theme=theme,
                         size=(scaled_size, scaled_size),
                         dpi_scale=dpi_scale,
                     )
-                elif is_compressed(filepath_):
+                elif is_compressed(filepath):
                     image = FileRenderer._render_decompressed(
-                        filepath_, is_small, theme, (scaled_size, scaled_size), dpi_scale
+                        filepath, is_small, theme, (scaled_size, scaled_size), dpi_scale
                     )
 
                 if image:
@@ -305,9 +304,7 @@ class FileRenderer:
                 if image and cache:
                     cache.save_image(image, file_name, mode="RGBA")
             except Exception as e:
-                logger.error(
-                    "[FileRenderer] Couldn't render thumbnail", filepath=filepath_, error=e
-                )
+                logger.error("[FileRenderer] Couldn't render thumbnail", filepath=filepath, error=e)
                 image = None
 
         if image:

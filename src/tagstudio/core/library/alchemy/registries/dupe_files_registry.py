@@ -10,6 +10,7 @@ import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.normalization import is_file
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
@@ -36,7 +37,7 @@ class DupeFilesRegistry:
         if not isinstance(results_filepath, Path):
             results_filepath = Path(results_filepath)
 
-        if not results_filepath.is_file():
+        if not is_file(results_filepath):
             raise ValueError("invalid file path")
 
         self.groups.clear()

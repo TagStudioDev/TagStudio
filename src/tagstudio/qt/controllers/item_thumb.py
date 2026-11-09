@@ -40,6 +40,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext
+from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.app_settings import ShowLabelOption
@@ -364,15 +365,17 @@ class ItemThumb(QWidget):
         drag = QDrag(self._driver)
         paths: list[QUrl] = []
         mimedata = QMimeData()
-
         selected_ids = self._driver.selection.selected
+        library_dir = self._lib.library_dir
+        if not library_dir:
+            return
 
         for entry_id in selected_ids:
             entry = self._lib.get_entry(entry_id)
             if not entry:
                 continue
 
-            url = QUrl.fromLocalFile(Path(unwrap(self._lib.library_dir)) / entry.path)
+            url = QUrl.fromLocalFile(path_on_disk(library_dir / entry.path))
             paths.append(url)
 
         mimedata.setUrls(paths)

@@ -83,6 +83,7 @@ def test_file_path_display(
     entry = qt_driver.lib.get_entry(2)
     assert isinstance(entry, Entry)
     filename = entry.path
+
     panel.layout().file_attrs.update_stats(filepath=unwrap(qt_driver.lib.library_dir) / filename)
 
     view = panel.layout().file_attrs.layout()

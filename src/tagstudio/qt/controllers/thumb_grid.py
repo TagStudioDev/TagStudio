@@ -630,12 +630,12 @@ class ThumbGrid(QWidget):
             self._pending_durations.add(path)
             self._driver.thumb_job_queue.put((self._load_duration, (path,)))
 
-    def _load_duration(self, file_path: Path) -> None:
-        self._duration_loaded.emit(file_path, get_duration(file_path))
+    def _load_duration(self, filepath: Path) -> None:
+        self._duration_loaded.emit(filepath, get_duration(filepath))
 
-    def _on_duration_loaded(self, file_path: Path, duration: float | None) -> None:
-        self._pending_durations.discard(file_path)
-        self._durations[file_path] = duration
-        thumb = self._thumb_for(self._entry_paths.get(file_path))
+    def _on_duration_loaded(self, filepath: Path, duration: float | None) -> None:
+        self._pending_durations.discard(filepath)
+        self._durations[filepath] = duration
+        thumb = self._thumb_for(self._entry_paths.get(filepath))
         if thumb is not None and thumb not in self._held:
             thumb.set_duration(duration)

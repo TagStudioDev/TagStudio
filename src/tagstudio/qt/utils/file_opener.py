@@ -10,6 +10,7 @@ from pathlib import Path
 
 import structlog
 
+from tagstudio.core.utils.normalization import exists, is_file
 from tagstudio.core.utils.silent_subprocess import silent_popen  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
@@ -27,7 +28,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
     """
     path = Path(path)
     logger.info("Opening file", path=path)
-    if not path.exists():
+    if not exists(path):
         logger.error("File not found", path=path)
         return
 
@@ -119,10 +120,10 @@ class FileOpenerHelper:
 
     def open_file(self):
         """Open the file in the default application."""
-        if Path(self.filepath).is_file():
+        if is_file(self.filepath):
             open_file(self.filepath)
 
     def open_explorer(self):
         """Open the file in the default file explorer."""
-        if Path(self.filepath).is_file():
+        if is_file(self.filepath):
             open_file(self.filepath, file_manager=True)

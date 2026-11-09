@@ -12,6 +12,7 @@ import structlog
 from PIL import Image
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
+from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.qt.app_settings import DEFAULT_CACHED_THUMB_QUALITY, DEFAULT_THUMB_CACHE_SIZE
 
 logger = structlog.get_logger(__name__)
@@ -121,10 +122,10 @@ class CacheManager:
         with self._lock as _lock:
             for i in self._get_most_recent_folder():
                 cache_folder = self.folders[i]
-                file_path = cache_folder.path / file_name
-                if file_path.exists():
+                path = path_on_disk(cache_folder.path / file_name)
+                if path.exists():
                     self._set_most_recent_folder(i)
-                    return file_path
+                    return path
         return None
 
     def save_image(self, image: Image.Image, file_name: Path, mode: str = "RGBA"):

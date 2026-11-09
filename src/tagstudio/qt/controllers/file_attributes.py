@@ -23,7 +23,7 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext, get_inner_ext
-from tagstudio.core.utils.normalization import exists
+from tagstudio.core.utils.normalization import exists, path_on_disk
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
@@ -111,7 +111,9 @@ class FileAttributes(QWidget):
             stats = FileAttributeData()
 
         view = self.layout()
+        filepath = path_on_disk(filepath)
         self._filepath = filepath
+
         view.message_label.setHidden(True)
         view.header.setHidden(False)
         view.details.setHidden(not self._is_expanded)

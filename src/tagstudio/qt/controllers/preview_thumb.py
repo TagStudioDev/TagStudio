@@ -23,6 +23,7 @@ from rawpy import LibRawFileUnsupportedError, LibRawIOError  # pyright: ignore
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed
+from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import (
     get_duration,
@@ -152,7 +153,7 @@ class PreviewThumb(QWidget):
         self, filepath: Path, preview: _PreviewType | None, stats: FileAttributeData | None
     ) -> None:
         """Callback that fires once a video's probe results are back."""
-        if filepath != self._current_file:
+        if filepath != self._current_file and path_on_disk(filepath) != self._current_file:
             return
 
         if preview == _PreviewType.VIDEO and stats is not None:
@@ -163,9 +164,9 @@ class PreviewThumb(QWidget):
             self.stats_updated.emit(filepath, stats)
         elif preview == _PreviewType.AUDIO:
             # Display the album art/waveform and duration
-            self._display_audio(filepath, is_new_file=True, start_player=False)
+            self._display_audio(path_on_disk(filepath), is_new_file=True, start_player=False)
         else:
-            self._display_image(filepath, is_new_file=True)
+            self._display_image(path_on_disk(filepath), is_new_file=True)
 
     def _animation_loaded_callback(
         self, filepath: Path, data: tuple[bytes, tuple[int, int]] | None
@@ -364,7 +365,7 @@ class PreviewThumb(QWidget):
 
     def _update_media_player(self, filepath: Path) -> None:
         """Display either audio or video."""
-        self.layout().media_player.play(filepath)
+        self.layout().media_player.play(path_on_disk(filepath))
 
     def _display_video(self, filepath: Path) -> None:
         """Play a video, loading its stats in the background."""
@@ -548,6 +549,7 @@ class PreviewThumb(QWidget):
     def _get_animation_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
         """Return an animated image's data and size, or `None` if it isn't animated."""
         ext = filepath.suffix.lower()
+        filepath = path_on_disk(filepath)
 
         try:
             with Image.open(filepath) as image:

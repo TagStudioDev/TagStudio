@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.progress_bar import ProgressWidget
@@ -115,7 +116,9 @@ class DropImportModal(QWidget):
             if not url.isLocalFile():
                 continue
 
-            file = Path(url.toLocalFile())
+            file = path_on_disk(Path(url.toLocalFile()))
+            if file is None:
+                continue
 
             if file.is_dir():
                 for f in file.glob("**/*"):

@@ -28,29 +28,29 @@ def norm_path(
     return Path(normalized)
 
 
+def path_on_disk(path: Path) -> Path:
+    """Un-normalize a path stored in a TagStudio library to match the form located on disk.
+
+    Returns the original path if path does not exist on disk.
+    """
+    if path.exists():
+        return path
+
+    # NOTE: Case sensitivity is True here since it's irrelevant to callers.
+    nfc_path = norm_path(path, case_sensitive=True, form="NFC")
+    if nfc_path.exists():
+        return nfc_path
+
+    return path
+
+
 def exists(path: Path) -> bool:
     """Wrapper for `pathlib.Path.exists()` that's Unicode Normalization Form agnostic."""
-    is_case_sensitive = is_fs_case_sensitive()
     # NOTE: Initial path will always be in NFD
-    return path.exists() or norm_path(path, is_case_sensitive, "NFC").exists()
+    return path.exists() or norm_path(path, is_fs_case_sensitive(), "NFC").exists()
 
 
 def is_file(path: Path) -> bool:
     """Wrapper for `pathlib.Path.is_file()` that's Unicode Normalization Form agnostic."""
-    is_case_sensitive = is_fs_case_sensitive()
     # NOTE: Initial path will always be in NFD
-    return path.is_file() or norm_path(path, is_case_sensitive, "NFC").is_file()
-
-
-def exists_and_form(path: Path) -> tuple[bool, Path | None]:
-    """Return the assumed normal form of a file that exists on disk, prioritizing NFD."""
-    is_case_sensitive = is_fs_case_sensitive()
-    # NOTE: Initial path will always be in NFD
-    if path.exists():
-        return (True, path)
-
-    nfc_path = norm_path(path, is_case_sensitive, "NFC")
-    if nfc_path.exists():
-        return (True, nfc_path)
-
-    return (False, None)
+    return path.is_file() or norm_path(path, is_fs_case_sensitive(), "NFC").is_file()

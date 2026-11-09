@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.scanners import scan_paths
-from tagstudio.core.utils.normalization import norm_path
+from tagstudio.core.utils.normalization import is_file, norm_path
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
 
@@ -111,7 +111,7 @@ class LibrarySyncEngine:
             for entry in self.library.get_entries(list(unvisited.values())):
                 if self.cancelled:
                     break
-                if not (library_dir / entry.path).is_file():
+                if not is_file(library_dir / entry.path):
                     self.unlinked_entries.append(entry)
 
         if self.cancelled:

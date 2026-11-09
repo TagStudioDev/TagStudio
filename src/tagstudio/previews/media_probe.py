@@ -12,6 +12,7 @@ from PIL import Image, ImageSequence
 
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
+from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.core.utils.stat import get_date_modified
 from tagstudio.previews.vendored.probe import probe
 
@@ -23,6 +24,8 @@ def probe_file(filepath: Path) -> dict[str, Any] | None:
 
     Results are cached by path and date modified timestamp.
     """
+    filepath = path_on_disk(filepath)
+
     try:
         mod_time = get_date_modified(filepath)
     except OSError:
@@ -40,6 +43,7 @@ def _cached_probe(filepath: Path, _mod_time: float) -> dict[str, Any] | None:
 
 def _readable_streams(filepath: Path) -> list[dict[str, Any]]:
     """Return a file's streams, or an empty list if it can't be probed or is DRM-protected."""
+    filepath = path_on_disk(filepath)
     streams: list[dict[str, Any]] = (probe_file(filepath) or {}).get("streams", [])
     if any(stream.get("codec_tag_string") in ["drma", "drms", "drmi"] for stream in streams):
         return []
@@ -48,6 +52,7 @@ def _readable_streams(filepath: Path) -> list[dict[str, Any]]:
 
 def get_video_stream(filepath: Path) -> dict[str, Any] | None:
     """Return a file's first readable video stream, skipping embedded cover art."""
+    filepath = path_on_disk(filepath)
     return next(
         (
             stream
@@ -100,6 +105,8 @@ def get_duration(filepath: Path) -> float | None:
 
     Results are cached by path and date modified timestamp.
     """
+    filepath = path_on_disk(filepath)
+
     try:
         mod_time = get_date_modified(filepath)
     except OSError:
