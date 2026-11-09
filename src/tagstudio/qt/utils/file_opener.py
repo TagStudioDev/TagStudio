@@ -10,7 +10,7 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.utils.normalization import exists, is_file
+from tagstudio.core.utils.normalization import exists, is_file, path_on_disk
 from tagstudio.core.utils.silent_subprocess import silent_popen  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
@@ -32,12 +32,12 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
         logger.error("File not found", path=path)
         return
 
+    path = str(path_on_disk(path).resolve())
     try:
         if sys.platform == "win32":
-            normpath = str(Path(path).resolve())
             if file_manager:
                 command_name = "explorer"
-                command_arg = f'/select,"{normpath}"'
+                command_arg = f'/select,"{path}"'
 
                 # For some reason, if the args are passed in a list, this will error when the
                 # path has spaces, even while surrounded in double quotes.
@@ -52,7 +52,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
                 if windows_start_command:
                     command_name = "start"
                     # First parameter is for title, NOT filepath
-                    command_args = ["", normpath]
+                    command_args = ["", path]
                     subprocess.Popen(
                         [command_name] + command_args,
                         shell=True,
@@ -61,7 +61,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
                         | subprocess.CREATE_BREAKAWAY_FROM_JOB,
                     )
                 else:
-                    command = f'"{normpath}"'
+                    command = f'"{path}"'
                     silent_popen(
                         command,
                         shell=True,
