@@ -115,18 +115,20 @@ class LibrarySyncEngine:
                 start_time_loop = time()
 
         # NOTE: Ignored files are skipped during the scan.
+        missing_ids: list[int] = []
         if not self.cancelled:
-            for entry in self.library.get_entries(list(unvisited.values())):
+            for entry_id, path in self.library.get_entry_paths(list(unvisited.values())):
                 if self.cancelled:
                     break
-                if not is_file(library_dir / entry.path):
-                    self.unlinked_entries.append(entry)
+                if not is_file(library_dir / path):
+                    missing_ids.append(entry_id)
 
         if self.cancelled:
             yield count, len(self.new_paths)
             logger.info("[Sync] Directory scan cancelled", path=library_dir, files_scanned=count)
             return
 
+        self.unlinked_entries = self.library.get_entries(missing_ids)
         if self.library.duplicate_path_entry_ids:
             self.unlinked_entries += self.library.get_entries(self.library.duplicate_path_entry_ids)
 

@@ -641,10 +641,16 @@ class Library:
             return entry
 
     def get_entries(self, entry_ids: Iterable[int]) -> list[Entry]:
-        with Session(self.engine) as session:
-            statement = select(Entry).where(Entry.id.in_(entry_ids))
-            entries = dict((e.id, e) for e in session.scalars(statement))
-            return [entries[id] for id in entry_ids if id in entries]
+        entry_ids = list(entry_ids)
+        entries: dict[int, Entry] = {}
+        for sub_list in [
+            entry_ids[i : i + MAX_SQL_VARIABLES]
+            for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
+        ]:
+            with Session(self.engine) as session:
+                statement = select(Entry).where(Entry.id.in_(sub_list))
+                entries.update((e.id, e) for e in session.scalars(statement))
+        return [entries[id] for id in entry_ids if id in entries]
 
     def removed_entry_ids(self, entry_ids: Iterable[int]) -> set[int]:
         """Return IDs from `entry_ids` that no longer exist in the library."""
@@ -952,6 +958,21 @@ class Library:
                 select(Entry.id, type_coerce(Entry.path, String).label("path"))
             ).all()
             return {row.id: row.path for row in rows}
+
+    def get_entry_paths(self, entry_ids: list[int]) -> Iterator[tuple[int, str]]:
+        """Yield the (id, string path) of each Entry in `entry_ids`."""
+        for sub_list in [
+            entry_ids[i : i + MAX_SQL_VARIABLES]
+            for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
+        ]:
+            with Session(self.engine) as session:
+                rows = session.execute(
+                    select(Entry.id, type_coerce(Entry.path, String).label("path")).where(
+                        Entry.id.in_(sub_list)
+                    )
+                ).all()
+            for row in rows:
+                yield row.id, row.path
 
     def get_or_build_path_cache(self) -> dict[str, int]:
         """Return the dict cache of normalized paths -> entry IDs."""
