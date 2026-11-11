@@ -141,11 +141,17 @@ class QtFileRenderer(QObject):
 
     def _will_render(self, filepath: Path, date_modified: float | None) -> bool:
         """Whether a file's preview is expected to render, so a placeholder should show."""
+        library_dir = self.renderer.lib.library_dir
+        if library_dir is None:
+            return False
         return (
             FileRenderer.find_renderer(filepath) is not None
             and is_file(filepath)
             and not FileRenderer.previously_failed(
-                filepath, self.theme, date_modified, is_small=False
+                filepath.relative_to(library_dir),
+                self.theme,
+                date_modified,
+                is_small=False,
             )
         )
 
@@ -161,6 +167,9 @@ class QtFileRenderer(QObject):
         date_modified: float | None = None,
     ):
         filepath = Path(filepath)
+        library_dir = self.renderer.lib.library_dir
+        if library_dir is None:
+            return
         side = math.ceil(max(size[0], size[1]) * pixel_ratio)
         result = RenderResult(None)
         if not is_placeholder:
@@ -178,7 +187,7 @@ class QtFileRenderer(QObject):
         is_loading = False
         if is_placeholder and self._will_render(filepath, date_modified):
             cached = FileRenderer.cached_thumbnail(
-                cache, filepath, self.theme, date_modified, is_small=False
+                cache, filepath.relative_to(library_dir), self.theme, date_modified, is_small=False
             )
             if cached is not None:
                 image = ImageQt.ImageQt(cached)
@@ -191,7 +200,9 @@ class QtFileRenderer(QObject):
             is_missing = result.is_unlinked or not is_file(filepath)
             cached = None
             if is_missing and not is_thumb:
-                cached = FileRenderer.cached_thumbnail(cache, filepath, self.theme, date_modified)
+                cached = FileRenderer.cached_thumbnail(
+                    cache, filepath.relative_to(library_dir), self.theme, date_modified
+                )
             if cached is not None:
                 image = ImageQt.ImageQt(cached)
             else:

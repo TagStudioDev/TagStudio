@@ -172,7 +172,7 @@ class FileRenderer:
         variant = (
             "LARGE" if not is_small and renderer is not None and renderer.has_small_variant else ""
         )
-        hashable_str: str = f"{str(filepath)}{mod_time}{theme_name}{variant}"
+        hashable_str: str = f"{filepath.as_posix()}{mod_time}{theme_name}{variant}"
         hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
         return Path(f"{hash_value}{FileRenderer._cached_img_ext}")
 
@@ -243,7 +243,12 @@ class FileRenderer:
             theme (Theme): A theme enum to determine the light/dark theme.
             date_modified (float | None): The date modified timestamp of the file. Used for caches.
         """
-        image = FileRenderer.cached_thumbnail(cache, filepath, theme, date_modified)
+        library_dir = self.lib.library_dir
+        if library_dir is None:
+            return None
+        image = FileRenderer.cached_thumbnail(
+            cache, filepath.relative_to(library_dir), theme, date_modified
+        )
         if not image and self.settings.generate_thumbs:
             res = self.settings.cached_thumb_resolution
             if not MIN_CACHED_THUMB_RES <= res <= MAX_CACHED_THUMB_RES:
@@ -278,7 +283,12 @@ class FileRenderer:
             is_small (bool): Is this specifically a thumbnail? Use for specifying small variants.
             cache (CacheManager | None): A cache manager to save the rendered image to, if any.
         """
-        file_name = FileRenderer._cached_thumb_name(filepath, theme, date_modified, is_small)
+        library_dir = self.lib.library_dir
+        if library_dir is None:
+            return None
+        file_name = FileRenderer._cached_thumb_name(
+            filepath.relative_to(library_dir), theme, date_modified, is_small
+        )
         scaled_size = math.ceil(max(size) * dpi_scale)
         image: Image.Image | None = None
 
