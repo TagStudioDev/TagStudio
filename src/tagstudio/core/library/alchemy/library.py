@@ -23,6 +23,7 @@ from sqlalchemy import (
     ColumnExpressionArgument,
     Engine,
     ScalarResult,
+    String,
     Update,
     and_,
     asc,
@@ -34,6 +35,7 @@ from sqlalchemy import (
     or_,
     select,
     text,
+    type_coerce,
     update,
 )
 from sqlalchemy.dialects import sqlite
@@ -95,7 +97,7 @@ from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.utils.filesystem import is_fs_case_sensitive
-from tagstudio.core.utils.normalization import norm_path
+from tagstudio.core.utils.normalization import norm_str
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
 
@@ -209,9 +211,9 @@ class OpenLibraryResult:
 class FileStat(NamedTuple):
     """Cached stat() fields. Matches the ones stored in file entries."""
 
-    date_created: float | None
-    date_modified: float | None
-    file_size: int | None
+    date_created: float
+    date_modified: float
+    file_size: int
 
 
 class Library:
@@ -219,7 +221,7 @@ class Library:
 
     library_dir: Path | None = None
     engine: Engine | None = None
-    path_cache: dict[Path, int] | None = None
+    path_cache: dict[str, int] | None = None
     duplicate_path_entry_ids: list[int] | None = None
 
     def __init__(self) -> None:
@@ -717,11 +719,13 @@ class Library:
                     Entry.id, Entry.date_created, Entry.date_modified, Entry.file_size
                 ).where(Entry.id.in_(sub_list))
                 for row in session.execute(stmt):
+                    if None in (row.date_created, row.date_modified, row.file_size):
+                        continue
                     stored[row.id] = FileStat(row.date_created, row.date_modified, row.file_size)
 
         updates: dict[int, FileStat] = {}
         for entry_id, path in entries:
-            stored_stat = stored.get(entry_id, FileStat(None, None, None))
+            stored_stat = stored.get(entry_id)
             full_path = library_dir / path
 
             try:
@@ -743,13 +747,6 @@ class Library:
             if stored_stat == current_stat:
                 continue
 
-            logger.info(
-                "[Library] Entry stat data changed",
-                path=full_path,
-                date_created=(stored_stat.date_created, current_stat.date_created),
-                date_modified=(stored_stat.date_modified, current_stat.date_modified),
-                file_size=(stored_stat.file_size, current_stat.file_size),
-            )
             updates[entry_id] = current_stat
 
         if not updates:
@@ -765,7 +762,6 @@ class Library:
             )
             session.commit()
 
-        logger.info(f"[Library] Refreshed stat data for {len(updates)} of {len(entries)} entries")
         return len(updates)
 
     def get_tag_entries(
@@ -846,14 +842,15 @@ class Library:
         full_ts_path.mkdir(parents=True, exist_ok=True)
         return False
 
-    def _path_cache_key(self, path: Path) -> Path:
-        return norm_path(path, case_sensitive=self.is_fs_case_sensitive)
+    def path_cache_key(self, path: Path) -> str:
+        """Return the path cache key for `path`."""
+        return norm_str(path.as_posix(), case_sensitive=self.is_fs_case_sensitive)
 
     def _cache_add_path(self, entry_id: int, path: Path) -> None:
         """Keep the path cache consistent with a newly-added or relinked entry."""
         if self.path_cache is None:
             return
-        key = self._path_cache_key(path)
+        key = self.path_cache_key(path)
         if key in self.path_cache:
             displaced_id = self.path_cache[key]
             logger.warning(
@@ -868,25 +865,25 @@ class Library:
             self.duplicate_path_entry_ids.append(displaced_id)
         self.path_cache[key] = entry_id
 
-    def _cache_remove_entries(self, entry_ids: Iterable[int]) -> None:
-        """Keep the path cache consistent with removed entry ids."""
-        removed = set(entry_ids)
-        if not removed:
+    def _cache_remove_entries(self, entry_paths: dict[int, str]) -> None:
+        """Keep the path cache consistent with removed entries."""
+        if not entry_paths:
             return
         if self.path_cache is not None:
-            stale_keys = [key for key, eid in self.path_cache.items() if eid in removed]
-            for key in stale_keys:
-                del self.path_cache[key]
+            for entry_id, path in entry_paths.items():
+                key = norm_str(path, case_sensitive=self.is_fs_case_sensitive)
+                if self.path_cache.get(key) == entry_id:
+                    del self.path_cache[key]
         if self.duplicate_path_entry_ids:
             self.duplicate_path_entry_ids = [
-                eid for eid in self.duplicate_path_entry_ids if eid not in removed
+                eid for eid in self.duplicate_path_entry_ids if eid not in entry_paths
             ]
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple entries to the Library."""
         assert items
 
-        with Session(self.engine) as session:
+        with Session(self.engine, expire_on_commit=False) as session:
             # add all items
 
             try:
@@ -907,33 +904,41 @@ class Library:
 
     def remove_entries(self, entry_ids: list[int]) -> None:
         """Remove Entry items matching supplied IDs from the Library."""
+        removed_paths: dict[int, str] = {}
         with Session(self.engine) as session:
             for sub_list in [
                 entry_ids[i : i + MAX_SQL_VARIABLES]
                 for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
             ]:
-                session.query(Entry).where(Entry.id.in_(sub_list)).delete()
+                rows = session.execute(
+                    delete(Entry)
+                    .where(Entry.id.in_(sub_list))
+                    .returning(Entry.id, type_coerce(Entry.path, String).label("path"))
+                )
+                removed_paths.update({row.id: row.path for row in rows})
             session.commit()
-        self._cache_remove_entries(entry_ids)
+        self._cache_remove_entries(removed_paths)
 
     def get_entry_id_from_path(self, path: Path) -> int:
         """Attempt to return an Entry ID given a filepath, else return -1."""
         with Session(self.engine) as session:
             return session.scalar(select(Entry.id).where(Entry.path == path).limit(1)) or -1
 
-    def all_paths_with_ids(self) -> dict[int, Path]:
-        """Bulk fetch every Entry's (id, path). Only used to init the path cache."""
+    def all_paths_with_ids(self) -> dict[int, str]:
+        """Bulk fetch every Entry's (id, string path). Only used to init the path cache."""
         with Session(self.engine) as session:
-            rows = session.execute(select(Entry.id, Entry.path)).all()
+            rows = session.execute(
+                select(Entry.id, type_coerce(Entry.path, String).label("path"))
+            ).all()
             return {row.id: row.path for row in rows}
 
-    def get_or_build_path_cache(self) -> dict[Path, int]:
+    def get_or_build_path_cache(self) -> dict[str, int]:
         """Return the dict cache of normalized paths -> entry IDs."""
         if self.path_cache is None:
-            cache: dict[Path, int] = {}
+            cache: dict[str, int] = {}
             duplicates: list[int] = []
             for entry_id, path in self.all_paths_with_ids().items():
-                key = self._path_cache_key(path)
+                key = norm_str(path, case_sensitive=self.is_fs_case_sensitive)
                 if key in cache:
                     logger.warning(
                         "[Library] Duplicate normalized path created while building cache, "
@@ -1277,6 +1282,11 @@ class Library:
             entry_id = entry_id.id
 
         with Session(self.engine) as session:
+            old_path = session.scalar(
+                select(type_coerce(Entry.path, String)).where(Entry.id == entry_id)
+            )
+
+        with Session(self.engine) as session:
             update_stmt = (
                 update(Entry)
                 .where(
@@ -1290,7 +1300,8 @@ class Library:
             session.execute(update_stmt)
             session.commit()
 
-        self._cache_remove_entries([entry_id])
+        if old_path is not None:
+            self._cache_remove_entries({entry_id: old_path})
         self._cache_add_path(entry_id, path)
         return True
 

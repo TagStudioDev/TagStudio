@@ -12,20 +12,26 @@ from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 def norm_path(
     path: Path | str, case_sensitive: bool, form: Literal["NFC", "NFKC", "NFD", "NFKD"] = "NFD"
 ) -> Path:
-    """Return normalized `path`. Uses Unicode Normalization Form D (NFD) by default.
+    """Return a Unicode-normalized Path. Uses Unicode Normalization Form D (NFD) by default.
 
     NOTE: NFD is the intended form for all TagStudio storage and comparisons. Some paths need other
     forms when referencing live files on disk.
     """
     if isinstance(path, str):
         path = Path(path)
-    posix = path.as_posix()
-    # NOTE: ASCII paths will be unaffected by all unicode normalization and can be skipped.
+    return Path(norm_str(path.as_posix(), case_sensitive=case_sensitive, form=form))
+
+
+def norm_str(
+    string: str, case_sensitive: bool, form: Literal["NFC", "NFKC", "NFD", "NFKD"] = "NFD"
+) -> str:
+    """Return a Unicode-normalized string. Uses Unicode Normalization Form D (NFD) by default."""
+    # NOTE: ASCII strings will be unaffected by all unicode normalization and can be skipped.
     # See: https://unicode.org/reports/tr15/
-    normalized = posix if posix.isascii() else unicodedata.normalize(form, posix)
+    normalized = string if string.isascii() else unicodedata.normalize(form, string)
     if not case_sensitive:
         normalized = normalized.casefold()
-    return Path(normalized)
+    return normalized
 
 
 def path_on_disk(path: Path) -> Path:

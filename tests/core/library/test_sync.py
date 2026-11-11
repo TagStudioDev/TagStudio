@@ -56,19 +56,23 @@ def test_sync_saves_new_files_oldest_modified_first(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sync_new_file_removed_before_save_is_skipped(library: Library):
-    """A new file that can't be found when saving must not stop the other new files saving."""
+def test_sync_new_file_failing_stat_is_skipped(library: Library, monkeypatch: pytest.MonkeyPatch):
+    """A scanned new file that `stat()` can run on it must not stop the other new files saving."""
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
     (library_dir / "kept.txt").touch()
-    (library_dir / "removed.txt").touch()
+
+    def scan_with_missing_file(*_: object) -> Iterator[Path]:
+        yield Path("kept.txt")
+        yield Path("missing.txt")
+
+    monkeypatch.setattr("tagstudio.core.library.sync.scan_paths", scan_with_missing_file)
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    (library_dir / "removed.txt").unlink()
     list(engine.save_new_entries())
 
     assert library.get_entry_id_from_path(Path("kept.txt")) != -1
-    assert library.get_entry_id_from_path(Path("removed.txt")) == -1
+    assert library.get_entry_id_from_path(Path("missing.txt")) == -1
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -108,7 +112,7 @@ def test_sync_nfd_nfc_false_positive(library: Library):
     (library_dir / nfd_name).touch()
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert len(engine.paths_to_restat) == 1
     assert engine.unlinked_entries_count == 2
 
@@ -129,17 +133,17 @@ def test_sync_cache_pruned_on_remove(library: Library):
     tracked_entry = next(e for e in engine.unlinked_entries if e.path == tracked_path)
 
     cache = library.get_or_build_path_cache()
-    assert tracked_path in cache
+    assert "tracked.txt" in cache
 
     # Only an explicit removal should prune the cache
     engine.unlinked_entries = [tracked_entry]
     engine.remove_unlinked_entries()
-    assert tracked_path not in cache
+    assert "tracked.txt" not in cache
 
     # A different file at the same path afterwards should be treated as new
     (library_dir / tracked_path).touch()
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == [tracked_path]
+    assert list(engine.new_paths) == [tracked_path]
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -170,7 +174,7 @@ def test_sync_duplicate_case_collision_merged(library: Library):
     )
 
     cache = library.get_or_build_path_cache()
-    path_key = Path("dupe/photo.jpg")  # Case-insensitive + NFD
+    path_key = "dupe/photo.jpg"  # Case-insensitive + NFD
     assert library.duplicate_path_entry_ids is not None
     assert len(library.duplicate_path_entry_ids) == 1
     dupe_id = library.duplicate_path_entry_ids[0]
@@ -186,6 +190,31 @@ def test_sync_duplicate_case_collision_merged(library: Library):
     assert library.entries_count == entries_before - 1
     assert cache.get(path_key) == original_id
     assert library.duplicate_path_entry_ids == []
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_duplicate_merge_counted_alongside_relink(library: Library):
+    """A merged duplicate and a relinked entry from the same sync must both count as relinked."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    library.is_fs_case_sensitive = False  # Force a case-insensitive collision
+
+    (library_dir / "Dupe").mkdir()
+    (library_dir / "Dupe" / "photo.jpg").touch()
+    (library_dir / "New").mkdir()
+    (library_dir / "New" / "moved.txt").touch()
+    _, _, moved_id = library.add_entries(
+        [
+            Entry(path=Path("Dupe/photo.jpg"), fields=[]),
+            Entry(path=Path("Dupe/PHOTO.JPG"), fields=[]),
+            Entry(path=Path("Old/moved.txt"), fields=[]),
+        ]
+    )
+    library.get_or_build_path_cache()
+    dupe_id = unwrap(library.duplicate_path_entry_ids)[0]
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    assert {e.id for e in engine.relinked_entries} == {dupe_id, moved_id}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -288,7 +317,7 @@ def test_sync_auto_relink_modified_file_stays_linked(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert Path("stable.txt") not in {e.path for e in engine.unlinked_entries}
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert len(engine.paths_to_restat) == 1
 
 
@@ -306,7 +335,7 @@ def test_sync_auto_relink_deleted_file(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert Path("gone.txt") in {e.path for e in engine.unlinked_entries}
 
 
@@ -406,7 +435,7 @@ def test_sync_auto_relink_moved_and_renamed_file(library: Library):
     (library_dir / "original_name.txt").rename(library_dir / "sub" / "renamed.txt")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert library.get_entry_id_from_path(Path("sub/renamed.txt")) == original_id
@@ -489,7 +518,7 @@ def test_sync_auto_relink_moved_file_modified(library: Library):
     (library_dir / "sub" / "notmoved.txt").write_text("different content, different size")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert library.get_entry_id_from_path(Path("sub/notmoved.txt")) == original_id
@@ -513,7 +542,7 @@ def test_sync_auto_relink_moved_file(library: Library):
     (library_dir / "moveme.txt").rename(library_dir / "sub" / "moveme.txt")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert Path("sub/moveme.txt") not in {e.path for e in engine.unlinked_entries}
@@ -643,7 +672,7 @@ def test_sync_auto_relink_renamed_file(library: Library):
     (library_dir / "original_name.txt").rename(library_dir / "renamed.txt")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert Path("renamed.txt") not in {e.path for e in engine.unlinked_entries}
@@ -723,7 +752,7 @@ def test_sync_auto_relink_separate_moved_and_renamed_files(library: Library):
     (library_dir / "rename_orig.txt").rename(library_dir / "rename_new.txt")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 2
     assert {e.id for e in engine.relinked_entries} == {moved_id, renamed_id}
     assert library.get_entry_id_from_path(Path("sub/moveme.txt")) == moved_id
@@ -743,7 +772,7 @@ def test_sync_auto_relink_matches_entry_without_stored_stats_by_filename(library
     (library_dir / "sub" / "legacy.txt").touch()
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert Path("legacy.txt") not in {e.path for e in engine.unlinked_entries}
@@ -786,7 +815,7 @@ def test_sync_cancel_skips_unlinked_finalization(library: Library):
     engine.cancelled = True
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.unlinked_entries_count == baseline_unlinked_count
-    assert engine.new_paths == []
+    assert engine.new_paths == {}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -862,12 +891,12 @@ def test_sync_cancel_skips_save_new_entries(library: Library):
 
     (library_dir / "f0.txt").touch()
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert engine.new_paths == [Path("f0.txt")]
+    assert list(engine.new_paths) == [Path("f0.txt")]
 
     engine.cancelled = True
     list(engine.save_new_entries())
     assert library.entries_count == baseline_count
-    assert engine.new_paths == [Path("f0.txt")]
+    assert list(engine.new_paths) == [Path("f0.txt")]
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)

@@ -97,11 +97,11 @@ def test_path_cache_self_maintained_by_add_entries(library: Library):
     """`add_entries()` must keep an already-built path cache up to date on its own."""
     library.is_fs_case_sensitive = True
     cache = library.get_or_build_path_cache()
-    assert Path("added_directly.txt") not in cache
+    assert "added_directly.txt" not in cache
 
     entry = Entry(path=Path("added_directly.txt"), fields=[])
     new_ids = library.add_entries([entry])
-    assert cache.get(Path("added_directly.txt")) == new_ids[0]
+    assert cache.get("added_directly.txt") == new_ids[0]
 
 
 def test_path_cache_self_maintained_by_remove_entries(library: Library):
@@ -109,10 +109,10 @@ def test_path_cache_self_maintained_by_remove_entries(library: Library):
     cache = library.get_or_build_path_cache()
     entry = Entry(path=Path("to_remove.txt"), fields=[])
     entry_id = library.add_entries([entry])[0]
-    assert cache.get(Path("to_remove.txt")) == entry_id
+    assert cache.get("to_remove.txt") == entry_id
 
     library.remove_entries([entry_id])
-    assert Path("to_remove.txt") not in cache
+    assert "to_remove.txt" not in cache
 
 
 def test_path_cache_self_maintained_by_update_entry_path(library: Library):
@@ -122,8 +122,8 @@ def test_path_cache_self_maintained_by_update_entry_path(library: Library):
     entry_id = library.add_entries([entry])[0]
 
     assert library.update_entry_path(entry_id, Path("new_location.txt"))
-    assert Path("old_location.txt") not in cache
-    assert cache.get(Path("new_location.txt")) == entry_id
+    assert "old_location.txt" not in cache
+    assert cache.get("new_location.txt") == entry_id
 
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
