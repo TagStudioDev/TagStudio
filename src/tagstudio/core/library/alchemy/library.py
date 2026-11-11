@@ -416,19 +416,35 @@ class Library:
         return self.open_sqlite_library(library_dir, in_memory)
 
     @staticmethod
-    def __get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
+    def _use_wal_if_supported(db_path: Path) -> None:
+        """Set the database to WAL mode, or to rollback journal mode if WAL can't be used.
+
+        An example of a setup where WAL will fail to open is SMB shares.
+        """
+        try:
+            with closing(sqlite3.connect(db_path, autocommit=True)) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as e:
+            logger.info("[Library] Could not use WAL mode, switching to rollback mode", error=e)
+
+        # NOTE: locking_mode=EXCLUSIVE lets an existing WAL database open without shared memory,
+        # meaning it can fall back to the default rollback journal mode behavior.
+        # See: https://www.sqlite.org/wal.html ("8. Use of WAL Without Shared-Memory")
+        try:
+            with closing(sqlite3.connect(db_path, autocommit=True)) as conn:
+                conn.execute("PRAGMA locking_mode=EXCLUSIVE")
+                conn.execute("PRAGMA journal_mode=DELETE")  # Rollback journal mode
+        except sqlite3.OperationalError as e:
+            logger.warning("[Library] Could not set journal mode", error=e)
+
+    @staticmethod
+    def _get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
         db_path = library_dir / TS_FOLDER_NAME / sql_filename
         connection_string = URL.create(
             drivername="sqlite",
             database=":memory:" if in_memory else str(db_path),
         )
-
-        if not in_memory:
-            try:
-                with closing(sqlite3.connect(db_path, autocommit=True)) as conn:
-                    conn.execute("PRAGMA journal_mode=WAL")
-            except sqlite3.OperationalError as e:
-                logger.warning("[Library] Could not set journal mode", error=e)
 
         logger.info("[Library] Creating SQLAlchemy Engine", connection_string=connection_string)
         return create_engine(connection_string, connect_args={"autocommit": False})
@@ -436,7 +452,9 @@ class Library:
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
     ) -> OpenLibraryResult:
-        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
+        if not in_memory:
+            Library._use_wal_if_supported(library_dir / TS_FOLDER_NAME / sql_filename)
+        self.engine = self._get_engine(library_dir, in_memory, sql_filename)
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -534,6 +552,9 @@ class Library:
     ) -> OpenLibraryResult:
         logger.info("[Library] Opening SQLite Library", library_dir=library_dir)
 
+        if not in_memory:
+            Library._use_wal_if_supported(library_dir / TS_FOLDER_NAME / sql_filename)
+
         # migrate if necessary
         try:
             with DBMigrations(library_dir, sql_filename) as migrations:
@@ -546,7 +567,7 @@ class Library:
             return OpenLibraryResult(success=False, error_description=e.args[0])
 
         # open up-to-date library
-        self.engine = self.__get_engine(library_dir, in_memory, sql_filename)
+        self.engine = self._get_engine(library_dir, in_memory, sql_filename)
         self.library_dir = library_dir
         return OpenLibraryResult(success=True, library_path=library_dir)
 
