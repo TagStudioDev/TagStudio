@@ -56,6 +56,15 @@ def test_scan_follows_symlinked_directory(tmp_path: Path):
     assert results == {Path("original_dir/photo.jpg"), Path("symlink_dir/photo.jpg")}
 
 
+def test_scan_skips_broken_symlink(tmp_path: Path):
+    """A symlink to a missing file must be skipped."""
+    (tmp_path / "a.txt").touch()
+    os.symlink(tmp_path / "missing.txt", tmp_path / "broken.txt")
+
+    results = set(_scan_with_internal_scanner(tmp_path, []))
+    assert results == {Path("a.txt")}
+
+
 def test_scan_stop_infinite_symlink_cycle(tmp_path: Path):
     """A cyclic symlink shouldn't cause an infinite loop, and be truncated."""
     (tmp_path / "sub").mkdir()

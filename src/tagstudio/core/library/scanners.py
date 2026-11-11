@@ -3,7 +3,6 @@
 
 
 import os
-import stat
 import subprocess
 import tempfile
 from collections.abc import Iterator
@@ -110,18 +109,19 @@ def _scan_with_internal_scanner(scan_dir: Path, ignore_patterns: list[str]) -> I
         for item in dir_items:
             rel = Path(item.path).relative_to(scan_dir)
             try:
-                if matcher.match(rel.as_posix(), is_dir=item.is_dir()):
+                item_is_dir = item.is_dir()
+                if matcher.match(rel.as_posix(), is_dir=item_is_dir):
                     continue
-                item_stat = item.stat(follow_symlinks=True)
+                item_is_file = item.is_file()
             except OSError:
                 continue
 
             # Check for and handle cyclical symlinks
-            if stat.S_ISDIR(item_stat.st_mode):
+            if item_is_dir:
                 key = os.path.realpath(item.path)
                 if key not in ancestors:
                     yield from walk(Path(item.path), ancestors | {key})
-            else:
+            elif item_is_file:
                 yield rel
 
     yield from walk(scan_dir, frozenset({os.path.realpath(scan_dir)}))

@@ -824,7 +824,16 @@ class QtDriver(DriverMixin, QObject):
             on_progress (Callable[[T], None]): Called on the main thread with each yielded value.
             on_done (Callable[[], None]): Called on the main thread once `generator` is finished.
         """
-        iterator = FunctionIterator(generator)
+
+        def run_step() -> Iterator[T]:
+            """Yield from a generator while catching exceptions to stop sync early."""
+            try:
+                yield from generator()
+            except Exception as e:
+                logger.error("[QtDriver] Sync step failed, cancelling sync", error=e)
+                self.sync_engine.cancelled = True
+
+        iterator = FunctionIterator(run_step)
         iterator.value.connect(on_progress)
         runnable = CustomRunnable(iterator.run)
         runnable.done.connect(on_done)
@@ -863,7 +872,7 @@ class QtDriver(DriverMixin, QObject):
                 # Scan finished, duplicate entry merging/relinking is running before the next yield
                 sync_banner.set_repairing()
                 return
-            sync_banner.set_scanning(searched_count + 1, found_count)
+            sync_banner.set_scanning(searched_count, found_count)
 
         def _start_scan() -> None:
             self._run_sync_step(
@@ -900,10 +909,11 @@ class QtDriver(DriverMixin, QObject):
         if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
             self.library_info_window.update_cleanup()
 
-        if self.sync_engine.cancelled:
+        if (sync_banner := self._sync_banner) is None:
             return
-
-        if (sync_banner := self._sync_banner) is not None:
+        if self.sync_engine.cancelled:
+            sync_banner.hide_banner(force=True)
+        else:
             sync_banner.finish(new_count, unlinked_count, relinked_count)
 
     # TODO: Break this out of the driver with other thumbnail grid stuff.
@@ -1005,10 +1015,7 @@ class QtDriver(DriverMixin, QObject):
         relinked_count: int,
         session_id: int,
     ):
-        """Refresh cached stat() data for files already known to the library.
-
-        Threaded method.
-        """
+        """Start refreshing cached stat() data for files already known to the library."""
         if self._is_sync_stale(session_id):
             return
         restat_count = engine.restat_count
@@ -1027,14 +1034,11 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def save_new_entries_runnable(self, engine: LibrarySyncEngine, session_id: int):
-        """Adds any known new files to the library and run default macros on them.
-
-        Threaded method.
-        """
+        """Start adding any known new files to the library."""
         if self._is_sync_stale(session_id):
             return
         new_count = engine.new_file_count
-        unlinked_count = engine.unlinked_entries_count
+        unlinked_count = -1 if engine.cancelled else engine.unlinked_entries_count
         relinked_count = engine.relinked_entries_count
 
         def on_progress(idx: int) -> None:
@@ -1390,7 +1394,7 @@ class QtDriver(DriverMixin, QObject):
                 ),
             )
         except Exception as e:
-            logger.error(e)
+            logger.error("[QtDriver] Couldn't open library", error=e)
             open_status = OpenLibraryResult(
                 success=False, library_path=path, error_description=f"{type(e).__name__}: {e}"
             )
