@@ -22,14 +22,12 @@ from tagstudio.qt.controllers.search_bar import SearchBar
 from tagstudio.qt.controllers.tagging_panel import TaggingPanel
 from tagstudio.qt.controllers.toggle_group import ToggleGroup
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.views.styles.stylesheets import MED_HEIGHT, PAD, WIN_PAD
+from tagstudio.qt.views.styles.stylesheets import FLAT_ICON_SIZE, MED_HEIGHT, PAD, WIN_PAD
 from tagstudio.qt.views.styles.tagstudio_style import set_handle_span, set_shown_at_rest
 from tagstudio.qt.views.toggle_group_view import Toggle
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
-
-_SIDE_PANEL_ICON_SIZE = 18
 
 
 class SidePanelToggle(IntEnum):
@@ -84,10 +82,9 @@ class MainWindowView(QHBoxLayout):
         )
 
         self.side_panel_button = FlatButton(
-            rm.right_side_panel_show_icon,
-            rm.right_side_panel_collapse_icon,
-            _SIDE_PANEL_ICON_SIZE,
+            rm.right_side_panel_show_icon, rm.right_side_panel_collapse_icon
         )
+        self.side_panel_button.setFixedSize(FLAT_ICON_SIZE, FLAT_ICON_SIZE)
         self.side_panel_button.setCheckable(True)
         self.side_panel_button.setChecked(True)
         self.side_panel_button.setToolTip(Translations["panel.toggle"])

@@ -30,7 +30,7 @@ from tagstudio.qt.views.styles.tagstudio_style import set_joined_edges
 _ICON_SIZE = QSize(18, 18)
 _SMALL_THUMB_ICON_SIZE = QSize(12, 12)
 _LARGE_THUMB_ICON_SIZE = QSize(18, 18)
-_THUMB_SIZE_SLIDER_WIDTH = 96
+_THUMB_SIZE_SLIDER_WIDTH = 72
 
 
 class BrowsingControlsView(QHBoxLayout):

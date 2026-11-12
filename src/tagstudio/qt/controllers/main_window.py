@@ -44,6 +44,7 @@ from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.views.main_window_view import MainWindowView, SidePanelToggle
 from tagstudio.qt.views.styles.stylesheets import (
+    FLAT_ICON_SIZE,
     LARGE_RADIUS,
     MED_HEIGHT,
     PAD,
@@ -68,7 +69,7 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-_CLOSED_SEARCH_BAR_INSET = MED_HEIGHT + PAD  # Side panel button room
+_CLOSED_SEARCH_BAR_INSET = PAD + FLAT_ICON_SIZE + WIN_PAD  # Side panel button room
 
 
 class MainWindow(QMainWindow):
@@ -471,7 +472,8 @@ class MainWindow(QMainWindow):
         central_widget = unwrap(self.centralWidget())
         search_bar_top = view.search_bar.layout().search_field.mapTo(central_widget, QPoint()).y()
         view.side_panel_button.move(
-            central_widget.width() - _CLOSED_SEARCH_BAR_INSET, search_bar_top
+            central_widget.width() - FLAT_ICON_SIZE - WIN_PAD,
+            search_bar_top + (MED_HEIGHT - FLAT_ICON_SIZE) // 2,
         )
 
     def set_sorting_mode(self, mode: SortingModeEnum) -> None:
