@@ -60,6 +60,7 @@ def test_single_constraint(search_library: Library, query: str, count: int):
         ("square and filetype:jpg", 2),
         ("orange filetype:png", 5),
         ("green path:*inherit*", 4),
+        ("filetype:png orange", 5),
     ],
 )
 def test_and(search_library: Library, query: str, count: int):
