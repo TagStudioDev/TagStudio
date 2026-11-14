@@ -66,6 +66,15 @@ def is_file(path: Path) -> bool:
     )
 
 
+def is_dir(path: Path) -> bool:
+    """Wrapper for `pathlib.Path.is_dir()` that's Unicode Normalization Form agnostic."""
+    # NOTE: Initial path will always be in NFD
+    return path.is_dir() or (
+        _can_normalized_path_differ(path)
+        and norm_path(path, case_sensitive=True, form="NFC").is_dir()
+    )
+
+
 def _can_normalized_path_differ(path: Path) -> bool:
     """Can this path differ if normalized in a different form?
 

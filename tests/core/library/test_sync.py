@@ -5,6 +5,7 @@
 
 import os
 import platform
+import shutil
 import unicodedata
 from collections.abc import Iterator
 from pathlib import Path
@@ -397,6 +398,20 @@ def test_sync_missing_file_in_ignored_folder_is_unlinked(library: Library):
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     unlinked = {e.path for e in engine.unlinked_entries if e.id in tracked_ids}
     assert unlinked == {"sub/gone.png"}
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_sync_files_in_missing_folder_are_unlinked(library: Library):
+    """Files whose whole folder is gone must be marked as unlinked."""
+    library_dir = unwrap(library.library_dir)
+    engine = LibrarySyncEngine(library=library)
+    paths = [Path("gone/one.png"), Path("gone/two.png"), Path("kept/three.png")]
+    tracked_ids = add_tracked_files(library, paths, "")
+    shutil.rmtree(library_dir / "gone")
+
+    list(engine.sync_dir(library_dir, force_internal_scanner=True))
+    unlinked = {e.path for e in engine.unlinked_entries if e.id in tracked_ids}
+    assert unlinked == {"gone/one.png", "gone/two.png"}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)

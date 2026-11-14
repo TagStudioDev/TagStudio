@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.library import FileEntryTuple, Library, Stat
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.scanners import scan_paths
-from tagstudio.core.utils.normalization import is_file, norm_str
+from tagstudio.core.utils.normalization import is_dir, is_file, norm_str
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
 
@@ -117,11 +117,16 @@ class LibrarySyncEngine:
 
         # NOTE: Ignored files are skipped during the scan.
         missing_entries: list[FileEntryTuple] = []
+        folder_exists: dict[str, bool] = {}
         if not self.cancelled:
             for entry in self.library.get_file_entry_tuples(list(unvisited.values())):
                 if self.cancelled:
                     break
-                if not is_file(library_dir / entry.path):
+                folder = posixpath.dirname(entry.path)
+                if folder not in folder_exists:
+                    folder_exists[folder] = is_dir(library_dir / folder)
+                # Mark an entry as missing if its file or file's parent folder is missing
+                if not folder_exists[folder] or not is_file(library_dir / entry.path):
                     missing_entries.append(entry)
 
         if self.cancelled:
