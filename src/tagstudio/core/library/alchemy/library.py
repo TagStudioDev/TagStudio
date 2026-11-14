@@ -208,12 +208,20 @@ class OpenLibraryResult:
     needs_json_migration: bool = False
 
 
-class FileStat(NamedTuple):
-    """Cached stat() fields. Matches the ones stored in file entries."""
+class StatTuple(NamedTuple):
+    """Cached `stat()` fields. Matches the ones stored in file entries."""
 
     date_created: float
     date_modified: float
     file_size: int
+
+
+class FileEntryTuple(NamedTuple):
+    """An entry's ID, path, and file stats."""
+
+    id: int
+    path: str
+    stat: StatTuple | None
 
 
 class Library:
@@ -719,13 +727,13 @@ class Library:
             make_transient(entry)
             return entry
 
-    def refresh_entries_stats(self, entries: list[tuple[int, Path]]) -> int:
+    def refresh_entries_stats(self, entries: list[tuple[int, str]]) -> int:
         """Check and update os.stat() metadata for multiple file entries in bulk.
 
         Only file entries that have differing stat data will be updated.
 
         Args:
-            entries (list[tuple[int, Path]]): A list of (ID, Path) tuples to check.
+            entries (list[tuple[int, str]]): A list of (ID, path) tuples to check.
 
         Returns:
             int: The number of entries that were updated.
@@ -736,23 +744,11 @@ class Library:
         library_dir = unwrap(self.library_dir)
         entry_ids = [entry_id for entry_id, _ in entries]
 
-        stored: dict[int, FileStat] = {}
-        with Session(self.engine) as session:
-            for sub_list in [
-                entry_ids[i : i + MAX_SQL_VARIABLES]
-                for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
-            ]:
-                stmt = select(
-                    Entry.id, Entry.date_created, Entry.date_modified, Entry.file_size
-                ).where(Entry.id.in_(sub_list))
-                for row in session.execute(stmt):
-                    if None in (row.date_created, row.date_modified, row.file_size):
-                        continue
-                    stored[row.id] = FileStat(row.date_created, row.date_modified, row.file_size)
+        stored_stats = {entry.id: entry.stat for entry in self.get_file_entry_tuples(entry_ids)}
 
-        updates: dict[int, FileStat] = {}
+        updates: dict[int, StatTuple] = {}
         for entry_id, path in entries:
-            stored_stat = stored.get(entry_id)
+            stored_stat = stored_stats.get(entry_id)
             full_path = library_dir / path
 
             try:
@@ -765,7 +761,7 @@ class Library:
                 )
                 continue
 
-            current_stat = FileStat(
+            current_stat = StatTuple(
                 get_date_created(file_stat),
                 get_date_modified(file_stat),
                 get_file_size(file_stat),
@@ -869,15 +865,15 @@ class Library:
         full_ts_path.mkdir(parents=True, exist_ok=True)
         return False
 
-    def path_cache_key(self, path: Path) -> str:
-        """Return the path cache key for `path`."""
-        return norm_str(path.as_posix(), case_sensitive=self.is_fs_case_sensitive)
+    def path_cache_key(self, path: str) -> str:
+        """Return the path cache key for the given POSIX path."""
+        return norm_str(path, case_sensitive=self.is_fs_case_sensitive)
 
     def _cache_add_path(self, entry_id: int, path: Path) -> None:
         """Keep the path cache consistent with a newly-added or relinked entry."""
         if self.path_cache is None:
             return
-        key = self.path_cache_key(path)
+        key = self.path_cache_key(path.as_posix())
         if key in self.path_cache:
             displaced_id = self.path_cache[key]
             logger.warning(
@@ -898,7 +894,7 @@ class Library:
             return
         if self.path_cache is not None:
             for entry_id, path in entry_paths.items():
-                key = norm_str(path, case_sensitive=self.is_fs_case_sensitive)
+                key = self.path_cache_key(path)
                 if self.path_cache.get(key) == entry_id:
                     del self.path_cache[key]
         if self.duplicate_path_entry_ids:
@@ -959,20 +955,27 @@ class Library:
             ).all()
             return {row.id: row.path for row in rows}
 
-    def get_entry_paths(self, entry_ids: list[int]) -> Iterator[tuple[int, str]]:
-        """Yield the (id, string path) of each Entry in `entry_ids`."""
+    def get_file_entry_tuples(self, entry_ids: list[int]) -> Iterator[FileEntryTuple]:
+        """Yield the ID, path, and file stats of each Entry in `entry_ids`."""
         for sub_list in [
             entry_ids[i : i + MAX_SQL_VARIABLES]
             for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
         ]:
             with Session(self.engine) as session:
                 rows = session.execute(
-                    select(Entry.id, type_coerce(Entry.path, String).label("path")).where(
-                        Entry.id.in_(sub_list)
-                    )
+                    select(
+                        Entry.id,
+                        type_coerce(Entry.path, String).label("path"),
+                        Entry.date_created,
+                        Entry.date_modified,
+                        Entry.file_size,
+                    ).where(Entry.id.in_(sub_list))
                 ).all()
             for row in rows:
-                yield row.id, row.path
+                stat = None
+                if None not in (row.date_created, row.date_modified, row.file_size):
+                    stat = StatTuple(row.date_created, row.date_modified, row.file_size)
+                yield FileEntryTuple(row.id, row.path, stat)
 
     def get_or_build_path_cache(self) -> dict[str, int]:
         """Return the dict cache of normalized paths -> entry IDs."""
@@ -980,7 +983,7 @@ class Library:
             cache: dict[str, int] = {}
             duplicates: list[int] = []
             for entry_id, path in self.all_paths_with_ids().items():
-                key = norm_str(path, case_sensitive=self.is_fs_case_sensitive)
+                key = self.path_cache_key(path)
                 if key in cache:
                     logger.warning(
                         "[Library] Duplicate normalized path created while building cache, "

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import posixpath
 from collections.abc import Callable, Hashable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -10,11 +11,11 @@ from time import sleep, time
 
 import structlog
 
-from tagstudio.core.library.alchemy.library import FileStat, Library
+from tagstudio.core.library.alchemy.library import FileEntryTuple, Library, StatTuple
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.scanners import scan_paths
-from tagstudio.core.utils.normalization import is_file, norm_path
+from tagstudio.core.utils.normalization import is_file, norm_str
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
 from tagstudio.core.utils.types import unwrap
 
@@ -31,10 +32,10 @@ class LibrarySyncEngine:
 
     library: Library
     cancelled: bool = False
-    new_paths: dict[Path, FileStat] = field(default_factory=dict)
-    paths_to_restat: list[tuple[int, Path]] = field(default_factory=list)
-    relinked_entries: list[Entry] = field(default_factory=list)
-    unlinked_entries: list[Entry] = field(default_factory=list)
+    new_paths: dict[str, StatTuple] = field(default_factory=dict)
+    paths_to_restat: list[tuple[int, str]] = field(default_factory=list)
+    relinked_entries: list[FileEntryTuple] = field(default_factory=list)
+    unlinked_entries: list[FileEntryTuple] = field(default_factory=list)
 
     @property
     def new_file_count(self) -> int:
@@ -80,7 +81,6 @@ class LibrarySyncEngine:
         self.reset()
         self.cancelled = False
 
-        case_sensitive = self.library.is_fs_case_sensitive
         cache = self.library.get_or_build_path_cache()
         unvisited = dict(cache)  # Copy the cache in case it's modified during the scan
         ignore_patterns = Ignore.get_patterns(library_dir)
@@ -92,21 +92,22 @@ class LibrarySyncEngine:
             if self.cancelled:
                 break
             count += 1
-            key = self.library.path_cache_key(raw_path)
+            path = raw_path.as_posix()
+            key = self.library.path_cache_key(path)
             entry_id = cache.get(key)
             if entry_id is not None:
                 unvisited.pop(key, None)
-                self.paths_to_restat.append((entry_id, raw_path))
+                self.paths_to_restat.append((entry_id, path))
             else:
                 try:
-                    file_stat = (library_dir / raw_path).stat()
-                    self.new_paths[raw_path] = FileStat(
+                    file_stat = (library_dir / path).stat()
+                    self.new_paths[path] = StatTuple(
                         get_date_created(file_stat),
                         get_date_modified(file_stat),
                         get_file_size(file_stat),
                     )
                 except OSError as e:
-                    logger.error("[Sync] Could not stat new file", path=raw_path, error=e)
+                    logger.error("[Sync] Could not stat new file", path=path, error=e)
 
             if (time() - start_time_loop) > YIELD_INTERVAL_SECONDS:
                 yield count, len(self.new_paths)
@@ -115,29 +116,31 @@ class LibrarySyncEngine:
                 start_time_loop = time()
 
         # NOTE: Ignored files are skipped during the scan.
-        missing_ids: list[int] = []
+        missing_entries: list[FileEntryTuple] = []
         if not self.cancelled:
-            for entry_id, path in self.library.get_entry_paths(list(unvisited.values())):
+            for entry in self.library.get_file_entry_tuples(list(unvisited.values())):
                 if self.cancelled:
                     break
-                if not is_file(library_dir / path):
-                    missing_ids.append(entry_id)
+                if not is_file(library_dir / entry.path):
+                    missing_entries.append(entry)
 
         if self.cancelled:
             yield count, len(self.new_paths)
             logger.info("[Sync] Directory scan cancelled", path=library_dir, files_scanned=count)
             return
 
-        self.unlinked_entries = self.library.get_entries(missing_ids)
+        self.unlinked_entries = missing_entries
         if self.library.duplicate_path_entry_ids:
-            self.unlinked_entries += self.library.get_entries(self.library.duplicate_path_entry_ids)
+            self.unlinked_entries += self.library.get_file_entry_tuples(
+                self.library.duplicate_path_entry_ids
+            )
 
         if self.unlinked_entries:
             yield -1, -1  # Signals the UI that repair work is starting
 
         # Any (rare) duplicate entries are merged first, then the normal relinking process
         self._merge_duplicate_path_entries(cache)
-        self._auto_relink_matched_entries(case_sensitive, cache)
+        self._auto_relink_matched_entries(cache)
 
         yield count, len(self.new_paths)
         logger.info(
@@ -169,7 +172,7 @@ class LibrarySyncEngine:
                 file_stat = self.new_paths[entry_path]
                 entries.append(
                     Entry(
-                        path=entry_path,
+                        path=Path(entry_path),
                         fields=[],
                         date_created=file_stat.date_created,
                         date_modified=file_stat.date_modified,
@@ -206,7 +209,7 @@ class LibrarySyncEngine:
             entries_updated=updated_count,
         )
 
-    def _apply_relink(self, entry: Entry, new_path: Path, cache: dict[str, int]) -> bool:
+    def _apply_relink(self, entry: FileEntryTuple, new_path: str, cache: dict[str, int]) -> bool:
         """Assign `new_path` to the `entry`, merging into a single entry if entries exist for both.
 
         Returns:
@@ -220,35 +223,35 @@ class LibrarySyncEngine:
             target = unwrap(self.library.get_entry_full(existing_id))
             source = unwrap(self.library.get_entry_full(entry.id))
             return self.library.merge_entries(source, target)
-        return self.library.update_entry_path(entry.id, new_path)
+        return self.library.update_entry_path(entry.id, Path(new_path))
 
     def _relink_unique_matches(
         self,
         cache: dict[str, int],
-        key_of_entry: Callable[[Entry], Hashable],
-        key_of_path: Callable[[Path], Hashable],
+        key_of_entry: Callable[[FileEntryTuple], Hashable],
+        key_of_path: Callable[[str], Hashable],
         log_message: str,
     ) -> None:
-        """Relink entries to new paths that share a unique key.
+        """Relink entries to new paths that share a unique key for matching.
 
         Args:
             cache (dict[str, int]): Path cache, forwarded to `_apply_relink()`.
-            key_of_entry (Callable[[Entry], Hashable]): Computes a grouping key from an entry.
-            key_of_path (Callable[[Path], Hashable]): Computes a grouping key from a path.
+            key_of_entry (Callable[[FileEntryTuple], Hashable]): Computes an entry's match key.
+            key_of_path (Callable[[str], Hashable]): Computes a path's match key.
             log_message (str): Logged on each successful relink in this pass.
         """
         if not self.new_paths or not self.unlinked_entries:
             return  # Nothing to match against
 
-        by_key: dict[Hashable, list[Entry]] = {}  # Key -> entries sharing it
+        by_key: dict[Hashable, list[FileEntryTuple]] = {}  # Key -> entries sharing it
         for entry in self.unlinked_entries:
             by_key.setdefault(key_of_entry(entry), []).append(entry)
 
-        paths_by_key: dict[Hashable, list[Path]] = {}  # Key -> candidate paths sharing it
+        paths_by_key: dict[Hashable, list[str]] = {}  # Key -> candidate paths sharing it
         for path in self.new_paths:
             paths_by_key.setdefault(key_of_path(path), []).append(path)
 
-        relinked: list[Entry] = []
+        relinked: list[FileEntryTuple] = []
         for key, candidate_paths in paths_by_key.items():  # Check each key for a unique pairing
             candidates = by_key.get(key, [])
             if len(candidates) != 1 or len(candidate_paths) != 1:  # Ambiguous case
@@ -258,12 +261,14 @@ class LibrarySyncEngine:
             if not self._apply_relink(entry, new_path, cache):  # DB write failed
                 continue
 
-            logger.info(log_message, old_path=entry.path.as_posix(), new_path=new_path.as_posix())
+            logger.info(log_message, old_path=entry.path, new_path=new_path)
             relinked.append(entry)
             del self.new_paths[new_path]
 
-        for entry in relinked:
-            self.unlinked_entries.remove(entry)
+        relinked_ids = {entry.id for entry in relinked}
+        self.unlinked_entries = [
+            entry for entry in self.unlinked_entries if entry.id not in relinked_ids
+        ]
         self.relinked_entries.extend(relinked)
 
     def _merge_duplicate_path_entries(self, cache: dict[str, int]) -> None:
@@ -275,18 +280,20 @@ class LibrarySyncEngine:
         if not duplicate_ids:
             return
 
-        merged: list[Entry] = []
+        merged: list[FileEntryTuple] = []
         for entry in self.unlinked_entries:
             if self.cancelled:
                 break
             if entry.id in duplicate_ids and self._apply_relink(entry, entry.path, cache):
                 merged.append(entry)
 
-        for entry in merged:
-            self.unlinked_entries.remove(entry)
+        merged_ids = {entry.id for entry in merged}
+        self.unlinked_entries = [
+            entry for entry in self.unlinked_entries if entry.id not in merged_ids
+        ]
         self.relinked_entries.extend(merged)
 
-    def _auto_relink_matched_entries(self, case_sensitive: bool, cache: dict[str, int]) -> None:
+    def _auto_relink_matched_entries(self, cache: dict[str, int]) -> None:
         """Attempt to automatically relink unlinked entries under available conditions.
 
         Auto-relink applies to:
@@ -307,21 +314,21 @@ class LibrarySyncEngine:
         if not self.new_paths or not self.unlinked_entries:
             return
 
-        def name_key(path: Path) -> Path:
-            return norm_path(Path(path.name), case_sensitive=case_sensitive)
+        def name_key(path: str) -> str:
+            """Key of filename for relinking across path/stat changes."""
+            return norm_str(
+                posixpath.basename(path), case_sensitive=self.library.is_fs_case_sensitive
+            )
 
-        def stat_key(path: Path) -> tuple[float, int]:
-            file_stat = self.new_paths[path]
-            return file_stat.date_modified, file_stat.file_size
-
-        def name_and_stat_key(path: Path) -> tuple[Path, float, int]:
-            return name_key(path), *stat_key(path)
+        def stat_key(stat: StatTuple | None) -> tuple[float, int] | None:
+            """Key of file stats for relinking across filename/path changes."""
+            return None if stat is None else (stat.date_modified, stat.file_size)
 
         # Pass 1: Filename + metadata (Case #7)
         self._relink_unique_matches(
             cache,
-            key_of_entry=lambda e: (name_key(e.path), e.date_modified, e.file_size),
-            key_of_path=name_and_stat_key,
+            key_of_entry=lambda e: (name_key(e.path), stat_key(e.stat)),
+            key_of_path=lambda p: (name_key(p), stat_key(self.new_paths[p])),
             log_message="[Sync] Automatically relinked moved file",
         )
 
@@ -331,8 +338,8 @@ class LibrarySyncEngine:
         # Pass 2: Different filename checking for same metadata (Cases #3, #11)
         self._relink_unique_matches(
             cache,
-            key_of_entry=lambda e: (e.date_modified, e.file_size),
-            key_of_path=stat_key,
+            key_of_entry=lambda e: stat_key(e.stat),
+            key_of_path=lambda p: stat_key(self.new_paths[p]),
             log_message="[Sync] Automatically relinked renamed file (matched by size + mdate)",
         )
 

@@ -135,13 +135,14 @@ def test_get_entries_across_chunks(library: Library, monkeypatch: pytest.MonkeyP
     assert [entry.id for entry in library.get_entries(requested)] == requested[:-1]
 
 
-def test_get_entry_paths_across_chunks(library: Library, monkeypatch: pytest.MonkeyPatch):
-    """`get_entry_paths()` must yield every requested entry's stored path across chunks."""
+def test_get_file_entry_tuples_across_chunks(library: Library, monkeypatch: pytest.MonkeyPatch):
+    """`get_file_entry_tuples()` must yield every requested entry's stored path across chunks."""
     monkeypatch.setattr("tagstudio.core.library.alchemy.library.MAX_SQL_VARIABLES", 2)
     entry_ids = library.add_entries([Entry(path=Path(f"{i}.txt"), fields=[]) for i in range(5)])
 
     expected = {entry_id: f"{i}.txt" for i, entry_id in enumerate(entry_ids)}
-    assert dict(library.get_entry_paths([*entry_ids, -1])) == expected
+    file_entries = library.get_file_entry_tuples([*entry_ids, -1])
+    assert {entry.id: entry.path for entry in file_entries} == expected
 
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):

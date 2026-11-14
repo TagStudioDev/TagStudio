@@ -35,7 +35,7 @@ def test_sync_new_files(library: Library):
     ts_ignore_path.write_text("*.md")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert set(engine.new_paths) == {Path("bar.txt")}
+    assert set(engine.new_paths) == {"bar.txt"}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -87,10 +87,10 @@ def test_sync_multi_byte_filenames(library: Library):
     (library_dir / "umlaute äöü.txt").touch()
 
     list(engine.sync_dir(library_dir))
-    assert Path("こんにちは.txt") in engine.new_paths
-    assert Path("em–dash.txt") in engine.new_paths
-    assert Path("apostrophe’.txt") in engine.new_paths
-    assert Path("umlaute äöü.txt") in engine.new_paths
+    assert "こんにちは.txt" in engine.new_paths
+    assert "em–dash.txt" in engine.new_paths
+    assert "apostrophe’.txt" in engine.new_paths
+    assert "umlaute äöü.txt" in engine.new_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -130,7 +130,7 @@ def test_sync_cache_pruned_on_remove(library: Library):
 
     (library_dir / tracked_path).unlink()
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    tracked_entry = next(e for e in engine.unlinked_entries if e.path == tracked_path)
+    tracked_entry = next(e for e in engine.unlinked_entries if e.path == tracked_path.as_posix())
 
     cache = library.get_or_build_path_cache()
     assert "tracked.txt" in cache
@@ -143,7 +143,7 @@ def test_sync_cache_pruned_on_remove(library: Library):
     # A different file at the same path afterwards should be treated as new
     (library_dir / tracked_path).touch()
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert list(engine.new_paths) == [tracked_path]
+    assert list(engine.new_paths) == [tracked_path.as_posix()]
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -280,7 +280,7 @@ def test_sync_auto_relink_respects_case_sensitivity(library: Library):
     library.is_fs_case_sensitive = True
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("Folder/Name.txt") in {e.path for e in engine.unlinked_entries}
+    assert "Folder/Name.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -299,7 +299,7 @@ def test_sync_auto_relink_respects_case_sensitivity_false(library: Library):
     library.is_fs_case_sensitive = False
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 1
-    assert engine.relinked_entries[0].path == Path("Folder/Name.txt")
+    assert engine.relinked_entries[0].path == "Folder/Name.txt"
     assert library.get_entry_id_from_path(Path("Other/name.txt")) >= 0
 
 
@@ -316,7 +316,7 @@ def test_sync_auto_relink_modified_file_stays_linked(library: Library):
     (library_dir / "stable.txt").write_text("modified content")
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert Path("stable.txt") not in {e.path for e in engine.unlinked_entries}
+    assert "stable.txt" not in {e.path for e in engine.unlinked_entries}
     assert engine.new_paths == {}
     assert len(engine.paths_to_restat) == 1
 
@@ -336,7 +336,7 @@ def test_sync_auto_relink_deleted_file(library: Library):
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
     assert engine.new_paths == {}
-    assert Path("gone.txt") in {e.path for e in engine.unlinked_entries}
+    assert "gone.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -396,7 +396,7 @@ def test_sync_missing_file_in_ignored_folder_is_unlinked(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     unlinked = {e.path for e in engine.unlinked_entries if e.id in tracked_ids}
-    assert unlinked == {Path("sub/gone.png")}
+    assert unlinked == {"sub/gone.png"}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -415,8 +415,8 @@ def test_sync_auto_relink_moved_and_renamed_file_modified(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("sub/renamed.txt") in engine.new_paths
-    assert Path("original_name.txt") in {e.path for e in engine.unlinked_entries}
+    assert "sub/renamed.txt" in engine.new_paths
+    assert "original_name.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -466,9 +466,9 @@ def test_sync_auto_relink_single_entry_multiple_moved_and_renamed_files(library:
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("a/renamed1.txt") in engine.new_paths
-    assert Path("b/renamed2.txt") in engine.new_paths
-    assert Path("original_name.txt") in {e.path for e in engine.unlinked_entries}
+    assert "a/renamed1.txt" in engine.new_paths
+    assert "b/renamed2.txt" in engine.new_paths
+    assert "original_name.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -495,10 +495,10 @@ def test_sync_auto_relink_multiple_entries_one_moved_and_renamed_file(library: L
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("c/renamed.txt") in engine.new_paths
+    assert "c/renamed.txt" in engine.new_paths
     unlinked_paths = {e.path for e in engine.unlinked_entries}
-    assert Path("a/one.txt") in unlinked_paths
-    assert Path("b/two.txt") in unlinked_paths
+    assert "a/one.txt" in unlinked_paths
+    assert "b/two.txt" in unlinked_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -545,7 +545,7 @@ def test_sync_auto_relink_moved_file(library: Library):
     assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
-    assert Path("sub/moveme.txt") not in {e.path for e in engine.unlinked_entries}
+    assert "sub/moveme.txt" not in {e.path for e in engine.unlinked_entries}
     assert library.get_entry_id_from_path(Path("sub/moveme.txt")) == original_id
     # The original path should no longer be associated with an entry
     assert library.get_entry_id_from_path(Path("moveme.txt")) == -1
@@ -577,7 +577,7 @@ def test_sync_auto_relink_moved_files_same_names(library: Library):
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
     assert library.get_entry_id_from_path(Path("a/photo.jpg")) == original_id
-    assert Path("b/photo.jpg") in engine.new_paths
+    assert "b/photo.jpg" in engine.new_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -603,9 +603,9 @@ def test_sync_auto_relink_single_entry_multiple_moved_files(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("a/photo.jpg") in engine.new_paths
-    assert Path("b/photo.jpg") in engine.new_paths
-    assert Path("photo.jpg") in {e.path for e in engine.unlinked_entries}
+    assert "a/photo.jpg" in engine.new_paths
+    assert "b/photo.jpg" in engine.new_paths
+    assert "photo.jpg" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -632,10 +632,10 @@ def test_sync_auto_relink_multiple_entries_one_moved_file(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("c/dupe.txt") in engine.new_paths
+    assert "c/dupe.txt" in engine.new_paths
     unlinked_paths = {e.path for e in engine.unlinked_entries}
-    assert Path("a/dupe.txt") in unlinked_paths
-    assert Path("b/dupe.txt") in unlinked_paths
+    assert "a/dupe.txt" in unlinked_paths
+    assert "b/dupe.txt" in unlinked_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -653,8 +653,8 @@ def test_sync_auto_relink_renamed_file_modified(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("renamed_and_modified.txt") in engine.new_paths
-    assert Path("original_name.txt") in {e.path for e in engine.unlinked_entries}
+    assert "renamed_and_modified.txt" in engine.new_paths
+    assert "original_name.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -675,7 +675,7 @@ def test_sync_auto_relink_renamed_file(library: Library):
     assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
-    assert Path("renamed.txt") not in {e.path for e in engine.unlinked_entries}
+    assert "renamed.txt" not in {e.path for e in engine.unlinked_entries}
     assert library.get_entry_id_from_path(Path("renamed.txt")) == original_id
     # The original path should no longer be associated with an entry
     assert library.get_entry_id_from_path(Path("original_name.txt")) == -1
@@ -700,9 +700,9 @@ def test_sync_auto_relink_single_entry_multiple_renamed_files(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("renamed1.txt") in engine.new_paths
-    assert Path("renamed2.txt") in engine.new_paths
-    assert Path("original_name.txt") in {e.path for e in engine.unlinked_entries}
+    assert "renamed1.txt" in engine.new_paths
+    assert "renamed2.txt" in engine.new_paths
+    assert "original_name.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -726,10 +726,10 @@ def test_sync_auto_relink_multiple_entries_one_renamed_file(library: Library):
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("renamed.txt") in engine.new_paths
+    assert "renamed.txt" in engine.new_paths
     unlinked_paths = {e.path for e in engine.unlinked_entries}
-    assert Path("one.txt") in unlinked_paths
-    assert Path("two.txt") in unlinked_paths
+    assert "one.txt" in unlinked_paths
+    assert "two.txt" in unlinked_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -775,7 +775,7 @@ def test_sync_auto_relink_matches_entry_without_stored_stats_by_filename(library
     assert engine.new_paths == {}
     assert engine.relinked_entries_count == 1
     assert engine.relinked_entries[0].id == original_id
-    assert Path("legacy.txt") not in {e.path for e in engine.unlinked_entries}
+    assert "legacy.txt" not in {e.path for e in engine.unlinked_entries}
     assert library.get_entry_id_from_path(Path("sub/legacy.txt")) == original_id
     # The original path should no longer be associated with an entry
     assert library.get_entry_id_from_path(Path("legacy.txt")) == -1
@@ -795,9 +795,9 @@ def test_sync_auto_relink_skips_ambiguous_entry_without_stored_stats(library: Li
 
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
     assert engine.relinked_entries_count == 0
-    assert Path("a/legacy.txt") in engine.new_paths
-    assert Path("b/legacy.txt") in engine.new_paths
-    assert Path("legacy.txt") in {e.path for e in engine.unlinked_entries}
+    assert "a/legacy.txt" in engine.new_paths
+    assert "b/legacy.txt" in engine.new_paths
+    assert "legacy.txt" in {e.path for e in engine.unlinked_entries}
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -878,7 +878,7 @@ def test_sync_cancel_skips_remaining_relink_passes(library: Library):
     relinked_ids = {e.id for e in engine.relinked_entries}
     assert moved_id in relinked_ids
     assert renamed_id not in relinked_ids
-    assert Path("renamed.txt") in engine.new_paths
+    assert "renamed.txt" in engine.new_paths
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -891,12 +891,12 @@ def test_sync_cancel_skips_save_new_entries(library: Library):
 
     (library_dir / "f0.txt").touch()
     list(engine.sync_dir(library_dir, force_internal_scanner=True))
-    assert list(engine.new_paths) == [Path("f0.txt")]
+    assert list(engine.new_paths) == ["f0.txt"]
 
     engine.cancelled = True
     list(engine.save_new_entries())
     assert library.entries_count == baseline_count
-    assert list(engine.new_paths) == [Path("f0.txt")]
+    assert list(engine.new_paths) == ["f0.txt"]
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
