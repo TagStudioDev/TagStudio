@@ -65,7 +65,7 @@ class SearchPanel[T](ModalContent):
         self._item_widgets: list[Capsule] = []
         self._are_capsules_clickable = True
         self._first_row = 0
-        self._filled_first_row: int | None = None
+        self._item_widget_rows: list[int | None] = []
 
         self.setLayout(view)
         scroll_bar = view.scroll_area.verticalScrollBar()
@@ -234,7 +234,7 @@ class SearchPanel[T](ModalContent):
             0, len(self._search_results) * _ROW_HEIGHT, QSizePolicy.Policy.Minimum
         )
         view.scroll_layout.invalidate()
-        self._filled_first_row = None
+        self._item_widget_rows = [None for _ in self._item_widgets]
         self._fill_item_widgets()
 
     def _fill_item_widgets(self) -> None:
@@ -244,9 +244,6 @@ class SearchPanel[T](ModalContent):
         margins = view.scroll_layout.contentsMargins()
         scroll_position = view.scroll_area.verticalScrollBar().value()
         self._first_row = max(0, scroll_position - margins.top()) // _ROW_HEIGHT
-        if self._first_row == self._filled_first_row:
-            return
-        self._filled_first_row = self._first_row
 
         # Two extra rows for the partly shown rows at the top and bottom
         while len(self._item_widgets) < viewport.height() // _ROW_HEIGHT + 2:
@@ -254,17 +251,22 @@ class SearchPanel[T](ModalContent):
             item_widget.setParent(view.scroll_contents)
             item_widget.set_clickable(self._are_capsules_clickable)
             self._item_widgets.append(item_widget)
+            self._item_widget_rows.append(None)
 
         width = viewport.width() - margins.left() - margins.right()
         for slot, item_widget in enumerate(self._item_widgets):
             row = self._first_row + slot
             if row >= len(self._search_results):
                 item_widget.setHidden(True)
+                self._item_widget_rows[slot] = None
                 continue
             top = margins.top() + row * _ROW_HEIGHT
             item_widget.setGeometry(margins.left(), top, width, CapsuleView.HEIGHT)
-            item_widget.setHidden(False)
-            self.set_item_widget(self._search_results[row], row)
+            # Only fill when the slot's row changes, avoiding refills on resizes
+            if self._item_widget_rows[slot] != row:
+                self._item_widget_rows[slot] = row
+                item_widget.setHidden(False)
+                self.set_item_widget(self._search_results[row], row)
 
     def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
@@ -290,7 +292,6 @@ class SearchPanel[T](ModalContent):
     @override
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Resize:
-            self._filled_first_row = None
             self._fill_item_widgets()
         return super().eventFilter(watched, event)
 
