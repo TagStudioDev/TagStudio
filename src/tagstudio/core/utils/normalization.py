@@ -6,8 +6,6 @@ import unicodedata
 from pathlib import Path
 from typing import Literal
 
-from tagstudio.core.utils.filesystem import is_fs_case_sensitive
-
 
 def norm_path(
     path: Path | str, case_sensitive: bool, form: Literal["NFC", "NFKC", "NFD", "NFKD"] = "NFD"
@@ -39,7 +37,7 @@ def path_on_disk(path: Path) -> Path:
 
     Returns the original path if path does not exist on disk.
     """
-    if path.exists():
+    if not _can_normalized_path_differ(path) or path.exists():
         return path
 
     # NOTE: Case sensitivity is True here since it's irrelevant to callers.
@@ -53,10 +51,25 @@ def path_on_disk(path: Path) -> Path:
 def exists(path: Path) -> bool:
     """Wrapper for `pathlib.Path.exists()` that's Unicode Normalization Form agnostic."""
     # NOTE: Initial path will always be in NFD
-    return path.exists() or norm_path(path, is_fs_case_sensitive(), "NFC").exists()
+    return path.exists() or (
+        _can_normalized_path_differ(path)
+        and norm_path(path, case_sensitive=True, form="NFC").exists()
+    )
 
 
 def is_file(path: Path) -> bool:
     """Wrapper for `pathlib.Path.is_file()` that's Unicode Normalization Form agnostic."""
     # NOTE: Initial path will always be in NFD
-    return path.is_file() or norm_path(path, is_fs_case_sensitive(), "NFC").is_file()
+    return path.is_file() or (
+        _can_normalized_path_differ(path)
+        and norm_path(path, case_sensitive=True, form="NFC").is_file()
+    )
+
+
+def _can_normalized_path_differ(path: Path) -> bool:
+    """Can this path differ if normalized in a different form?
+
+    ASCII paths don't change across NFC/NFD/NFKC/NFKD.
+    Used as a check to determine if additional disk calls such as `.exists()` are necessary.
+    """
+    return not path.as_posix().isascii()
