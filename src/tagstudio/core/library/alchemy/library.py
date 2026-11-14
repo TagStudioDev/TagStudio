@@ -447,7 +447,7 @@ class Library:
         )
 
         logger.info("[Library] Creating SQLAlchemy Engine", connection_string=connection_string)
-        return create_engine(connection_string, connect_args={"autocommit": False})
+        return create_engine(connection_string, connect_args={"autocommit": False, "timeout": 60})
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
