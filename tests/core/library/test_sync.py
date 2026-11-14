@@ -160,7 +160,7 @@ def test_sync_signals_repair_phase_when_entries_are_unlinked(library: Library):
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_sync_duplicate_case_collision_merged(library: Library):
-    """A duplicate entry displaced by a case-insensitive collision must be merged automatically."""
+    """A duplicate entry from a case-insensitive path collision must be merged automatically."""
     library_dir = unwrap(library.library_dir)
     engine = LibrarySyncEngine(library=library)
     library.is_fs_case_sensitive = False  # Force a case-insensitive collision

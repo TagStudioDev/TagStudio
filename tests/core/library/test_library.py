@@ -126,6 +126,20 @@ def test_path_cache_self_maintained_by_update_entry_path(library: Library):
     assert cache.get("new_location.txt") == entry_id
 
 
+def test_cancelled_path_cache_build_not_kept(library: Library):
+    """A cancelled `get_or_build_path_cache()` must leave the path cache unbuilt."""
+    checks: list[None] = []
+
+    def cancel_after_first_chunk() -> bool:
+        checks.append(None)
+        return len(checks) > 1
+
+    library.get_or_build_path_cache(is_cancelled=cancel_after_first_chunk)
+    assert library.path_cache is None
+    assert library.duplicate_path_entry_ids is None
+    assert len(library.get_or_build_path_cache()) == 2
+
+
 def test_get_entries_across_chunks(library: Library, monkeypatch: pytest.MonkeyPatch):
     """`get_entries()` must return every requested entry (in order) across chunks."""
     monkeypatch.setattr("tagstudio.core.library.alchemy.library.MAX_SQL_VARIABLES", 2)

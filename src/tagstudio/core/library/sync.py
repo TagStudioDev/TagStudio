@@ -81,7 +81,10 @@ class LibrarySyncEngine:
         self.reset()
         self.cancelled = False
 
-        cache = self.library.get_or_build_path_cache()
+        cache = self.library.get_or_build_path_cache(is_cancelled=lambda: self.cancelled)
+        if self.cancelled:
+            logger.info("[Sync] Directory scan cancelled", path=library_dir)
+            return
         unvisited = dict(cache)  # Copy the cache in case it's modified during the scan
         ignore_patterns = Ignore.get_patterns(library_dir)
 

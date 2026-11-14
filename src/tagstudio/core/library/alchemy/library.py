@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
+from threading import Lock
 from typing import TYPE_CHECKING, NamedTuple
 
 import structlog
@@ -240,6 +241,7 @@ class Library:
         # TODO: Make this dependant on the filesystem(s) of the library root directories.
         self.is_fs_case_sensitive = is_fs_case_sensitive()
         self.tag_edit_callbacks: list[Callable[[set[int]], None]] = []
+        self._path_cache_lock = Lock()
 
     def _on_tags_edited(self, tag_ids: set[int]) -> None:
         """Call functions registered to run when one or more tags are edited."""
@@ -869,38 +871,41 @@ class Library:
         """Return the path cache key for the given POSIX path."""
         return norm_str(path, case_sensitive=self.is_fs_case_sensitive)
 
-    def _cache_add_path(self, entry_id: int, path: Path) -> None:
-        """Keep the path cache consistent with a newly-added or relinked entry."""
-        if self.path_cache is None:
-            return
-        key = self.path_cache_key(path.as_posix())
-        if key in self.path_cache:
-            displaced_id = self.path_cache[key]
-            logger.warning(
-                "[Library] Duplicate path discovered in path cache while normalizing path, "
-                "marking displaced entry as unlinked.",
-                path=path,
-                displaced_entry_id=displaced_id,
-                entry_id=entry_id,
-            )
-            if self.duplicate_path_entry_ids is None:
-                self.duplicate_path_entry_ids = []
-            self.duplicate_path_entry_ids.append(displaced_id)
-        self.path_cache[key] = entry_id
+    def _add_to_path_cache(self, entry_id: int, path: Path) -> None:
+        """Keep the path cache consistent with a newly added or relinked entry."""
+        with self._path_cache_lock:
+            if self.path_cache is None:
+                return
+            key = self.path_cache_key(path.as_posix())
+            if key in self.path_cache:
+                duplicate_id = self.path_cache[key]
+                logger.warning(
+                    "[Library] Duplicate path discovered in path cache while normalizing path, "
+                    "adding the duplicate entry to the unlinked list "
+                    "to be merged into a single entry.",
+                    path=path,
+                    duplicate_entry_id=duplicate_id,
+                    entry_id=entry_id,
+                )
+                if self.duplicate_path_entry_ids is None:
+                    self.duplicate_path_entry_ids = []
+                self.duplicate_path_entry_ids.append(duplicate_id)
+            self.path_cache[key] = entry_id
 
-    def _cache_remove_entries(self, entry_paths: dict[int, str]) -> None:
+    def _remove_from_path_cache(self, entry_paths: dict[int, str]) -> None:
         """Keep the path cache consistent with removed entries."""
         if not entry_paths:
             return
-        if self.path_cache is not None:
-            for entry_id, path in entry_paths.items():
-                key = self.path_cache_key(path)
-                if self.path_cache.get(key) == entry_id:
-                    del self.path_cache[key]
-        if self.duplicate_path_entry_ids:
-            self.duplicate_path_entry_ids = [
-                eid for eid in self.duplicate_path_entry_ids if eid not in entry_paths
-            ]
+        with self._path_cache_lock:
+            if self.path_cache is not None:
+                for entry_id, path in entry_paths.items():
+                    key = self.path_cache_key(path)
+                    if self.path_cache.get(key) == entry_id:
+                        del self.path_cache[key]
+            if self.duplicate_path_entry_ids:
+                self.duplicate_path_entry_ids = [
+                    eid for eid in self.duplicate_path_entry_ids if eid not in entry_paths
+                ]
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple entries to the Library."""
@@ -921,7 +926,7 @@ class Library:
             session.expunge_all()
 
         for entry_id, item in zip(new_ids, items, strict=True):
-            self._cache_add_path(entry_id, item.path)
+            self._add_to_path_cache(entry_id, item.path)
 
         return new_ids
 
@@ -940,20 +945,12 @@ class Library:
                 )
                 removed_paths.update({row.id: row.path for row in rows})
             session.commit()
-        self._cache_remove_entries(removed_paths)
+        self._remove_from_path_cache(removed_paths)
 
     def get_entry_id_from_path(self, path: Path) -> int:
         """Attempt to return an Entry ID given a filepath, else return -1."""
         with Session(self.engine) as session:
             return session.scalar(select(Entry.id).where(Entry.path == path).limit(1)) or -1
-
-    def all_paths_with_ids(self) -> dict[int, str]:
-        """Bulk fetch every Entry's (id, string path). Only used to init the path cache."""
-        with Session(self.engine) as session:
-            rows = session.execute(
-                select(Entry.id, type_coerce(Entry.path, String).label("path"))
-            ).all()
-            return {row.id: row.path for row in rows}
 
     def get_file_entry_tuples(self, entry_ids: list[int]) -> Iterator[FileEntryTuple]:
         """Yield the ID, path, and file stats of each Entry in `entry_ids`."""
@@ -977,26 +974,54 @@ class Library:
                     stat = StatTuple(row.date_created, row.date_modified, row.file_size)
                 yield FileEntryTuple(row.id, row.path, stat)
 
-    def get_or_build_path_cache(self) -> dict[str, int]:
+    def get_or_build_path_cache(
+        self, is_cancelled: Callable[[], bool] | None = None
+    ) -> dict[str, int]:
         """Return the dict cache of normalized paths -> entry IDs."""
-        if self.path_cache is None:
-            cache: dict[str, int] = {}
-            duplicates: list[int] = []
-            for entry_id, path in self.all_paths_with_ids().items():
-                key = self.path_cache_key(path)
-                if key in cache:
-                    logger.warning(
-                        "[Library] Duplicate normalized path created while building cache, "
-                        "marking the displaced entry as unlinked.",
-                        path=path,
-                        displaced_entry_id=cache[key],
-                        entry_id=entry_id,
-                    )
-                    duplicates.append(cache[key])
-                cache[key] = entry_id
-            self.path_cache = cache
-            self.duplicate_path_entry_ids = duplicates
-        return self.path_cache
+        # Return an existing cache if there is one
+        if self.path_cache is not None:
+            return self.path_cache
+
+        # Init an empty cache
+        path_cache: dict[str, int] = {}
+        with self._path_cache_lock:
+            self.path_cache = path_cache
+            self.duplicate_path_entry_ids = []
+
+        # Build the cache in chunks
+        coerced_path = type_coerce(Entry.path, String)
+        last_path = ""
+        while True:
+            if is_cancelled is not None and is_cancelled():
+                with self._path_cache_lock:
+                    self.path_cache = None
+                    self.duplicate_path_entry_ids = None
+                return path_cache
+            # NOTE: A session per chunk lets writes commit between them in rollback journal mode.
+            with self._path_cache_lock:
+                with Session(self.engine) as session:
+                    rows = session.execute(
+                        select(Entry.id, coerced_path.label("path"))
+                        .where(coerced_path > last_path)
+                        .order_by(coerced_path)
+                        .limit(10_000)
+                    ).all()
+                for row in rows:
+                    key = self.path_cache_key(row.path)
+                    if key in path_cache:
+                        logger.warning(
+                            "[Library] Duplicate normalized path created while building cache, "
+                            "adding the duplicate entry to the unlinked list "
+                            "to be merged into a single entry.",
+                            path=row.path,
+                            duplicate_entry_id=path_cache[key],
+                            entry_id=row.id,
+                        )
+                        unwrap(self.duplicate_path_entry_ids).append(path_cache[key])
+                    path_cache[key] = row.id
+            if not rows:
+                return path_cache
+            last_path = rows[-1].path
 
     def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
@@ -1346,8 +1371,8 @@ class Library:
             session.commit()
 
         if old_path is not None:
-            self._cache_remove_entries({entry_id: old_path})
-        self._cache_add_path(entry_id, path)
+            self._remove_from_path_cache({entry_id: old_path})
+        self._add_to_path_cache(entry_id, path)
         return True
 
     def remove_tag(self, tag_id: int) -> bool:
