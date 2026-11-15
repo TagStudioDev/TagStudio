@@ -311,16 +311,19 @@ class ThumbGrid(QWidget):
         # - Arrow keys move to adjacent pages for navigation and selection
         # - Arrow keys will jump to the page with the navigated entry
         results = self._driver.frame_content
-        page_start = self._driver.browsing_history.current.page_index * self._driver.page_size
+        page_start = self._driver.shown_page_index * self._driver.page_size
         cursor = self._driver.selection.cursor
         if cursor in results:
             target = self._index_in_direction(results.index(cursor), key)
         else:
             target = page_start + (self.layout().first_visible_index() or 0)
+        leaves_page = target // self._driver.page_size != self._driver.shown_page_index
+        if leaves_page and self._driver.is_searching:
+            return True  # Stop pages from changing during a search
         target = self._driver.selection.move_selection(results, target, extend)
 
         page = target // self._driver.page_size
-        if page != self._driver.browsing_history.current.page_index:
+        if page != self._driver.shown_page_index:
             self.scroll_to(results[target])
             self._driver.page_move(page, absolute=True)
         else:

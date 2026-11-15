@@ -197,19 +197,21 @@ def qt_driver(library: Library, library_dir: Path):
         open = library_dir
         ci = True
 
-    # In-memory libraries are per-thread, so grid entry fetches run on the test thread
-    grid_fetch_pool = Mock()
-    grid_fetch_pool.return_value.start.side_effect = lambda task: task()
+    # Each thread opens its own blank in-memory DB, so run pool tasks on the test thread.
+    # See: https://www.sqlite.org/inmemorydb.html
+    mock_thread_pool = Mock()
+    mock_thread_pool.start.side_effect = lambda task: task()
 
     with (
         patch("tagstudio.qt.qt_driver.Consumer"),
         patch("tagstudio.qt.qt_driver.CustomRunnable"),
         # NOTE: Patching the QThreadPool stops Python's garbage collector from causing segfaults
         patch("tagstudio.qt.qt_driver.QThreadPool"),
-        patch("tagstudio.qt.controllers.thumb_grid.QThreadPool", grid_fetch_pool),
+        patch("tagstudio.qt.controllers.thumb_grid.QThreadPool", return_value=mock_thread_pool),
     ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
         driver.lib = library
+        driver._library_pool = mock_thread_pool
         driver.entry_state = EntryState(library)
 
         driver.app = Mock()

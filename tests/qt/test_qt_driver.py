@@ -2,8 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from collections.abc import Callable
+from typing import cast
+from unittest.mock import Mock
+
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.qt_driver import History, QtDriver
 
 
@@ -37,6 +42,28 @@ def test_browsing_state_update(qt_driver: QtDriver):
     assert len(qt_driver.frame_content) == 1
     entry = unwrap(qt_driver.lib.get_entry_full(qt_driver.frame_content[0]))
     assert list(entry.tags)[0].name == "bar"
+
+
+def test_newer_search_replaces_older_one(qt_driver: QtDriver):
+    searches: list[Callable[[], None]] = []
+    qt_driver._library_pool = Mock()
+    qt_driver._library_pool.start.side_effect = searches.append
+
+    qt_driver.update_browsing_state(BrowsingState.from_tag_name("foo"))
+    qt_driver.update_browsing_state(BrowsingState.from_path("*bar.md"))
+    for search in searches:
+        search()
+
+    assert len(qt_driver.frame_content) == 1
+    entry = unwrap(qt_driver.lib.get_entry_full(qt_driver.frame_content[0]))
+    assert list(entry.tags)[0].name == "bar"
+
+
+def test_invalid_search_syntax_shows_message(qt_driver: QtDriver):
+    qt_driver.update_browsing_state(BrowsingState.from_search_query("tag:("))
+
+    set_results_text = cast(Mock, qt_driver.main_window.set_results_text)
+    set_results_text.assert_called_with(f'{Translations["status.results.invalid_syntax"]} "tag:("')
 
 
 def test_close_library(qt_driver: QtDriver):

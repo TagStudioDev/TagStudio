@@ -16,6 +16,10 @@ DB_VERSION_CURRENT_KEY: str = "CURRENT"
 DB_VERSION_INITIAL_KEY: str = "INITIAL"
 DB_VERSION: int = 500
 
+# Interval for how often a search query will check for a cancel signal
+# NOTE: This gets used in the tests via monkey patching
+CANCEL_SEARCH_INTERVAL: int = 100_000
+
 TAG_CHILDREN_QUERY = text("""
 WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS tag_id

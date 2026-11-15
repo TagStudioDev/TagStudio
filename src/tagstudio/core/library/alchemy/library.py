@@ -65,6 +65,7 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import (
+    CANCEL_SEARCH_INTERVAL,
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
@@ -1037,6 +1038,7 @@ class Library:
         self,
         search: BrowsingState,
         page_size: int | None,
+        is_cancelled: Callable[[], bool] | None = None,
     ) -> SearchResult:
         """Filter library by search query.
 
@@ -1068,9 +1070,9 @@ class Library:
             if ast:
                 start_time = time.time()
                 statement = statement.where(SQLBoolExpressionBuilder(self).visit(ast))
-                end_time = time.time()
                 logger.info(
-                    f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
+                    f"[Library] SQL Expression Builder finished "
+                    f"({format_timespan(time.time() - start_time)})"
                 )
 
             statement = statement.distinct(Entry.id)
@@ -1095,33 +1097,40 @@ class Library:
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
 
             logger.info(
-                "searching library",
+                "[Library] Searching library...",
                 filter=search,
                 query_full=str(statement.compile(compile_kwargs={"literal_binds": True})),
             )
 
             start_time = time.time()
-            if page_size:
-                rows = session.connection().execute(statement).fetchall()
-                ids = []
-                total_count = 0
-                for row in rows:
-                    ids.append(row[0])
-                    total_count = row[1]
-            else:
-                ids = list(session.connection().execute(statement).scalars())
-                total_count = len(ids)
-            end_time = time.time()
-            logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
-            res = SearchResult(
-                total_count=total_count,
-                ids=ids,
+            connection = session.connection()
+            dbapi_connection = connection.connection.dbapi_connection
+            assert isinstance(dbapi_connection, sqlite3.Connection)
+            # Allow for the search to be cancelled via the progress handler
+            dbapi_connection.set_progress_handler(is_cancelled, CANCEL_SEARCH_INTERVAL)
+
+            try:
+                if page_size:
+                    rows = connection.execute(statement).fetchall()
+                    ids = []
+                    total_count = 0
+                    for row in rows:
+                        ids.append(row[0])
+                        total_count = row[1]
+                else:
+                    ids = list(connection.execute(statement).scalars())
+                    total_count = len(ids)
+            finally:
+                dbapi_connection.set_progress_handler(None, 0)
+
+            logger.info(
+                f"[Library] SQL Execution finished ({format_timespan(time.time() - start_time)})"
             )
-
+            result = SearchResult(total_count=total_count, ids=ids)
             session.expunge_all()
 
-            return res
+            return result
 
     def search_tags(self, name: str | None, limit: int = 100) -> tuple[list[Tag], list[Tag]]:
         """Return a list of Tag records matching the query."""

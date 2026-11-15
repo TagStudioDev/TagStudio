@@ -49,7 +49,7 @@ from tagstudio.core.constants import BUILD_TYPE, VERSION
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
-from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
+from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult, SearchResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.sync import LibrarySyncEngine
@@ -139,6 +139,7 @@ class Consumer(QThread):
 #                 | A   [B]<- C |
 #                 |[A]<- B    C |  Previous routes still exist
 #                 | A ->[D]     |  Stack is cut from [:A] on new route
+# TODO: Split out of driver
 class History[T]:
     __history: list[T]
     __index: int = 0
@@ -178,6 +179,8 @@ class QtDriver(DriverMixin, QObject):
     """A Qt GUI frontend driver for TagStudio."""
 
     SIGTERM = Signal()
+    # (Search ID, results or None, error or None, seconds)
+    _search_finished = Signal(int, SearchResult, BaseException, float)
 
     tag_manager: Modal | None = None
     color_manager: Modal | None = None
@@ -205,12 +208,18 @@ class QtDriver(DriverMixin, QObject):
         self.rm: ResourceManager = ResourceManager()
 
         # State Management
+        self._library_pool = QThreadPool(self)
+        self._library_pool.setMaxThreadCount(1)
         self.entry_state = EntryState(self.lib)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
 
         # Thumbnail Grid
-        self.frame_content: list[int] = []  # List of Entry IDs for the current query
-        self._results_state: BrowsingState | None = None
+        self.frame_content: list[int] = []  # List of Entry IDs for the shown state
+        # State the grid shows results from. Lags behind browsing_history.current during a search.
+        self._shown_state: BrowsingState | None = None
+        self._search_id: int = 0
+        self._is_searching: bool = False
+        self._search_finished.connect(self._on_search_finished)
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
 
@@ -439,7 +448,8 @@ class QtDriver(DriverMixin, QObject):
         self.copy_buffer: dict[str, list[Any]] = {"fields": [], "tags": []}
 
         def on_visible_changed(entry_id: int):
-            self.browsing_history.current.first_visible_entry_id = entry_id
+            if self._shown_state is not None:
+                self._shown_state.first_visible_entry_id = entry_id
 
         self.main_window.thumb_grid.visible_changed.connect(on_visible_changed)
 
@@ -537,19 +547,13 @@ class QtDriver(DriverMixin, QObject):
         sync_banner = self._sync_banner
         if sync_banner is not None and sync_banner.is_awaiting_refresh:
             sync_banner.hide_banner()
-        self._results_state = None  # Submitting a search always searches again
-        try:
-            self.update_browsing_state(
-                BrowsingState.from_search_query(query)
-                .with_sorting_mode(self.main_window.sorting_mode)
-                .with_sorting_direction(self.main_window.sorting_direction)
-                .with_show_hidden_entries(self.main_window.show_hidden_entries)
-            )
-        except ParsingError as e:
-            self.main_window.set_results_text(
-                f'{Translations["status.results.invalid_syntax"]} "{query}"'
-            )
-            logger.error("[QtDriver] Could not update BrowsingState", error=e)
+        self.update_browsing_state(
+            BrowsingState.from_search_query(query)
+            .with_sorting_mode(self.main_window.sorting_mode)
+            .with_sorting_direction(self.main_window.sorting_direction)
+            .with_show_hidden_entries(self.main_window.show_hidden_entries),
+            searches_again=True,
+        )
 
     def init_ignore_modal(self):
         """Initialize the Ignore Files panel."""
@@ -638,6 +642,7 @@ class QtDriver(DriverMixin, QObject):
         scrollbar.verticalScrollBar().setValue(0)
         self.__reset_navigation()
 
+        self._search_id += 1  # Stops search in progress
         self.lib.close()
         self.sync_engine.reset()
         self.cache_manager = None
@@ -648,7 +653,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
         self.frame_content.clear()
-        self._results_state = None
+        self._shown_state = None
         self.selection.clear()
         if self.color_manager:
             self.color_manager.layout().content_widget.reset()
@@ -923,6 +928,16 @@ class QtDriver(DriverMixin, QObject):
         return len(self.frame_content) if self.settings.infinite_scroll else self.settings.page_size
 
     @property
+    def shown_page_index(self) -> int:
+        """The index of the results page the grid shows."""
+        return self._shown_state.page_index if self._shown_state is not None else 0
+
+    @property
+    def is_searching(self) -> bool:
+        """Whether a search query is currently being run on the library."""
+        return self._is_searching
+
+    @property
     def _sync_banner(self) -> SyncBanner | None:
         """Get the sync banner, if there currently is one."""
         return self.main_window.browsing_area.banners.get(SyncBanner.KEY, SyncBanner)
@@ -1111,6 +1126,8 @@ class QtDriver(DriverMixin, QObject):
         self.update_browsing_state(current.with_page_index(0) if current.page_index else None)
 
     def page_move(self, value: int, absolute: bool = False) -> None:
+        if self._is_searching:
+            return
         current = self.browsing_history.current
         index = clamp(value if absolute else current.page_index + value, 0, self.pages_count - 1)
         if index != current.page_index:
@@ -1160,21 +1177,24 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
 
-        start = self.browsing_history.current.page_index * self.page_size
+        start = self.shown_page_index * self.page_size
         end = min(start + self.page_size, len(self.frame_content))
 
         self.main_window.thumb_grid.set_entries(self.frame_content[start:end])
         self.main_window.update()
 
-    def update_browsing_state(self, state: BrowsingState | None = None) -> None:
+    def update_browsing_state(
+        self, state: BrowsingState | None = None, searches_again: bool = False
+    ) -> None:
         """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
 
-        previous = self.browsing_history.current
         if state:
             self.browsing_history.push(state)
+            # States with the same query/sorting aren't pushed, the only reset the scroll position.
+            self.browsing_history.current.first_visible_entry_id = None
         current = self.browsing_history.current
         self.main_window.search_bar.set_nav_buttons_enabled(True)
         self.main_window.search_bar.set_history_available(
@@ -1183,27 +1203,64 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_bar.set_query(current.query or "")
 
-        shown = self._results_state
+        shown = self._shown_state
         if current is shown:  # Results refresh in case entries were removed from the library
             selected = self.selection.selected
             self.selection.deselect(self.lib.removed_entry_ids(selected))
         only_page_changed = (
-            current is not shown  # Refreshing the shown state searches again
+            not searches_again
+            and not self._is_searching
+            and current is not shown  # Refreshing the shown state searches again
             and shown is not None
             and current.with_page_index(0) == shown.with_page_index(0)
         )
+        self._search_id += 1
         if not only_page_changed:
             # Search the library
-            start_time = time.time()
             Ignore.get_patterns(self.lib.library_dir, include_global=True)
-            results = self.lib.search_library(current, page_size=0)
-            logger.info("items to render", count=len(results))
-            end_time = time.time()
+            self.main_window.set_results_text(Translations["status.results.searching"])
+            self._search_library(current)
+        else:
+            self._show_page()
 
+    def _search_library(self, state: BrowsingState) -> None:
+        """Search the library with a query and any filters and sorting."""
+        search_id = self._search_id
+        self._is_searching = True
+        self.main_window.browsing_area.pagination.setEnabled(False)
+
+        def is_cancelled() -> bool:
+            return search_id != self._search_id
+
+        def search() -> None:
+            if is_cancelled():
+                return
+            results: SearchResult | None = None
+            error: Exception | ParsingError | None = None
+            start_time = time.time()
+            try:
+                results = self.lib.search_library(state, page_size=0, is_cancelled=is_cancelled)
+            except (Exception, ParsingError) as e:
+                error = e
+            self._search_finished.emit(search_id, results, error, time.time() - start_time)
+
+        self._library_pool.start(search)
+
+    def _on_search_finished(
+        self,
+        search_id: int,
+        results: SearchResult | None,
+        error: Exception | ParsingError | None,
+        seconds: float,
+    ) -> None:
+        if search_id != self._search_id:
+            return
+        self._is_searching = False
+        self.main_window.browsing_area.pagination.setEnabled(True)
+        current = self.browsing_history.current
+        if results is not None:
             # Show search result labels
-            time_span = (
-                f"<a style=color:'gray'>({format_timespan(end_time - start_time).title()})</a>"
-            )
+            time_span = f"<a style=color:'gray'>({format_timespan(seconds).title()})</a>"
             count = f"<b>{results.total_count:,}</b>"
             is_single = results.total_count == 1
             # Show "X Results" on query, otherwise "X Items"
@@ -1216,13 +1273,31 @@ class QtDriver(DriverMixin, QObject):
             )
             self.frame_content = results.ids
             self.main_window.menu_bar.update_select_actions()
-        self._results_state = current
+            self._show_page()
+        elif isinstance(error, ParsingError):
+            self.main_window.set_results_text(
+                f'{Translations["status.results.invalid_syntax"]} "{current.query}"'
+            )
+            logger.error("[QtDriver] Could not parse the search query", error=error)
+        else:
+            self.main_window.set_results_text(Translations["status.results.search_failed"])
+            logger.error("[QtDriver] Could not search the library", error=error)
+
+    def _show_page(self) -> None:
+        """Show the current results page."""
+        previous = self._shown_state
+        current = self.browsing_history.current
+        self._shown_state = current
 
         # Update page content
-        same_page = current.query == previous.query and current.page_index == previous.page_index
-        if state is None:
+        if current.first_visible_entry_id is not None:
             entry_id = current.first_visible_entry_id
-        elif same_page and current is not previous:
+        elif (
+            previous is not None
+            and current is not previous
+            and current.query == previous.query
+            and current.page_index == previous.page_index
+        ):
             # Keep the selection in view when the same results are only resorted or filtered
             entry_id = self.selection.cursor
         else:

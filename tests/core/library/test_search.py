@@ -2,8 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+from unittest.mock import patch
+
 import pytest
 import structlog
+from sqlalchemy.exc import OperationalError
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
@@ -145,3 +148,13 @@ def test_parent_tags(search_library: Library, query: str, count: int):
 def test_syntax(search_library: Library, invalid_query: str):
     with pytest.raises(ParsingError) as e_info:  # noqa: F841  # pyright: ignore[reportUnusedVariable]
         search_library.search_library(BrowsingState.from_search_query(invalid_query), page_size=500)
+
+
+def test_cancelled_search_stops(search_library: Library):
+    with (
+        patch("tagstudio.core.library.alchemy.library.CANCEL_SEARCH_INTERVAL", 1),
+        pytest.raises(OperationalError, match="interrupted"),
+    ):
+        search_library.search_library(
+            BrowsingState.show_all(), page_size=0, is_cancelled=lambda: True
+        )

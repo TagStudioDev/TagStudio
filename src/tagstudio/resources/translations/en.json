@@ -416,6 +416,8 @@
     "status.results_found": "{count} Results {time_span}",
     "status.results_found.singular": "{count} Result {time_span}",
     "status.results.invalid_syntax": "Invalid Search Syntax:",
+    "status.results.search_failed": "Search Failed",
+    "status.results.searching": "Searching…",
     "tag_manager.title": "Library Tags",
     "tag.add": "Add Tag",
     "tag.add_to_search": "Add to Search",
