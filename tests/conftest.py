@@ -190,17 +190,31 @@ def _reset_ignore():
 
 
 @pytest.fixture
-def qt_driver(library: Library, library_dir: Path):
+def mock_thread_pool() -> Mock:
+    # NOTE: Each thread opens its own blank in-memory DB, so run pool tasks on the test thread.
+    # See: https://www.sqlite.org/inmemorydb.html
+    mock_thread_pool = Mock()
+    mock_thread_pool.start.side_effect = lambda task: task()
+    return mock_thread_pool
+
+
+@pytest.fixture(autouse=True)
+def _search_pools_on_test_thread(mock_thread_pool: Mock):
+    """Mock threads for threaded search boxes."""
+    with (
+        patch("tagstudio.qt.controllers.search_panel.QThreadPool", return_value=mock_thread_pool),
+        patch("tagstudio.qt.controllers.suggest_box.QThreadPool", return_value=mock_thread_pool),
+    ):
+        yield
+
+
+@pytest.fixture
+def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
     class Args:
         settings_file = library_dir / "settings.toml"
         cache_file = library_dir / "tagstudio.ini"
         open = library_dir
         ci = True
-
-    # Each thread opens its own blank in-memory DB, so run pool tasks on the test thread.
-    # See: https://www.sqlite.org/inmemorydb.html
-    mock_thread_pool = Mock()
-    mock_thread_pool.start.side_effect = lambda task: task()
 
     with (
         patch("tagstudio.qt.qt_driver.Consumer"),

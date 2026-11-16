@@ -5,7 +5,7 @@ from functools import partial
 from typing import Any, override
 
 import structlog
-from PySide6.QtCore import QEvent, Signal
+from PySide6.QtCore import QEvent, QThreadPool, Signal
 from PySide6.QtGui import QAction, QPainter, QPaintEvent, QPixmap, QShowEvent, Qt
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
@@ -47,6 +47,7 @@ def _item_name(item: object) -> str:
 class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal(str)  # Query
+    _items_found = Signal(int, object)  # (Search ID, Items)
 
     def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
         super().__init__()
@@ -61,6 +62,12 @@ class SuggestBox[T](QWidget):
         self.added: list[int] = []
         self.excluded: list[int] = []
         self._effect = WidgetEffects()
+        self._search_id = 0  # Generation of the search, used to invalidate stale searches
+        self._shown_search_id = 0
+        self._submits_when_found = False
+        self._search_pool = QThreadPool(self)
+        self._search_pool.setMaxThreadCount(1)
+        self._items_found.connect(self._on_items_found)
 
         self.setLayout(SuggestBoxView(placeholder_text))
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -212,7 +219,6 @@ class SuggestBox[T](QWidget):
 
     def _on_search_query_changed(self, query: str) -> None:
         self._update_items(query.strip())
-        self._update_hint_icon()
 
     def _on_search_query_submitted(self, query: str, always_create: bool = False) -> None:
         # Focus search field if no query
@@ -221,6 +227,10 @@ class SuggestBox[T](QWidget):
             return
         elif not self.isHidden():
             self.layout().search_field.setFocus()
+
+        if not always_create and self._shown_search_id != self._search_id:
+            self._submits_when_found = True
+            return
 
         if always_create:
             self._on_item_create()
@@ -266,15 +276,26 @@ class SuggestBox[T](QWidget):
 
     def _update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
-        logger.info("[SearchPanel] Updating items", limit=self._limit)
-        self._selection_index = 0
-        if self.layout().content_layout.count() > 0:
-            self.layout().scroll_area.ensureWidgetVisible(
-                self.layout().content_layout.itemAt(0).widget(),  # pyright: ignore
-                xmargin=16,
-                ymargin=0,
-            )
+        logger.info("[SearchPanel] Updating items...", limit=self._limit)
+        self._submits_when_found = False
+        self._search_id += 1
+        search_id = self._search_id
 
+        def search() -> None:
+            if search_id != self._search_id:
+                return
+            try:
+                items = self._items_for_query(query)
+            except Exception as e:
+                logger.error("[SearchPanel] Error searching items", query=query, error=e)
+                return
+            self._items_found.emit(search_id, items)
+
+        self._search_pool.clear()
+        self._search_pool.start(search)
+
+    def _items_for_query(self, query: str | None) -> list[T]:
+        """Get the items returned by the search query."""
         # Get results for the search query
         query_lower = "" if not query else query.lower()
         search_results: tuple[list[T], list[T]] = self._search_items(query_lower)
@@ -308,16 +329,35 @@ class SuggestBox[T](QWidget):
 
         if self._limit > 0:
             all_results = all_results[: self._limit]
+        return all_results
 
-        self._search_results = all_results
+    def _on_items_found(self, search_id: int, items: list[T]) -> None:
+        if search_id != self._search_id:
+            return
+        self._shown_search_id = search_id
+        self._selection_index = 0
+        if self.layout().content_layout.count() > 0:
+            self.layout().scroll_area.ensureWidgetVisible(
+                self.layout().content_layout.itemAt(0).widget(),  # pyright: ignore
+                xmargin=16,
+                ymargin=0,
+            )
+
+        self._search_results = items
         logger.info("[SearchPanel] Search results", results=self._search_results)
 
         for i in range(0, self._limit):
-            item: T | None = all_results[i] if i < len(all_results) else None
+            item: T | None = items[i] if i < len(items) else None
             self._set_item_widget(item=item, index=i)
 
         view = self.layout()
         view.set_suggestions_visible(not view.content_layout.isEmpty())
+        self._update_hint_icon()
+        self.update()
+
+        if self._submits_when_found:
+            self._submits_when_found = False
+            self._on_search_query_submitted(self.layout().search_field.text())
 
     @override
     def paintEvent(self, event: QPaintEvent) -> None:

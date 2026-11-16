@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import QEvent, QObject, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QSizePolicy
 
@@ -21,10 +21,6 @@ from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
 logger = structlog.get_logger(__name__)
 
 _ROW_HEIGHT = CapsuleView.HEIGHT + HALF_PAD  # Each capsule and the gap below it
-
-# Only import for type checking/autocompletion, will not be imported at runtime.
-if TYPE_CHECKING:
-    from tagstudio.qt.qt_driver import QtDriver
 
 
 def _item_id(item: object) -> int:
@@ -47,6 +43,7 @@ def _item_name(item: object) -> str:
 
 class SearchPanel[T](ModalContent):
     item_chosen = Signal(int)
+    _items_found = Signal(int, str, object)  # (Search ID, Query, Search Results)
 
     def __init__(
         self,
@@ -55,7 +52,6 @@ class SearchPanel[T](ModalContent):
         is_chooser: bool = True,
     ) -> None:
         super().__init__()
-        self._driver: QtDriver | None = None
         self._is_chooser = is_chooser
         self._is_create_from_query_button_in_layout = False
 
@@ -66,6 +62,12 @@ class SearchPanel[T](ModalContent):
         self._are_capsules_clickable = True
         self._first_row = 0
         self._item_widget_rows: list[int | None] = []
+        self._search_id = 0  # Generation of the search, used to invalidate stale searches
+        self._shown_search_id = 0
+        self._submits_when_found = False
+        self._search_pool = QThreadPool(self)
+        self._search_pool.setMaxThreadCount(1)
+        self._items_found.connect(self._on_items_found)
 
         self.setLayout(view)
         scroll_bar = view.scroll_area.verticalScrollBar()
@@ -160,6 +162,10 @@ class SearchPanel[T](ModalContent):
                 window.hide()
             return
 
+        if self._shown_search_id != self._search_id:
+            self._submits_when_found = True
+            return
+
         # Create item if no search results
         if len(self._search_results) <= 0:
             self.on_item_create()
@@ -191,11 +197,26 @@ class SearchPanel[T](ModalContent):
 
     def update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
-        logger.info("[SearchPanel] Updating items")
+        logger.info("[SearchPanel] Updating items...")
+        self._submits_when_found = False
+        self._search_id += 1
+        search_id = self._search_id
 
-        # Remove the create from query button if one exists
-        self.remove_create_from_query_button()
+        def search() -> None:
+            if search_id != self._search_id:
+                return
+            try:
+                items = self.items_for_query(query)
+            except Exception as e:
+                logger.error("[SearchPanel] Error searching items", query=query, error=e)
+                return
+            self._items_found.emit(search_id, query, items)
 
+        self._search_pool.clear()
+        self._search_pool.start(search)
+
+    def items_for_query(self, query: str | None) -> list[T]:
+        """Get the items returned by the search query."""
         # Get results for the search query
         query_lower = "" if not query else query.lower()
         search_results: tuple[list[T], list[T]] = self.search_items(query_lower)
@@ -218,14 +239,27 @@ class SearchPanel[T](ModalContent):
         all_results: list[T] = sorted(list(priority_results), key=lambda i: len(_item_name(i))) + [
             item for item in raw_results if item not in priority_results
         ]
+        return all_results
 
-        self._search_results = all_results
+    def _on_items_found(self, search_id: int, query: str, items: list[T]) -> None:
+        if search_id != self._search_id:
+            return
+        self._shown_search_id = search_id
+
+        # Remove the "create from query" button if one exists
+        self.remove_create_from_query_button()
+
+        self._search_results = items
         logger.info("[SearchPanel] Search results", count=len(self._search_results))
         self._update_item_widgets()
 
-        # Add back the create from query button
+        # Add back the "create from query" button
         if query and query.strip():
             self.add_create_from_query_button()
+
+        if self._submits_when_found:
+            self._submits_when_found = False
+            self.on_search_query_submitted(self.get_search_query())
 
     def _update_item_widgets(self) -> None:
         """Show the search results in the item widgets."""
