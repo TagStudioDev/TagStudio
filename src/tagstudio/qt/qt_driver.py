@@ -210,7 +210,7 @@ class QtDriver(DriverMixin, QObject):
         # State Management
         self._library_pool = QThreadPool(self)
         self._library_pool.setMaxThreadCount(1)
-        self.entry_state = EntryState(self.lib)
+        self.entry_state = EntryState(self.lib, self._library_pool)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
 
         # Thumbnail Grid
@@ -643,6 +643,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self._search_id += 1  # Stops search in progress
+        self.entry_state.wait_for_writes()
         self.lib.close()
         self.sync_engine.reset()
         self.cache_manager = None
@@ -1148,7 +1149,11 @@ class QtDriver(DriverMixin, QObject):
             entry = self.lib.get_entry_full(self.selection.selected[0])
             if entry:
                 self.copy_buffer["fields"] = entry.fields
-                self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
+                self.copy_buffer["tags"] = list(
+                    self.entry_state.tag_ids_with_pending_writes(
+                        entry.id, {tag.id for tag in entry.tags}
+                    )
+                )
         self.main_window.menu_bar.update_clipboard_actions()
 
     def paste_fields_action_callback(self):

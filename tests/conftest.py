@@ -209,6 +209,11 @@ def _search_pools_on_test_thread(mock_thread_pool: Mock):
 
 
 @pytest.fixture
+def entry_state(library: Library, mock_thread_pool: Mock) -> EntryState:
+    return EntryState(library, mock_thread_pool)
+
+
+@pytest.fixture
 def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
     class Args:
         settings_file = library_dir / "settings.toml"
@@ -226,7 +231,7 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
         driver.lib = library
         driver._library_pool = mock_thread_pool
-        driver.entry_state = EntryState(library)
+        driver.entry_state = EntryState(library, driver._library_pool)
 
         driver.app = Mock()
         driver.main_window = Mock()
