@@ -427,6 +427,17 @@ class Library:
         return self.open_sqlite_library(library_dir, in_memory)
 
     @staticmethod
+    def needs_migration(library_dir: Path) -> bool:
+        """Whether a library requires a migration."""
+        if not (library_dir / TS_FOLDER_NAME / SQL_FILENAME).exists():
+            return False
+        try:
+            with DBMigrations(library_dir, SQL_FILENAME) as migrations:
+                return migrations.required
+        except Exception:
+            return False
+
+    @staticmethod
     def _use_wal_if_supported(db_path: Path) -> None:
         """Set the database to WAL mode, or to rollback journal mode if WAL can't be used.
 

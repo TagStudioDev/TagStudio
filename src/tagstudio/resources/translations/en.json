@@ -405,6 +405,7 @@
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",
     "sorting.mode.random": "Random",
+    "splash.migrating_library": "Migrating Library \"{library_path}\"…",
     "splash.opening_library": "Opening Library \"{library_path}\"…",
     "status.items": "{count} Items {time_span}",
     "status.items.singular": "{count} Item {time_span}",

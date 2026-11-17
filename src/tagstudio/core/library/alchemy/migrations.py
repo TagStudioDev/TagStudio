@@ -74,11 +74,6 @@ class DBMigrations:
                 f"{Translations['status.library_version_expected']} {supported_versions}"
             )
 
-        logger.info(
-            f"[Library][Migration] "
-            f"Opening Library with DB Version {self.loaded_db_version}/{DB_VERSION}"
-        )
-
         self._exited = False
 
     def __enter__(self):
@@ -94,6 +89,9 @@ class DBMigrations:
 
     def run(self):
         assert not self._exited
+        logger.info(
+            f"[Library][Migration] Library DB Version {self.loaded_db_version}/{DB_VERSION}"
+        )
         if not self.required:
             return
 

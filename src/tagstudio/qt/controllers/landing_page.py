@@ -6,6 +6,7 @@ from typing import Literal, override
 
 from PIL import ImageQt
 from PySide6.QtCore import (
+    QAbstractAnimation,
     QCoreApplication,
     QEasingCurve,
     QEvent,
@@ -105,8 +106,8 @@ class LandingPage(QWidget):
         """
         self.layout().status_label.setText(text)
 
-    def animate_logo_in(self) -> None:
-        """Animate the TagStudio logo in."""
+    def animate_logo(self) -> None:
+        """Animate in the TagStudio logo and background image."""
         QCoreApplication.sendPostedEvents(None, QEvent.Type.LayoutRequest)
         logo_label = self.layout().logo_label
         self._logo_pos_anim.setStartValue(QPoint(logo_label.x(), logo_label.y() - 100))
@@ -114,6 +115,17 @@ class LandingPage(QWidget):
         self._logo_pos_anim.start()
         self._logo_opacity_anim.start()
         self._background_fade.start()
+
+    def show_logo(self) -> None:
+        """Immediately show the TagStudio logo and background image."""
+        if self._logo_pos_anim.state() == QAbstractAnimation.State.Running:
+            self._logo_pos_anim.setCurrentTime(self._logo_pos_anim.duration())
+        self._logo_opacity_anim.stop()
+        self._background_fade.stop()
+        logo_opacity_effect = self.layout().logo_label.graphicsEffect()
+        assert isinstance(logo_opacity_effect, QGraphicsOpacityEffect)
+        logo_opacity_effect.setOpacity(1.0)
+        self._set_background_opacity(1.0)
 
     def _update_logo_color(self, style: Literal["mono", "color"] = "mono") -> None:
         """Update the color of the TagStudio logo.

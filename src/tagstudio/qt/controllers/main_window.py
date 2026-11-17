@@ -291,6 +291,7 @@ class MainWindow(QMainWindow):
         view.side_panel.setHidden(enabled or not self._is_side_open)
         view.side_panel_button.setHidden(enabled)
         view.browsing_area.toggle_landing_page(enabled)
+        self.update()
 
     def _on_inspector_toggled(self, index: int, shown: bool) -> None:
         toggles = self.layout().inspector_toggles

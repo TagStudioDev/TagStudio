@@ -181,6 +181,7 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
     # (Search ID, results or None, error or None, seconds)
     _search_finished = Signal(int, SearchResult, BaseException, float)
+    _library_loaded = Signal(int)  # Library session ID
 
     tag_manager: Modal | None = None
     color_manager: Modal | None = None
@@ -210,6 +211,8 @@ class QtDriver(DriverMixin, QObject):
         # State Management
         self._library_pool = QThreadPool(self)
         self._library_pool.setMaxThreadCount(1)
+        self._library_session_id = 0
+        self._library_loaded.connect(self._on_library_loaded)
         self.entry_state = EntryState(self.lib, self._library_pool)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
 
@@ -389,7 +392,7 @@ class QtDriver(DriverMixin, QObject):
             splash_name=self.settings.splash,
             device_ratio=self.main_window.devicePixelRatio(),
         )
-        self.splash.show()
+        # self.splash.show() # TODO: Decide if the splash screen should be removed
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
@@ -467,17 +470,16 @@ class QtDriver(DriverMixin, QObject):
         startup_result = None
         if startup_path:
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
-            if startup_result.success and startup_result.library_path:
-                self.main_window.toggle_landing_page(enabled=False)
 
         self.init_library_window()
         self.migration_modal: JsonMigrationModal | None = None
 
         if startup_result is None:
-            self.main_window.browsing_area.landing_page.animate_logo_in()
+            self.main_window.browsing_area.landing_page.animate_logo()
         elif startup_result.success and startup_result.library_path:
             self.open_library(startup_result.library_path)
         else:
+            self.main_window.browsing_area.landing_page.show_logo()
             self.show_error_message(
                 error_name=startup_result.error_title
                 or Translations["window.message.error_opening_library"],
@@ -643,6 +645,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self._search_id += 1  # Stops search in progress
+        self._library_session_id += 1
         self.entry_state.wait_for_writes()
         self.lib.close()
         self.sync_engine.reset()
@@ -664,7 +667,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.thumb_grid.set_entries([])
         self.main_window.toggle_landing_page(enabled=True)
-        self.main_window.browsing_area.landing_page.animate_logo_in()
+        self.main_window.browsing_area.landing_page.animate_logo()
         self.main_window.browsing_area.pagination.setHidden(True)
         self.main_window.menu_bar.set_library_actions_enabled(False)
         self.main_window.search_bar.set_nav_buttons_enabled(False)
@@ -1453,12 +1456,20 @@ class QtDriver(DriverMixin, QObject):
         library_dir_display = (
             path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
         )
-        message = Translations.format("splash.opening_library", library_path=library_dir_display)
-        self.main_window.browsing_area.landing_page.set_status_label(message)
-        self.main_window.repaint()
-
         if self.lib.library_dir:
             self.close_library()
+
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
+        self.main_window.browsing_area.landing_page.set_status_label(message)
+        self.main_window.browsing_area.landing_page.show_logo()
+        self.main_window.repaint()
+
+        if Library.needs_migration(path):
+            message = Translations.format(
+                "splash.migrating_library", library_path=library_dir_display
+            )
+            self.main_window.browsing_area.landing_page.set_status_label(message)
+            self.main_window.repaint()
 
         open_status: OpenLibraryResult | None = None
         try:
@@ -1521,9 +1532,7 @@ class QtDriver(DriverMixin, QObject):
         )
         self.__reset_navigation(initial_state)
 
-        if self.settings.scan_files_on_open:
-            self.sync_library_callback()
-        elif not self._sync_disabled_notice_shown:
+        if not self.settings.scan_files_on_open and not self._sync_disabled_notice_shown:
             self._sync_disabled_notice_shown = True
             # Show that the setting for opening a library on start is turned off,
             # with a prompt to open the settings to change that (encouraged but not required).
@@ -1545,19 +1554,22 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         self.main_window.setAcceptDrops(True)
-
         self.init_ignore_modal()
-
         self.main_window.menu_bar.set_library_actions_enabled(True)
-
         self.main_window.inspector.update_from_selection()
-
-        # page (re)rendering, extract eventually
         self.update_browsing_state()
+        self._library_pool.start(partial(self._library_loaded.emit, self._library_session_id))
 
+        return open_status
+
+    def _on_library_loaded(self, session_id: int) -> None:
+        if session_id != self._library_session_id:
+            return
+        # Leave the landing page once the opened library's first results have loaded
         self.main_window.toggle_landing_page(enabled=False)
         self.main_window.thumb_grid.scroll_area.setFocus()
-        return open_status
+        if self.settings.scan_files_on_open:
+            self.sync_library_callback()
 
     def log_optional_modules(self) -> None:
         """Logs the status of optional modules."""
