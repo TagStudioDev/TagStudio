@@ -29,6 +29,8 @@ logger = structlog.get_logger(__name__)
 
 class TagSearchPanel(SearchPanel[Tag]):
     search_for_tag = Signal(int)
+    remove_tag_requested = Signal(int)
+    _tags_edited = Signal(set)
 
     def __init__(
         self,
@@ -44,19 +46,20 @@ class TagSearchPanel(SearchPanel[Tag]):
         )
         self._lib = library
         self.layout().create_from_query_button.set_is_tag(True)
+        self._tags_edited.connect(self._on_tags_edited)
 
     @override
     def showEvent(self, event: QShowEvent) -> None:
         # NOTE: hideEvent() removes this again, so hidden panels don't search on every tag edit
-        if self._on_tags_edited not in self._lib.tag_edit_callbacks:
-            self._lib.tag_edit_callbacks.append(self._on_tags_edited)
+        if self._tags_edited.emit not in self._lib.tag_edit_callbacks:
+            self._lib.tag_edit_callbacks.append(self._tags_edited.emit)
         super().showEvent(event)
 
     @override
     def hideEvent(self, event: QHideEvent) -> None:
         # NOTE: showEvent() adds this again, so hidden panels don't search on every tag edit
-        if self._on_tags_edited in self._lib.tag_edit_callbacks:
-            self._lib.tag_edit_callbacks.remove(self._on_tags_edited)
+        if self._tags_edited.emit in self._lib.tag_edit_callbacks:
+            self._lib.tag_edit_callbacks.remove(self._tags_edited.emit)
         super().hideEvent(event)
 
     def _on_tags_edited(self, tag_ids: set[int]) -> None:  # pyright: ignore[reportUnusedParameter]
@@ -118,7 +121,7 @@ class TagSearchPanel(SearchPanel[Tag]):
         if result != QMessageBox.StandardButton.Ok:
             return
 
-        self._lib.remove_tag(item.id)
+        self.remove_tag_requested.emit(item.id)
 
     @override
     def _on_item_chosen(self, item: Tag) -> None:

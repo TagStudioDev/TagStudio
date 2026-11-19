@@ -46,8 +46,8 @@ def test_browsing_state_update(qt_driver: QtDriver):
 
 def test_newer_search_replaces_older_one(qt_driver: QtDriver):
     searches: list[Callable[[], None]] = []
-    qt_driver._library_pool = Mock()
-    qt_driver._library_pool.start.side_effect = searches.append
+    qt_driver.library_pool = Mock()
+    qt_driver.library_pool.start.side_effect = searches.append
 
     qt_driver.update_browsing_state(BrowsingState.from_tag_name("foo"))
     qt_driver.update_browsing_state(BrowsingState.from_path("*bar.md"))

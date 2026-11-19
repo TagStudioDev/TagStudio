@@ -247,7 +247,7 @@ class Library:
     def _on_tags_edited(self, tag_ids: set[int]) -> None:
         """Call functions registered to run when one or more tags are edited."""
         if tag_ids:
-            for callback in self.tag_edit_callbacks:
+            for callback in list(self.tag_edit_callbacks):
                 callback(tag_ids)
 
     @staticmethod
@@ -570,6 +570,19 @@ class Library:
             session.execute(text("CREATE INDEX IF NOT EXISTS idx_entries_id ON entries (id)"))
             session.execute(
                 text("CREATE INDEX IF NOT EXISTS idx_entries_suffix ON entries (suffix)")
+            )
+            # NOTE: These two indexes are used alongside the foreign key constraints.
+            # See: https://www.sqlite.org/foreignkeys.html#fk_indexes
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_text_fields_entry_id ON text_fields (entry_id)"
+                )
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_datetime_fields_entry_id "
+                    "ON datetime_fields (entry_id)"
+                )
             )
 
             session.commit()
@@ -929,7 +942,7 @@ class Library:
                 ]
 
     def add_entries(self, items: list[Entry]) -> list[int]:
-        """Add multiple entries to the Library."""
+        """Add multiple entries to the library."""
         assert items
 
         with Session(self.engine, expire_on_commit=False) as session:
@@ -952,7 +965,7 @@ class Library:
         return new_ids
 
     def remove_entries(self, entry_ids: list[int]) -> None:
-        """Remove Entry items matching supplied IDs from the Library."""
+        """Remove entries from the library."""
         removed_paths: dict[int, str] = {}
         with Session(self.engine) as session:
             for sub_list in [
@@ -965,6 +978,9 @@ class Library:
                     .returning(Entry.id, type_coerce(Entry.path, String).label("path"))
                 )
                 removed_paths.update({row.id: row.path for row in rows})
+                session.execute(delete(TagEntry).where(TagEntry.entry_id.in_(sub_list)))
+                session.execute(delete(TextField).where(TextField.entry_id.in_(sub_list)))
+                session.execute(delete(DatetimeField).where(DatetimeField.entry_id.in_(sub_list)))
             session.commit()
         self._remove_from_path_cache(removed_paths)
 
@@ -1415,6 +1431,14 @@ class Library:
                     )
                 )
                 session.execute(
+                    delete(CategoryExclusion).where(
+                        or_(
+                            CategoryExclusion.tag_id == tag_id,
+                            CategoryExclusion.category_id == tag_id,
+                        )
+                    )
+                )
+                session.execute(
                     update(Tag)
                     .where(Tag.disambiguation_id == tag_id)
                     .values(disambiguation_id=None)
@@ -1613,6 +1637,11 @@ class Library:
                     )
                 )
                 edited_tag_ids = self._tag_ids_with_colors(session, colors)
+                session.execute(
+                    update(Tag)
+                    .where(Tag.color_namespace == namespace_.namespace)
+                    .values(color_namespace=None, color_slug=None)
+                )
                 for color in colors:
                     session.delete(color)
                     session.flush()
@@ -1748,6 +1777,11 @@ class Library:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 edited_tag_ids = self._tag_ids_with_colors(session, [color])
+                session.execute(
+                    update(Tag)
+                    .where(Tag.color_namespace == color.namespace, Tag.color_slug == color.slug)
+                    .values(color_namespace=None, color_slug=None)
+                )
                 session.delete(color)
                 session.commit()
 

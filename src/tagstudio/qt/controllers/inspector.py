@@ -23,7 +23,6 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
     TextFieldTemplate,
 )
-from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations, field_type_name
@@ -185,7 +184,9 @@ class Inspector(QWidget):
         if stats.duration is not None:
             self._current_stats.duration = stats.duration
 
-        entry = unwrap(self._lib.get_entry(selected[0]))
+        entry = self._lib.get_entry(selected[0])
+        if entry is None:
+            return
         self.layout().file_attrs.update_stats(filepath, self._current_stats, entry)
         self._lay_out_info_now()
 
@@ -203,14 +204,15 @@ class Inspector(QWidget):
         selected = self._driver.selection.selected
         if len(selected) == 1:
             if self._driver.settings.edit_field_on_add:
-                entry = unwrap(self._lib.get_entry_full(selected[0]))
-                entry_field = None
-                if isinstance(template, TextFieldTemplate):
-                    entry_field = entry.text_fields[-1]
-                elif isinstance(template, DatetimeFieldTemplate):
-                    entry_field = entry.datetime_fields[-1]
-                if entry_field is not None:
-                    self._edit_field(entry.id, entry_field)
+                entry = self._lib.get_entry_full(selected[0])
+                if entry is not None:
+                    entry_field = None
+                    if isinstance(template, TextFieldTemplate):
+                        entry_field = entry.text_fields[-1]
+                    elif isinstance(template, DatetimeFieldTemplate):
+                        entry_field = entry.datetime_fields[-1]
+                    if entry_field is not None:
+                        self._edit_field(entry.id, entry_field)
 
             self.layout().containers.update_from_entry(selected[0])
 
@@ -262,8 +264,10 @@ class Inspector(QWidget):
         selected = self._driver.selection.selected
         self._set_item_mode(None)
         try:
-            # No Items Selected
-            if len(selected) == 0:
+            entry = self._lib.get_entry(selected[0]) if len(selected) == 1 else None
+
+            # No Items Selected (or entry was deleted)
+            if len(selected) <= 1 and entry is None:
                 self.layout().preview_thumb.hide_preview()
                 self._current_stats = None
                 self.layout().file_attrs.update_stats()
@@ -271,9 +275,8 @@ class Inspector(QWidget):
                 self.layout().containers.hide_containers()
 
             # One Item Selected
-            elif len(selected) == 1:
+            elif entry is not None:
                 entry_id = selected[0]
-                entry: Entry = unwrap(self._lib.get_entry(entry_id))
 
                 filepath: Path = unwrap(self._lib.library_dir) / entry.path
                 if filepath != self.layout().preview_thumb.current_file:

@@ -247,3 +247,14 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 - Rebuilds the `entries` table with an `AUTOINCREMENT` primary key.
 - Changes the database [page size](https://www.sqlite.org/fileformat.html#page_size) to 32 KB.
 - Adds the `idx_entries_id` and `idx_entries_suffix` indexes to the `entries` table.
+
+#### Version 502
+
+| Added in Commit | Introduced in Release | Format |
+| --------------- | --------------------- | ------ |
+| TBD             | TBD                   | SQLite |
+
+- Applies repairs to the `tag_entries`, `text_fields`, and `datetime_fields` tables, removing rows that reference entries that have been deleted.
+- Applies repairs to the `tag_entries` and `category_exclusions` tables, removing rows that reference tags that have been deleted.
+- Applies repairs to the `tags` table, clearing colors that have been deleted.
+- Adds the `idx_text_fields_entry_id` and `idx_datetime_fields_entry_id` indexes to the `text_fields` and `datetime_fields` tables.

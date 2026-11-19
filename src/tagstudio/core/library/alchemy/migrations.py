@@ -113,6 +113,7 @@ class DBMigrations:
             MigrationTo400,  # changes: add category_exclusions
             MigrationTo500,  # changes: entries
             MigrationTo501,  # changes: entries, indexes, page size
+            MigrationTo502,  # changes: deletes orphaned data, indexes
         ]
         for migration in migrations:
             if self.loaded_db_version < migration.version and (
@@ -730,3 +731,37 @@ class MigrationTo501(DBMigration):
         logger.info(fmt_log("Adding entry indexes..."))
         conn.execute("CREATE INDEX IF NOT EXISTS idx_entries_id ON entries (id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_entries_suffix ON entries (suffix)")
+
+
+class MigrationTo502(DBMigration):
+    version = 502
+
+    @override
+    @classmethod
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
+        """Migrate DB to DB_VERSION 502."""
+        logger.info(fmt_log("Removing orphaned rows from tables..."))
+        conn.execute("""
+            DELETE FROM tag_entries
+            WHERE entry_id NOT IN (SELECT id FROM entries) OR tag_id NOT IN (SELECT id FROM tags)
+        """)
+        conn.execute("DELETE FROM text_fields WHERE entry_id NOT IN (SELECT id FROM entries)")
+        conn.execute("DELETE FROM datetime_fields WHERE entry_id NOT IN (SELECT id FROM entries)")
+        conn.execute("""
+            DELETE FROM category_exclusions
+            WHERE tag_id NOT IN (SELECT id FROM tags) OR category_id NOT IN (SELECT id FROM tags)
+        """)
+        conn.execute("""
+            UPDATE tags SET color_namespace = NULL, color_slug = NULL
+            WHERE (color_namespace, color_slug) NOT IN (SELECT namespace, slug FROM tag_colors)
+        """)
+
+        # NOTE: These two indexes are used alongside the foreign key constraints.
+        # See: https://www.sqlite.org/foreignkeys.html#fk_indexes
+        logger.info(fmt_log("Adding field indexes..."))
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_text_fields_entry_id ON text_fields (entry_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_datetime_fields_entry_id ON datetime_fields (entry_id)"
+        )

@@ -211,12 +211,12 @@ class QtDriver(DriverMixin, QObject):
         self.rm: ResourceManager = ResourceManager()
 
         # State Management
-        self._library_pool = QThreadPool(self)
-        self._library_pool.setMaxThreadCount(1)
+        self.library_pool = QThreadPool(self)
+        self.library_pool.setMaxThreadCount(1)
         self._library_session_id = 0
         self._open_library_finished.connect(self._on_open_library_finished)
         self._library_loaded.connect(self._on_library_loaded)
-        self.entry_state = EntryState(self.lib, self._library_pool)
+        self.entry_state = EntryState(self.lib, self.library_pool)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
 
         # Thumbnail Grid
@@ -418,6 +418,9 @@ class QtDriver(DriverMixin, QObject):
         )
         tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
         tsp.search_for_tag.connect(self.search_for_tag_callback)
+        tsp.remove_tag_requested.connect(
+            lambda tag_id: self.library_pool.start(partial(self.lib.remove_tag, tag_id))
+        )
         self.tag_manager = Modal(tsp, Translations["tag_manager.title"])
 
         # Initialize the Color Group Manager panel
@@ -737,19 +740,21 @@ class QtDriver(DriverMixin, QObject):
             pending.append((origin_id_, Path(origin_path)))
         else:
             for item in selected:
-                entry = unwrap(self.lib.get_entry(item))
+                entry = self.lib.get_entry(item)
+                if entry is None:
+                    continue
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
         if pending and self.delete_file_confirmation(len(pending), pending[0][1]):
-            for e_id, f in pending:
+            for _, f in pending:
                 if (origin_path == f) or (not origin_path):
                     self.main_window.inspector.stop_media_playback()
 
-                if e_id is not None:
-                    self.lib.remove_entries([e_id])
                 delete_file(library_dir / f)
 
+            entry_ids = [e_id for e_id, _ in pending if e_id is not None]
+            self.library_pool.start(partial(self.lib.remove_entries, entry_ids))
             self.selection.clear()
             self.update_browsing_state()
 
@@ -1255,7 +1260,7 @@ class QtDriver(DriverMixin, QObject):
                 error = e
             self._search_finished.emit(search_id, results, error, time.time() - start_time)
 
-        self._library_pool.start(search)
+        self.library_pool.start(search)
 
     def _on_search_finished(
         self,
@@ -1498,7 +1503,7 @@ class QtDriver(DriverMixin, QObject):
                 )
             self._open_library_finished.emit(session_id, path, open_status)
 
-        self._library_pool.start(_open)
+        self.library_pool.start(_open)
 
     def _on_open_library_finished(
         self, session_id: int, path: Path, open_status: OpenLibraryResult
@@ -1574,7 +1579,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.set_library_actions_enabled(True)
         self.main_window.inspector.update_from_selection()
         self.update_browsing_state()
-        self._library_pool.start(partial(self._library_loaded.emit, self._library_session_id))
+        self.library_pool.start(partial(self._library_loaded.emit, self._library_session_id))
 
         return open_status
 

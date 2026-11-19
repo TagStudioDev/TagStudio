@@ -5,7 +5,7 @@
 from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import QStringListModel, Qt, QThreadPool, Signal
+from PySide6.QtCore import QStringListModel, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -97,7 +97,6 @@ class RemoveUnlinkedEntriesModal(QWidget):
         pw.show()
 
         r = CustomRunnable(self.tracker.remove_unlinked_entries)
-        QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
                 pw.hide(),
@@ -105,6 +104,7 @@ class RemoveUnlinkedEntriesModal(QWidget):
                 self.done.emit(),
             )
         )
+        self.driver.library_pool.start(r)
 
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802

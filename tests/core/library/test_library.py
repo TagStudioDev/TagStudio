@@ -8,14 +8,17 @@ from tempfile import TemporaryDirectory
 
 import pytest
 import structlog
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.fields import (
     DatetimeField,
     TextField,
 )
+from tagstudio.core.library.alchemy.joins import CategoryExclusion
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias, TagColorGroup
+from tagstudio.core.library.alchemy.models import Entry, Namespace, Tag, TagAlias, TagColorGroup
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
@@ -275,6 +278,23 @@ def test_remove_tag(library: Library, generate_tag: Callable[..., Tag]):
     assert len(library.tags) == tag_count - 1
 
 
+@pytest.mark.parametrize("removed_tag_id", [123, 124])
+def test_remove_tag_removes_its_category_exclusions(
+    library: Library, generate_tag: Callable[..., Tag], removed_tag_id: int
+):
+    unwrap(library.add_tag(generate_tag("category", id=123, is_category=True)))
+    unwrap(library.add_tag(generate_tag("excluder", id=124), exclusion_ids={123}))
+
+    library.remove_tag(removed_tag_id)
+
+    with Session(library.engine) as session:
+        assert not session.scalars(
+            select(CategoryExclusion).where(
+                CategoryExclusion.tag_id == 124, CategoryExclusion.category_id == 123
+            )
+        ).all()
+
+
 def test_search_library_case_insensitive(library: Library):
     # Given
     entries = list(library.all_entries(with_joins=True))
@@ -348,8 +368,9 @@ def test_update_entry_with_multiple_identical_text_fields(library: Library, entr
 
     # Then only one should be updated
     entry = next(library.all_entries(with_joins=True))
-    assert entry.text_fields[0].value == ""
-    assert entry.text_fields[1].value == "new value"
+    values = {field.id: field.value for field in entry.text_fields}
+    assert values.pop(title_field.id) == "new value"
+    assert list(values.values()) == [""]
 
 
 def test_mirror_entry_fields(library: Library):
@@ -464,6 +485,16 @@ def test_remove_tags_from_entries(library: Library, entry_full: Entry):
 
     entry = next(library.all_entries(with_joins=True))
     assert removed_tag_id not in [t.id for t in entry.tags]
+
+
+def test_remove_entries_removes_their_tags_and_fields(library: Library):
+    assert library.add_field_to_entries(2, field=DatetimeField(name="Date", value=None))
+    library.remove_entries([2])
+
+    assert library.get_tag_entries([2000], [2]) == {2000: set()}
+    with Session(library.engine) as session:
+        assert not session.scalars(select(TextField).where(TextField.entry_id == 2)).all()
+        assert not session.scalars(select(DatetimeField).where(DatetimeField.entry_id == 2)).all()
 
 
 @pytest.mark.parametrize(
@@ -671,3 +702,36 @@ def test_update_color_reports_tags_using_it(library: Library, generate_tag: Call
 
     assert 123 in edited[0]
     assert 124 not in edited[0]
+
+
+def test_tags_lose_deleted_color(library: Library, generate_tag: Callable[..., Tag]):
+    library.add_namespace(Namespace("custom", "Custom"))
+    color = unwrap(
+        library.add_color(
+            TagColorGroup(slug="teal", namespace="custom", name="Teal", primary="#008080")
+        )
+    )
+    library.add_tag(generate_tag("teal tag", id=123, color_namespace="custom", color_slug="teal"))
+
+    library.delete_color(color)
+    library.add_color(
+        TagColorGroup(slug="teal", namespace="custom", name="Teal", primary="#008080")
+    )
+
+    assert unwrap(library.get_tag(123)).color is None
+
+
+def test_tags_lose_colors_of_deleted_namespace(library: Library, generate_tag: Callable[..., Tag]):
+    library.add_namespace(Namespace("custom", "Custom"))
+    library.add_color(
+        TagColorGroup(slug="teal", namespace="custom", name="Teal", primary="#008080")
+    )
+    library.add_tag(generate_tag("teal tag", id=123, color_namespace="custom", color_slug="teal"))
+
+    library.delete_namespace("custom")
+    library.add_namespace(Namespace("custom", "Custom"))
+    library.add_color(
+        TagColorGroup(slug="teal", namespace="custom", name="Teal", primary="#008080")
+    )
+
+    assert unwrap(library.get_tag(123)).color is None

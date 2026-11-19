@@ -91,7 +91,11 @@ class TileList(InsetFrame):
         """Update tags and fields from a single Entry source."""
         logger.warning("[TileList] Updating Selection", entry_id=entry_id)
 
-        entry = unwrap(self.lib.get_entry_full(entry_id))
+        entry = self.lib.get_entry_full(entry_id)
+        if entry is None:
+            self.cached_entries = []
+            self.hide_containers()
+            return
         self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields)
 

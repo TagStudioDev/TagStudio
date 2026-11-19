@@ -230,8 +230,8 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
     ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
         driver.lib = library
-        driver._library_pool = mock_thread_pool
-        driver.entry_state = EntryState(library, driver._library_pool)
+        driver.library_pool = mock_thread_pool
+        driver.entry_state = EntryState(library, driver.library_pool)
 
         driver.app = Mock()
         driver.main_window = Mock()

@@ -20,11 +20,15 @@ CWD = Path(__file__)
 FIXTURES = "fixtures"
 EMPTY_LIBRARIES = "empty_libraries"
 ENTRY_INDEXES = {"idx_entries_id", "idx_entries_suffix"}
+FIELD_INDEXES = {"idx_text_fields_entry_id", "idx_datetime_fields_entry_id"}
 
 
-def entries_index_names(sql_path: Path) -> set[str]:
+def index_names(sql_path: Path) -> set[str]:
     with closing(sqlite3.connect(sql_path)) as connection:
-        return {row[1] for row in connection.execute("PRAGMA index_list(entries)")}
+        return {
+            row[0]
+            for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'index'")
+        }
 
 
 def pragma_value(sql_path: Path, pragma: str) -> object:
@@ -127,7 +131,7 @@ def test_migration_to_501_adds_entry_indexes(tmp_path: Path):
         assert library.open_library(library_dir=tmp_path).success
     finally:
         library.close()
-    assert entries_index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= ENTRY_INDEXES
+    assert index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= ENTRY_INDEXES
 
 
 def test_new_library_has_entry_indexes(tmp_path: Path):
@@ -136,7 +140,27 @@ def test_new_library_has_entry_indexes(tmp_path: Path):
         assert library.open_library(library_dir=tmp_path).success
     finally:
         library.close()
-    assert entries_index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= ENTRY_INDEXES
+    assert index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= ENTRY_INDEXES
+
+
+def test_migration_to_502_adds_field_indexes(tmp_path: Path):
+    copy_fixture_library(CWD.parents[2] / FIXTURES / EMPTY_LIBRARIES / "DB_VERSION_202", tmp_path)
+
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+    finally:
+        library.close()
+    assert index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= FIELD_INDEXES
+
+
+def test_new_library_has_field_indexes(tmp_path: Path):
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+    finally:
+        library.close()
+    assert index_names(tmp_path / TS_FOLDER_NAME / SQL_FILENAME) >= FIELD_INDEXES
 
 
 def test_migration_to_501_sets_32_kb_page_size(tmp_path: Path):
@@ -206,6 +230,64 @@ def test_new_library_prevents_entry_id_reuse(tmp_path: Path):
         assert library.add_entries([Entry(path=Path("new.txt"), fields=[])])[0] != removed_id
     finally:
         library.close()
+
+
+@pytest.mark.parametrize(
+    ("orphaned_data", "count_query"),
+    [
+        (
+            "INSERT INTO tag_entries (tag_id, entry_id) VALUES (1, 99999)",
+            "SELECT count(*) FROM tag_entries WHERE entry_id = 99999",
+        ),
+        (
+            "INSERT INTO tag_entries (tag_id, entry_id) VALUES (99999, 1)",
+            "SELECT count(*) FROM tag_entries WHERE tag_id = 99999",
+        ),
+        (
+            "INSERT INTO text_fields (name, entry_id, value, is_multiline) "
+            "VALUES ('Title', 99999, 'Title', 0)",
+            "SELECT count(*) FROM text_fields WHERE entry_id = 99999",
+        ),
+        (
+            "INSERT INTO datetime_fields (name, entry_id) VALUES ('Date', 99999)",
+            "SELECT count(*) FROM datetime_fields WHERE entry_id = 99999",
+        ),
+        (
+            "INSERT INTO category_exclusions (tag_id, category_id) VALUES (99999, 1)",
+            "SELECT count(*) FROM category_exclusions WHERE tag_id = 99999",
+        ),
+        (
+            "INSERT INTO category_exclusions (tag_id, category_id) VALUES (1, 99999)",
+            "SELECT count(*) FROM category_exclusions WHERE category_id = 99999",
+        ),
+        (
+            "UPDATE tags SET color_namespace = 'deleted', color_slug = 'deleted' WHERE id = 1",
+            "SELECT count(*) FROM tags WHERE color_slug = 'deleted'",
+        ),
+    ],
+)
+def test_migration_to_502_removes_orphaned_data(
+    tmp_path: Path, orphaned_data: str, count_query: str
+):
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+        library.add_entries([Entry(id=1, path=Path("entry.txt"), fields=[])])
+    finally:
+        library.close()
+    with closing(sqlite3.connect(tmp_path / TS_FOLDER_NAME / SQL_FILENAME)) as connection:
+        connection.execute(orphaned_data)
+        assert connection.execute(count_query).fetchone()[0] == 1
+        connection.execute("UPDATE versions SET value = 501 WHERE key = 'CURRENT'")
+        connection.commit()
+
+    library = Library()
+    try:
+        assert library.open_library(library_dir=tmp_path).success
+    finally:
+        library.close()
+    with closing(sqlite3.connect(tmp_path / TS_FOLDER_NAME / SQL_FILENAME)) as connection:
+        assert connection.execute(count_query).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize(
