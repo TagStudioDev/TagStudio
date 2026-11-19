@@ -475,7 +475,12 @@ class Library:
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
     ) -> OpenLibraryResult:
         if not in_memory:
-            Library._use_wal_if_supported(library_dir / TS_FOLDER_NAME / sql_filename)
+            db_path = library_dir / TS_FOLDER_NAME / sql_filename
+            # NOTE: The page size needs to be written before WAL mode is set to take effect
+            with closing(sqlite3.connect(db_path, autocommit=True)) as conn:
+                conn.execute("PRAGMA page_size = 32768")
+                conn.execute("VACUUM")
+            Library._use_wal_if_supported(db_path)
         self.engine = self._get_engine(library_dir, in_memory, sql_filename)
 
         logger.info(
@@ -561,6 +566,10 @@ class Library:
                 text(
                     "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
                 )
+            )
+            session.execute(text("CREATE INDEX IF NOT EXISTS idx_entries_id ON entries (id)"))
+            session.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_entries_suffix ON entries (suffix)")
             )
 
             session.commit()
@@ -836,7 +845,7 @@ class Library:
                     contains_eager(Entry.tags),
                 )
 
-            stmt = stmt.distinct()
+            stmt = stmt.distinct().order_by(Entry.id)
 
             entries = session.execute(stmt).scalars()
             if with_joins:

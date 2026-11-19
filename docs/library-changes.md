@@ -166,7 +166,7 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ---
 
-### Versions 200 - 2xx
+### Versions 200 - 202
 
 #### Version 200
 
@@ -202,6 +202,8 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 - Applies repairs to the `tag_parents` table, removing rows that reference child tags that have been deleted.
 
+---
+
 ### Version 300
 
 | Added in Commit                          | Introduced in Release                                                   | Format |
@@ -211,10 +213,37 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 - Drops `folder` columns from the `entries` table.
 - Drops the unused `folders` table.
 
+---
+
 ### Version 400
+
+| Added in Commit                          | Introduced in Release                                                   | Format |
+| ---------------------------------------- | ----------------------------------------------------------------------- | ------ |
+| 3fe7922642e569c69dc6d247991f708f2b053ddc | [v9.6.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.6.4) | SQLite |
+
+- Adds the `category_exclusion` table.
+
+---
+
+### Versions 500 - 5xx
+
+#### Version 500
+
+| Added in Commit                          | Introduced in Release | Format |
+| ---------------------------------------- | --------------------- | ------ |
+| 3b1328130af51498f3dbd32e70994d8cf8e2f4d6 | _None_                | SQLite |
+
+- Rebuilds the `date_created` and `date_modified` columns in the `entries` table with `REAL`/`float` types instead of `DATETIME`.
+- Adds an `INTEGER` `file_size` column in the `entries` table.
+- Normalizes the `path`, `filename`, and `suffix` columns in the `entries` table to [Unicode Normalization Form D (NFD)](https://unicode.org/reports/tr15/#Norm_Forms).
+- Adds a `!*/` line after the first `*` line in the `.ts_ignore` file (if one isn't already present) to align with proper [`.gitignore`](https://git-scm.com/docs/gitignore) behavior.
+
+#### Version 501
 
 | Added in Commit | Introduced in Release | Format |
 | --------------- | --------------------- | ------ |
 | TBD             | TBD                   | SQLite |
 
-- Adds the `category_exclusion` table.
+- Rebuilds the `entries` table with an `AUTOINCREMENT` primary key.
+- Changes the database [page size](https://www.sqlite.org/fileformat.html#page_size) to 32 KB.
+- Adds the `idx_entries_id` and `idx_entries_suffix` indexes to the `entries` table.

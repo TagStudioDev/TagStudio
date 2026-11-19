@@ -197,8 +197,9 @@ class Tag(Base):
 
 class Entry(Base):
     __tablename__ = "entries"
+    __table_args__ = {"sqlite_autoincrement": True}
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     filename: Mapped[str] = mapped_column()

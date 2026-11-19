@@ -181,6 +181,8 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
     # (Search ID, results or None, error or None, seconds)
     _search_finished = Signal(int, SearchResult, BaseException, float)
+    # (Library session ID, library path, open result)
+    _open_library_finished = Signal(int, Path, OpenLibraryResult)
     _library_loaded = Signal(int)  # Library session ID
 
     tag_manager: Modal | None = None
@@ -212,6 +214,7 @@ class QtDriver(DriverMixin, QObject):
         self._library_pool = QThreadPool(self)
         self._library_pool.setMaxThreadCount(1)
         self._library_session_id = 0
+        self._open_library_finished.connect(self._on_open_library_finished)
         self._library_loaded.connect(self._on_library_loaded)
         self.entry_state = EntryState(self.lib, self._library_pool)
         self.selection: SelectionState[int] = SelectionState(lambda: self.frame_content)
@@ -1458,37 +1461,50 @@ class QtDriver(DriverMixin, QObject):
         )
         if self.lib.library_dir:
             self.close_library()
+        self._library_session_id += 1  # Ignore results of earlier open_library calls
+        session_id = self._library_session_id
 
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.browsing_area.landing_page.set_status_label(message)
         self.main_window.browsing_area.landing_page.show_logo()
-        self.main_window.repaint()
 
         if Library.needs_migration(path):
             message = Translations.format(
                 "splash.migrating_library", library_path=library_dir_display
             )
             self.main_window.browsing_area.landing_page.set_status_label(message)
-            self.main_window.repaint()
 
-        open_status: OpenLibraryResult | None = None
-        try:
-            open_status = self.lib.open_library(path)
-        except ValueError as e:
-            logger.warning(e)
-            open_status = OpenLibraryResult(
-                success=False,
-                library_path=path,
-                error_title=Translations["menu.file.missing_library.title"],
-                error_description=Translations.format(
-                    "menu.file.missing_library.message", library=library_dir_display
-                ),
-            )
-        except Exception as e:
-            logger.error("[QtDriver] Couldn't open library", error=e)
-            open_status = OpenLibraryResult(
-                success=False, library_path=path, error_description=f"{type(e).__name__}: {e}"
-            )
+        def _open() -> None:
+            """Open the library on the library thread pool."""
+            if self.lib.library_dir:  # Left open by an earlier open_library call
+                self.lib.close()
+            open_status: OpenLibraryResult | None = None
+            try:
+                open_status = self.lib.open_library(path)
+            except ValueError as e:
+                logger.warning(e)
+                open_status = OpenLibraryResult(
+                    success=False,
+                    library_path=path,
+                    error_title=Translations["menu.file.missing_library.title"],
+                    error_description=Translations.format(
+                        "menu.file.missing_library.message", library=library_dir_display
+                    ),
+                )
+            except Exception as e:
+                logger.error("[QtDriver] Couldn't open library", error=e)
+                open_status = OpenLibraryResult(
+                    success=False, library_path=path, error_description=f"{type(e).__name__}: {e}"
+                )
+            self._open_library_finished.emit(session_id, path, open_status)
+
+        self._library_pool.start(_open)
+
+    def _on_open_library_finished(
+        self, session_id: int, path: Path, open_status: OpenLibraryResult
+    ) -> None:
+        if session_id != self._library_session_id:
+            return
         self.cache_manager = CacheManager(
             path,
             max_size=self.settings.thumb_cache_size,

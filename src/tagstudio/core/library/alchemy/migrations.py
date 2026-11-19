@@ -112,6 +112,7 @@ class DBMigrations:
             MigrationTo300,  # changes: deletes folders
             MigrationTo400,  # changes: add category_exclusions
             MigrationTo500,  # changes: entries
+            MigrationTo501,  # changes: entries, indexes, page size
         ]
         for migration in migrations:
             if self.loaded_db_version < migration.version and (
@@ -684,3 +685,48 @@ class MigrationTo500(DBMigration):
         # Add "!*/" after the first "*" found, if any
         lines.insert(patterns.index("*") + 1, "!*/")
         ts_ignore.write_text("\n".join(lines) + "\n", encoding="utf8")
+
+
+class MigrationTo501(DBMigration):
+    version = 501
+
+    @override
+    @classmethod
+    def run(cls, conn: Connection, library_dir: Path, fmt_log: LoggingMethod):
+        """Migrate DB to DB_VERSION 501."""
+        logger.info(fmt_log("Rebuilding the entries table with AUTOINCREMENT..."))
+        conn.execute("""
+            CREATE TABLE entries_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                path VARCHAR NOT NULL,
+                filename VARCHAR NOT NULL,
+                suffix VARCHAR NOT NULL,
+                date_created FLOAT,
+                date_modified FLOAT,
+                file_size INTEGER,
+                date_added DATETIME,
+                UNIQUE (path)
+            )
+        """)
+        conn.execute("""
+            INSERT INTO entries_new (
+                id, path, filename, suffix, date_created, date_modified, file_size, date_added
+            )
+            SELECT id, path, filename, suffix, date_created, date_modified, file_size, date_added
+            FROM entries
+        """)
+        conn.execute("DROP TABLE entries")
+        conn.execute("ALTER TABLE entries_new RENAME TO entries")
+
+        logger.info(fmt_log("Changing the page size to 32 KB..."))
+        journal_mode = unwrap(conn.execute("PRAGMA journal_mode").fetchone())[0]
+        conn.autocommit = True
+        conn.execute("PRAGMA journal_mode=DELETE")
+        conn.execute("PRAGMA page_size = 32768")
+        conn.execute("VACUUM")
+        conn.execute(f"PRAGMA journal_mode={journal_mode}")
+        conn.autocommit = False
+
+        logger.info(fmt_log("Adding entry indexes..."))
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_entries_id ON entries (id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_entries_suffix ON entries (suffix)")

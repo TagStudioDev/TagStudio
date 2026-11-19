@@ -14,7 +14,7 @@ JSON_FILENAME: str = "ts_library.json"
 
 DB_VERSION_CURRENT_KEY: str = "CURRENT"
 DB_VERSION_INITIAL_KEY: str = "INITIAL"
-DB_VERSION: int = 500
+DB_VERSION: int = 501
 
 # Interval for how often a search query will check for a cancel signal
 # NOTE: This gets used in the tests via monkey patching
