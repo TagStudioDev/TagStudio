@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import pytest
 import structlog
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
@@ -497,6 +498,11 @@ def test_remove_entries_removes_their_tags_and_fields(library: Library):
         assert not session.scalars(select(DatetimeField).where(DatetimeField.entry_id == 2)).all()
 
 
+def test_library_enforces_foreign_keys(library: Library):
+    with pytest.raises(IntegrityError):
+        library.add_tags_to_entries(99999, 1000)
+
+
 @pytest.mark.parametrize(
     ["query_name", "has_result"],
     [
@@ -702,6 +708,18 @@ def test_update_color_reports_tags_using_it(library: Library, generate_tag: Call
 
     assert 123 in edited[0]
     assert 124 not in edited[0]
+
+
+def test_renamed_color_stays_on_its_tags(library: Library, generate_tag: Callable[..., Tag]):
+    red = unwrap(library.get_tag_color("red", "tagstudio-standard"))
+    library.add_tag(generate_tag("red tag", id=123, color_slug="red"))
+
+    crimson = TagColorGroup(
+        slug="crimson", namespace=red.namespace, name="Crimson", primary=red.primary
+    )
+    library.update_color(red, crimson)
+
+    assert unwrap(library.get_tag(123)).color_slug == "crimson"
 
 
 def test_tags_lose_deleted_color(library: Library, generate_tag: Callable[..., Tag]):

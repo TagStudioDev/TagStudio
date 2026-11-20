@@ -121,16 +121,16 @@ def library(request, library_dir: Path):  # pyright: ignore
         path=Path("foo.txt"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
-    assert lib.add_tags_to_entries(entry.id, tag.id)
 
     entry2 = Entry(
         id=2,
         path=Path("one/two/bar.md"),
         fields=[TextField(name="Title", value="I'm a Test Title")],
     )
-    assert lib.add_tags_to_entries(entry2.id, tag2.id)
 
     assert lib.add_entries([entry, entry2])
+    assert lib.add_tags_to_entries(entry.id, tag.id)
+    assert lib.add_tags_to_entries(entry2.id, tag2.id)
     assert len(lib.tags) == 6
 
     yield lib

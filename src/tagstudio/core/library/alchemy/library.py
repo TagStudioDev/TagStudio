@@ -31,6 +31,7 @@ from sqlalchemy import (
     create_engine,
     delete,
     desc,
+    event,
     func,
     inspect,
     or_,
@@ -461,6 +462,14 @@ class Library:
             logger.warning("[Library] Could not set journal mode", error=e)
 
     @staticmethod
+    def _enable_foreign_keys(connection: sqlite3.Connection, _connection_record: object) -> None:
+        """Turn on foreign key enforcement for a new connection."""
+        # NOTE: SQLite silently ignores this PRAGMA if autocommit is False
+        connection.autocommit = True
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.autocommit = False
+
+    @staticmethod
     def _get_engine(library_dir: Path, in_memory: bool, sql_filename: str):
         db_path = library_dir / TS_FOLDER_NAME / sql_filename
         connection_string = URL.create(
@@ -469,7 +478,9 @@ class Library:
         )
 
         logger.info("[Library] Creating SQLAlchemy Engine", connection_string=connection_string)
-        return create_engine(connection_string, connect_args={"autocommit": False, "timeout": 60})
+        engine = create_engine(connection_string, connect_args={"autocommit": False, "timeout": 60})
+        event.listen(engine, "connect", Library._enable_foreign_keys)
+        return engine
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
@@ -972,15 +983,15 @@ class Library:
                 entry_ids[i : i + MAX_SQL_VARIABLES]
                 for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
             ]:
+                session.execute(delete(TagEntry).where(TagEntry.entry_id.in_(sub_list)))
+                session.execute(delete(TextField).where(TextField.entry_id.in_(sub_list)))
+                session.execute(delete(DatetimeField).where(DatetimeField.entry_id.in_(sub_list)))
                 rows = session.execute(
                     delete(Entry)
                     .where(Entry.id.in_(sub_list))
                     .returning(Entry.id, type_coerce(Entry.path, String).label("path"))
                 )
                 removed_paths.update({row.id: row.path for row in rows})
-                session.execute(delete(TagEntry).where(TagEntry.entry_id.in_(sub_list)))
-                session.execute(delete(TextField).where(TextField.entry_id.in_(sub_list)))
-                session.execute(delete(DatetimeField).where(DatetimeField.entry_id.in_(sub_list)))
             session.commit()
         self._remove_from_path_cache(removed_paths)
 
@@ -1628,8 +1639,6 @@ class Library:
 
                 if not namespace_:
                     raise Exception
-                session.delete(namespace_)
-                session.flush()
 
                 colors = list(
                     session.scalars(
@@ -1645,6 +1654,8 @@ class Library:
                 for color in colors:
                     session.delete(color)
                     session.flush()
+                session.delete(namespace_)
+                session.flush()
 
                 session.commit()
 
@@ -1988,6 +1999,9 @@ class Library:
             )
             if existing_color:
                 edited_tag_ids = self._tag_ids_with_colors(session, [old_color_group])
+                # Defer the foreign key check to the next commit, so the compound key
+                # is allowed to change over the span of two statements (lasts for this transaction)
+                session.execute(text("PRAGMA defer_foreign_keys = ON"))
                 update_color_stmt = (
                     update(TagColorGroup)
                     .where(
