@@ -388,6 +388,9 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
+        self.main_window.show()
+        self.main_window.raise_()
+        self.main_window.activateWindow()
 
         self.splash: SplashScreen = SplashScreen(
             resource_manager=self.rm,
@@ -395,7 +398,7 @@ class QtDriver(DriverMixin, QObject):
             splash_name=self.settings.splash,
             device_ratio=self.main_window.devicePixelRatio(),
         )
-        # self.splash.show() # TODO: Decide if the splash screen should be removed
+        # self.splash.show()  # TODO: Decide if the splash screen should be removed
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
@@ -515,22 +518,13 @@ class QtDriver(DriverMixin, QObject):
         msg_box.exec()
 
     def init_library_window(self):
+        # Browsing and Navigation Signals
         self.main_window.search_bar.search_submitted.connect(self.submit_search)
-
-        # Sorting Dropdowns
         self.main_window.set_sorting_mode(self.browsing_history.current.sorting_mode)
         self.main_window.sorting_mode_changed.connect(self.sorting_mode_callback)
         self.main_window.sorting_direction_changed.connect(self.sorting_direction_callback)
-
-        # Exclude hidden entries checkbox
         self.main_window.show_hidden_entries_changed.connect(self.show_hidden_entries_callback)
-
         self.main_window.navigation_requested.connect(self.navigation_callback)
-
-        # NOTE: Putting this too early will result in a non-responsive white window on start.
-        self.main_window.show()
-        self.main_window.activateWindow()
-
         self.main_window.browsing_area.pagination.index.connect(
             lambda i: self.page_move(i, absolute=True)
         )
@@ -548,7 +542,7 @@ class QtDriver(DriverMixin, QObject):
             self.open_library_from_dialog
         )
 
-        self.splash.finish(self.main_window)
+        # self.splash.finish(self.main_window)
 
     def submit_search(self, query: str) -> None:
         # Clear any banner asking for a manual refresh of the view

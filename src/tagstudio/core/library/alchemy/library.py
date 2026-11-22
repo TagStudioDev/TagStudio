@@ -73,7 +73,6 @@ from tagstudio.core.library.alchemy.constants import (
     DEFAULT_FIELD_TEMPLATES,
     JSON_FILENAME,
     SQL_FILENAME,
-    TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import Base as ModelBase
 from tagstudio.core.library.alchemy.enums import MAX_SQL_VARIABLES, BrowsingState, SortingModeEnum
@@ -99,6 +98,7 @@ from tagstudio.core.library.alchemy.models import (
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.library.tag_cache import CachedTag, TagCache
 from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 from tagstudio.core.utils.normalization import norm_str
 from tagstudio.core.utils.stat import get_date_created, get_date_modified, get_file_size
@@ -244,6 +244,7 @@ class Library:
         self.is_fs_case_sensitive = is_fs_case_sensitive()
         self.tag_edit_callbacks: list[Callable[[set[int]], None]] = []
         self._path_cache_lock = Lock()
+        self._tag_cache = TagCache(self.engine)
 
     def _on_tags_edited(self, tag_ids: set[int]) -> None:
         """Call functions registered to run when one or more tags are edited."""
@@ -272,6 +273,7 @@ class Library:
         self.folder = None
         self.path_cache = None
         self.duplicate_path_entry_ids = None
+        self._tag_cache = TagCache(self.engine)
 
         self.dupe_entries_count = -1
         self.dupe_files_count = -1
@@ -282,6 +284,7 @@ class Library:
         """Migrate JSON library data to the SQLite database."""
         logger.info("Starting Library Conversion...")
         start_time = time.time()
+        self._tag_cache = TagCache(self.engine)
 
         # Tags
         for tag in json_lib.tags:
@@ -385,21 +388,10 @@ class Library:
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
 
-    def tag_display_name(self, tag: Tag | None) -> str:
+    def tag_display_name(self, tag: Tag | CachedTag | None) -> str:
         if not tag:
             return "<NO TAG>"
-
-        if tag.disambiguation_id:
-            with Session(self.engine) as session:
-                disam_tag = session.scalar(select(Tag).where(Tag.id == tag.disambiguation_id))
-                if not disam_tag:
-                    return "<NO DISAM TAG>"
-                disam_name = disam_tag.shorthand
-                if not disam_name:
-                    disam_name = disam_tag.name
-                return f"{tag.name} ({disam_name})"
-        else:
-            return tag.name
+        return self._tag_cache.display_name(tag.name, tag.disambiguation_id)
 
     def open_library(self, library_dir: Path, in_memory: bool = False) -> OpenLibraryResult:
         """Wrapper for open_sqlite_library and create_sqlite_library.
@@ -423,9 +415,13 @@ class Library:
                 )
 
         if is_new:
-            return self.create_sqlite_library(library_dir, in_memory)
-
-        return self.open_sqlite_library(library_dir, in_memory)
+            open_status = self.create_sqlite_library(library_dir, in_memory)
+        else:
+            open_status = self.open_sqlite_library(library_dir, in_memory)
+        if open_status.success:
+            self._tag_cache = TagCache(self.engine)
+            self._tag_cache.load()
+        return open_status
 
     @staticmethod
     def needs_migration(library_dir: Path) -> bool:
@@ -1179,72 +1175,30 @@ class Library:
 
             return result
 
-    def search_tags(self, name: str | None, limit: int = 100) -> tuple[list[Tag], list[Tag]]:
-        """Return a list of Tag records matching the query."""
-        if limit <= 0:
-            limit = sys.maxsize
+    def search_tags(self, query: str | None) -> list[int]:
+        """Return IDs of tags matched by the query. Case-insensitive.
 
-        search_query: str = name.lower() if name else ""
+        Tags are matched by display name, shorthand, aliases, and descendants of matching parents.
+        Names starting with the query come first, shortest first. An empty query returns every tag.
+        """
+        tag_ids = self._tag_cache.search(query or "")
+        logger.info("[Library] Searching tags...", search=query, results=len(tag_ids))
+        return tag_ids
 
-        def sort_key(text: str):
-            priority = text.startswith(search_query)
-            p_ordering = len(text) if priority else sys.maxsize
-            return not priority, p_ordering, text
+    def get_cached_tag(self, tag_id: int) -> CachedTag | None:
+        """Return the cached tag with this ID, or `None` if it's missing."""
+        return self._tag_cache.get(tag_id)
 
-        with Session(self.engine) as session:
-            query = select(Tag.id, Tag.name)
+    def get_tag_ids_by_name(self, name: str) -> set[int]:
+        """Return the IDs of tags with a name, shorthand, or alias equal to this name.
 
-            if limit > 0 and not search_query:
-                query = query.order_by(Tag.name).limit(limit)
+        Case-insensitive. Spaces and underscores are interchangeable.
+        """
+        return self._tag_cache.tag_ids_by_name(name)
 
-            if search_query:
-                query = query.where(
-                    or_(
-                        Tag.name.icontains(search_query),
-                        Tag.shorthand.icontains(search_query),
-                    )
-                )
-
-            tags = list(session.execute(query))
-
-            if search_query:
-                query = select(TagAlias.tag_id, TagAlias.name).where(
-                    TagAlias.name.icontains(search_query)
-                )
-                tags.extend(session.execute(query))
-
-            tags.sort(key=lambda t: sort_key(t[1]))
-            # Use order from Tag.name or TagAlias.name depending on which comes first for each tag.
-            # Value=0 to avoid unnecessary copying of tag names.
-            tag_ids = list(dict((id, 0) for id, _ in tags).keys())
-
-            logger.info(
-                "searching tags",
-                search=search_query,
-                limit=limit,
-                statement=str(query),
-                results=len(tag_ids),
-            )
-            tag_ids = tag_ids[:limit]
-
-            all_ids = set(tag_ids)
-            for tag_id in tag_ids:
-                if len(all_ids) >= limit:
-                    break
-                for id in session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag_id}):
-                    all_ids.add(id)
-                    if len(all_ids) >= limit:
-                        break
-
-            hierarchy = self.get_tag_hierarchy(all_ids)
-
-            direct_tags = [hierarchy.pop(id) for id in tag_ids]
-
-            all_ids.difference_update(tag_ids)
-            descendant_tags = [hierarchy.pop(id) for id in all_ids]
-            descendant_tags.sort(key=lambda t: sort_key(t.name))
-
-            return direct_tags, descendant_tags
+    def get_tag_ids_with_descendants(self, tag_ids: Iterable[int]) -> set[int]:
+        """Return these tag IDs plus the IDs of all their descendant tags."""
+        return self._tag_cache.with_descendants(tag_ids)
 
     def add_field_template(self, field_template: BaseFieldTemplate) -> BaseFieldTemplate | None:
         """Add a new field template to the library."""
@@ -1354,12 +1308,9 @@ class Library:
 
         return True
 
-    def search_field_templates(self, name: str | None, limit: int = 100) -> list[BaseFieldTemplate]:
+    def search_field_templates(self, query: str | None) -> list[BaseFieldTemplate]:
         """Return field template rows matching the query, detached from the session."""
-        if limit <= 0:
-            limit = sys.maxsize
-
-        search_query: str = name.lower() if name else ""
+        search_query: str = query.lower() if query else ""
 
         def sort_key(template: BaseFieldTemplate) -> tuple[str] | tuple[bool, int, str]:
             text = template.name.lower()
@@ -1383,16 +1334,14 @@ class Library:
                 *session.scalars(datetime_stmt),
             ]
             field_templates.sort(key=sort_key)
-            field_templates = field_templates[:limit]
 
             for ft in field_templates:
                 session.expunge(ft)
                 make_transient(ft)
 
             logger.info(
-                "Searching field templates",
+                "[Library] Searching field templates...",
                 search=search_query,
-                limit=limit,
                 results=len(field_templates),
             )
             return field_templates
@@ -1434,6 +1383,20 @@ class Library:
     def remove_tag(self, tag_id: int) -> bool:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
+                edited_tag_ids = {tag_id}
+                edited_tag_ids.update(
+                    session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag_id))
+                )
+                edited_tag_ids.update(
+                    session.scalars(
+                        select(CategoryExclusion.tag_id).where(
+                            CategoryExclusion.category_id == tag_id
+                        )
+                    )
+                )
+                edited_tag_ids.update(
+                    session.scalars(select(Tag.id).where(Tag.disambiguation_id == tag_id))
+                )
                 session.execute(delete(TagAlias).where(TagAlias.tag_id == tag_id))
                 session.execute(delete(TagEntry).where(TagEntry.tag_id == tag_id))
                 session.execute(
@@ -1461,7 +1424,8 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return False
-        self._on_tags_edited({tag_id})
+        self._tag_cache.refresh_tags(edited_tag_ids)
+        self._on_tags_edited(edited_tag_ids)
         return True
 
     def remove_entry_field(
@@ -1561,28 +1525,6 @@ class Library:
 
         return True
 
-    def tag_from_strings(self, strings: list[str] | str) -> list[int]:
-        """Create a Tag from a given string."""
-        # TODO: Port over tag searching with aliases fallbacks
-        # and context clue ranking for string searches.
-        tags: list[int] = []
-
-        if isinstance(strings, str):
-            strings = [strings]
-
-        with Session(self.engine) as session:
-            for string in strings:
-                tag = session.scalar(select(Tag).where(Tag.name == string))
-                if tag:
-                    tags.append(tag.id)
-                else:
-                    new = session.add(Tag(name=string))
-                    if new:
-                        tags.append(new.id)
-                        session.flush()
-            session.commit()
-        return tags
-
     def add_namespace(self, namespace: Namespace) -> bool:
         """Add a namespace value to the library.
 
@@ -1663,6 +1605,7 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return None
+        self._tag_cache.refresh_tags(edited_tag_ids)
         self._on_tags_edited(edited_tag_ids)
 
     def add_tag(
@@ -1692,12 +1635,13 @@ class Library:
 
                 session.commit()
                 session.expunge(tag)
-                return tag
 
             except IntegrityError as e:
                 logger.error(e)
                 session.rollback()
                 return None
+        self._tag_cache.refresh_tags({tag.id})
+        return tag
 
     def add_tags_to_entries(
         self, entry_ids: int | Iterable[int], tag_ids: int | Iterable[int]
@@ -1800,6 +1744,7 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return None
+        self._tag_cache.refresh_tags(edited_tag_ids)
         self._on_tags_edited(edited_tag_ids)
 
     @staticmethod
@@ -1940,11 +1885,12 @@ class Library:
             try:
                 session.add(parent_tag)
                 session.commit()
-                return True
             except IntegrityError:
                 session.rollback()
                 logger.error("IntegrityError")
                 return False
+        self._tag_cache.refresh_tags({child_id})
+        return True
 
     def add_alias(self, name: str, tag_id: int) -> bool:
         with Session(self.engine) as session:
@@ -1959,20 +1905,11 @@ class Library:
             try:
                 session.add(alias)
                 session.commit()
-                return True
             except IntegrityError:
                 session.rollback()
                 logger.error("IntegrityError")
                 return False
-
-    def remove_parent_tag(self, base_id: int, remove_tag_id: int) -> bool:
-        with Session(self.engine) as session:
-            p_id = base_id
-            r_id = remove_tag_id
-            remove = session.query(TagParent).filter_by(parent_id=p_id, child_id=r_id).one()
-            session.delete(remove)
-            session.commit()
-
+        self._tag_cache.refresh_tags({tag_id})
         return True
 
     def update_tag(
@@ -2036,31 +1973,25 @@ class Library:
                 )
                 session.execute(update_tags_stmt)
                 session.commit()
+                self._tag_cache.refresh_tags(edited_tag_ids)
                 self._on_tags_edited(edited_tag_ids)
                 return
 
         # "if not existing_color", out of the session context
         self.add_color(new_color_group)
 
-    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> bool:
+    def update_aliases(self, tag: Tag, aliases: Iterable[TagAlias], session: Session) -> None:
         """Update TagAliases for a given Tag."""
-        unique_alias_names: set[str] = set()
         # Remove aliases that are no longer on the Tag
-        try:
-            old_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
-            unique_alias_names = set([x.name for x in old_aliases])
-            old_alias_ids: list[int] = [a.id for a in old_aliases]
-            for old_alias in old_aliases:
-                if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
-                    logger.warning(
-                        "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
-                    )
-                    session.delete(old_alias)
-            session.commit()
-        except IntegrityError as e:
-            session.rollback()
-            logger.error("[Library] Could not update aliases", error=e)
-            return False
+        old_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
+        unique_alias_names = set([x.name for x in old_aliases])
+        old_alias_ids: list[int] = [a.id for a in old_aliases]
+        for old_alias in old_aliases:
+            if old_alias.id not in [a.id for a in aliases] or not old_alias.name:
+                logger.warning(
+                    "[Library] Deleting removed alias", id=old_alias.id, name=old_alias.name
+                )
+                session.delete(old_alias)
 
         # Update or Add aliases
         for alias in aliases:
@@ -2069,20 +2000,11 @@ class Library:
             if not alias.name or alias.name in unique_alias_names:
                 continue
 
-            try:
-                if alias.id in old_alias_ids:
-                    stmt = update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
-                    session.execute(stmt)
-                else:
-                    session.add(alias)
-            except IntegrityError as e:
-                session.rollback()
-                logger.error("[Library] Could not update or add alias", error=e)
-                return False
-
-        session.commit()
-
-        return True
+            if alias.id in old_alias_ids:
+                stmt = update(TagAlias).where(TagAlias.id == alias.id).values(name=alias.name)
+                session.execute(stmt)
+            else:
+                session.add(alias)
 
     def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
         if tag.id in parent_ids:

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from typing import Any, override
+from typing import override
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -21,24 +21,6 @@ from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
 logger = structlog.get_logger(__name__)
 
 _ROW_HEIGHT = CapsuleView.HEIGHT + HALF_PAD  # Each capsule and the gap below it
-
-
-def _item_id(item: object) -> int:
-    item_id: Any = getattr(item, "id")  # noqa: B009
-
-    if isinstance(item_id, int):
-        return item_id
-    else:
-        raise AttributeError()
-
-
-def _item_name(item: object) -> str:
-    item_name: Any = getattr(item, "name")  # noqa: B009
-
-    if isinstance(item_name, str):
-        return item_name
-    else:
-        raise AttributeError()
 
 
 class SearchPanel[T](ModalContent):
@@ -192,9 +174,6 @@ class SearchPanel[T](ModalContent):
     def _on_item_chosen(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def _is_excluded(self, item: T) -> bool:
-        return _item_id(item) in self._excluded
-
     def update_items(self, query: str | None = None) -> None:
         """Update the item list given a search query."""
         logger.info("[SearchPanel] Updating items...")
@@ -206,7 +185,7 @@ class SearchPanel[T](ModalContent):
             if search_id != self._search_id:
                 return
             try:
-                items = self.items_for_query(query)
+                items = self.search_items(query)
             except Exception as e:
                 logger.error("[SearchPanel] Error searching items", query=query, error=e)
                 return
@@ -214,32 +193,6 @@ class SearchPanel[T](ModalContent):
 
         self._search_pool.clear()
         self._search_pool.start(search)
-
-    def items_for_query(self, query: str | None) -> list[T]:
-        """Get the items returned by the search query."""
-        # Get results for the search query
-        query_lower = "" if not query else query.lower()
-        search_results: tuple[list[T], list[T]] = self.search_items(query_lower)
-
-        # Sort and prioritize the results
-        direct_results = list({item for item in search_results[0] if not self._is_excluded(item)})
-        direct_results.sort(key=lambda item: _item_name(item).lower())
-
-        ancestor_results = list({item for item in search_results[1] if not self._is_excluded(item)})
-        ancestor_results.sort(key=lambda item: _item_name(item).lower())
-
-        raw_results = list(direct_results + ancestor_results)
-        priority_results: set[T] = set()
-
-        if query and query.strip():
-            for raw_item in raw_results:
-                if _item_name(raw_item).lower().startswith(query_lower):
-                    priority_results.add(raw_item)
-
-        all_results: list[T] = sorted(list(priority_results), key=lambda i: len(_item_name(i))) + [
-            item for item in raw_results if item not in priority_results
-        ]
-        return all_results
 
     def _on_items_found(self, search_id: int, query: str, items: list[T]) -> None:
         if search_id != self._search_id:
@@ -302,7 +255,7 @@ class SearchPanel[T](ModalContent):
                 item_widget.setHidden(False)
                 self.set_item_widget(self._search_results[row], row)
 
-    def search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
+    def search_items(self, query: str | None) -> list[T]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def set_item_widget(self, item: T, index: int) -> None:  # pyright: ignore[reportUnusedParameter]

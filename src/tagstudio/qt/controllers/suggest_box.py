@@ -35,15 +35,6 @@ def _item_id(item: object) -> int:
         raise AttributeError()
 
 
-def _item_name(item: object) -> str:
-    item_name: Any = getattr(item, "name")  # noqa: B009
-
-    if isinstance(item_name, str):
-        return item_name
-    else:
-        raise AttributeError()
-
-
 class SuggestBox[T](QWidget):
     item_chosen = Signal(object)
     done = Signal(str)  # Query
@@ -60,7 +51,6 @@ class SuggestBox[T](QWidget):
         self._search_results: list[T] = []
         self._selection_index = 0
         self.added: list[int] = []
-        self.excluded: list[int] = []
         self._effect = WidgetEffects()
         self._search_id = 0  # Generation of the search, used to invalidate stale searches
         self._shown_search_id = 0
@@ -253,9 +243,6 @@ class SuggestBox[T](QWidget):
     def _on_item_chosen(self, item: T) -> None:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
-    def _is_excluded(self, item: T) -> bool:
-        return _item_id(item) in self.excluded
-
     def _is_selected_item_added(self) -> bool:
         return bool(
             len(self._search_results) > self._selection_index
@@ -285,7 +272,7 @@ class SuggestBox[T](QWidget):
             if search_id != self._search_id:
                 return
             try:
-                items = self._items_for_query(query)
+                items = self._search_items(query)
             except Exception as e:
                 logger.error("[SearchPanel] Error searching items", query=query, error=e)
                 return
@@ -293,43 +280,6 @@ class SuggestBox[T](QWidget):
 
         self._search_pool.clear()
         self._search_pool.start(search)
-
-    def _items_for_query(self, query: str | None) -> list[T]:
-        """Get the items returned by the search query."""
-        # Get results for the search query
-        query_lower = "" if not query else query.lower()
-        search_results: tuple[list[T], list[T]] = self._search_items(query_lower)
-
-        # Sort and prioritize the results
-        direct_results = list({item for item in search_results[0] if not self._is_excluded(item)})
-        direct_results.sort(key=lambda item: _item_name(item).lower())
-
-        ancestor_results = list({item for item in search_results[1] if not self._is_excluded(item)})
-        ancestor_results.sort(key=lambda item: _item_name(item).lower())
-
-        raw_results = list(direct_results + ancestor_results)
-        priority_results: set[T] = set()
-
-        if query and query.strip():
-            for raw_item in raw_results:
-                if _item_name(raw_item).lower().startswith(query_lower):
-                    priority_results.add(raw_item)
-
-        all_results: list[T] = sorted(list(priority_results), key=lambda i: len(_item_name(i))) + [
-            item for item in raw_results if item not in priority_results
-        ]
-
-        # Target items already added to a selection and move them to the end of the list
-        if self._settings.sort_added_tags_last:
-            already_added: list[T] = [i for i in all_results if _item_id(i) in self.added]
-            for item in already_added:
-                if item in all_results:
-                    all_results.remove(item)
-            all_results = all_results + already_added
-
-        if self._limit > 0:
-            all_results = all_results[: self._limit]
-        return all_results
 
     def _on_items_found(self, search_id: int, items: list[T]) -> None:
         if search_id != self._search_id:
@@ -370,7 +320,7 @@ class SuggestBox[T](QWidget):
             self._effect.paint_focus_ring(painter, self.rect(), RADIUS)
         painter.end()
 
-    def _search_items(self, query: str) -> tuple[list[T], list[T]]:  # pyright: ignore[reportUnusedParameter]
+    def _search_items(self, query: str | None) -> list[T]:  # pyright: ignore[reportUnusedParameter]
         raise NotImplementedError()
 
     def _set_item_widget(self, item: T | None, index: int) -> None:  # pyright: ignore[reportUnusedParameter]

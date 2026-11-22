@@ -9,7 +9,8 @@ from PySide6.QtCore import QPoint, QRect, QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPainterPath, QPaintEvent
 from PySide6.QtWidgets import QCheckBox, QWidget
 
-from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.tag_cache import CachedTag, TagColor
 from tagstudio.qt.views.capsule_view import CapsuleView
 from tagstudio.qt.views.styles.palette import shade
 from tagstudio.qt.views.styles.stylesheets import (
@@ -63,7 +64,7 @@ class Badge(QCheckBox):
         super().__init__()
         self._underlay_widget: QWidget | None = None
         self._underlay_brush: QBrush | None = None
-        self._color_group: TagColorGroup | None = None
+        self._color_group: TagColorGroup | TagColor | None = None
         self._effect = WidgetEffects()
         self._icon = icon
         self._is_circular = is_circular
@@ -71,12 +72,12 @@ class Badge(QCheckBox):
         self.setFixedSize(self.SIZE, self.SIZE)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover)
 
-    def set_tag(self, tag: Tag | None) -> None:
+    def set_tag(self, tag: CachedTag | None) -> None:
         """Show a tag's color and name."""
         self.setToolTip(tag.name if tag else "")
         self.set_color_group(tag.color if tag else None)
 
-    def set_color_group(self, color_group: TagColorGroup | None) -> None:
+    def set_color_group(self, color_group: TagColorGroup | TagColor | None) -> None:
         self._color_group = color_group
         self.update()
 

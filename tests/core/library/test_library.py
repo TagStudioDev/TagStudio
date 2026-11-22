@@ -175,6 +175,13 @@ def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
     assert tag_inc.id > 1000
 
 
+def test_add_tag_adds_nothing_on_failure(library: Library):
+    cat_tag = Tag(name="Cat")
+    assert library.add_tag(cat_tag, aliases={TagAlias(name="Kitty")}, exclusion_ids={-1}) is None
+
+    assert "Cat" not in {tag.name for tag in library.tags}
+
+
 def test_tag_self_parent(library: Library, generate_tag: Callable[..., Tag]):
     # tag already exists
     assert library.add_tag(generate_tag("foo", id=1000)) is None
@@ -204,10 +211,14 @@ def test_library_search(library: Library, entry_full: Entry):
 def test_tag_search(library: Library):
     tag = library.tags[0]
 
-    assert library.search_tags(tag.name.lower())[0]
-    assert library.search_tags(tag.name.upper())[0]
-    assert library.search_tags(tag.name[2:-2])[0]
-    assert library.search_tags(tag.name * 2) == ([], [])
+    assert library.search_tags(tag.name.lower())
+    assert library.search_tags(tag.name.upper())
+    assert library.search_tags(tag.name[2:-2])
+    assert library.search_tags(tag.name * 2) == []
+
+
+def test_tag_search_without_query_includes_all_tags(library: Library):
+    assert set(library.search_tags("")) == {tag.id for tag in library.tags}
 
 
 def test_get_entry(library: Library, entry_min: Entry):

@@ -340,7 +340,7 @@ class ItemThumb(QWidget):
 
     def update_badge_tag(self, tag_id: int) -> None:
         """Update the current name and color of a badge's tag."""
-        self.layout().badges[tag_id].set_tag(self._driver.entry_state.badge_tag(tag_id))
+        self.layout().badges[tag_id].set_tag(self._lib.get_cached_tag(tag_id))
 
     def assign_badge(self, tag_id: int, value: bool) -> None:
         badge = self.layout().badges[tag_id]

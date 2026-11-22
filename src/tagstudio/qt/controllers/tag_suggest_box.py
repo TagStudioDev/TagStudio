@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.tag_cache import CachedTag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import AppSettings
@@ -26,7 +27,7 @@ from tagstudio.qt.views.styles.tag_icons import tag_icon
 logger = structlog.get_logger(__name__)
 
 
-class TagSuggestBox(SuggestBox[Tag]):
+class TagSuggestBox(SuggestBox[CachedTag]):
     search_for_tag = Signal(int)
 
     def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
@@ -87,12 +88,15 @@ class TagSuggestBox(SuggestBox[Tag]):
         else:
             tag = Tag(name=query)
             self._lib.add_tag(tag)
-            self._on_item_chosen(tag)
+            self._choose_tag(tag.id)
             self._clear_search_query()
 
     @override
-    def _on_item_edit(self, item: Tag) -> None:
-        edit_tag_panel: EditTagPanel = EditTagPanel(self._lib, tag=item)
+    def _on_item_edit(self, item: CachedTag) -> None:
+        tag = self._lib.get_tag(item.id)
+        if tag is None:
+            return
+        edit_tag_panel: EditTagPanel = EditTagPanel(self._lib, tag=tag)
         modal: Modal = Modal(
             edit_tag_panel, Translations["tag.edit"], is_savable=True, inline_title=False
         )
@@ -100,8 +104,11 @@ class TagSuggestBox(SuggestBox[Tag]):
         modal.show()
 
     @override
-    def _on_item_chosen(self, item: Tag) -> None:
-        self.item_chosen.emit(item.id)
+    def _on_item_chosen(self, item: CachedTag) -> None:
+        self._choose_tag(item.id)
+
+    def _choose_tag(self, tag_id: int) -> None:
+        self.item_chosen.emit(tag_id)
         self._clear_search_query()
         self.done.emit("*")  # The query does not matter
 
@@ -125,14 +132,19 @@ class TagSuggestBox(SuggestBox[Tag]):
             self.set_hint_icon(None)
 
     @override
-    def _search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
-        if query != "":
-            return self._lib.search_tags(name=query, limit=0)
-        else:
-            return ([], [])
+    def _search_items(self, query: str | None) -> list[CachedTag]:
+        if not query:
+            return []
+        tag_ids = self._lib.search_tags(query)
+        if self._settings.sort_added_tags_last:
+            tag_ids.sort(key=lambda tag_id: tag_id in self.added)
+        if self._limit > 0:
+            tag_ids = tag_ids[: self._limit]
+        tags = (self._lib.get_cached_tag(tag_id) for tag_id in tag_ids)
+        return [tag for tag in tags if tag is not None]
 
     @override
-    def _set_item_widget(self, item: Tag | None, index: int) -> None:
+    def _set_item_widget(self, item: CachedTag | None, index: int) -> None:
         """Set the tag of a tag widget at a specific index."""
         underlined_widget: UnderlinedWidget = self._get_item_widget(index)
         capsule = underlined_widget.widget
@@ -177,7 +189,7 @@ class TagSuggestBox(SuggestBox[Tag]):
                 aliases=edit_item_panel.aliases,
                 exclusion_ids=edit_item_panel.exclusion_ids,
             )
-            self._on_item_chosen(tag)
+            self._choose_tag(tag.id)
 
         edit_item_panel.hide()
         self._on_search_query_changed(self.layout().search_field.text())

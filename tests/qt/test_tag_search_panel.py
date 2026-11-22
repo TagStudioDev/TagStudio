@@ -48,9 +48,9 @@ def test_capsule_actions_replaced_correctly(qtbot: QtBot, library: Library):
     qtbot.addWidget(panel)
 
     # Set the widget
-    tags = library.tags
+    tag = library.search_tags("")[0]
     panel.update_items()
-    panel.set_item_widget(tags[0], 0)
+    panel.set_item_widget(tag, 0)
     capsule: Capsule = panel.get_item_widget(0)
 
     should_replace_actions = {
@@ -61,7 +61,7 @@ def test_capsule_actions_replaced_correctly(qtbot: QtBot, library: Library):
     ensure_one_receiver_per_action(should_replace_actions)
 
     # Set the widget again
-    panel.set_item_widget(tags[0], 0)
+    panel.set_item_widget(tag, 0)
 
     # Ensure each action has been replaced (amount of receivers is still 1)
     ensure_one_receiver_per_action(should_replace_actions)

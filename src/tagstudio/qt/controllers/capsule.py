@@ -9,6 +9,7 @@ from PySide6.QtGui import QAction, QColor, QEnterEvent, QMouseEvent, QPainter, Q
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.tag_cache import TagColor
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.views.capsule_view import CapsuleView
@@ -42,7 +43,7 @@ class Capsule(QWidget):
         is_dashed: bool = False,
     ) -> None:
         super().__init__()
-        self._color_group: TagColorGroup | None = None
+        self._color_group: TagColorGroup | TagColor | None = None
         self._colors = capsule_colors(None)
         self._effect = WidgetEffects()
         self._icon: bytes | None = None
@@ -117,7 +118,7 @@ class Capsule(QWidget):
     def set_text(self, text: str) -> None:
         self.layout().button.setText(escape_text(text))
 
-    def set_color_group(self, color_group: TagColorGroup | None) -> None:
+    def set_color_group(self, color_group: TagColorGroup | TagColor | None) -> None:
         """Set the colors from a tag color group, or the default tag colors if `None`."""
         self._color_group = color_group
         self._colors = capsule_colors(color_group)

@@ -7,12 +7,10 @@ from typing import TYPE_CHECKING, override
 
 import structlog
 from sqlalchemy import ColumnElement, and_, distinct, false, func, literal, or_, select
-from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
-from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
-from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
+from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.media_types import MediaTypeGroup, MediaTypes
 from tagstudio.core.query_lang.ast import (
     AST,
@@ -151,26 +149,16 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
 
     def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
         """Given a tag name find the ids of all tags that this name could refer to."""
-        with Session(self.lib.engine) as session:
-            tag_ids = list(
-                session.scalars(
-                    select(Tag.id)
-                    .where(or_(Tag.name.ilike(tag_name), Tag.shorthand.ilike(tag_name)))
-                    .union(select(TagAlias.tag_id).where(TagAlias.name.ilike(tag_name)))
-                )
+        tag_ids = self.lib.get_tag_ids_by_name(tag_name)
+        if len(tag_ids) > 1:
+            logger.debug(
+                f'Tag Constraint "{tag_name}" is ambiguous, {len(tag_ids)} matching tags found',
+                tag_ids=tag_ids,
+                include_children=include_children,
             )
-            if len(tag_ids) > 1:
-                logger.debug(
-                    f'Tag Constraint "{tag_name}" is ambiguous, {len(tag_ids)} matching tags found',
-                    tag_ids=tag_ids,
-                    include_children=include_children,
-                )
-            if not include_children:
-                return tag_ids
-            outp: list[int] = []
-            for tag_id in tag_ids:
-                outp.extend(list(session.scalars(TAG_CHILDREN_ID_QUERY, {"tag_id": tag_id})))
-            return outp
+        if not include_children:
+            return list(tag_ids)
+        return list(self.lib.get_tag_ids_with_descendants(tag_ids))
 
     def __separate_tags(
         self, terms: list[AST], only_single: bool = True

@@ -26,6 +26,7 @@ from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FO
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
+from tagstudio.core.library.tag_cache import CachedTag, TagCache, TagCacheData
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.entry_state import EntryState
@@ -135,6 +136,38 @@ def library(request, library_dir: Path):  # pyright: ignore
 
     yield lib
 
+    # NOTE: Catches tag writes that don't update the tag cache
+    _assert_tag_cache_matches_database(lib)
+
+
+def _assert_tag_cache_matches_database(library: Library) -> None:
+    """Fail if an open library's tag cache differs from a new read of the database."""
+    if library.library_dir is not None:
+        new_data = TagCache(library.engine).load()
+        assert _tag_cache_contents(library._tag_cache.load()) == _tag_cache_contents(new_data)
+
+
+def _tag_cache_contents(data: TagCacheData) -> tuple[object, ...]:
+    return (
+        {
+            tag_id: CachedTag(
+                tag.id,
+                tag.name,
+                tag.shorthand,
+                tag.aliases,
+                tag.color,
+                tag.disambiguation_id,
+                tag.is_category,
+                tag.parent_ids,
+                tuple(sorted(tag.exclusion_ids)),
+            )
+            for tag_id, tag in data.tags.items()
+        },
+        data.names,
+        data.joined_aliases,
+        {tag_id: sorted(child_ids) for tag_id, child_ids in data.children.items()},
+    )
+
 
 @pytest.fixture
 def search_library(tmp_path: Path) -> Generator[Library]:
@@ -147,6 +180,7 @@ def search_library(tmp_path: Path) -> Generator[Library]:
     status = lib.open_library(tmp_path)
     assert status.success
     yield lib
+    _assert_tag_cache_matches_database(lib)
     lib.close()
 
 

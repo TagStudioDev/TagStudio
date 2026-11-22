@@ -83,11 +83,13 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
         self.done.emit("*")
 
     @override
-    def _search_items(self, query: str) -> tuple[list[BaseFieldTemplate], list[BaseFieldTemplate]]:
-        if query != "":
-            return self._lib.search_field_templates(name=query, limit=0), []
-        else:
-            return ([], [])
+    def _search_items(self, query: str | None) -> list[BaseFieldTemplate]:
+        if not query:
+            return []
+        field_templates = self._lib.search_field_templates(query)
+        if self._limit > 0:
+            field_templates = field_templates[: self._limit]
+        return field_templates
 
     @override
     def _update_hint_icon(self) -> None:

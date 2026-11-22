@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QGuiApplication
 from tagstudio.core.enums import ThemePalette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.tag_cache import TagColor
 from tagstudio.core.utils.singleton import Singleton
 from tagstudio.qt.views.styles.palette import (
     ColorType,
@@ -447,7 +448,9 @@ def header(string: str, level: int, color: str | None = None) -> str:
     return f"<h{level}{style_tag}>{string}</h{level}>"
 
 
-def tag_colors(color_group: TagColorGroup | None) -> tuple[QColor, QColor, QColor, QColor]:
+def tag_colors(
+    color_group: TagColorGroup | TagColor | None,
+) -> tuple[QColor, QColor, QColor, QColor]:
     """Return the primary, border, highlight, and text colors for a tag color group."""
     primary = QColor(
         color_group.primary
@@ -468,7 +471,7 @@ def tag_colors(color_group: TagColorGroup | None) -> tuple[QColor, QColor, QColo
 
 
 def capsule_colors(
-    color_group: TagColorGroup | None,
+    color_group: TagColorGroup | TagColor | None,
 ) -> tuple[QColor, QColor | None, QColor, QColor]:
     """Return a Capsule's fill, border (only if the tag has one), highlight, and text colors."""
     if color_group is None:

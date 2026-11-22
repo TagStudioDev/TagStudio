@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
-from sqlalchemy import text
-
 from tagstudio.core.library.alchemy.fields import (
     DatetimeFieldTemplate,
     TextFieldTemplate,
@@ -19,28 +17,6 @@ DB_VERSION: int = 502
 # Interval for how often a search query will check for a cancel signal
 # NOTE: This gets used in the tests via monkey patching
 CANCEL_SEARCH_INTERVAL: int = 100_000
-
-TAG_CHILDREN_QUERY = text("""
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS tag_id
-    UNION
-    SELECT tp.child_id AS tag_id
-    FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
-)
-SELECT * FROM ChildTags;
-""")
-
-TAG_CHILDREN_ID_QUERY = text("""
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS tag_id
-    UNION
-    SELECT tp.child_id AS tag_id
-    FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
-)
-SELECT tag_id FROM ChildTags;
-""")
 
 
 DEFAULT_FIELD_TEMPLATES = (

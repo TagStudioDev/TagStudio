@@ -12,7 +12,6 @@ from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers import edit_tag_panel  # Module import due to circular import
@@ -27,7 +26,7 @@ from tagstudio.qt.views.styles.tag_icons import tag_icon
 logger = structlog.get_logger(__name__)
 
 
-class TagSearchPanel(SearchPanel[Tag]):
+class TagSearchPanel(SearchPanel[int]):
     search_for_tag = Signal(int)
     remove_tag_requested = Signal(int)
     _tags_edited = Signal(set)
@@ -88,24 +87,31 @@ class TagSearchPanel(SearchPanel[Tag]):
         modal.show()
 
     @override
-    def on_item_edit(self, item: Tag) -> None:
-        panel = edit_tag_panel.EditTagPanel(self._lib, tag=item)
+    def on_item_edit(self, item: int) -> None:
+        tag = self._lib.get_tag(item)
+        if tag is None:
+            return
+        panel = edit_tag_panel.EditTagPanel(self._lib, tag=tag)
         modal: Modal = Modal(panel, Translations["tag.edit"], is_savable=True, inline_title=False)
         modal.saved.connect(lambda: self.edit_item(panel))
         modal.show()
 
     @override
-    def _on_item_remove(self, item: Tag) -> None:
+    def _on_item_remove(self, item: int) -> None:
         if self._is_chooser:
             return
 
-        if item.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
+        if item in range(RESERVED_TAG_START, RESERVED_TAG_END):
+            return
+
+        tag = self._lib.get_cached_tag(item)
+        if tag is None:
             return
 
         message_box = QMessageBox(
             QMessageBox.Icon.Warning,
             Translations["tag.remove"],
-            Translations.format("tag.confirm_delete", tag_name=self._lib.tag_display_name(item)),
+            Translations.format("tag.confirm_delete", tag_name=self._lib.tag_display_name(tag)),
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
         unwrap(message_box.button(QMessageBox.StandardButton.Ok)).setText(
@@ -121,15 +127,15 @@ class TagSearchPanel(SearchPanel[Tag]):
         if result != QMessageBox.StandardButton.Ok:
             return
 
-        self.remove_tag_requested.emit(item.id)
+        self.remove_tag_requested.emit(item)
 
     @override
-    def _on_item_chosen(self, item: Tag) -> None:
-        self.item_chosen.emit(item.id)
+    def _on_item_chosen(self, item: int) -> None:
+        self.item_chosen.emit(item)
 
     @override
-    def search_items(self, query: str) -> tuple[list[Tag], list[Tag]]:
-        return self._lib.search_tags(name=query, limit=-1)
+    def search_items(self, query: str | None) -> list[int]:
+        return [tag_id for tag_id in self._lib.search_tags(query) if tag_id not in self._excluded]
 
     @override
     def _update_item_widgets(self) -> None:
@@ -140,13 +146,17 @@ class TagSearchPanel(SearchPanel[Tag]):
         super()._update_item_widgets()
 
     @override
-    def set_item_widget(self, item: Tag, index: int) -> None:
+    def set_item_widget(self, item: int, index: int) -> None:
         """Set the tag for a capsule widget at a specific index."""
         capsule = self.get_item_widget(index)
-        capsule.set_text(self._lib.tag_display_name(item))
-        capsule.set_color_group(item.color)
-        capsule.set_icon(tag_icon(item.id))
-        capsule.has_remove = not self._is_chooser and item.id not in range(
+        tag = self._lib.get_cached_tag(item)
+        capsule.setHidden(tag is None)
+        if tag is None:
+            return
+        capsule.set_text(self._lib.tag_display_name(tag))
+        capsule.set_color_group(tag.color)
+        capsule.set_icon(tag_icon(item))
+        capsule.has_remove = not self._is_chooser and item not in range(
             RESERVED_TAG_START, RESERVED_TAG_END
         )
 
@@ -158,13 +168,13 @@ class TagSearchPanel(SearchPanel[Tag]):
             capsule.on_search.disconnect()
 
         # Connect callbacks
-        capsule.on_edit.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
-        capsule.on_remove.connect(lambda remove_tag=item: self._on_item_remove(remove_tag))
+        capsule.on_edit.connect(lambda tag_id=item: self.on_item_edit(tag_id))
+        capsule.on_remove.connect(lambda tag_id=item: self._on_item_remove(tag_id))
         if self._is_chooser:
-            capsule.on_click.connect(lambda tag=item: self._on_item_chosen(tag))
+            capsule.on_click.connect(lambda tag_id=item: self._on_item_chosen(tag_id))
         else:
-            capsule.on_click.connect(lambda edit_tag=item: self.on_item_edit(edit_tag))
-        capsule.on_search.connect(lambda tag_id=item.id: self.search_for_tag.emit(tag_id))
+            capsule.on_click.connect(lambda tag_id=item: self.on_item_edit(tag_id))
+        capsule.on_search.connect(lambda tag_id=item: self.search_for_tag.emit(tag_id))
 
     @override
     def create_item(self, edit_item_panel: ModalContent) -> None:

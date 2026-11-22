@@ -109,8 +109,8 @@ class FieldTemplateSearchPanel(SearchPanel[BaseFieldTemplate]):
         self.field_template_chosen.emit(item)
 
     @override
-    def search_items(self, query: str) -> tuple[list[BaseFieldTemplate], list[BaseFieldTemplate]]:
-        return self.__lib.search_field_templates(name=query, limit=-1), []
+    def search_items(self, query: str | None) -> list[BaseFieldTemplate]:
+        return self.__lib.search_field_templates(query)
 
     @override
     def set_item_widget(self, item: BaseFieldTemplate, index: int) -> None:

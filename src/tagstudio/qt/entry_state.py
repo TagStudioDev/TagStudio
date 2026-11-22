@@ -9,7 +9,6 @@ from PySide6.QtCore import QCoreApplication, QEvent, QObject, QThreadPool, Signa
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
 
 logger = structlog.get_logger(__name__)
 
@@ -38,12 +37,11 @@ class EntryState(QObject):
             tag_id: set() for tag_id in self._badge_tag_ids
         }
         self._badges_loaded: set[int] = set()
-        self._badge_tags: dict[int, Tag | None] = {}
         # [(Entry IDs, Added Tag IDs, Removed Tag IDs)]
         self._pending_writes: list[tuple[set[int], set[int], set[int]]] = []
         self._write_pool = write_pool
         self._write_finished.connect(self._on_write_finished)
-        library.tag_edit_callbacks.append(self._on_tags_edited)
+        library.tag_edit_callbacks.append(self.tags_edited.emit)
 
     @property
     def badge_tag_ids(self) -> tuple[int, ...]:
@@ -57,7 +55,7 @@ class EntryState(QObject):
             self.cache_badges(entry_ids, tag_entries)
 
     def cache_badges(self, entry_ids: Iterable[int], tag_entries: dict[int, set[int]]) -> None:
-        """Store which entries have tags used for badges, as given by `tag_entries`."""
+        """Cache which entries have tags used for badges, as given by `tag_entries`."""
         entry_ids = set(entry_ids)
         for tag_id, entries in self._entries_with_badge.items():
             entries.difference_update(entry_ids)
@@ -68,18 +66,6 @@ class EntryState(QObject):
         for entries in self._entries_with_badge.values():
             entries.clear()
         self._badges_loaded.clear()
-        self._badge_tags.clear()
-
-    def _on_tags_edited(self, tag_ids: set[int]) -> None:
-        for tag_id in tag_ids:
-            self._badge_tags.pop(tag_id, None)
-        self.tags_edited.emit(tag_ids)
-
-    def badge_tag(self, tag_id: int) -> Tag | None:
-        """The tag a badge represents, for its name and color."""
-        if tag_id not in self._badge_tags:
-            self._badge_tags[tag_id] = self._lib.get_tag(tag_id)
-        return self._badge_tags[tag_id]
 
     def has_badge(self, entry_id: int, tag_id: int) -> bool:
         if tag_id not in self._entries_with_badge:
@@ -87,10 +73,10 @@ class EntryState(QObject):
             return False
         if entry_id not in self._badges_loaded:
             self.load_badges([entry_id])
-        stored_tag_ids: set[int] = (
+        cached_tag_ids: set[int] = (
             {tag_id} if entry_id in self._entries_with_badge[tag_id] else set()
         )
-        return tag_id in self.tag_ids_with_pending_writes(entry_id, stored_tag_ids)
+        return tag_id in self.tag_ids_with_pending_writes(entry_id, cached_tag_ids)
 
     def set_tag(self, entry_ids: int | Iterable[int], tag_id: int, value: bool) -> None:
         if value:
@@ -116,7 +102,7 @@ class EntryState(QObject):
         QCoreApplication.sendPostedEvents(self, QEvent.Type.MetaCall)
 
     def tag_ids_with_pending_writes(self, entry_id: int, tag_ids: set[int]) -> set[int]:
-        """Apply an entry's pending tag writes to its stored tag IDs."""
+        """Apply an entry's pending tag writes to its cached tag IDs."""
         tag_ids = set(tag_ids)
         for entry_ids, added_tag_ids, removed_tag_ids in self._pending_writes:
             if entry_id in entry_ids:
