@@ -37,6 +37,7 @@ class EntryState(QObject):
             tag_id: set() for tag_id in self._badge_tag_ids
         }
         self._badges_loaded: set[int] = set()
+        self._cached_entry_tag_ids: dict[int, set[int]] = {}
         # [(Entry IDs, Added Tag IDs, Removed Tag IDs)]
         self._pending_writes: list[tuple[set[int], set[int], set[int]]] = []
         self._write_pool = write_pool
@@ -101,6 +102,15 @@ class EntryState(QObject):
         self._write_pool.waitForDone()
         QCoreApplication.sendPostedEvents(self, QEvent.Type.MetaCall)
 
+    def cache_entry_tags(self, entry_tag_ids: dict[int, set[int]]) -> None:
+        """Cache the tag IDs of these entries."""
+        self._cached_entry_tag_ids = entry_tag_ids
+
+    def entry_tag_ids(self, entry_id: int) -> set[int]:
+        """Return a cached entry's tag IDs with its pending tag writes applied."""
+        cached_tag_ids = self._cached_entry_tag_ids.get(entry_id, set())
+        return self.tag_ids_with_pending_writes(entry_id, cached_tag_ids)
+
     def tag_ids_with_pending_writes(self, entry_id: int, tag_ids: set[int]) -> set[int]:
         """Apply an entry's pending tag writes to its cached tag IDs."""
         tag_ids = set(tag_ids)
@@ -143,6 +153,7 @@ class EntryState(QObject):
         self._pending_writes.remove((entry_ids, added_tag_ids, removed_tag_ids))
         if success:
             self._update_badges(entry_ids, added_tag_ids, removed_tag_ids)
+            self._update_cached_entry_tags(entry_ids, added_tag_ids, removed_tag_ids)
         self.entry_tags_changed.emit(entry_ids)
 
     def _update_badges(
@@ -152,3 +163,10 @@ class EntryState(QObject):
             self._entries_with_badge[tag_id].update(entry_ids)
         for tag_id in removed_tag_ids.intersection(self._badge_tag_ids):
             self._entries_with_badge[tag_id].difference_update(entry_ids)
+
+    def _update_cached_entry_tags(
+        self, entry_ids: set[int], added_tag_ids: set[int], removed_tag_ids: set[int]
+    ) -> None:
+        for entry_id in entry_ids.intersection(self._cached_entry_tag_ids):
+            self._cached_entry_tag_ids[entry_id].update(added_tag_ids)
+            self._cached_entry_tag_ids[entry_id].difference_update(removed_tag_ids)

@@ -9,7 +9,7 @@ from functools import partial
 from typing import override
 
 import structlog
-from PySide6.QtCore import QCoreApplication, QEvent, Qt
+from PySide6.QtCore import QCoreApplication, QEvent, Qt, QThreadPool, Signal
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import QMessageBox, QWidget
 
@@ -20,7 +20,8 @@ from tagstudio.core.library.alchemy.fields import (
     TextField,
 )
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.tag_cache import CachedTag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations, field_type_name
 from tagstudio.qt.controllers.edit_text import EditText
@@ -42,13 +43,25 @@ logger = structlog.get_logger(__name__)
 class TileList(InsetFrame):
     """A styled list of Tile widgets."""
 
+    _entry_loaded = Signal(int, object)  # (Preview Session ID, Entry or None)
+
     def __init__(self, library: Library, driver: QtDriver) -> None:
         super().__init__()
 
         self.lib = library
         self.driver: QtDriver = driver
-        self.cached_entries: list[Entry] = []
+
+        self._loading_entry_id: int | None = None
+        self._on_loaded: list[Callable[[], None]] = []
+        self._preview_session_id = 0  # Used to invalidate stale selection data
+        self._shown_contents: tuple[object, ...] | None = None
+        self._shown_tag_ids: list[int] = []
         self._tiles: list[Tile] = []
+        self.cached_entries: list[Entry] = []
+
+        self._load_pool = QThreadPool(self)
+        self._load_pool.setMaxThreadCount(1)
+        self._entry_loaded.connect(self._on_entry_loaded)
 
         # TODO: Reimplement mixed entry editing
 
@@ -87,26 +100,76 @@ class TileList(InsetFrame):
         """Get the topmost entry ID in the (cached) selected entries."""
         return self.cached_entries[0].id
 
-    def update_from_entry(self, entry_id: int) -> None:
+    def update_from_entry(self, entry_id: int, on_loaded: Callable[[], None] | None = None) -> None:
         """Update tags and fields from a single Entry source."""
         logger.warning("[TileList] Updating Selection", entry_id=entry_id)
+        if entry_id != self._loading_entry_id:
+            self._on_loaded.clear()
+        self._loading_entry_id = entry_id
+        if on_loaded is not None:
+            self._on_loaded.append(on_loaded)
+        self._preview_session_id += 1
+        preview_session_id = self._preview_session_id
 
-        entry = self.lib.get_entry_full(entry_id)
+        def load() -> None:
+            if preview_session_id != self._preview_session_id:
+                return
+            try:
+                entry = self.lib.get_entry_full(entry_id)
+            except Exception as e:
+                logger.error("[TileList] Could not load entry", entry_id=entry_id, error=e)
+                entry = None
+            self._entry_loaded.emit(preview_session_id, entry)
+
+        self._load_pool.clear()
+        self._load_pool.start(load)
+
+    def _on_entry_loaded(self, preview_session_id: int, entry: Entry | None) -> None:
+        if preview_session_id != self._preview_session_id:
+            return
+        on_loaded = self._on_loaded
+        self._on_loaded = []
         if entry is None:
             self.cached_entries = []
             self.hide_containers()
-            return
-        self.cached_entries = [entry]
-        self.update_granular(entry.tags, entry.fields)
+        else:
+            self.cached_entries = [entry]
+            self.driver.entry_state.cache_entry_tags({entry.id: {tag.id for tag in entry.tags}})
+            self._show_entry(entry)
+        for callback in on_loaded:
+            callback()
 
-    def update_granular(self, entry_tags: set[Tag], entry_fields: list[BaseField]) -> None:
+    def show_current_tags(self, entry_id: int) -> None:
+        """Show the entry's current tags from EntryState."""
+        if self.cached_entries and self.cached_entries[0].id == entry_id:
+            self._show_entry(self.cached_entries[0])
+
+    def _show_entry(self, entry: Entry) -> None:
+        """Show the entry's tags and fields."""
+        tags: list[CachedTag] = []
+        for tag_id in sorted(self.driver.entry_state.entry_tag_ids(entry.id)):
+            tag = self.lib.get_cached_tag(tag_id)
+            if tag is not None:
+                tags.append(tag)
+
+        contents = (entry.id, *tags, *((field.id, field) for field in entry.fields))
+        if contents == self._shown_contents:
+            return
+        self._shown_contents = contents
+        self._shown_tag_ids = [tag.id for tag in tags]
+        self.update_granular(tags, entry.fields)
+
+    def update_granular(self, entry_tags: list[CachedTag], entry_fields: list[BaseField]) -> None:
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
         container_index = 0
         # Write tag container(s)
         if entry_tags:
             categories = self.get_tag_categories(entry_tags)
-            for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
+            for cat, tags in sorted(
+                categories.items(),
+                key=lambda item: (item[0] is None, item[0].name if item[0] is not None else ""),
+            ):
                 self.write_tag_tile(container_index, tags=tags, category_tag=cat, is_mixed=False)
                 container_index += 1
                 container_len += 1
@@ -135,10 +198,14 @@ class TileList(InsetFrame):
 
     def hide_containers(self) -> None:
         """Hide all field and tag containers."""
+        self._preview_session_id += 1
+        self._on_loaded.clear()
+        self._shown_tag_ids = []
+        self._shown_contents = None
         for c in self._tiles:
             c.setHidden(True)
 
-    def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
+    def get_tag_categories(self, tags: list[CachedTag]) -> dict[CachedTag | None, set[CachedTag]]:
         """Get a dictionary of category tags mapped to their respective tags.
 
         Example:
@@ -149,35 +216,33 @@ class TileList(InsetFrame):
         """
         loop_cutoff = 1024  # Used for stopping the while loop
 
-        hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
-        categories: dict[Tag | None, set[Tag]] = {None: set()}
+        categories: dict[CachedTag | None, set[CachedTag]] = {None: set()}
 
-        for tag in hierarchy_tags.values():
-            if tag.is_category:
-                categories[tag] = set()
         for tag in tags:
-            tag = hierarchy_tags[tag.id]
             has_category_parent = False
-            parent_tags = tag.parent_tags
+            parent_ids = tag.parent_ids
 
             loop_counter = 0
-            while len(parent_tags) > 0:
+            while len(parent_ids) > 0:
                 # NOTE: This is for preventing infinite loops in the event a tag is parented
                 # to itself cyclically.
                 loop_counter += 1
                 if loop_counter >= loop_cutoff:
                     break
 
-                grandparent_tags: set[Tag] = set()
-                for parent_tag in parent_tags:
-                    if parent_tag in categories and parent_tag.id not in tag.exclusion_ids:
-                        categories[parent_tag].add(tag)
+                grandparent_ids: set[int] = set()
+                for parent_id in parent_ids:
+                    parent_tag = self.lib.get_cached_tag(parent_id)
+                    if parent_tag is None:
+                        continue
+                    if parent_tag.is_category and parent_tag.id not in tag.exclusion_ids:
+                        categories.setdefault(parent_tag, set()).add(tag)
                         has_category_parent = True
-                    grandparent_tags.update(parent_tag.parent_tags)
-                parent_tags = grandparent_tags
+                    grandparent_ids.update(parent_tag.parent_ids)
+                parent_ids = tuple(grandparent_ids)
 
             if tag.is_category and tag.id not in tag.exclusion_ids:
-                categories[tag].add(tag)
+                categories.setdefault(tag, set()).add(tag)
             elif not has_category_parent:
                 categories[None].add(tag)
 
@@ -373,14 +438,18 @@ class TileList(InsetFrame):
         container.setHidden(False)
 
     def write_tag_tile(
-        self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
+        self,
+        index: int,
+        tags: set[CachedTag],
+        category_tag: CachedTag | None = None,
+        is_mixed: bool = False,
     ) -> None:
         """Update/Create tag data for a tag Tile.
 
         Args:
             index(int): The container index.
-            tags(set[Tag]): The list of tags for this container.
-            category_tag(Tag|None): The category tag this container represents.
+            tags(set[CachedTag]): The list of tags for this container.
+            category_tag(CachedTag|None): The category tag this container represents.
             is_mixed(bool): Relevant when multiple items are selected.
                 If True, field is not present in all selected items.
         """
@@ -461,10 +530,4 @@ class TileList(InsetFrame):
 
     @property
     def tags(self) -> list[int]:
-        if len(self.cached_entries) <= 0:
-            return []
-        entry = self.cached_entries[0]
-        entry_ = self.lib.get_entry_full(entry.id, with_fields=False)
-        if not entry_:
-            return []
-        return [tag.id for tag in entry_.tags]
+        return list(self._shown_tag_ids)

@@ -11,7 +11,7 @@ from PySide6.QtCore import Signal
 
 from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.tag_cache import CachedTag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.capsule import Capsule
@@ -48,7 +48,7 @@ class TagData(TileData):
     def set_entries(self, entries: list[int]) -> None:
         self._entries = entries
 
-    def set_tags(self, tags: Iterable[Tag]) -> None:
+    def set_tags(self, tags: Iterable[CachedTag]) -> None:
         tags_ = sorted(list(tags), key=lambda tag: self._lib.tag_display_name(tag))
         logger.info("[TagData] Tags:", tags=tags)
 
@@ -75,7 +75,7 @@ class TagData(TileData):
             layout.addWidget(capsule)
             capsule.show()
 
-    def _on_click(self, tag: Tag) -> None:
+    def _on_click(self, tag: CachedTag) -> None:
         match self._driver.settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
@@ -98,13 +98,16 @@ class TagData(TileData):
                     )
                 )
 
-    def _on_remove(self, tag: Tag) -> None:
+    def _on_remove(self, tag: CachedTag) -> None:
         logger.info("[TagData] remove_tag", selected=self._entries)
 
         self._driver.entry_state.remove_tags(self._entries, tag.id)
 
-    def _on_edit(self, tag: Tag) -> None:
-        edit_tag_panel = EditTagPanel(self._driver.lib, tag=tag)
+    def _on_edit(self, tag: CachedTag) -> None:
+        tag_to_edit = self._lib.get_tag(tag.id)
+        if tag_to_edit is None:
+            return
+        edit_tag_panel = EditTagPanel(self._driver.lib, tag=tag_to_edit)
 
         edit_modal = Modal(
             edit_tag_panel, Translations["tag.edit"], is_savable=True, inline_title=False
@@ -121,7 +124,7 @@ class TagData(TileData):
         )
         self.on_update.emit()
 
-    def _on_search(self, tag: Tag) -> None:
+    def _on_search(self, tag: CachedTag) -> None:
         self._driver.main_window.search_bar.set_query(f"tag_id:{tag.id}")
         self._driver.update_browsing_state(
             BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)

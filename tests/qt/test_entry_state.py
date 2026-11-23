@@ -4,6 +4,8 @@
 # pyright: reportPrivateUsage=false
 
 
+from unittest.mock import Mock
+
 from PySide6.QtCore import QRect
 from pytestqt.qtbot import QtBot
 
@@ -43,6 +45,24 @@ def test_unload_badges_rereads_from_library(entry_state: EntryState, library: Li
     library.add_tags_to_entries(1, TAG_ARCHIVED)
     entry_state.unload_badges()
     assert entry_state.has_badge(1, TAG_ARCHIVED)
+
+
+def test_entry_tag_ids_include_pending_tag_writes(library: Library):
+    entry_state = EntryState(library, Mock())  # Never runs the writes
+    entry_state.cache_entry_tags({1: {1000}})
+
+    entry_state.add_tags(1, 2000)
+    entry_state.remove_tags(1, 1000)
+
+    assert entry_state.entry_tag_ids(1) == {2000}
+
+
+def test_entry_tag_ids_include_finished_tag_writes(entry_state: EntryState):
+    entry_state.cache_entry_tags({1: {1000}})
+
+    entry_state.add_tags(1, 2000)
+
+    assert entry_state.entry_tag_ids(1) == {1000, 2000}
 
 
 def test_badge_click_updates_whole_selection(qt_driver: QtDriver, qtbot: QtBot):

@@ -261,6 +261,9 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         # NOTE: Patching the QThreadPool stops Python's garbage collector from causing segfaults
         patch("tagstudio.qt.qt_driver.QThreadPool"),
         patch("tagstudio.qt.controllers.thumb_grid.QThreadPool", return_value=mock_thread_pool),
+        patch(
+            "tagstudio.qt.controllers.tiles.tile_list.QThreadPool", return_value=mock_thread_pool
+        ),
     ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
         driver.lib = library

@@ -110,8 +110,13 @@ class Inspector(QWidget):
     def _on_tags_changed(self, entry_ids: set[int]) -> None:
         selected = self._driver.selection.selected
         if len(selected) == 1 and selected[0] in entry_ids:
-            self.layout().containers.update_from_entry(selected[0])
-            self.layout().tag_search_box.added = self.layout().containers.tags
+            containers = self.layout().containers
+            containers.show_current_tags(selected[0])
+            self._update_added_tags()
+            containers.update_from_entry(selected[0], on_loaded=self._update_added_tags)
+
+    def _update_added_tags(self) -> None:
+        self.layout().tag_search_box.added = self.layout().containers.tags
 
     def _on_tags_edited(self, tag_ids: set[int]) -> None:  # pyright: ignore[reportUnusedParameter]
         self._on_tags_changed(set(self._driver.selection.selected))
@@ -131,7 +136,7 @@ class Inspector(QWidget):
             self.layout().add_field_button.setEnabled(has_selection)
 
         if mode == _ItemMode.TAG:
-            self.layout().tag_search_box.added = self.layout().containers.tags
+            self._update_added_tags()
             self.layout().field_search_box.hide_and_reset()
             self.layout().tag_search_box.setHidden(False)
             hide_and_disable_buttons()
@@ -184,10 +189,10 @@ class Inspector(QWidget):
         if stats.duration is not None:
             self._current_stats.duration = stats.duration
 
-        entry = self._lib.get_entry(selected[0])
-        if entry is None:
+        entries = self.layout().containers.cached_entries
+        if not entries or entries[0].id != selected[0]:
             return
-        self.layout().file_attrs.update_stats(filepath, self._current_stats, entry)
+        self.layout().file_attrs.update_stats(filepath, self._current_stats, entries[0])
         self._lay_out_info_now()
 
     def _set_selection_callback(self) -> None:
@@ -264,36 +269,16 @@ class Inspector(QWidget):
         selected = self._driver.selection.selected
         self._set_item_mode(None)
         try:
-            entry = self._lib.get_entry(selected[0]) if len(selected) == 1 else None
-
-            # No Items Selected (or entry was deleted)
-            if len(selected) <= 1 and entry is None:
-                self.layout().preview_thumb.hide_preview()
-                self._current_stats = None
-                self.layout().file_attrs.update_stats()
-                self.layout().file_attrs.update_dates()
+            # No Items Selected
+            if len(selected) == 0:
+                self._hide_entry_file()
                 self.layout().containers.hide_containers()
 
             # One Item Selected
-            elif entry is not None:
-                entry_id = selected[0]
-
-                filepath: Path = unwrap(self._lib.library_dir) / entry.path
-                if filepath != self.layout().preview_thumb.current_file:
-                    self._current_stats = None
-
-                if update_preview and self.width() == 0:
-                    self.layout().preview_thumb.hide_preview()
-                    self._preview_outdated = True
-                elif update_preview:
-                    self.layout().preview_thumb.display_file(filepath, entry.date_modified)
-                    if self._current_stats is None:
-                        self._current_stats = FileAttributeData()
-                    self.layout().file_attrs.update_stats(
-                        filepath, self._current_stats, entry, reserve_stat_space=True
-                    )
-                self.layout().file_attrs.update_dates(entry)
-                self.layout().containers.update_from_entry(entry_id)
+            elif len(selected) == 1:
+                self.layout().containers.update_from_entry(
+                    selected[0], on_loaded=partial(self._show_entry_file, update_preview)
+                )
                 self._set_selection_callback()
 
             # Multiple Selected Items
@@ -311,6 +296,39 @@ class Inspector(QWidget):
         self._lay_out_info_now()
         self._fit_preview_height()
         self._emit_can_add_tags()
+
+    def _show_entry_file(self, update_preview: bool) -> None:
+        """Show the preview and details of the shown entry's file."""
+        entries = self.layout().containers.cached_entries
+        if not entries:
+            self._hide_entry_file()
+        else:
+            entry = entries[0]
+            filepath: Path = unwrap(self._lib.library_dir) / entry.path
+            if filepath != self.layout().preview_thumb.current_file:
+                self._current_stats = None
+
+            if update_preview and self.width() == 0:
+                self.layout().preview_thumb.hide_preview()
+                self._preview_outdated = True
+            elif update_preview:
+                self.layout().preview_thumb.display_file(filepath, entry.date_modified)
+                if self._current_stats is None:
+                    self._current_stats = FileAttributeData()
+                self.layout().file_attrs.update_stats(
+                    filepath, self._current_stats, entry, reserve_stat_space=True
+                )
+            self.layout().file_attrs.update_dates(entry)
+        self._update_added_tags()
+        self._lay_out_info_now()
+        self._fit_preview_height()
+
+    def _hide_entry_file(self) -> None:
+        """Hide the preview and details of the shown entry's file."""
+        self.layout().preview_thumb.hide_preview()
+        self._current_stats = None
+        self.layout().file_attrs.update_stats()
+        self.layout().file_attrs.update_dates()
 
     def _emit_can_add_tags(self) -> None:
         self.can_add_tags_changed.emit(
