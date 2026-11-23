@@ -112,6 +112,7 @@ class DBMigrations:
             MigrationTo202,  # changes: tag_parents
             MigrationTo300,  # changes: deletes folders
             MigrationTo400,  # changes: add category_exclusions
+            MigrationTo401,  # changes: dark_lavender slug
         ]
         for migration in migrations:
             if self.loaded_db_version < migration.version and (
@@ -224,7 +225,7 @@ class MigrationTo8(DBMigration):
                 "secondary": None,
             },
             {
-                "slug": "dark_lavender",
+                "slug": "dark-lavender",
                 "namespace": "tagstudio-shades",
                 "name": "Dark Lavender",
                 "primary": "#3D3B6C",
@@ -610,4 +611,23 @@ class MigrationTo400(DBMigration):
 
                 PRIMARY KEY (tag_id, category_id)
             )
+        """)
+
+
+class MigrationTo401(DBMigration):
+    version = 401
+
+    @override
+    @classmethod
+    def run(cls, conn: Connection, library_dir: Path, fmt_log):
+        logger.info(fmt_log("Renaming 'dark_lavender' tag color slug to 'dark-lavender'..."))
+        conn.execute("""
+            UPDATE tag_colors
+            SET slug = 'dark-lavender'
+            WHERE namespace = 'tagstudio-shades' AND slug = 'dark_lavender'
+        """)
+        conn.execute("""
+            UPDATE tags
+            SET color_slug = 'dark-lavender'
+            WHERE color_namespace = 'tagstudio-shades' AND color_slug = 'dark_lavender'
         """)

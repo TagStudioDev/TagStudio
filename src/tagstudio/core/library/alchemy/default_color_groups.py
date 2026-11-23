@@ -337,7 +337,7 @@ def shades() -> list[TagColorGroup]:
         primary="#104B98",
     )
     dark_lavender = TagColorGroup(
-        slug="dark_lavender",
+        slug="dark-lavender",
         namespace="tagstudio-shades",
         name="Dark Lavender",
         primary="#3D3B6C",
