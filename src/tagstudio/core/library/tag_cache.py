@@ -152,6 +152,21 @@ class TagCache:
         """Return these tag IDs plus the IDs of all their descendant tags."""
         return _with_descendants(self.load(), tag_ids)
 
+    def with_ancestors(self, tag_ids: Iterable[int]) -> set[int]:
+        """Return these tag IDs plus the IDs of all their ancestor tags."""
+        data = self.load()
+        found = set(tag_ids)
+        unchecked_ids = list(found)
+        while unchecked_ids:
+            tag = data.tags.get(unchecked_ids.pop())
+            if tag is None:
+                continue
+            for parent_id in tag.parent_ids:
+                if parent_id not in found:
+                    found.add(parent_id)
+                    unchecked_ids.append(parent_id)
+        return found
+
     def display_name(self, name: str, disambiguation_id: int | None) -> str:
         """Return the tag name followed by the disambiguation tag's shorthand (if one) or name."""
         return _display_name(self.load(), name, disambiguation_id)
@@ -268,12 +283,12 @@ def _add_tags(data: TagCacheData, tags: dict[int, CachedTag]) -> None:
 
 def _with_descendants(data: TagCacheData, tag_ids: Iterable[int]) -> set[int]:
     found = set(tag_ids)
-    pending = list(found)
-    while pending:
-        for child_id in data.children.get(pending.pop(), ()):
+    unchecked_ids = list(found)
+    while unchecked_ids:
+        for child_id in data.children.get(unchecked_ids.pop(), ()):
             if child_id not in found:
                 found.add(child_id)
-                pending.append(child_id)
+                unchecked_ids.append(child_id)
     return found
 
 

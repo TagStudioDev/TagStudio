@@ -6,7 +6,7 @@
 
 from collections.abc import Callable
 
-from PySide6.QtWidgets import QCheckBox
+from PySide6.QtWidgets import QCheckBox, QVBoxLayout
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
@@ -484,9 +484,36 @@ def test_edit_tag_panel_new_tag_multiple_categories(
 
     panel._add_parent_tag_callback(other_parent.id)
 
-    capsule = _find_category_capsule(panel, 1)
-    assert capsule is not None
-    assert capsule.layout().button.text() == other_parent.name
+    category_names = _capsule_texts(panel.layout().category_scroll_layout)
+    assert category_names == [other_parent.name, parent.name]
+
+
+def test_edit_tag_panel_sorts_parent_tags_by_name(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    banana = unwrap(library.add_tag(generate_tag("Banana", id=123)))
+    apple = unwrap(library.add_tag(generate_tag("apple", id=124)))
+    child = unwrap(library.add_tag(generate_tag("child", id=125, parent_tags={banana, apple})))
+
+    panel: EditTagPanel = EditTagPanel(library, child)
+    qtbot.addWidget(panel)
+
+    parent_names = _capsule_texts(panel.layout().parent_tags_scroll_layout)
+    assert parent_names == ["apple", "Banana"]
+
+
+def test_edit_tag_panel_sorts_categories_by_name(
+    qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
+):
+    banana = unwrap(library.add_tag(generate_tag("Banana", id=123, is_category=True)))
+    apple = unwrap(library.add_tag(generate_tag("apple", id=124, is_category=True)))
+    child = unwrap(library.add_tag(generate_tag("child", id=125, parent_tags={banana, apple})))
+
+    panel: EditTagPanel = EditTagPanel(library, child)
+    qtbot.addWidget(panel)
+
+    category_names = _capsule_texts(panel.layout().category_scroll_layout)
+    assert category_names == ["apple", "Banana"]
 
 
 def test_edit_tag_panel_category_not_shown_for_self(
@@ -577,6 +604,14 @@ def _find_category_capsule(panel: EditTagPanel, index: int = 0) -> Capsule | Non
     if row is None:
         return None
     return row.widget().findChild(Capsule)
+
+
+def _capsule_texts(scroll_layout: QVBoxLayout) -> list[str]:
+    rows = scroll_layout.itemAt(0).widget().layout()
+    return [
+        rows.itemAt(index).widget().findChild(Capsule).layout().button.text()
+        for index in range(rows.count())
+    ]
 
 
 def _find_include_checkbox(capsule: Capsule) -> QCheckBox:

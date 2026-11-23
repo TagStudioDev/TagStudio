@@ -33,7 +33,6 @@ from sqlalchemy import (
     desc,
     event,
     func,
-    inspect,
     or_,
     select,
     text,
@@ -43,12 +42,10 @@ from sqlalchemy import (
 from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import (
-    InstanceState,
     Session,
     contains_eager,
     joinedload,
     make_transient,
-    noload,
     selectinload,
 )
 
@@ -1200,6 +1197,10 @@ class Library:
         """Return these tag IDs plus the IDs of all their descendant tags."""
         return self._tag_cache.with_descendants(tag_ids)
 
+    def get_tag_ids_with_ancestors(self, tag_ids: Iterable[int]) -> set[int]:
+        """Return these tag IDs plus the IDs of all their ancestor tags."""
+        return self._tag_cache.with_ancestors(tag_ids)
+
     def add_field_template(self, field_template: BaseFieldTemplate) -> BaseFieldTemplate | None:
         """Add a new field template to the library."""
         if not (isinstance(field_template, (TextFieldTemplate, DatetimeFieldTemplate))):
@@ -1822,54 +1823,6 @@ class Library:
             )
 
             return session.scalar(statement)
-
-    def get_tag_hierarchy(self, tag_ids: Iterable[int]) -> dict[int, Tag]:
-        """Get a dictionary containing tags in `tag_ids` and all of their ancestor tags."""
-        current_tag_ids: set[int] = set(tag_ids)
-        all_tag_ids: set[int] = set()
-        all_tags: dict[int, Tag] = {}
-        all_tag_parents: dict[int, list[int]] = {}
-
-        with Session(self.engine) as session:
-            while len(current_tag_ids) > 0:
-                all_tag_ids.update(current_tag_ids)
-                statement = select(TagParent).where(TagParent.child_id.in_(current_tag_ids))
-                tag_parents = session.scalars(statement).fetchall()
-                current_tag_ids.clear()
-                for tag_parent in tag_parents:
-                    all_tag_parents.setdefault(tag_parent.child_id, []).append(tag_parent.parent_id)
-                    current_tag_ids.add(tag_parent.parent_id)
-                current_tag_ids = current_tag_ids.difference(all_tag_ids)
-
-            statement = select(Tag).where(Tag.id.in_(all_tag_ids))
-            statement = statement.options(
-                noload(Tag.parent_tags),
-                selectinload(Tag.aliases),
-                selectinload(Tag.category_exclusions),
-                joinedload(Tag.color),
-            )
-            tags = session.scalars(statement).fetchall()
-            for tag in tags:
-                all_tags[tag.id] = tag
-            for tag in all_tags.values():
-                try:
-                    # Sqlalchemy tracks this as a change to the parent_tags field
-                    tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
-                    # When calling session.add with this tag instance sqlalchemy will
-                    # attempt to create TagParents that already exist.
-
-                    state: InstanceState[Tag] = inspect(tag)
-                    # Prevent sqlalchemy from thinking fields are different from what's committed
-                    # committed_state contains original values for fields that have changed.
-                    # empty when no fields have changed
-                    state.committed_state.clear()
-                except KeyError as e:
-                    logger.error(
-                        "[LIBRARY][get_tag_hierarchy] Tag referenced by TagParent does not exist!",
-                        error=e,
-                    )
-
-        return all_tags
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:

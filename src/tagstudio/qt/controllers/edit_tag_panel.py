@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias, TagColorGroup
+from tagstudio.core.library.tag_cache import CachedTag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers import tag_search_panel  # Module import due to circular import
@@ -154,14 +155,14 @@ class EditTagPanel(ModalContent):
     def _add_parent_tag_callback(self, tag_id: int):
         self.parent_ids.add(tag_id)
         self._set_parent_tags()
-        self._set_categories(added_parent_id=tag_id)
+        self._set_categories()
 
     def _remove_parent_tag_callback(self, tag_id: int):
         self.parent_ids.remove(tag_id)
         if tag_id == self._disambiguation_id:
             self._disambiguation_id = None
         self._set_parent_tags()
-        self._set_categories(removed_parent=True)
+        self._set_categories()
 
     def _create_alias_callback(self):
         alias = TagAlias("", tag_id=self.tag.id)
@@ -198,8 +199,11 @@ class EditTagPanel(ModalContent):
             else Translations["color.title.no_color"]
         )
 
-    def _edit_tag(self, tag: Tag, on_saved: Callable[[], None]) -> None:
+    def _edit_tag(self, tag_id: int, on_saved: Callable[[], None]) -> None:
         """Open a nested modal to edit another tag, such as a parent or category."""
+        tag = self._lib.get_tag(tag_id)
+        if tag is None:
+            return
         panel = EditTagPanel(self._lib, tag=tag)
         edit_modal = Modal(panel, Translations["tag.edit"], is_savable=True, inline_title=False)
 
@@ -215,7 +219,7 @@ class EditTagPanel(ModalContent):
         edit_modal.saved.connect(update_tag)
         edit_modal.show()
 
-    def _set_categories(self, added_parent_id: int | None = None, removed_parent: bool = False):
+    def _set_categories(self):
         category_scroll_layout = self.layout().category_scroll_layout
         while category_scroll_layout.itemAt(0):
             category_scroll_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
@@ -231,47 +235,27 @@ class EditTagPanel(ModalContent):
             layout.addWidget(row)
             self.setTabOrder(last_tab, next_tab)
 
-        if removed_parent:
-            tags_by_category: dict[Tag, set[Tag]] = {}
-            hierarchy = set(self._lib.get_tag_hierarchy(self.parent_ids).values())
-            for tag in hierarchy:
-                if tag.is_category:
-                    tags_by_category[tag] = set()
-            for tag in hierarchy:
-                for parent in self._lib.get_tag_hierarchy([tag.id]).values():
-                    if parent in tags_by_category:
-                        if tag == parent and parent.id not in self.parent_ids:
-                            continue
-                        tags_by_category[parent].add(tag)
-
-            for category, tags in tags_by_category.items():
-                if len(tags) == 0:
-                    continue
-
-                last_tab, next_tab, row = self._build_category_row_widget(category)
-                layout.addWidget(row)
-                self.setTabOrder(last_tab, next_tab)
-        else:
-            tag_ids = set(self.parent_ids)
-            if added_parent_id is not None:
-                tag_ids.add(added_parent_id)
-
-            for tag in self._lib.get_tag_hierarchy(tag_ids).values():
-                if not tag.is_category or tag == self.tag:
-                    continue
-                last_tab, next_tab, row = self._build_category_row_widget(tag)
-                layout.addWidget(row)
-                self.setTabOrder(last_tab, next_tab)
+        categories: list[CachedTag] = []
+        for tag_id in self._lib.get_tag_ids_with_ancestors(self.parent_ids):
+            category = self._lib.get_cached_tag(tag_id)
+            if category is not None and category.is_category and category.id != self.tag.id:
+                categories.append(category)
+        for category in sorted(categories, key=lambda tag: tag.name.casefold()):
+            last_tab, next_tab, row = self._build_category_row_widget(category)
+            layout.addWidget(row)
+            self.setTabOrder(last_tab, next_tab)
         _match_capsule_widths(container)
         category_scroll_layout.addWidget(container)
 
-    def _build_category_row_widget(self, category: Tag) -> tuple[QCheckBox, QPushButton, QWidget]:
+    def _build_category_row_widget(
+        self, category: Tag | CachedTag
+    ) -> tuple[QCheckBox, QPushButton, QWidget]:
         container = QWidget()
         row = QHBoxLayout(container)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
 
-        def update_category_exclusion(category_tag: Tag, checked: bool) -> None:
+        def update_category_exclusion(category_tag: Tag | CachedTag, checked: bool) -> None:
             if checked:
                 self.exclusion_ids.remove(category_tag.id)
             else:
@@ -292,11 +276,11 @@ class EditTagPanel(ModalContent):
 
         # Add Tag Capsule
         capsule = Capsule(has_edit=True, is_tag=True)
-        capsule.set_edit_enabled(category != self.tag)  # Disable edit menu if it's THIS tag
+        capsule.set_edit_enabled(category.id != self.tag.id)  # Disable edit menu if it's THIS tag
         capsule.set_text(self._lib.tag_display_name(category))
         capsule.set_color_group(category.color)
         capsule.set_icon(tag_icon(category.id))
-        capsule.on_edit.connect(partial(self._edit_tag, category, self._set_categories))
+        capsule.on_edit.connect(partial(self._edit_tag, category.id, self._set_categories))
         row.addWidget(capsule)
         row.addStretch()
 
@@ -314,12 +298,14 @@ class EditTagPanel(ModalContent):
         last_tab: QWidget = view.aliases_table.cellWidget(view.aliases_table.rowCount() - 1, 1)
         next_tab: QWidget = last_tab
 
+        parent_tags: list[CachedTag] = []
         for parent_id in self.parent_ids:
-            tag = self._lib.get_tag(parent_id)
-            if not tag:
-                continue
-            is_disam = parent_id == self._disambiguation_id
-            last_tab, next_tab, container = self._build_parent_row_widget(tag, parent_id, is_disam)
+            tag = self._lib.get_cached_tag(parent_id)
+            if tag is not None:
+                parent_tags.append(tag)
+        for tag in sorted(parent_tags, key=lambda parent: parent.name.casefold()):
+            is_disam = tag.id == self._disambiguation_id
+            last_tab, next_tab, container = self._build_parent_row_widget(tag, tag.id, is_disam)
             layout.addWidget(container)
             # TODO: Disam buttons after the first currently can't be added due to this error:
             # QWidget::setTabOrder: 'first' and 'second' must be in the same window
@@ -330,7 +316,7 @@ class EditTagPanel(ModalContent):
         view.parent_tags_scroll_layout.addWidget(c)
         self._set_preview_text()
 
-    def _build_parent_row_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
+    def _build_parent_row_widget(self, tag: CachedTag, parent_id: int, is_disambiguation: bool):
         container = QWidget()
         row = QHBoxLayout(container)
         row.setContentsMargins(0, 0, 0, 0)
@@ -359,7 +345,7 @@ class EditTagPanel(ModalContent):
         capsule.set_color_group(tag.color)
         capsule.set_icon(tag_icon(tag.id))
         capsule.on_remove.connect(lambda t=parent_id: self._remove_parent_tag_callback(t))
-        capsule.on_edit.connect(partial(self._edit_tag, tag, self._set_parent_tags))
+        capsule.on_edit.connect(partial(self._edit_tag, tag.id, self._set_parent_tags))
         row.addWidget(capsule)
         row.addStretch()
 
