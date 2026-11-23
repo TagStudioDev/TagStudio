@@ -374,7 +374,7 @@ class MigrationTo104(DBMigration):
             """).fetchone()
         )[0]
 
-        with open(ts_ignore, "w") as f:
+        with open(ts_ignore, "w", encoding="utf-8") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
 
 

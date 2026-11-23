@@ -96,7 +96,7 @@ def migrate_ext_list(exts: list[str], is_exclude_list: bool) -> str:
     ts_ignore_template = (
         Path(__file__).parents[2] / "resources/templates/ts_ignore_template_blank.txt"
     )
-    with open(ts_ignore_template) as f:
+    with open(ts_ignore_template, encoding="utf-8") as f:
         out = f.read()
 
     # actual conversion
