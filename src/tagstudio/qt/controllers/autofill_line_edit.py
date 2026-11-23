@@ -58,7 +58,7 @@ class AutofillLineEdit(QLineEdit):
             elif (
                 arg__1.key() == QtCore.Qt.Key.Key_Enter or arg__1.key() == QtCore.Qt.Key.Key_Return
             ):
-                if arg__1.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier:
+                if arg__1.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
                     self.shift_return_pressed.emit()
                 else:
                     self.return_pressed.emit()
