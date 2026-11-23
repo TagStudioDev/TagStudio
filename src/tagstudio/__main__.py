@@ -6,6 +6,7 @@
 """TagStudio launcher."""
 
 import argparse
+import logging
 import sys
 import traceback
 
@@ -55,6 +56,13 @@ def main():
         version=f"TagStudio v{VERSION} {Translations[BUILD_TYPE] if BUILD_TYPE else ''}",
     )
     args = parser.parse_args()
+
+    # structlog defaults to emitting every level; gate debug logs on --debug.
+    structlog.configure(
+        wrapper_class=structlog.make_filtering_bound_logger(
+            logging.DEBUG if args.debug else logging.INFO
+        ),
+    )
 
     driver = QtDriver(args)
     ui_name = "Qt"
