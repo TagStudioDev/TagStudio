@@ -91,12 +91,15 @@ class TagSearchPanel(SearchPanel[Tag]):
             QMessageBox.Icon.Question,
             Translations["tag.remove"],
             Translations.format("tag.confirm_delete", tag_name=self._lib.tag_display_name(item)),
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
         )
+        ok_button = message_box.addButton(
+            Translations["generic.ok"], QMessageBox.ButtonRole.AcceptRole
+        )
+        message_box.addButton(Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole)
 
-        result = message_box.exec()
+        message_box.exec()
 
-        if result != QMessageBox.StandardButton.Ok:
+        if message_box.clickedButton() != ok_button:
             return
 
         self._lib.remove_tag(item.id)

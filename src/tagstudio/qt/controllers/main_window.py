@@ -454,12 +454,14 @@ class MainMenuBar(QMenuBar):
 
 # View Component
 class MainWindow(QMainWindow):
+    # NOTE: These hold translation keys, not translated strings. They are resolved
+    # at build time so the user's language (loaded after module import) is applied.
     THUMB_SIZES: list[tuple[str, int]] = [
-        (Translations["home.thumbnail_size.extra_large"], 256),
-        (Translations["home.thumbnail_size.large"], 192),
-        (Translations["home.thumbnail_size.medium"], 128),
-        (Translations["home.thumbnail_size.small"], 96),
-        (Translations["home.thumbnail_size.mini"], 76),
+        ("home.thumbnail_size.extra_large", 256),
+        ("home.thumbnail_size.large", 192),
+        ("home.thumbnail_size.medium", 128),
+        ("home.thumbnail_size.small", 96),
+        ("home.thumbnail_size.mini", 76),
     ]
 
     def __init__(self, driver: QtDriver, parent: QWidget | None = None) -> None:
@@ -650,7 +652,7 @@ class MainWindow(QMainWindow):
         self.thumb_size_combobox.setMaximumWidth(352)
         self.extra_input_layout.addWidget(self.thumb_size_combobox)
         for size in MainWindow.THUMB_SIZES:
-            self.thumb_size_combobox.addItem(size[0], size[1])
+            self.thumb_size_combobox.addItem(Translations[size[0]], size[1])
         self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
 
         self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
