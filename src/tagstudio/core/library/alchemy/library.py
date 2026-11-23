@@ -863,9 +863,11 @@ class Library:
         search_query: str = name.lower() if name else ""
 
         def sort_key(text: str):
-            priority = text.startswith(search_query)
-            p_ordering = len(text) if priority else sys.maxsize
-            return not priority, p_ordering, text
+            normalized = text.strip().lower()
+            exact = normalized == search_query
+            prefix = normalized.startswith(search_query)
+            p_ordering = len(normalized) if prefix else sys.maxsize
+            return not exact, not prefix, p_ordering, normalized
 
         with Session(self.engine) as session:
             query = select(Tag.id, Tag.name)
