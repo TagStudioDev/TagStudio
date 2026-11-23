@@ -9,7 +9,8 @@ from unittest.mock import Mock
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.qt_driver import History, QtDriver
+from tagstudio.qt.browsing_history import BrowsingHistory
+from tagstudio.qt.qt_driver import QtDriver
 
 
 def test_browsing_state_update(qt_driver: QtDriver):
@@ -89,7 +90,7 @@ def test_new_results_start_on_first_page():
 
 
 def test_history_skips_repeated_states():
-    history = History(BrowsingState.from_search_query("foo"))
+    history = BrowsingHistory(BrowsingState.from_search_query("foo"))
     history.push(BrowsingState(query="foo", first_visible_entry_id=1))
     history.push(BrowsingState.from_search_query("bar"))
 

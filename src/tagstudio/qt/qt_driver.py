@@ -57,6 +57,7 @@ from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.module_status import ModuleStatus
+from tagstudio.core.utils.numeric import clamp
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
 from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
@@ -68,6 +69,7 @@ from tagstudio.qt.app_settings import (
     ShowLabelOption,
     Theme,
 )
+from tagstudio.qt.browsing_history import BrowsingHistory
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.about_modal import AboutModal
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
@@ -112,10 +114,6 @@ logger = structlog.get_logger(__name__)
 T = TypeVar("T")
 
 
-def clamp(value, lower_bound, upper_bound):
-    return max(lower_bound, min(upper_bound, value))
-
-
 class Consumer(QThread):
     MARKER_QUIT = "MARKER_QUIT"
 
@@ -132,47 +130,6 @@ class Consumer(QThread):
                 job[0](*job[1])
             except RuntimeError:
                 pass
-
-
-# Ex. User visits | A ->[B]     |
-#                 | A    B ->[C]|
-#                 | A   [B]<- C |
-#                 |[A]<- B    C |  Previous routes still exist
-#                 | A ->[D]     |  Stack is cut from [:A] on new route
-# TODO: Split out of driver
-class History[T]:
-    __history: list[T]
-    __index: int = 0
-
-    def __init__(self, initial_value: T):
-        self.__history = [initial_value]
-        super().__init__()
-
-    def erase_future(self) -> None:
-        self.__history = self.__history[: self.__index + 1]
-
-    def push(self, value: T) -> None:
-        """Make `value` current and drop any forward history, unless it equals the current one."""
-        if value == self.current:
-            return
-        self.erase_future()
-        self.__history.append(value)
-        self.__index = len(self.__history) - 1
-
-    def can_move(self, delta: int) -> bool:
-        """Whether the history goes this far from the current value."""
-        return 0 <= self.__index + delta < len(self.__history)
-
-    def move(self, delta: int) -> bool:
-        """Move through the history, returning whether the current value changed."""
-        index = clamp(self.__index + delta, 0, len(self.__history) - 1)
-        moved = index != self.__index
-        self.__index = index
-        return moved
-
-    @property
-    def current(self) -> T:
-        return self.__history[self.__index]
 
 
 class QtDriver(DriverMixin, QObject):
@@ -202,7 +159,7 @@ class QtDriver(DriverMixin, QObject):
     lib: Library
     cache_manager: CacheManager | None = None
 
-    browsing_history: History[BrowsingState]
+    browsing_history: BrowsingHistory[BrowsingState]
 
     def __init__(self, args: Namespace):
         super().__init__()
@@ -280,7 +237,7 @@ class QtDriver(DriverMixin, QObject):
 
     def __reset_navigation(self, state: BrowsingState | None = None) -> None:
         """Start the browsing history over at this state, or at showing everything."""
-        self.browsing_history = History(state or BrowsingState.show_all())
+        self.browsing_history = BrowsingHistory(state or BrowsingState.show_all())
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
