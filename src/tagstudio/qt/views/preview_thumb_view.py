@@ -72,11 +72,11 @@ class PreviewThumbView(QWidget):
         open_file_action.triggered.connect(self._open_file_action_callback)
         open_explorer_action = QAction(open_file_str(), self)
         open_explorer_action.triggered.connect(self._open_explorer_action_callback)
-        delete_action = QAction(
+        self._delete_action = QAction(
             Translations.format("trash.context.singular", trash_term=trash_term()),
             self,
         )
-        delete_action.triggered.connect(self._delete_action_callback)
+        self._delete_action.triggered.connect(self._delete_action_callback)
 
         self.__button_wrapper = QPushButton()
         self.__button_wrapper.setMinimumSize(*self.__img_button_size)
@@ -84,7 +84,7 @@ class PreviewThumbView(QWidget):
         self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.__button_wrapper.addAction(open_file_action)
         self.__button_wrapper.addAction(open_explorer_action)
-        self.__button_wrapper.addAction(delete_action)
+        self.__button_wrapper.addAction(self._delete_action)
         self.__button_wrapper.clicked.connect(self._button_wrapper_callback)
 
         # In testing, it didn't seem possible to center the widgets directly
@@ -98,7 +98,7 @@ class PreviewThumbView(QWidget):
         self.__preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.__preview_gif.addAction(open_file_action)
         self.__preview_gif.addAction(open_explorer_action)
-        self.__preview_gif.addAction(delete_action)
+        self.__preview_gif.addAction(self._delete_action)
         self.__gif_buffer: QBuffer = QBuffer()
 
         self.__preview_gif_page = QWidget()
@@ -107,7 +107,7 @@ class PreviewThumbView(QWidget):
         self.__media_player = MediaPlayer(driver)
         self.__media_player.addAction(open_file_action)
         self.__media_player.addAction(open_explorer_action)
-        self.__media_player.addAction(delete_action)
+        self.__media_player.addAction(self._delete_action)
         # QMediaPlayer loads duration asynchronously after setSource().
         self.__media_player.player.durationChanged.connect(
             self.__media_player_duration_changed_callback
@@ -335,6 +335,15 @@ class PreviewThumbView(QWidget):
         self.__switch_preview(None)
         self._current_file = None
         self.__should_render_on_resize = False
+
+    def update_delete_action_text(self, plural: bool) -> None:
+        """Update the context menu delete action to match the selection size."""
+        self._delete_action.setText(
+            Translations.format(
+                "trash.context.plural" if plural else "trash.context.singular",
+                trash_term=trash_term(),
+            )
+        )
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:

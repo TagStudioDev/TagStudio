@@ -16,6 +16,8 @@ from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.platform_strings import trash_term
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
 
@@ -91,9 +93,24 @@ class ThumbGridLayout(QLayout):
         self._last_page_update = None
 
     def update_selected(self):
+        plural = len(self.driver._selected) > 1
         for item_thumb in self._item_thumbs:
             value = item_thumb.item_id in self.driver._selected
             item_thumb.thumb_button.set_selected(value)
+            item_thumb.delete_action.setText(
+                Translations.format(
+                    "trash.context.plural" if plural else "trash.context.singular",
+                    trash_term=trash_term(),
+                )
+            )
+        self.driver.main_window.menu_bar.delete_file_action.setText(
+            Translations.format(
+                "menu.delete_selected_files_plural"
+                if plural
+                else "menu.delete_selected_files_singular",
+                trash_term=trash_term(),
+            )
+        )
 
     def add_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
         for tag_id in tag_ids:

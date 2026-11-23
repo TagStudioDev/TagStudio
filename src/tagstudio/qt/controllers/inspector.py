@@ -233,6 +233,7 @@ class Inspector(QWidget):
             (Only works with one or more items selected)
         """
         self._selected = selected
+        self.layout().preview_thumb.update_delete_action_text(plural=len(selected) > 1)
         self._set_item_mode(None)
         try:
             # No Items Selected

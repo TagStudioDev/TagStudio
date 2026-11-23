@@ -270,7 +270,7 @@ class MainMenuBar(QMenuBar):
 
         # Move Files to trash
         self.delete_file_action = QAction(
-            Translations.format("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
+            Translations.format("menu.delete_selected_files_singular", trash_term=trash_term()),
             self,
         )
         self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
