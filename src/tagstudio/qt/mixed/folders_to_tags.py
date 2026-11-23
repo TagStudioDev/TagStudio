@@ -164,6 +164,7 @@ def generate_preview_data(library: Library) -> BranchData:
     return tree
 
 
+@deprecated("Will be replaced with upcoming 'Macros' feature.")
 class FoldersToTagsModal(QWidget):
     def __init__(self, library: Library, driver: QtDriver):
         super().__init__()

@@ -130,7 +130,7 @@ def test_title_update(
     menu_bar = QMenuBar()
 
     qt_driver.main_window.menu_bar.open_recent_library_menu = QMenu(menu_bar)
-    qt_driver.main_window.menu_bar.ignore_modal_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.ignore_files_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.save_library_backup_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.close_library_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.sync_library_action = QAction(menu_bar)

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 # TODO: Use newer MVC style guidelines
-class LibraryInfoWindowView(QWidget):
+class LibraryInfoModalView(QWidget):
     def __init__(self, library: Library, driver: QtDriver):
         super().__init__()
         self.lib = library

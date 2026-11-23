@@ -27,13 +27,13 @@ def test_edit_tag_panel_init(qtbot: QtBot, library: Library):
 def test_edit_tag_panel_add_tag_callback(qt_driver: QtDriver):
     # Given
     assert len(qt_driver.lib.tags) == 6
-    qt_driver.add_tag_action_callback()
+    qt_driver.open_new_tag_modal()
 
     # When
-    panel = qt_driver.modal.layout().content_widget
+    panel = unwrap(qt_driver.new_tag_modal).layout().content_widget
     assert isinstance(panel, EditTagPanel)
     panel.set_name("xxx")
-    qt_driver.modal.saved.emit()
+    unwrap(qt_driver.new_tag_modal).saved.emit()
 
     # Then
     tags: list[Tag] = qt_driver.lib.tags

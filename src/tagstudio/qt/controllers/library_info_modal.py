@@ -22,7 +22,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.utils import file_opener
-from tagstudio.qt.views.library_info_window_view import LibraryInfoWindowView
+from tagstudio.qt.views.library_info_modal_view import LibraryInfoModalView
 from tagstudio.qt.views.styles.stylesheets import header
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -33,7 +33,7 @@ logger = structlog.get_logger(__name__)
 
 
 # TODO: Use newer MVC style guidelines
-class LibraryInfoWindow(LibraryInfoWindowView):
+class LibraryInfoModal(LibraryInfoModalView):
     def __init__(self, library: Library, driver: QtDriver):
         super().__init__(library, driver)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)

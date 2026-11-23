@@ -280,8 +280,6 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver.main_window.thumb_grid = ThumbGrid(driver, Pagination())
         driver.main_window.menu_bar.autofill_action = Mock()
 
-        driver.copy_buffer = {"fields": [], "tags": []}
-
         # TODO - downsize this method and use it
         # driver.start()
         driver.navigator.frame_content = [e.id for e in library.all_entries()]

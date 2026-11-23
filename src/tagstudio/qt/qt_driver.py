@@ -19,7 +19,6 @@ from functools import partial
 from pathlib import Path
 from queue import Queue
 from typing import Any, TypeVar
-from warnings import catch_warnings
 
 import semver
 import structlog
@@ -73,7 +72,7 @@ from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
 from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal import IgnoreModal
-from tagstudio.qt.controllers.library_info_window import LibraryInfoWindow
+from tagstudio.qt.controllers.library_info_modal import LibraryInfoModal
 from tagstudio.qt.controllers.main_window import MainWindow
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.splash import SplashScreen
@@ -137,27 +136,11 @@ class QtDriver(DriverMixin, QObject):
     _open_library_finished = Signal(int, Path, OpenLibraryResult)
     _library_loaded = Signal(int)  # Library session ID
 
-    tag_manager: Modal | None = None
-    color_manager: Modal | None = None
-    field_template_manager: Modal | None = None
-    ignore_modal: Modal | None = None
-    add_field_modal: Modal | None = None
-    folders_modal: FoldersToTagsModal
-    about_modal: Modal
-    unlinked_modal: FixUnlinkedEntriesModal
-    ignored_modal: FixIgnoredEntriesModal
-    dupe_modal: FixDupeFilesModal
-    library_info_window: LibraryInfoWindow
-
-    applied_theme: Theme
-
-    lib: Library
-    cache_manager: CacheManager | None = None
-
     def __init__(self, args: Namespace):
         super().__init__()
         self.args = args
         self.lib = Library()
+        self.cache_manager: CacheManager | None = None
         self.rm: ResourceManager = ResourceManager()
 
         # State Management
@@ -168,6 +151,7 @@ class QtDriver(DriverMixin, QObject):
         self._library_loaded.connect(self._on_library_loaded)
         self.entry_state = EntryState(self.lib, self.library_pool)
         self.selection: SelectionState[int] = SelectionState(lambda: self.navigator.frame_content)
+        self.copy_buffer: dict[str, list[Any]] = {"fields": [], "tags": []}
 
         # Thumbnail Grid
         self.thumb_job_queue: Queue = Queue()
@@ -180,6 +164,21 @@ class QtDriver(DriverMixin, QObject):
         self._sync_pool.setMaxThreadCount(1)
         self.file_scan_lock: bool = False  # Prevent multiple file scanning operations at once
         self.sync_engine = LibrarySyncEngine(self.lib)
+
+        # Windows
+        self.about_modal: Modal | None = None
+        self.changelog_modal: Modal | None = None
+        self.color_manager: Modal | None = None  # TODO: Convert to full window modes
+        self.field_template_manager: Modal | None = None  # TODO: Determine what this folds into
+        self.fix_dupe_files_modal: FixDupeFilesModal | None = None
+        self.fix_ignored_entries_modal: FixIgnoredEntriesModal | None = None
+        self.fix_unlinked_entries_modal: FixUnlinkedEntriesModal | None = None
+        self.folders_modal: FoldersToTagsModal | None = None  # NOTE: Deprecated
+        self.ignore_files_modal: Modal | None = None
+        self.library_info_modal: LibraryInfoModal | None = None
+        self.migration_modal: JsonMigrationModal | None = None  # NOTE: Deprecated
+        self.new_tag_modal: Modal | None = None
+        self.tag_manager: Modal | None = None  # TODO: Convert to full window modes
 
         self.branch: str = (" (" + Translations[BUILD_TYPE] + ")") if BUILD_TYPE else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
@@ -396,7 +395,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.inspector.can_add_tags_changed.connect(tag_search.set_capsules_clickable)
 
         self.update_recent_lib_menu()
-        self.copy_buffer: dict[str, list[Any]] = {"fields": [], "tags": []}
 
         self.main_window.thumb_grid.visible_changed.connect(
             self.navigator.set_first_visible_entry_id
@@ -418,7 +416,6 @@ class QtDriver(DriverMixin, QObject):
             startup_result = self.verify_library_path(startup_path, allow_creation=False)
 
         self.init_library_window()
-        self.migration_modal: JsonMigrationModal | None = None
 
         if startup_result is None:
             self.main_window.browsing_area.landing_page.animate_logo()
@@ -492,21 +489,18 @@ class QtDriver(DriverMixin, QObject):
             searches_again=True,
         )
 
-    def init_ignore_modal(self):
-        """Initialize the Ignore Files panel."""
-        if self.ignore_modal:
-            with catch_warnings(record=True):
-                self.ignore_modal.saved.disconnect()
-            self.ignore_modal.deleteLater()
-            self.ignore_modal = None
+    def init_ignore_files_modal(self):
+        """Initialize the Ignore Files modal."""
+        if self.ignore_files_modal:
+            self.ignore_files_modal.deleteLater()
 
         panel = IgnoreModal(self.lib)
-        self.ignore_modal = Modal(
+        self.ignore_files_modal = Modal(
             panel,
             Translations["menu.edit.ignore_files"],
             is_savable=True,
         )
-        self.ignore_modal.saved.connect(panel.save)
+        self.ignore_files_modal.saved.connect(panel.save)
 
     def show_grid_filenames(self, value: bool):
         """Save and apply whether the grid shows filenames."""
@@ -594,9 +588,6 @@ class QtDriver(DriverMixin, QObject):
         if self.color_manager:
             self.color_manager.layout().content_widget.reset()
 
-        if hasattr(self, "library_info_window"):
-            self.library_info_window.close()
-
         self.main_window.thumb_grid.set_entries([])
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.browsing_area.landing_page.animate_logo()
@@ -609,16 +600,16 @@ class QtDriver(DriverMixin, QObject):
         logger.info("[QtDriver] Backing up library...")
         Library.save_library_backup_to_disk(unwrap(self.lib.library_dir))
 
-    def add_tag_action_callback(self):
+    def open_new_tag_modal(self):
         panel = EditTagPanel(self.lib)
-        self.modal = Modal(
+        modal = Modal(
             panel,
             Translations["tag.new"],
             Translations["tag.create"],
             is_savable=True,
         )
 
-        self.modal.saved.connect(
+        modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
                     panel.build_tag(),
@@ -626,10 +617,11 @@ class QtDriver(DriverMixin, QObject):
                     set(panel.aliases),
                     set(panel.exclusion_ids),
                 ),
-                self.modal.hide(),
+                modal.hide(),
             )
         )
-        self.modal.show()
+        modal.show()
+        self.new_tag_modal = modal
 
     def search_for_tag_callback(self, tag_id: int) -> None:
         """Callback to search for a given Tag ID."""
@@ -800,8 +792,8 @@ class QtDriver(DriverMixin, QObject):
         self._set_sync_running(running=True)
         session_id = self._new_sync_session()
         # Disable the "Fix Unlinked Entries" modal's relink/remove actions during the sync
-        if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
-            self.unlinked_modal.update_unlinked_count()
+        if self.fix_unlinked_entries_modal and self.fix_unlinked_entries_modal.isVisible():
+            self.fix_unlinked_entries_modal.update_unlinked_count()
 
         engine = self.sync_engine
         library_dir = unwrap(self.lib.library_dir)
@@ -848,11 +840,11 @@ class QtDriver(DriverMixin, QObject):
 
         self._set_sync_running(running=False)
         self.lib.unlinked_entries_count = unlinked_count
-        if hasattr(self, "unlinked_modal") and self.unlinked_modal.isVisible():
-            self.unlinked_modal.update_unlinked_count()
-            self.unlinked_modal.remove_modal.refresh_list()
-        if hasattr(self, "library_info_window") and self.library_info_window.isVisible():
-            self.library_info_window.update_cleanup()
+        if self.fix_unlinked_entries_modal and self.fix_unlinked_entries_modal.isVisible():
+            self.fix_unlinked_entries_modal.update_unlinked_count()
+            self.fix_unlinked_entries_modal.remove_modal.refresh_list()
+        if self.library_info_modal and self.library_info_modal.isVisible():
+            self.library_info_modal.update_cleanup()
 
         if (sync_banner := self._sync_banner) is None:
             return
@@ -911,28 +903,28 @@ class QtDriver(DriverMixin, QObject):
             sync_banner.hide_banner(force=True)
         self.open_settings_modal()
 
-    def open_library_info_window(self):
-        if not hasattr(self, "library_info_window"):
-            self.library_info_window = LibraryInfoWindow(self.lib, self)
-        self.library_info_window.show()
+    def open_library_info_modal(self):
+        if not self.library_info_modal:
+            self.library_info_modal = LibraryInfoModal(self.lib, self)
+        self.library_info_modal.show()
 
     def open_fix_ignored_entries_modal(self):
-        if not hasattr(self, "ignored_modal"):
-            self.ignored_modal = FixIgnoredEntriesModal(self.lib, self)
-        self.ignored_modal.show()
+        if not self.fix_ignored_entries_modal:
+            self.fix_ignored_entries_modal = FixIgnoredEntriesModal(self.lib, self)
+        self.fix_ignored_entries_modal.show()
 
     def open_fix_dupe_files_modal(self):
-        if not hasattr(self, "dupe_modal"):
-            self.dupe_modal = FixDupeFilesModal(self.lib, self)
-        self.dupe_modal.show()
+        if not self.fix_dupe_files_modal:
+            self.fix_dupe_files_modal = FixDupeFilesModal(self.lib, self)
+        self.fix_dupe_files_modal.show()
 
     def open_folders_to_tags_modal(self):
-        if not hasattr(self, "folders_modal"):
+        if not self.folders_modal:
             self.folders_modal = FoldersToTagsModal(self.lib, self)
         self.folders_modal.show()
 
     def open_about_modal(self):
-        if not hasattr(self, "about_modal"):
+        if not self.about_modal:
             self.about_modal = Modal(
                 AboutModal(self.global_settings_path),
                 window_title=Translations["about.title"],
@@ -942,9 +934,9 @@ class QtDriver(DriverMixin, QObject):
         self.about_modal.show()
 
     def open_fix_unlinked_entries_modal(self):
-        if not hasattr(self, "unlinked_modal"):
-            self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
-        self.unlinked_modal.show()
+        if not self.fix_unlinked_entries_modal:
+            self.fix_unlinked_entries_modal = FixUnlinkedEntriesModal(self.lib, self)
+        self.fix_unlinked_entries_modal.show()
 
     def sync_entry_stats_runnable(
         self,
@@ -1199,7 +1191,7 @@ class QtDriver(DriverMixin, QObject):
             return str(last_version_opened) != VERSION
 
     def show_changelog(self):
-        if not hasattr(self, "changelog_modal"):
+        if not self.changelog_modal:
             self.changelog_modal = Modal(
                 ChangelogModal(),
                 window_title=Translations["changelog.window_title"],
@@ -1328,7 +1320,7 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         self.main_window.setAcceptDrops(True)
-        self.init_ignore_modal()
+        self.init_ignore_files_modal()
         self.main_window.menu_bar.set_library_actions_enabled(True)
         self.main_window.inspector.update_from_selection()
         self.navigator.update_browsing_state()

@@ -35,7 +35,7 @@ class MenuBar(QMenuBar):
     copy_fields_action: QAction
     paste_fields_action: QAction
     delete_file_action: QAction
-    ignore_modal_action: QAction
+    ignore_files_action: QAction
     tag_manager_action: QAction
     field_template_manager_action: QAction
     color_manager_action: QAction
@@ -158,9 +158,9 @@ class MenuBar(QMenuBar):
         self.edit_menu.addSeparator()
 
         # Ignore Files and Directories (.ts_ignore System)
-        self.ignore_modal_action = QAction(Translations["menu.edit.ignore_files"], self)
-        self.ignore_modal_action.setEnabled(False)
-        self.edit_menu.addAction(self.ignore_modal_action)
+        self.ignore_files_action = QAction(Translations["menu.edit.ignore_files"], self)
+        self.ignore_files_action.setEnabled(False)
+        self.edit_menu.addAction(self.ignore_files_action)
 
         # Manage Tags
         self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)
@@ -306,11 +306,11 @@ class MenuBar(QMenuBar):
         )
         self.close_library_action.triggered.connect(driver.close_library)
 
-        self.new_tag_action.triggered.connect(driver.add_tag_action_callback)
+        self.new_tag_action.triggered.connect(driver.open_new_tag_modal)
         self.copy_fields_action.triggered.connect(driver.copy_fields_action_callback)
         self.paste_fields_action.triggered.connect(driver.paste_fields_action_callback)
         self.delete_file_action.triggered.connect(lambda: driver.delete_files_callback(""))
-        self.ignore_modal_action.triggered.connect(lambda: unwrap(driver.ignore_modal).show())
+        self.ignore_files_action.triggered.connect(lambda: unwrap(driver.ignore_files_modal).show())
         self.tag_manager_action.triggered.connect(lambda: unwrap(driver.tag_manager).show())
         self.color_manager_action.triggered.connect(lambda: unwrap(driver.color_manager).show())
         self.field_template_manager_action.triggered.connect(
@@ -322,7 +322,7 @@ class MenuBar(QMenuBar):
         self.clear_select_action.triggered.connect(driver.selection.clear)
         driver.selection.changed.connect(self._on_selection_changed)
 
-        self.library_info_action.triggered.connect(driver.open_library_info_window)
+        self.library_info_action.triggered.connect(driver.open_library_info_modal)
 
         self.fix_unlinked_entries_action.triggered.connect(driver.open_fix_unlinked_entries_modal)
         self.fix_ignored_entries_action.triggered.connect(driver.open_fix_ignored_entries_modal)
@@ -372,7 +372,7 @@ class MenuBar(QMenuBar):
             self.tag_manager_action,
             self.color_manager_action,
             self.field_template_manager_action,
-            self.ignore_modal_action,
+            self.ignore_files_action,
             self.new_tag_action,
             self.fix_unlinked_entries_action,
             self.fix_ignored_entries_action,
