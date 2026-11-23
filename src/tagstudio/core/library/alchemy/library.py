@@ -28,6 +28,7 @@ from sqlalchemy import (
     create_engine,
     delete,
     desc,
+    event,
     exists,
     func,
     inspect,
@@ -399,9 +400,28 @@ class Library:
             connection_string=connection_string,
             poolclass=poolclass,
         )
-        return create_engine(
+        engine = create_engine(
             connection_string, poolclass=poolclass, connect_args={"autocommit": False}
         )
+
+        # SQLite's built-in lower()/LIKE only fold ASCII letters. ts_lower() applies
+        # full Unicode case folding so search and sorting work for all languages.
+        @event.listens_for(engine, "connect")
+        def _register_sql_functions(dbapi_conn, _connection_record):
+            dbapi_conn.create_function(
+                "ts_lower",
+                1,
+                lambda value: value.casefold() if isinstance(value, str) else value,
+            )
+            dbapi_conn.create_function(
+                "regexp",
+                2,
+                lambda pattern, value: (
+                    1 if isinstance(value, str) and re.search(pattern, value) else 0
+                ),
+            )
+
+        return engine
 
     def create_sqlite_library(
         self, library_dir: Path, in_memory: bool, sql_filename: str = SQL_FILENAME
@@ -818,9 +838,9 @@ class Library:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
                 case SortingModeEnum.FILE_NAME:
-                    sort_on = func.lower(Entry.filename)
+                    sort_on = func.ts_lower(Entry.filename)
                 case SortingModeEnum.PATH:
-                    sort_on = func.lower(Entry.path)
+                    sort_on = func.ts_lower(Entry.path)
                 case SortingModeEnum.RANDOM:
                     sort_on = func.sin(Entry.id * search.random_seed)
 
@@ -860,10 +880,10 @@ class Library:
         if limit <= 0:
             limit = sys.maxsize
 
-        search_query: str = name.lower() if name else ""
+        search_query: str = name.casefold() if name else ""
 
         def sort_key(text: str):
-            priority = text.startswith(search_query)
+            priority = text.casefold().startswith(search_query)
             p_ordering = len(text) if priority else sys.maxsize
             return not priority, p_ordering, text
 
@@ -876,8 +896,8 @@ class Library:
             if search_query:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(search_query),
-                        Tag.shorthand.icontains(search_query),
+                        func.ts_lower(Tag.name).contains(search_query),
+                        func.ts_lower(Tag.shorthand).contains(search_query),
                     )
                 )
 
@@ -885,7 +905,7 @@ class Library:
 
             if search_query:
                 query = select(TagAlias.tag_id, TagAlias.name).where(
-                    TagAlias.name.icontains(search_query)
+                    func.ts_lower(TagAlias.name).contains(search_query)
                 )
                 tags.extend(session.execute(query))
 
@@ -1035,10 +1055,10 @@ class Library:
         if limit <= 0:
             limit = sys.maxsize
 
-        search_query: str = name.lower() if name else ""
+        search_query: str = name.casefold() if name else ""
 
         def sort_key(template: BaseFieldTemplate) -> tuple[str] | tuple[bool, int, str]:
-            text = template.name.lower()
+            text = template.name.casefold()
             if not search_query:
                 return (text,)
             priority = text.startswith(search_query)
@@ -1049,9 +1069,11 @@ class Library:
             text_stmt = select(TextFieldTemplate)
             datetime_stmt = select(DatetimeFieldTemplate)
             if search_query:
-                text_stmt = text_stmt.where(TextFieldTemplate.name.icontains(search_query))
+                text_stmt = text_stmt.where(
+                    func.ts_lower(TextFieldTemplate.name).contains(search_query)
+                )
                 datetime_stmt = datetime_stmt.where(
-                    DatetimeFieldTemplate.name.icontains(search_query)
+                    func.ts_lower(DatetimeFieldTemplate.name).contains(search_query)
                 )
 
             field_templates: list[BaseFieldTemplate] = [

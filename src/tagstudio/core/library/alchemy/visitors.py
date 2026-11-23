@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, override
 import structlog
 from sqlalchemy import ColumnElement, and_, distinct, false, func, literal, or_, select
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.operators import ilike_op
 
 from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
@@ -69,17 +68,17 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             glob = False
 
             # Smartcase check
-            if node.value == node.value.lower():
+            if node.value == node.value.casefold():
                 ilike = True
             if node.value.startswith("*") or node.value.endswith("*"):
                 glob = True
 
             if ilike and glob:
                 logger.info("ConstraintType.Path", ilike=True, glob=True)
-                return func.lower(Entry.path).op("GLOB")(f"{node.value.lower()}")
+                return func.ts_lower(Entry.path).op("GLOB")(f"{node.value.casefold()}")
             elif ilike:
                 logger.info("ConstraintType.Path", ilike=True, glob=False)
-                return ilike_op(Entry.path, f"%{node.value}%")
+                return func.ts_lower(Entry.path).like(f"%{node.value.casefold()}%")
             elif glob:
                 logger.info("ConstraintType.Path", ilike=False, glob=True)
                 return Entry.path.op("GLOB")(node.value)
@@ -105,7 +104,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         elif node.type == ConstraintType.FileType:
             # NOTE: The MediaTypes system includes the leading dot (if any), and this search system
             # should take in either variant.
-            ext = f".{node.value.removeprefix('.').lower()}"
+            ext = f".{node.value.removeprefix('.').casefold()}"
             extensions = MediaTypes.get_equivalent_exts(ext).copy()
             for compound_ext in MediaTypes.get_compound_exts(ext):
                 extensions |= MediaTypes.get_equivalent_exts(compound_ext)
@@ -143,7 +142,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             *[
                 and_(
                     Entry.suffix.in_(last_suffixes),
-                    Entry.path.like(literal(f"%{prefix}.") + Entry.suffix),
+                    func.ts_lower(Entry.path).like(
+                        func.ts_lower(literal(f"%{prefix}.") + Entry.suffix)
+                    ),
                 )
                 for prefix, last_suffixes in last_suffixes_by_prefix.items()
             ],
@@ -155,8 +156,17 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             tag_ids = list(
                 session.scalars(
                     select(Tag.id)
-                    .where(or_(Tag.name.ilike(tag_name), Tag.shorthand.ilike(tag_name)))
-                    .union(select(TagAlias.tag_id).where(TagAlias.name.ilike(tag_name)))
+                    .where(
+                        or_(
+                            func.ts_lower(Tag.name).like(tag_name.casefold()),
+                            func.ts_lower(Tag.shorthand).like(tag_name.casefold()),
+                        )
+                    )
+                    .union(
+                        select(TagAlias.tag_id).where(
+                            func.ts_lower(TagAlias.name).like(tag_name.casefold())
+                        )
+                    )
                 )
             )
             if len(tag_ids) > 1:
