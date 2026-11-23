@@ -20,8 +20,6 @@ class Parser:
     tokenizer: Tokenizer
     next_token: Token
 
-    last_constraint_type: ConstraintType = ConstraintType.Tag
-
     def __init__(self, text: str) -> None:
         self.text = text
         self.tokenizer = Tokenizer(self.text)
@@ -92,11 +90,12 @@ class Parser:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "NOT"  # pyright: ignore
 
     def __constraint(self) -> Constraint:
+        constraint_type = ConstraintType.Tag
         if self.next_token.type == TokenType.CONSTRAINTTYPE:
             constraint = self.__eat(TokenType.CONSTRAINTTYPE).value
             if not isinstance(constraint, ConstraintType):
                 raise self.__syntax_error()
-            self.last_constraint_type = constraint
+            constraint_type = constraint
 
         value = self.__literal()
 
@@ -111,7 +110,7 @@ class Parser:
 
             self.__eat(TokenType.SBRACKETC)
 
-        return Constraint(self.last_constraint_type, value, properties)
+        return Constraint(constraint_type, value, properties)
 
     def __property(self) -> Property:
         key = self.__eat(TokenType.ULITERAL).value
