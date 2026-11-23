@@ -49,7 +49,7 @@ class TagData(TileData):
         self._entries = entries
 
     def set_tags(self, tags: Iterable[CachedTag]) -> None:
-        tags_ = sorted(list(tags), key=lambda tag: self._lib.tag_display_name(tag))
+        tags_ = sorted(list(tags), key=lambda tag: self._lib.tag_display_name(tag).casefold())
         logger.info("[TagData] Tags:", tags=tags)
 
         layout = self.layout()

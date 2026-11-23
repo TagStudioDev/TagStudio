@@ -168,7 +168,10 @@ class TileList(InsetFrame):
             categories = self.get_tag_categories(entry_tags)
             for cat, tags in sorted(
                 categories.items(),
-                key=lambda item: (item[0] is None, item[0].name if item[0] is not None else ""),
+                key=lambda item: (
+                    item[0] is None,
+                    item[0].name.casefold() if item[0] is not None else "",
+                ),
             ):
                 self.write_tag_tile(container_index, tags=tags, category_tag=cat, is_mixed=False)
                 container_index += 1

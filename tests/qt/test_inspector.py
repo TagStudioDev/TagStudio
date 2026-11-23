@@ -8,9 +8,11 @@ from unittest.mock import Mock
 from tagstudio.core.constants import TAG_FAVORITE
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.controllers.tiles.tag_data import TagData
 from tagstudio.qt.qt_driver import QtDriver
+from tagstudio.qt.views.styles.stylesheets import header
 
 
 def category_names(panel: Inspector, tag_id: int) -> dict[str | None, set[str]]:
@@ -118,3 +120,32 @@ def test_tags_skip_excluded_categories(qt_driver: QtDriver):
     )
 
     assert category_names(Inspector(qt_driver), tag.id) == {None: {"Jonathan"}}
+
+
+def test_categories_sort_by_name(qt_driver: QtDriver, entry_full: Entry):
+    lib = qt_driver.lib
+    banana = unwrap(lib.add_tag(Tag(name="Banana", is_category=True)))
+    apple = unwrap(lib.add_tag(Tag(name="apple", is_category=True)))
+    tag = unwrap(lib.add_tag(Tag(name="Jonathan"), parent_ids={banana.id, apple.id}))
+    lib.add_tags_to_entries(entry_full.id, tag.id)
+    panel = Inspector(qt_driver)
+
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
+
+    titles = [tile.title for tile in panel.containers._tiles[:2]]
+    assert titles == [header("apple", 4), header("Banana", 4)]
+
+
+def test_tags_sort_by_name(qt_driver: QtDriver, entry_full: Entry):
+    lib = qt_driver.lib
+    banana = unwrap(lib.add_tag(Tag(name="Banana")))
+    apple = unwrap(lib.add_tag(Tag(name="apple")))
+    lib.add_tags_to_entries(entry_full.id, {banana.id, apple.id})
+    panel = Inspector(qt_driver)
+
+    qt_driver.selection.toggle_item_selection(entry_full.id, append=False, bridge=False)
+
+    tag_data = panel.containers._tiles[0].get_inner_widget()
+    assert isinstance(tag_data, TagData)
+    capsules = tag_data.findChildren(Capsule)
+    assert [capsule.layout().button.text() for capsule in capsules] == ["apple", "Banana", "foo"]

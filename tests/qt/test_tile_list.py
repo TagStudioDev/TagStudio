@@ -10,6 +10,7 @@ from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.qt_driver import QtDriver
+from tagstudio.qt.views.styles.stylesheets import header
 
 
 def test_update_selection_empty(qt_driver: QtDriver):
@@ -140,13 +141,13 @@ def test_meta_tag_category(qt_driver: QtDriver, entry_full: Entry):
             case 0:
                 # Check if the container is the Meta Tags category
                 tag: Tag = unwrap(qt_driver.lib.get_tag(2))
-                assert container.title == f"<h4>{tag.name}</h4>"
+                assert container.title == header(tag.name, 4)
             case 1:
                 # Check if the container is the Tags category
-                assert container.title == "<h4>Tags</h4>"
+                assert container.title == header("Tags", 4)
             case 2:
                 # Make sure the container isn't a duplicate Tags category
-                assert container.title != "<h4>Tags</h4>"
+                assert container.title != header("Tags", 4)
             case _:
                 pass
 
@@ -170,15 +171,15 @@ def test_custom_tag_category(qt_driver: QtDriver, entry_full: Entry):
     for i, container in enumerate(panel.containers._tiles):
         match i:
             case 0:
+                # Check if the container is the custom "foo" category
+                assert container.title == header(tag.name, 4)
+            case 1:
                 # Check if the container is the Meta Tags category
                 tag_2: Tag = unwrap(qt_driver.lib.get_tag(2))
-                assert container.title == f"<h4>{tag_2.name}</h4>"
-            case 1:
-                # Check if the container is the custom "foo" category
-                assert container.title == f"<h4>{tag.name}</h4>"
+                assert container.title == header(tag_2.name, 4)
             case 2:
                 # Make sure the container isn't a plain Tags category
-                assert container.title != "<h4>Tags</h4>"
+                assert container.title != header("Tags", 4)
             case _:
                 pass
 
@@ -202,7 +203,7 @@ def test_exclude_tag_category(
     qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
-    assert panel.containers._tiles[0].title == "<h4>Tags</h4>"
+    assert panel.containers._tiles[0].title == header("Tags", 4)
 
 
 def test_exclude_self_from_tag_category(
@@ -224,7 +225,7 @@ def test_exclude_self_from_tag_category(
     qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
-    assert panel.containers._tiles[0].title == f"<h4>{category_parent.name}</h4>"
+    assert panel.containers._tiles[0].title == header(category_parent.name, 4)
 
 
 def test_exclude_self_from_tag_category_without_parent(
@@ -243,4 +244,4 @@ def test_exclude_self_from_tag_category_without_parent(
     qt_driver.selection.toggle_item_selection(entry.id, append=False, bridge=False)
 
     assert len(panel.containers._tiles) == 1
-    assert panel.containers._tiles[0].title == "<h4>Tags</h4>"
+    assert panel.containers._tiles[0].title == header("Tags", 4)
