@@ -214,6 +214,7 @@ class ThumbGrid(QWidget):
         self._driver.entry_state.entry_tags_changed.connect(self._on_tags_changed)
         self._driver.entry_state.tags_edited.connect(self._on_tags_edited)
         self._driver.selection.changed.connect(self._update_selected)
+        self._driver.navigator.page_shown.connect(self._on_page_shown)
 
     def set_entries(self, entry_ids: list[int]) -> None:
         self._generation += 1
@@ -310,22 +311,23 @@ class ThumbGrid(QWidget):
         # Paginated results are treated as a single result set that's visually broken up, meaning:
         # - Arrow keys move to adjacent pages for navigation and selection
         # - Arrow keys will jump to the page with the navigated entry
-        results = self._driver.frame_content
-        page_start = self._driver.shown_page_index * self._driver.page_size
+        navigator = self._driver.navigator
+        results = navigator.frame_content
+        page_start = navigator.shown_page_index * navigator.page_size
         cursor = self._driver.selection.cursor
         if cursor in results:
             target = self._index_in_direction(results.index(cursor), key)
         else:
             target = page_start + (self.layout().first_visible_index() or 0)
-        leaves_page = target // self._driver.page_size != self._driver.shown_page_index
-        if leaves_page and self._driver.is_searching:
+        leaves_page = target // navigator.page_size != navigator.shown_page_index
+        if leaves_page and navigator.is_searching:
             return True  # Stop pages from changing during a search
         target = self._driver.selection.move_selection(results, target, extend)
 
-        page = target // self._driver.page_size
-        if page != self._driver.shown_page_index:
+        page = target // navigator.page_size
+        if page != navigator.shown_page_index:
             self.scroll_to(results[target])
-            self._driver.page_move(page, absolute=True)
+            navigator.go_to_page(page)
         else:
             bottom_padding = self._pagination.height() if self._pagination.isVisible() else 0
             self.layout().ensure_visible(target - page_start, bottom_padding)
@@ -334,8 +336,8 @@ class ThumbGrid(QWidget):
     def _index_in_direction(self, index: int, key: Qt.Key) -> int:
         """The index of the next item from `index` in an arrow key's direction, across all pages."""
         per_row = self.layout().items_per_row()
-        page_size = self._driver.page_size
-        last = len(self._driver.frame_content) - 1
+        page_size = self._driver.navigator.page_size
+        last = len(self._driver.navigator.frame_content) - 1
         page_start = index - index % page_size
         page_end = min(page_start + page_size - 1, last)
         column = (index - page_start) % per_row
@@ -397,6 +399,20 @@ class ThumbGrid(QWidget):
     def _thumb_for(self, entry_id: int | None) -> ItemThumb | None:
         index = None if entry_id is None else self._entry_indices.get(entry_id)
         return None if index is None else self.layout().widget_at(index)
+
+    def _on_page_shown(self, entry_id: int | None) -> None:
+        if entry_id is not None:
+            self.scroll_to(entry_id)
+
+        navigator = self._driver.navigator
+        start = navigator.shown_page_index * navigator.page_size
+        end = min(start + navigator.page_size, len(navigator.frame_content))
+
+        self.set_entries(navigator.frame_content[start:end])
+
+        self._pagination.update_buttons(
+            navigator.pages_count, navigator.browsing_history.current.page_index, emit=False
+        )
 
     def _on_items_assigned(self, items: list[tuple[int, ItemThumb]]) -> None:
         missing: list[int] = []

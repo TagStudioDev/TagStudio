@@ -356,7 +356,7 @@ class MenuBar(QMenuBar):
 
     def update_select_actions(self) -> None:
         """Enable/disable library selection actions."""
-        has_results = bool(self._driver.frame_content)
+        has_results = bool(self._driver.navigator.frame_content)
         has_selection = bool(self._driver.selection.selected)
         self.select_all_action.setEnabled(has_results)
         self.select_inverse_action.setEnabled(has_results)

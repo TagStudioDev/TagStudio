@@ -66,7 +66,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.remove_modal = RemoveUnlinkedEntriesModal(self.driver, self.sync_engine)
         self.remove_modal.done.connect(
             lambda: (
-                self.driver.update_browsing_state(),
+                self.driver.navigator.update_browsing_state(),
                 self._sync_ui_from_tracker(),
             )
         )

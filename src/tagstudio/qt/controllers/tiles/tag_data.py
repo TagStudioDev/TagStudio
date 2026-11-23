@@ -80,19 +80,23 @@ class TagData(TileData):
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
             case TagClickActionOption.SET_SEARCH:
-                self._driver.update_browsing_state(
-                    BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)
+                self._driver.navigator.update_browsing_state(
+                    BrowsingState.from_tag_id(
+                        tag.id, self._driver.navigator.browsing_history.current
+                    )
                 )
             case TagClickActionOption.ADD_TO_SEARCH:
                 # NOTE: modifying the ast and then setting that would be nicer
                 #       than this string manipulation, but also much more complex,
                 #       due to needing to implement a visitor that turns an AST to a string
                 #       So if that exists when you read this, change the following accordingly.
-                current = self._driver.browsing_history.current
+                current = self._driver.navigator.browsing_history.current
                 suffix = unwrap(
-                    BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current).query
+                    BrowsingState.from_tag_id(
+                        tag.id, self._driver.navigator.browsing_history.current
+                    ).query
                 )
-                self._driver.update_browsing_state(
+                self._driver.navigator.update_browsing_state(
                     current.with_search_query(
                         f"{current.query} {suffix}" if current.query else suffix
                     )
@@ -126,6 +130,6 @@ class TagData(TileData):
 
     def _on_search(self, tag: CachedTag) -> None:
         self._driver.main_window.search_bar.set_query(f"tag_id:{tag.id}")
-        self._driver.update_browsing_state(
-            BrowsingState.from_tag_id(tag.id, self._driver.browsing_history.current)
+        self._driver.navigator.update_browsing_state(
+            BrowsingState.from_tag_id(tag.id, self._driver.navigator.browsing_history.current)
         )

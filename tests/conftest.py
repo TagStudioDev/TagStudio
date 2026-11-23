@@ -30,6 +30,7 @@ from tagstudio.core.library.tag_cache import CachedTag, TagCache, TagCacheData
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.entry_state import EntryState
+from tagstudio.qt.navigator import Navigator
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -269,6 +270,9 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver.lib = library
         driver.library_pool = mock_thread_pool
         driver.entry_state = EntryState(library, driver.library_pool)
+        driver.navigator = Navigator(
+            library, driver.library_pool, driver.settings, driver.selection
+        )
 
         driver.app = Mock()
         driver.main_window = Mock()
@@ -280,7 +284,7 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
 
         # TODO - downsize this method and use it
         # driver.start()
-        driver.frame_content = [e.id for e in library.all_entries()]
+        driver.navigator.frame_content = [e.id for e in library.all_entries()]
         yield driver
 
 

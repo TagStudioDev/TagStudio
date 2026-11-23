@@ -7,6 +7,7 @@ import typing
 from typing import cast, override
 
 import structlog
+from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from PySide6.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
@@ -31,7 +32,10 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
+from tagstudio.core.library.alchemy.library import SearchResult
+from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.utils.types import unwrap
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.controllers.browsing_area import BrowsingArea
 from tagstudio.qt.controllers.inspector import Inspector
@@ -241,6 +245,11 @@ class MainWindow(QMainWindow):
         view.content_splitter.splitterMoved.connect(self.update)
         view.content_splitter.handle(1).installEventFilter(self)
         self._driver.selection.changed.connect(self._corner_handle.queue_update)
+        navigator = self._driver.navigator
+        navigator.state_updated.connect(self._on_state_updated)
+        navigator.search_started.connect(self._on_search_started)
+        navigator.results_found.connect(self._on_results_found)
+        navigator.search_failed.connect(self._on_search_failed)
         self.thumb_grid.scroll_area.installEventFilter(self)
 
     @property
@@ -494,6 +503,38 @@ class MainWindow(QMainWindow):
 
     def set_show_durations_action_checked(self, option: ShowLabelOption) -> None:
         self.layout().browsing_controls.set_show_durations_action_checked(option)
+
+    def _on_state_updated(self) -> None:
+        history = self._driver.navigator.browsing_history
+        self.search_bar.set_nav_buttons_enabled(True)
+        self.search_bar.set_history_available(history.can_move(-1), history.can_move(1))
+        self.search_bar.set_query(history.current.query or "")
+
+    def _on_search_started(self) -> None:
+        self.set_results_text(Translations["status.results.searching"])
+        self.browsing_area.pagination.setEnabled(False)
+
+    def _on_results_found(self, results: SearchResult, seconds: float) -> None:
+        self.browsing_area.pagination.setEnabled(True)
+        # Show search result labels
+        time_span = f"<a style=color:'gray'>({format_timespan(seconds).title()})</a>"
+        count = f"<b>{results.total_count:,}</b>"
+        is_single = results.total_count == 1
+        # Show "X Results" on query, otherwise "X Items"
+        if self._driver.navigator.browsing_history.current.query:
+            key = "status.results_found.singular" if is_single else "status.results_found"
+        else:
+            key = "status.items.singular" if is_single else "status.items"
+        self.set_results_text(Translations.format(key, count=count, time_span=time_span))
+        self.menu_bar.update_select_actions()
+
+    def _on_search_failed(self, error: BaseException) -> None:
+        self.browsing_area.pagination.setEnabled(True)
+        if isinstance(error, ParsingError):
+            query = self._driver.navigator.browsing_history.current.query
+            self.set_results_text(f'{Translations["status.results.invalid_syntax"]} "{query}"')
+        else:
+            self.set_results_text(Translations["status.results.search_failed"])
 
     def _update_content_splitter_limit(self) -> None:
         """Update whether the side panel's handle is at a limit."""

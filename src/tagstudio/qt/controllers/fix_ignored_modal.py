@@ -32,7 +32,7 @@ class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
         self.remove_modal.done.connect(
             lambda: (
                 self.update_ignored_count(),
-                self.driver.update_browsing_state(),
+                self.driver.navigator.update_browsing_state(),
                 self.update_driver_widgets(),
                 self.refresh_ignored(),
             )
