@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 
+import os
 import platform
 from datetime import datetime
 from enum import Enum, StrEnum
@@ -16,11 +17,21 @@ from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_GLOBAL_SETTINGS_PATH = (
-    Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
-    if platform.system() == "Windows"
-    else Path.home() / ".config" / "TagStudio" / "settings.toml"
-)
+
+def _default_global_settings_path() -> Path:
+    if platform.system() == "Windows":
+        return Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
+    # XDG Base Directory: $XDG_CONFIG_HOME (absolute, non-empty) or ~/.config.
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    config_home = (
+        Path(xdg_config_home)
+        if xdg_config_home and Path(xdg_config_home).is_absolute()
+        else Path.home() / ".config"
+    )
+    return config_home / "TagStudio" / "settings.toml"
+
+
+DEFAULT_GLOBAL_SETTINGS_PATH = _default_global_settings_path()
 
 DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
 MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
