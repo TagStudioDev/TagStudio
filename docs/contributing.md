@@ -40,14 +40,20 @@ If you wish to discuss TagStudio further, feel free to join the [Discord Server]
 
 ## :material-thumb-down:{.red} Unacceptable Code
 
-The following types of code will **NOT** be accepted to the project:
+The following types of code will **NOT** be accepted into the project:
+
+<!-- prettier-ignore -->
+!!! danger "AI-Generated Code & Pull Requests"
+    **Fully AI-generated** code and/or pull requests that have <u>clearly been opened without any human in the loop</u> will be **closed on sight**, and you will be **blocked** from the TagStudio project for spam. These types of PRs, however well-intended they may be, are utterly **unhelpful** to us and only serve to give us **more busywork** cleaning up the mess that your AI bot created.
+
+    Any code that was created with the _assistance_ of AI must be fully human-reviewed _before_ it's ever opened as a pull request, be fully understood by the **human** authoring the pull request, and comply with the rest of our Contribution Guidelines, especially the "Unacceptable Code" section. **"Vibe coding" does not meet these requirements** by its very nature.
 
 - Code that does not follow the [Contribution Checklist](#contribution-checklist) or violates the Contribution Guidelines
 - Large refactors that have not been discussed with us first
     - These types of refactors end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work
-- Other people/projects' code that is used without consent or does not have a [compatible license](#licenses)
-- Code that you do not understand and/or cannot explain (i.e. "vibe coding")
-- Code that adds a drastic amount of complexity with minimal utility
+- Code from other people or projects that is used without consent or does not have a [compatible license](#licenses)
+- Code that you do not understand and/or cannot explain (e.g. "vibe coding")
+- Code that adds a large amount of complexity while providing minimal utility
 
 ---
 
