@@ -144,6 +144,45 @@ def test_parent_tags(search_library: Library, query: str, count: int):
 
 
 @pytest.mark.parametrize(
+    ["query", "paths"],
+    [
+        ("field: holmes", {"adventures.txt", "memoirs.txt"}),
+        ("field: ADVENTURES", {"adventures.txt"}),
+        ('field: "adventures of"', {"adventures.txt"}),
+        ("field: 2024-05", {"adventures.txt"}),
+        ("field: 1_2", set()),
+        ("field: 1%2", set()),
+        ("field: holmes[name=title]", {"adventures.txt"}),
+        ("field: holmes[name=TITLE]", {"adventures.txt"}),
+        ("field: holmes[NAME=title]", {"adventures.txt"}),
+        ('field: holmes[name="series title"]', {"memoirs.txt"}),
+        ('field: chapter[name="series title"]', set()),
+        ('field: 2024[name="date taken"]', {"adventures.txt"}),
+        ("bar field: test", {"one/two/bar.md"}),
+        ("field: adventures or field: memoirs", {"adventures.txt", "memoirs.txt"}),
+        ("not field: holmes", {"foo.txt", "one/two/bar.md"}),
+    ],
+)
+def test_fields(field_library: Library, query: str, paths: set[str]):
+    results = field_library.search_library(BrowsingState.from_search_query(query), page_size=500)
+    assert {entry.path.as_posix() for entry in field_library.get_entries(results.ids)} == paths
+
+
+def test_unknown_field_property(field_library: Library):
+    with pytest.raises(NotImplementedError):
+        field_library.search_library(
+            BrowsingState.from_search_query("field: holmes[nmae=title]"), page_size=500
+        )
+
+
+def test_non_field_constraint_property(field_library: Library):
+    with pytest.raises(NotImplementedError):
+        field_library.search_library(
+            BrowsingState.from_search_query("path: holmes[name=title]"), page_size=500
+        )
+
+
+@pytest.mark.parametrize(
     "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
 )
 def test_syntax(search_library: Library, invalid_query: str):

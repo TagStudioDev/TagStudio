@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pytestqt.qtbot import QtBot
 
-from tagstudio.core.library.alchemy.fields import TextField
+from tagstudio.core.library.alchemy.fields import DatetimeField, TextField
 from tagstudio.core.media_types import MediaTypes
 
 CWD = Path(__file__).parent
@@ -183,6 +183,29 @@ def search_library(tmp_path: Path) -> Generator[Library]:
     yield lib
     _assert_tag_cache_matches_database(lib)
     lib.close()
+
+
+@pytest.fixture
+def field_library(library: Library) -> Library:
+    assert library.add_entries(
+        [
+            Entry(
+                path=Path("adventures.txt"),
+                fields=[
+                    TextField(name="Title", value="The Adventures of Sherlock Holmes"),
+                    DatetimeField(name="Date Taken", value="2024-05-01 12:34:56"),
+                ],
+            ),
+            Entry(
+                path=Path("memoirs.txt"),
+                fields=[
+                    TextField(name="Series Title", value="The Memoirs of Sherlock Holmes"),
+                    TextField(name="Notes", value="Chapter 1-2"),
+                ],
+            ),
+        ]
+    )
+    return library
 
 
 @pytest.fixture

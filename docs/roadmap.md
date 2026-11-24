@@ -222,7 +222,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     - [x] Search by Extension (e.g. ".jpg", ".png") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
         - [x] Optional consolidation of extension synonyms (e.g. ".jpg" can equal ".jpeg") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] Search by media type (e.g. "image", "video", "document") **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
-- [ ] Field Content Search :material-chevron-triple-up:{ .priority-high title="High Priority" }
+- [x] Field Search **[v9.7.0]**
 - [x] [Boolean Operators](search.md) **[[v9.5.0](changelog.md#950-march-3rd-2025)]**
     - [x] `AND` Operator
     - [x] `OR` Operator

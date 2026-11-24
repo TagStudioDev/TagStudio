@@ -76,7 +76,17 @@ You may also see the `tag_id:` prefix keyword show up when using the right-click
 
 ## Fields
 
-_[Field](fields.md) search is currently not in the program, however is coming in a future version._
+[Fields](fields.md) are searchable using the `field:` keyword, which searches the contents of every [text](fields.md#text) and [datetime](fields.md#datetime) field across entries. For example, `field: holmes` will return results for any entries with any text fields containing the text "holmes" (not the field name itself). Searches that include spaces need to be escaped using quotes, for example `field: "sherlock holmes"`. Field searches are case-insensitive and match any part of a field's contents.
+
+To search for fields that have a specific name, add the name in square brackets after the search term. For example, `field: holmes[name=title]` only searches fields named "Title". Field names are case-insensitive, and names containing spaces need to be surrounded in quotes, such as `field: holmes[name="series title"]`.
+
+### Dates
+
+Datetime fields are currently searchable using the `YYYY-MM-DD HH:MM:SS` format (regardless of the date format set in your settings). For example, given a "Date Taken" field:
+
+- `field: 2024[name="date taken"]` returns dates in 2024
+- `field: 2024-05[name="date taken"]` returns dates in May 2024
+- `field: 2024-05-01[name="date taken"]` returns dates on May 1st, 2024
 
 ---
 

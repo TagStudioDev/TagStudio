@@ -9,6 +9,7 @@ import structlog
 from sqlalchemy import ColumnElement, and_, distinct, false, func, literal, or_, select
 from sqlalchemy.sql.operators import ilike_op
 
+from tagstudio.core.library.alchemy.fields import DatetimeField, TextField
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.media_types import MediaTypeGroup, MediaTypes
@@ -40,28 +41,28 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
 
     @override
     def visit_or_list(self, node: ORList) -> ColumnElement[bool]:
-        tag_ids, bool_expressions = self.__separate_tags(node.elements, only_single=False)
+        tag_ids, bool_expressions = self._separate_tags(node.elements, only_single=False)
         if len(tag_ids) > 0:
-            bool_expressions.append(self.__entry_has_any_tags(tag_ids))
+            bool_expressions.append(self._entry_has_any_tags(tag_ids))
         return or_(*bool_expressions)
 
     @override
     def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:
-        tag_ids, bool_expressions = self.__separate_tags(node.terms, only_single=True)
+        tag_ids, bool_expressions = self._separate_tags(node.terms, only_single=True)
         if len(tag_ids) > 0:
-            bool_expressions.append(self.__entry_has_all_tags(tag_ids))
+            bool_expressions.append(self._entry_has_all_tags(tag_ids))
         return and_(*bool_expressions)
 
     @override
     def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:
         """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
-        if len(node.properties) != 0:
-            raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
+        if len(node.properties) != 0 and node.type != ConstraintType.Field:
+            raise NotImplementedError("Properties for this constraint type aren't implemented yet")
 
         if node.type == ConstraintType.Tag:
-            return self.__entry_has_any_tags(self.__get_tag_ids(node.value))
+            return self._entry_has_any_tags(self._get_tag_ids(node.value))
         elif node.type == ConstraintType.TagID:
-            return self.__entry_has_any_tags([int(node.value)])
+            return self._entry_has_any_tags([int(node.value)])
         elif node.type == ConstraintType.Path:
             ilike = False
             glob = False
@@ -108,9 +109,14 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             for compound_ext in MediaTypes.get_compound_exts(ext):
                 extensions |= MediaTypes.get_equivalent_exts(compound_ext)
             return self._entry_has_any_ext(extensions)
-        elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
+        elif node.type == ConstraintType.Special:
             if node.value.lower() == "untagged":
                 return ~Entry.id.in_(select(Entry.id).join(TagEntry))
+        elif node.type == ConstraintType.Field:
+            return or_(
+                self._entry_has_matching_field(TextField, node),
+                self._entry_has_matching_field(DatetimeField, node),
+            )
 
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
@@ -147,7 +153,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             ],
         )
 
-    def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
+    def _get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
         """Given a tag name find the ids of all tags that this name could refer to."""
         tag_ids = self.lib.get_tag_ids_by_name(tag_name)
         if len(tag_ids) > 1:
@@ -160,7 +166,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             return list(tag_ids)
         return list(self.lib.get_tag_ids_with_descendants(tag_ids))
 
-    def __separate_tags(
+    def _separate_tags(
         self, terms: list[AST], only_single: bool = True
     ) -> tuple[list[int], list[ColumnElement[bool]]]:
         tag_ids: set[int] = set()
@@ -179,7 +185,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                             )
                         continue
                     case ConstraintType.Tag:
-                        ids = self.__get_tag_ids(term.value)
+                        ids = self._get_tag_ids(term.value)
                         if len(ids) == 0:
                             bool_expressions.append(false())
                             continue
@@ -197,13 +203,15 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         pass
                     case ConstraintType.Special:
                         pass
+                    case ConstraintType.Field:
+                        pass
                     case _:
                         raise NotImplementedError(f"Unhandled constraint: '{term.type}'")
 
             bool_expressions.append(self.visit(term))
         return list(tag_ids), bool_expressions
 
-    def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
+    def _entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has all provided tag ids."""
         # Relational Division Query
         return Entry.id.in_(
@@ -213,8 +221,19 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             .having(func.count(distinct(TagEntry.tag_id)) == len(tag_ids))
         )
 
-    def __entry_has_any_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
+    def _entry_has_any_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has any of the provided tag ids."""
         return Entry.id.in_(
             select(TagEntry.entry_id).where(TagEntry.tag_id.in_(tag_ids)).distinct()
         )
+
+    def _entry_has_matching_field(
+        self, field_type: type[TextField | DatetimeField], node: Constraint
+    ) -> ColumnElement[bool]:
+        """Returns Binary Expression that is true if the Entry has a matching field of this type."""
+        conditions = [field_type.value.icontains(node.value, autoescape=True)]
+        for prop in node.properties:
+            if prop.key.lower() != "name":
+                raise NotImplementedError(f"Unknown field property: '{prop.key}'")
+            conditions.append(func.lower(field_type.name) == func.lower(prop.value))
+        return Entry.id.in_(select(field_type.entry_id).where(*conditions))

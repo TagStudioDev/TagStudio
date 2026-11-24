@@ -3,17 +3,18 @@
 
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import IntEnum
 from typing import TypeVar, override
 
 
-class ConstraintType(Enum):
+class ConstraintType(IntEnum):
     Tag = 0
     TagID = 1
     MediaType = 2
     FileType = 3
     Path = 4
     Special = 5
+    Field = 6
 
     @staticmethod
     def from_string(text: str) -> ConstraintType | None:
@@ -24,6 +25,7 @@ class ConstraintType(Enum):
             "filetype": ConstraintType.FileType,
             "path": ConstraintType.Path,
             "special": ConstraintType.Special,
+            "field": ConstraintType.Field,
         }.get(text.lower())
 
 
