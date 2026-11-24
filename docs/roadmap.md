@@ -118,9 +118,11 @@ A detailed specification written for the TagStudio tag and/or library format. In
     - [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.x]**
 - [x] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     - [x] Tag Search
+        - [x] Sort by alphabetical
+        - [ ] Sort by most used :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Sort by color :material-chevron-up:{ .priority-low title="Low Priority" }
     - [ ] Pinned Tags
     - [x] Recent Tags
-    - [ ] Top Tags
 - [ ] New Tabbed Tag Building UI to Support New Tag Features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
 - [x] Media Duration Labels **[v9.7.0]**
 - [ ] Word/Line Count Labels :material-chevron-up:{ .priority-low title="Low Priority" }

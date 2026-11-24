@@ -120,7 +120,6 @@ path = [
     "src/tagstudio/resources/qt/images/panels/image-outline.svg",
     "src/tagstudio/resources/qt/images/panels/tag-search.svg",
     "src/tagstudio/resources/qt/images/panels/text-box-outline.svg",
-    "src/tagstudio/resources/qt/images/panels/trophy.svg",
     "src/tagstudio/resources/qt/images/rail/tag-text.svg",
     "src/tagstudio/resources/qt/images/rail/tag-text-outline.svg",
     "src/tagstudio/resources/qt/images/search/file-tree.svg",

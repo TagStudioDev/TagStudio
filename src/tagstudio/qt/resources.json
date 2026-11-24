@@ -371,10 +371,6 @@
         "mode": "pil",
         "path": "qt/images/thumb_loading.png"
     },
-    "top_tags_icon_solid": {
-        "mode": "rb",
-        "path": "qt/images/panels/trophy.svg"
-    },
     "trash": {
         "mode": "pil",
         "path": "qt/images/bxs-trash-solid.png"

@@ -11,8 +11,6 @@ from tagstudio.qt.controllers.section_splitter import SectionSplitter
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import WIN_PAD
 
-_TAG_LIST_MIN_HEIGHT = 72  # Minimum height of the pinned, recent, and top tag lists
-
 
 class TaggingPanelView(QVBoxLayout):
     def __init__(
@@ -38,9 +36,6 @@ class TaggingPanelView(QVBoxLayout):
                     Translations["panel.tagging.recent_tags"],
                     recent_tags,
                 ),
-                self._placeholder_section(
-                    rm.top_tags_icon_solid, Translations["panel.tagging.top_tags"]
-                ),
             ]
         )
         self.addWidget(self.section_splitter, stretch=1)
@@ -50,5 +45,5 @@ class TaggingPanelView(QVBoxLayout):
         return self._tag_list_section(svg, title, InsetFrame())
 
     def _tag_list_section(self, svg: bytes, title: str, tag_list: QWidget) -> CollapsibleSection:
-        tag_list.setMinimumHeight(_TAG_LIST_MIN_HEIGHT)
+        tag_list.setMinimumHeight(72)
         return CollapsibleSection(svg, title, tag_list)

@@ -19,7 +19,7 @@ _STARTING_WIDTH = 240
 _RECENT_TAGS_LIMIT = 20  # TODO: Make a setting
 
 
-# TODO: Implement the pinned and top tags sections
+# TODO: Implement the pinned tags section
 class TaggingPanel(QWidget):
     """A panel of tagging tools in collapsible sections."""
 

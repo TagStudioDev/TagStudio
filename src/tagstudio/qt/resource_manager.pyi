@@ -111,7 +111,6 @@ class ResourceManager:
     tags_icon: bytes
     tags_icon_solid: bytes
     thumb_loading: Image.Image
-    top_tags_icon_solid: bytes
     trash: Image.Image
     ts_logo_text_color: Image.Image
     ts_logo_text_mono: Image.Image
