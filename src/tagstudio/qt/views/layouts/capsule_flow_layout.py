@@ -6,8 +6,8 @@ from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.styles.stylesheets import HALF_PAD
 
 
-class TagDataView(FlowLayout):
-    """The layout used for a TagData widget."""
+class CapsuleFlowLayout(FlowLayout):
+    """A flow layout for capsules."""
 
     def __init__(self) -> None:
         super().__init__()

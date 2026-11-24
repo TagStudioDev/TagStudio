@@ -119,7 +119,7 @@ A detailed specification written for the TagStudio tag and/or library format. In
 - [x] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     - [x] Tag Search
     - [ ] Pinned Tags
-    - [ ] Recent Tags
+    - [x] Recent Tags
     - [ ] Top Tags
 - [ ] New Tabbed Tag Building UI to Support New Tag Features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.8.x]**
 - [x] Media Duration Labels **[v9.7.0]**

@@ -46,6 +46,11 @@ class TagSearchPanel(SearchPanel[int]):
         self._lib = library
         self.layout().create_from_query_button.set_is_tag(True)
         self._tags_edited.connect(self._on_tags_edited)
+        self.restyle()
+
+    def restyle(self) -> None:
+        """Style the results' inset to match the tag shape."""
+        self.layout().results_box.set_content_inset(TagShape.content_inset(PAD))
 
     @override
     def showEvent(self, event: QShowEvent) -> None:
@@ -136,14 +141,6 @@ class TagSearchPanel(SearchPanel[int]):
     @override
     def search_items(self, query: str | None) -> list[int]:
         return [tag_id for tag_id in self._lib.search_tags(query) if tag_id not in self._excluded]
-
-    @override
-    def _update_item_widgets(self) -> None:
-        results_layout = self.layout().results_layout
-        margins = results_layout.contentsMargins()
-        margins.setLeft(PAD - (TagShape.PILL_INSET_REDUCTION if TagShape.is_pill else 0))
-        results_layout.setContentsMargins(margins)
-        super()._update_item_widgets()
 
     @override
     def set_item_widget(self, item: int, index: int) -> None:

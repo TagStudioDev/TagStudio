@@ -11,11 +11,13 @@ from tagstudio.qt.controllers.section_splitter import SectionSplitter
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import WIN_PAD
 
-_TAG_LIST_MIN_HEIGHT = 72  # Placeholder height of the pinned, recent, and top tag lists
+_TAG_LIST_MIN_HEIGHT = 72  # Minimum height of the pinned, recent, and top tag lists
 
 
 class TaggingPanelView(QVBoxLayout):
-    def __init__(self, tag_search: QWidget, tag_search_row: QHBoxLayout) -> None:
+    def __init__(
+        self, tag_search: QWidget, tag_search_row: QHBoxLayout, recent_tags: QWidget
+    ) -> None:
         super().__init__()
         self.setContentsMargins(0, 0, 0, WIN_PAD)
         rm = ResourceManager()
@@ -31,8 +33,10 @@ class TaggingPanelView(QVBoxLayout):
                 self._placeholder_section(
                     rm.pinned_tags_icon_solid, Translations["panel.tagging.pinned_tags"]
                 ),
-                self._placeholder_section(
-                    rm.recent_tags_icon_solid, Translations["panel.tagging.recent_tags"]
+                self._tag_list_section(
+                    rm.recent_tags_icon_solid,
+                    Translations["panel.tagging.recent_tags"],
+                    recent_tags,
                 ),
                 self._placeholder_section(
                     rm.top_tags_icon_solid, Translations["panel.tagging.top_tags"]
@@ -43,6 +47,8 @@ class TaggingPanelView(QVBoxLayout):
         self.addStretch()
 
     def _placeholder_section(self, svg: bytes, title: str) -> CollapsibleSection:
-        tag_list = InsetFrame()
+        return self._tag_list_section(svg, title, InsetFrame())
+
+    def _tag_list_section(self, svg: bytes, title: str, tag_list: QWidget) -> CollapsibleSection:
         tag_list.setMinimumHeight(_TAG_LIST_MIN_HEIGHT)
         return CollapsibleSection(svg, title, tag_list)

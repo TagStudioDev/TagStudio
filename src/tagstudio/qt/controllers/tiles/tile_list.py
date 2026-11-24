@@ -465,8 +465,7 @@ class TileList(InsetFrame):
             container = self._tiles[index]
 
         container.set_title(Translations["entries.tags"] if not category_tag else category_tag.name)
-        reduction = TagShape.PILL_INSET_REDUCTION if TagShape.is_pill else 0
-        container.set_content_inset(HALF_PAD - reduction)
+        container.set_content_inset(TagShape.content_inset(HALF_PAD))
 
         if not is_mixed:
             inner_widget = container.get_inner_widget()

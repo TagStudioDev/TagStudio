@@ -18,8 +18,8 @@ from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.tiles.tile_data import TileData
+from tagstudio.qt.views.layouts.capsule_flow_layout import CapsuleFlowLayout
 from tagstudio.qt.views.styles.tag_icons import tag_icon
-from tagstudio.qt.views.tiles.tag_data_view import TagDataView
 
 if TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
@@ -36,13 +36,13 @@ class TagData(TileData):
         self._driver = driver
         self._lib = driver.lib
         self._entries: list[int] = []
-        super().__init__(title, TagDataView())
+        super().__init__(title, CapsuleFlowLayout())
         self.setObjectName("tag_data")
 
     @override
-    def layout(self) -> TagDataView:
+    def layout(self) -> CapsuleFlowLayout:
         layout = super().layout()
-        assert isinstance(layout, TagDataView)
+        assert isinstance(layout, CapsuleFlowLayout)
         return layout
 
     def set_entries(self, entries: list[int]) -> None:

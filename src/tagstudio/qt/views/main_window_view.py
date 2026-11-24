@@ -51,7 +51,7 @@ class MainWindowView(QHBoxLayout):
         self.browsing_controls = BrowsingControls()
         self.browsing_area = BrowsingArea(driver, pixel_ratio)
         self.inspector = Inspector(driver)
-        self.tagging_panel = TaggingPanel(driver.lib)
+        self.tagging_panel = TaggingPanel(driver.lib, driver.entry_state)
         self.central_content = QWidget()
         self.central_content.setObjectName("central_content")
         central_content_layout = QVBoxLayout(self.central_content)

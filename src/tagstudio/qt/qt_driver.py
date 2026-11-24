@@ -394,6 +394,13 @@ class QtDriver(DriverMixin, QObject):
         )
         self.main_window.inspector.can_add_tags_changed.connect(tag_search.set_capsules_clickable)
 
+        recent_tags = self.main_window.tagging_panel.recent_tags
+        recent_tags.search_for_tag.connect(self.search_for_tag_callback)
+        recent_tags.tag_chosen.connect(
+            lambda chosen_tag: self.entry_state.add_tags(self.selection.selected, chosen_tag)
+        )
+        self.main_window.inspector.can_add_tags_changed.connect(recent_tags.set_capsules_clickable)
+
         self.update_recent_lib_menu()
 
         self.main_window.thumb_grid.visible_changed.connect(
@@ -568,6 +575,7 @@ class QtDriver(DriverMixin, QObject):
         # Reset library state
         self.main_window.search_bar.set_query("")
         self.main_window.tagging_panel.tag_search.set_search_query("")
+        self.main_window.tagging_panel.recent_tags.set_tag_ids([])
         self.main_window.set_results_text("")
         scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -632,6 +640,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         self.entry_state.add_tags(self.selection.selected, tag_ids)
+        self.main_window.tagging_panel.add_recent_tags(tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.

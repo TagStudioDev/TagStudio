@@ -6,7 +6,7 @@ from typing import override
 
 import structlog
 from PySide6 import QtCore, QtGui
-from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, Signal
+from PySide6.QtCore import QEvent, QObject, QThreadPool, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QSizePolicy
 
@@ -16,7 +16,7 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.views.capsule_view import CapsuleView
 from tagstudio.qt.views.search_panel_view import SearchPanelView
-from tagstudio.qt.views.styles.stylesheets import HALF_PAD, PAD
+from tagstudio.qt.views.styles.stylesheets import HALF_PAD
 
 logger = structlog.get_logger(__name__)
 
@@ -52,10 +52,7 @@ class SearchPanel[T](ModalContent):
         self._items_found.connect(self._on_items_found)
 
         self.setLayout(view)
-        scroll_bar = view.scroll_area.verticalScrollBar()
-        scroll_bar.rangeChanged.connect(self._toggle_scroll_bar)
-        self._toggle_scroll_bar(scroll_bar.minimum(), scroll_bar.maximum())
-        scroll_bar.valueChanged.connect(self._fill_item_widgets)
+        view.scroll_area.verticalScrollBar().valueChanged.connect(self._fill_item_widgets)
         view.scroll_area.viewport().installEventFilter(self)
         self.setMinimumSize(300, 400)
         self._connect_callbacks()
@@ -101,20 +98,6 @@ class SearchPanel[T](ModalContent):
         self.layout().scroll_layout.removeWidget(self.layout().create_from_query_button)
         self.layout().create_from_query_button.hide()
         self._is_create_from_query_button_in_layout = False
-
-    def _toggle_scroll_bar(self, minimum: int, maximum: int) -> None:
-        """Show the scroll bar when needed."""
-        view = self.layout()
-        is_overflowing = maximum > minimum
-        margins = view.results_layout.contentsMargins()
-        margins.setRight(0 if is_overflowing else PAD)
-        view.results_layout.setContentsMargins(margins)
-        view.results_layout.activate()
-        view.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-            if is_overflowing
-            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
 
     def get_item_widget(self, index: int) -> Capsule:
         """The item widget showing the result at this row, which must be in view."""

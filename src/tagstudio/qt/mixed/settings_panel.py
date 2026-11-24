@@ -34,6 +34,8 @@ from tagstudio.qt.app_settings import (
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
+from tagstudio.qt.controllers.tag_capsule_box import TagCapsuleBox
+from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.views.styles.stylesheets import TagShape
 
 if TYPE_CHECKING:
@@ -464,9 +466,9 @@ class SettingsPanel(ModalContent):
             driver.apply_theme()
         TagShape.is_pill = settings["pill_shaped_tags"]
         TagShape.is_circle_badge = settings["circular_badges"]
-        # Restyle displayed tags so they take the new shape
+        # Restyle displayed tags and containers so they take the new shape and padding
         for widget in QApplication.allWidgets():
-            if isinstance(widget, Capsule):
+            if isinstance(widget, (Capsule, TagCapsuleBox, TagSearchPanel)):
                 widget.restyle()
         # Update main_window to refresh badge shape
         driver.main_window.update()

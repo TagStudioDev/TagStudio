@@ -61,7 +61,12 @@ class TagShape(metaclass=Singleton):
 
     is_pill: bool = True
     is_circle_badge: bool = True
-    PILL_INSET_REDUCTION = 2  # Pills tell tiles to have smaller margins for visual balance
+    PILL_INSET_REDUCTION = 2  # Content insets are smaller beside pills for visual balance
+
+    @staticmethod
+    def content_inset(inset: int) -> int:
+        """The content inset beside tags. Smaller beside pills for visual balance."""
+        return inset - TagShape.PILL_INSET_REDUCTION if TagShape.is_pill else inset
 
 
 def container_style() -> str:
