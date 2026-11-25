@@ -97,10 +97,6 @@ class ResourceManager:
     sort_numeric_ascending_icon: bytes
     sort_numeric_descending_icon: bytes
     sort_random_icon: bytes
-    splash_95: QPixmap
-    splash_aurora: QPixmap
-    splash_classic: QPixmap
-    splash_goo_gears: QPixmap
     spreadsheet: Image.Image
     sync_icon: bytes
     tag_search_icon_solid: bytes

@@ -29,7 +29,6 @@ from tagstudio.qt.app_settings import (
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
-    Splash,
 )
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
@@ -60,15 +59,6 @@ class SettingsPanel(ModalContent):
         Theme.SYSTEM: "settings.theme.system",
         Theme.DARK: "settings.theme.dark",
         Theme.LIGHT: "settings.theme.light",
-    }
-
-    splash_map: dict[Splash, str] = {
-        Splash.DEFAULT: "settings.splash.option.default",
-        Splash.RANDOM: "settings.splash.option.random",
-        Splash.CLASSIC: "settings.splash.option.classic",
-        Splash.GOO_GEARS: "settings.splash.option.goo_gears",
-        Splash.NINETY_FIVE: "settings.splash.option.ninety_five",
-        Splash.AURORA: "settings.splash.option.aurora",
     }
 
     tag_click_action_map: dict[TagClickActionOption, str] = {
@@ -368,16 +358,6 @@ class SettingsPanel(ModalContent):
         self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
-        # Splash Screen
-        self.splash_combobox = QComboBox()
-        for k in SettingsPanel.splash_map:
-            self.splash_combobox.addItem(Translations[SettingsPanel.splash_map[k]], k)
-        splash = self.driver.settings.splash
-        if splash not in SettingsPanel.splash_map:
-            splash = Splash.DEFAULT
-        self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
-        form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
-
         # Pill-Shaped Tags
         self.pill_shaped_tags_checkbox = QCheckBox()
         self.pill_shaped_tags_checkbox.setChecked(self.driver.settings.pill_shaped_tags)
@@ -422,7 +402,6 @@ class SettingsPanel(ModalContent):
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
-            "splash": self.splash_combobox.currentData(),
         }
 
     def has_pending_changes(self) -> bool:
@@ -457,7 +436,6 @@ class SettingsPanel(ModalContent):
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
-        driver.settings.splash = Splash(settings["splash"]) or Splash.DEFAULT
 
         driver.settings.save()
 

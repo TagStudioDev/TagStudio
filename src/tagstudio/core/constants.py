@@ -7,7 +7,6 @@ VERSION: str = version("tagstudio")
 BUILD_TYPE: str = ""  # Usually "", "app.nightly", or "app.pre_release"
 COPYRIGHT_YEARS: str = "2021-2026"
 COPYRIGHT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien & TagStudio Contributors"
-COPYRIGHT_COMPACT: str = f"© {COPYRIGHT_YEARS} Travis Abendshien\n& TagStudio Contributors"
 
 GITHUB_REPO_URL = "https://github.com/TagStudioDev/TagStudio"
 GITHUB_RELEASE_URL = "https://github.com/TagStudioDev/TagStudio/releases/latest"

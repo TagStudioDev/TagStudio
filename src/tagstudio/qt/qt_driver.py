@@ -75,7 +75,6 @@ from tagstudio.qt.controllers.ignore_modal import IgnoreModal
 from tagstudio.qt.controllers.library_info_modal import LibraryInfoModal
 from tagstudio.qt.controllers.main_window import MainWindow
 from tagstudio.qt.controllers.modal import Modal
-from tagstudio.qt.controllers.splash import SplashScreen
 from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
@@ -330,14 +329,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.raise_()
         self.main_window.activateWindow()
 
-        self.splash: SplashScreen = SplashScreen(
-            resource_manager=self.rm,
-            screen_width=QGuiApplication.primaryScreen().geometry().width(),
-            splash_name=self.settings.splash,
-            device_ratio=self.main_window.devicePixelRatio(),
-        )
-        # self.splash.show()  # TODO: Decide if the splash screen should be removed
-
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
@@ -480,8 +471,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.browsing_area.landing_page.open_library_requested.connect(
             self.open_library_from_dialog
         )
-
-        # self.splash.finish(self.main_window)
 
     def submit_search(self, query: str) -> None:
         # Clear any banner asking for a manual refresh of the view

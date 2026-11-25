@@ -4,7 +4,7 @@
 
 import platform
 from datetime import datetime
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, IntEnum
 from pathlib import Path
 from typing import override
 
@@ -32,15 +32,6 @@ MAX_CACHED_THUMB_RES = 1024  # Pixels
 DEFAULT_CACHED_THUMB_RES = 256  # Pixels
 
 PAGE_SIZES = (50, 100, 250, 500, 1000, 2500, 5000)
-
-
-class Splash(StrEnum):
-    DEFAULT = "default"
-    RANDOM = "random"
-    CLASSIC = "classic"
-    GOO_GEARS = "goo_gears"
-    NINETY_FIVE = "95"
-    AURORA = "aurora"
 
 
 class ShowLabelOption(IntEnum):
@@ -88,7 +79,6 @@ class AppSettings(BaseModel):
     theme: Theme = Field(default=Theme.SYSTEM)
     pill_shaped_tags: bool = Field(default=True)
     circular_badges: bool = Field(default=True)
-    splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
 
     date_format: str = Field(default="%x")

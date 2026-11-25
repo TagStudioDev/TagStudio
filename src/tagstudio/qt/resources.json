@@ -315,22 +315,6 @@
         "mode": "rb",
         "path": "qt/images/search/bx-shuffle.svg"
     },
-    "splash_95": {
-        "mode": "qpixmap",
-        "path": "qt/images/splash/95.png"
-    },
-    "splash_aurora": {
-        "mode": "qpixmap",
-        "path": "qt/images/splash/aurora.png"
-    },
-    "splash_classic": {
-        "mode": "qpixmap",
-        "path": "qt/images/splash/classic.png"
-    },
-    "splash_goo_gears": {
-        "mode": "qpixmap",
-        "path": "qt/images/splash/goo_gears.png"
-    },
     "spreadsheet": {
         "mode": "pil",
         "path": "qt/images/file_icons/spreadsheet.png"
