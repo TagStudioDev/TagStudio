@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -29,6 +28,8 @@ from tagstudio.qt.app_settings import (
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
+    ShowFilepathOption,
+    TagClickActionOption,
     ThemeOption,
 )
 from tagstudio.qt.controllers.capsule import Capsule

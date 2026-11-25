@@ -9,11 +9,11 @@ from typing import TYPE_CHECKING, override
 import structlog
 from PySide6.QtCore import Signal
 
-from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.tag_cache import CachedTag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import TagClickActionOption
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.modal import Modal

@@ -4,8 +4,9 @@
 
 import platform
 import traceback
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from typing import Any
+from warnings import deprecated
 
 import structlog
 from PySide6.QtCore import Qt
@@ -26,6 +27,20 @@ _MACOS_ACCENT_BRIGHTENING = QColorSpace(QColorSpace.Primaries.SRgb, 1.8).transfo
 MUTED_PURPLE = "#809782ff"
 MUTED_PURPLE_OPAQUE = "#9782ff"
 MUTED_PURPLE_DEEP = "#6A5BB3"
+
+
+@deprecated("Will be replaced with a better color palette system.")
+class ThemePalette(StrEnum):
+    COLOR_BG_DARK = "#65000000"
+    COLOR_BG_LIGHT = "#22000000"
+    COLOR_DARK_LABEL = "#DD000000"
+    COLOR_BG = "#65000000"
+
+    COLOR_HOVER = "#65444444"
+    COLOR_PRESSED = "#65777777"
+    COLOR_DISABLED_BG = "#30000000"
+    COLOR_FORBIDDEN = "#65F39CAA"
+    COLOR_FORBIDDEN_BG = "#65440D12"
 
 
 class Palette(metaclass=Singleton):

@@ -10,10 +10,10 @@ from PySide6 import QtCore
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMenu, QMenuBar, QWidget
 
-from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import ShowFilepathOption
 from tagstudio.qt.helpers.mnemonics import assign_mnemonics
 
 if typing.TYPE_CHECKING:

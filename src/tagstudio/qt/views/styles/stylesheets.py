@@ -7,7 +7,6 @@ import platform
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QGuiApplication
 
-from tagstudio.core.enums import ThemePalette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.library.tag_cache import TagColor
@@ -15,6 +14,7 @@ from tagstudio.core.utils.singleton import Singleton
 from tagstudio.qt.views.styles.palette import (
     ColorType,
     Palette,
+    ThemePalette,
     UiColor,
     blend,
     burn,

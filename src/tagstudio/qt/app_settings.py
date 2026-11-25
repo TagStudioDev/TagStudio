@@ -4,15 +4,13 @@
 
 import platform
 from datetime import datetime
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 from pathlib import Path
 from typing import override
 
 import structlog
 import toml
 from pydantic import BaseModel, Field, field_validator
-
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
 logger = structlog.get_logger(__name__)
 
@@ -34,6 +32,15 @@ DEFAULT_CACHED_THUMB_RES = 256  # Pixels
 PAGE_SIZES = (50, 100, 250, 500, 1000, 2500, 5000)
 
 
+class AppCacheItems(StrEnum):
+    """List of setting item names."""
+
+    LAST_LIBRARY = "last_library"
+    LIBS_LIST = "libs_list"
+    DISMISSED_UPDATE = "dismissed_update"
+    LAST_VERSION_OPENED = "last_version_opened"
+
+
 class ShowLabelOption(IntEnum):
     """Used for common options that can show labels in different states."""
 
@@ -43,12 +50,30 @@ class ShowLabelOption(IntEnum):
 
 
 class ThemeOption(IntEnum):
-    """Values representing the options for the "theme" setting."""
+    """Options for the "theme" setting."""
 
     DARK = 0
     LIGHT = 1
     SYSTEM = 2
     DEFAULT = SYSTEM
+
+
+class ShowFilepathOption(IntEnum):
+    """Options for the "show_filepath" setting."""
+
+    SHOW_FULL_PATHS = 0
+    SHOW_RELATIVE_PATHS = 1
+    SHOW_FILENAMES_ONLY = 2
+    DEFAULT = SHOW_RELATIVE_PATHS
+
+
+class TagClickActionOption(IntEnum):
+    """Options for the "tag_click_action" setting."""
+
+    OPEN_EDIT = 0
+    SET_SEARCH = 1
+    ADD_TO_SEARCH = 2
+    DEFAULT = OPEN_EDIT
 
 
 class TomlEnumEncoder(toml.TomlEncoder):

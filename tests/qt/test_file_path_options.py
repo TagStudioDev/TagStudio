@@ -12,10 +12,10 @@ from PySide6.QtGui import QAction, QTextDocument
 from PySide6.QtWidgets import QMenu, QMenuBar
 from pytestqt.qtbot import QtBot
 
-from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.app_settings import ShowFilepathOption
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.qt_driver import QtDriver

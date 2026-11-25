@@ -16,7 +16,6 @@ from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QGuiApplication, QPalette
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
-from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -27,6 +26,7 @@ from tagstudio.core.utils.normalization import exists, path_on_disk
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
+from tagstudio.qt.app_settings import ShowFilepathOption
 from tagstudio.qt.controllers.size_animation import SizeAnimation
 from tagstudio.qt.utils.file_opener import FileOpenerHelper, open_file
 from tagstudio.qt.views.file_attributes_view import FileAttributesView

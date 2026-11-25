@@ -45,7 +45,7 @@ from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButto
 
 from tagstudio.core.base_driver import BaseDriver
 from tagstudio.core.constants import BUILD_TYPE, VERSION
-from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
+from tagstudio.core.enums import MacroID
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
@@ -59,7 +59,9 @@ from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
+    AppCacheItems,
     AppSettings,
+    ShowFilepathOption,
     ShowLabelOption,
     ThemeOption,
 )
