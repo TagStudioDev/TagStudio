@@ -9,23 +9,23 @@ from unittest.mock import Mock
 import pytest
 from PySide6.QtCore import Qt
 
-from tagstudio.core.enums import Theme
+from tagstudio.qt.app_settings import ThemeOption
 
 
 @pytest.mark.parametrize(
     "theme,expected_call",
     [
-        (Theme.DARK, Qt.ColorScheme.Dark),
-        (Theme.LIGHT, Qt.ColorScheme.Light),
-        (Theme.SYSTEM, None),  # SYSTEM theme should NOT call setColorScheme
+        (ThemeOption.DARK, Qt.ColorScheme.Dark),
+        (ThemeOption.LIGHT, Qt.ColorScheme.Light),
+        (ThemeOption.SYSTEM, None),  # SYSTEM theme should NOT call setColorScheme
     ],
 )
-def test_theme_colorscheme_handling(theme: Theme, expected_call):
+def test_theme_colorscheme_handling(theme: ThemeOption, expected_call):
     mock_style_hints = Mock()
 
-    if theme == Theme.DARK:
+    if theme == ThemeOption.DARK:
         mock_style_hints.setColorScheme(Qt.ColorScheme.Dark)
-    elif theme == Theme.LIGHT:
+    elif theme == ThemeOption.LIGHT:
         mock_style_hints.setColorScheme(Qt.ColorScheme.Light)
 
     if expected_call is None:

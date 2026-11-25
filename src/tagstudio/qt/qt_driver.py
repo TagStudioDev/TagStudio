@@ -63,7 +63,7 @@ from tagstudio.qt.app_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     AppSettings,
     ShowLabelOption,
-    Theme,
+    ThemeOption,
 )
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.about_modal import AboutModal
@@ -250,9 +250,9 @@ class QtDriver(DriverMixin, QObject):
 
     def apply_theme(self) -> None:
         """Apply the set theme's color scheme and palette to the app."""
-        if self.settings.theme == Theme.DARK:
+        if self.settings.theme == ThemeOption.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        elif self.settings.theme == Theme.LIGHT:
+        elif self.settings.theme == ThemeOption.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
         else:
             self.app.styleHints().unsetColorScheme()
@@ -296,12 +296,12 @@ class QtDriver(DriverMixin, QObject):
         self.applied_theme = self.settings.theme
 
     def _on_color_scheme_changed(self) -> None:
-        if self.applied_theme == Theme.SYSTEM == self.settings.theme:
+        if self.applied_theme == ThemeOption.SYSTEM == self.settings.theme:
             self.apply_theme()
 
     def start(self) -> None:
         """Launch the main Qt window."""
-        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
+        if self.settings.theme == ThemeOption.SYSTEM and platform.system() == "Windows":
             sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
         self.app_style = TagStudioStyle()

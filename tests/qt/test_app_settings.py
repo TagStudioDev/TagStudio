@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from tagstudio.qt.app_settings import AppSettings, Theme
+from tagstudio.qt.app_settings import AppSettings, ThemeOption
 
 
 def test_read_settings(library_dir: Path):
@@ -30,7 +30,7 @@ def test_read_settings(library_dir: Path):
     assert settings.show_filenames_in_grid
     assert settings.page_size == 1000
     assert settings.show_filepath == 0
-    assert settings.theme == Theme.SYSTEM
+    assert settings.theme == ThemeOption.SYSTEM
     assert settings.date_format == "%x"
     assert settings.hour_format
     assert settings.zero_padding

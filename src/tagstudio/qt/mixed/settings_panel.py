@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -29,6 +29,7 @@ from tagstudio.qt.app_settings import (
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
+    ThemeOption,
 )
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
@@ -55,10 +56,10 @@ class SettingsPanel(ModalContent):
         ShowFilepathOption.SHOW_FILENAMES_ONLY: "settings.filepath.option.name",
     }
 
-    theme_map: dict[Theme, str] = {
-        Theme.SYSTEM: "settings.theme.system",
-        Theme.DARK: "settings.theme.dark",
-        Theme.LIGHT: "settings.theme.light",
+    theme_map: dict[ThemeOption, str] = {
+        ThemeOption.SYSTEM: "settings.theme.system",
+        ThemeOption.DARK: "settings.theme.dark",
+        ThemeOption.LIGHT: "settings.theme.light",
     }
 
     tag_click_action_map: dict[TagClickActionOption, str] = {
@@ -354,7 +355,7 @@ class SettingsPanel(ModalContent):
             self.theme_combobox.addItem(Translations[SettingsPanel.theme_map[k]], k)
         theme = self.driver.settings.theme
         if theme not in SettingsPanel.theme_map:
-            theme = Theme.DEFAULT
+            theme = ThemeOption.DEFAULT
         self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 

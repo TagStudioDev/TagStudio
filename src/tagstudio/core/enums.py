@@ -48,8 +48,6 @@ class ThemePalette(enum.StrEnum):
 class Theme(enum.IntEnum):
     DARK = 0
     LIGHT = 1
-    SYSTEM = 2
-    DEFAULT = SYSTEM
 
 
 class OpenStatus(enum.IntEnum):

@@ -12,7 +12,7 @@ import structlog
 import toml
 from pydantic import BaseModel, Field, field_validator
 
-from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption, Theme
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
 logger = structlog.get_logger(__name__)
 
@@ -40,6 +40,13 @@ class ShowLabelOption(IntEnum):
     ALWAYS = 0
     ON_HOVER = 1
     NEVER = 2
+
+
+class ThemeOption(IntEnum):
+    DARK = 0
+    LIGHT = 1
+    SYSTEM = 2
+    DEFAULT = SYSTEM
 
 
 class TomlEnumEncoder(toml.TomlEncoder):
@@ -76,7 +83,7 @@ class AppSettings(BaseModel):
     dont_create_items_on_enter: bool = Field(default=False)
     sort_added_tags_last: bool = Field(default=True)
     invert_suggest_box_scroll: bool = Field(default=False)
-    theme: Theme = Field(default=Theme.SYSTEM)
+    theme: ThemeOption = Field(default=ThemeOption.SYSTEM)
     pill_shaped_tags: bool = Field(default=True)
     circular_badges: bool = Field(default=True)
     windows_start_command: bool = Field(default=False)
