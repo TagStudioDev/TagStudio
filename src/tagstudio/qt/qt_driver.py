@@ -43,8 +43,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton, QScrollArea
 
+from tagstudio.core.base_driver import BaseDriver
 from tagstudio.core.constants import BUILD_TYPE, VERSION
-from tagstudio.core.driver import BaseDriver
 from tagstudio.core.enums import AppCacheItems, MacroID, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
@@ -68,7 +68,7 @@ from tagstudio.qt.controllers.about_modal import AboutModal
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
 from tagstudio.qt.controllers.edit_tag_panel import EditTagPanel
 from tagstudio.qt.controllers.field_template_search_panel import FieldTemplateSearchPanel
-from tagstudio.qt.controllers.fix_ignored_modal import FixIgnoredEntriesModal
+from tagstudio.qt.controllers.fix_ignored_entries_modal import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal import IgnoreModal
 from tagstudio.qt.controllers.library_info_modal import LibraryInfoModal
 from tagstudio.qt.controllers.main_window import MainWindow

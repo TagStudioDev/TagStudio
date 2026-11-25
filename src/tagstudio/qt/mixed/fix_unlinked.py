@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDuplicateEntriesProgress
+from tagstudio.qt.controllers.merge_dupe_entries_progress import MergeDupeEntriesProgress
 from tagstudio.qt.mixed.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.views.styles.stylesheets import header
 
@@ -57,7 +57,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.refresh_unlinked_button = QPushButton(Translations["entries.generic.refresh_alt"])
         self.refresh_unlinked_button.clicked.connect(self.driver.sync_library_callback)
 
-        self.merge_class = MergeDuplicateEntriesProgress(self.lib, self.driver)
+        self.merge_class = MergeDupeEntriesProgress(self.lib, self.driver)
 
         self.manual_button = QPushButton(Translations["entries.unlinked.relink.manual"])
         self.manual_button.setHidden(True)

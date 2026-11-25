@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from tagstudio.qt.qt_driver import QtDriver
 
 
-class MergeDuplicateEntriesProgress(QObject):
+class MergeDupeEntriesProgress(QObject):
     done = Signal()
 
     def __init__(self, library: Library, driver: QtDriver):

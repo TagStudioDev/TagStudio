@@ -4,8 +4,8 @@
 
 from pathlib import Path
 
+from tagstudio.core.base_driver import BaseDriver
 from tagstudio.core.constants import TS_FOLDER_NAME
-from tagstudio.core.driver import BaseDriver
 from tagstudio.core.library.alchemy.library import OpenLibraryResult
 from tagstudio.i18n.translations import Translations
 
