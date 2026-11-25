@@ -12,10 +12,10 @@ from PySide6.QtGui import QDesktopServices, QPixmap
 from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.constants import GITHUB_RELEASE_URL, VERSION
-from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.utils.update_check import get_most_recent_release_version
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 
 logger = structlog.get_logger(__name__)
@@ -58,7 +58,7 @@ class UpdateAvailableMessageBox(QMessageBox):
 
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
-        latest_release_version = unwrap(TagStudioCore.get_most_recent_release_version())
+        latest_release_version = unwrap(get_most_recent_release_version())
         status = Translations.format(
             "version_modal.status",
             installed_version=f"<span style='color:{red}'>{VERSION}</span>",

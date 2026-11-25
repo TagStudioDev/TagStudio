@@ -51,11 +51,9 @@ from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.sync import LibrarySyncEngine
-from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.module_status import ModuleStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
-from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
@@ -91,6 +89,7 @@ from tagstudio.qt.selection_state import SelectionState
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.utils.update_check import get_most_recent_release_version, is_version_outdated
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.styles.image_background import ImageBackground
 from tagstudio.qt.views.styles.palette import ColorType, Palette, UiColor, get_ui_color
@@ -1148,14 +1147,14 @@ class QtDriver(BaseDriver, QObject):
         """Check for an update to TagStudio and display a notification if there is one."""
 
         def fetch_latest_version() -> None:
-            TagStudioCore.get_most_recent_release_version()
+            get_most_recent_release_version()
 
         runnable = CustomRunnable(fetch_latest_version)
         runnable.done.connect(self._show_available_update)
         QThreadPool.globalInstance().start(runnable)
 
     def _show_available_update(self) -> None:
-        latest_version = TagStudioCore.get_most_recent_release_version()
+        latest_version = get_most_recent_release_version()
         if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
             return
 

@@ -9,14 +9,13 @@ from typing import override
 from PySide6.QtCore import QEvent, Qt
 
 from tagstudio.core.constants import VERSION
-from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.ripgrep_status import RipgrepStatus
-from tagstudio.core.utils.str_formatting import is_version_outdated
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.utils.file_opener import open_file
+from tagstudio.qt.utils.update_check import get_most_recent_release_version, is_version_outdated
 from tagstudio.qt.views.about_modal_view import AboutModalView
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 
@@ -36,7 +35,7 @@ class AboutModal(ModalContent):
         amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
 
         # TagStudio Version
-        latest_ts_version = unwrap(TagStudioCore.get_most_recent_release_version(), "0.0.0")
+        latest_ts_version = unwrap(get_most_recent_release_version(), "0.0.0")
         if not is_version_outdated(VERSION, latest_ts_version):
             view.version_content.setText(f"{VERSION}")
         else:
