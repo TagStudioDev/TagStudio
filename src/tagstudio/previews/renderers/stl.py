@@ -13,9 +13,9 @@ import numpy as np
 import structlog
 from PIL import Image
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 
 logger = structlog.get_logger(__name__)
 

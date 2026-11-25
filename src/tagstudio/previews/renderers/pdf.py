@@ -16,10 +16,10 @@ from PySide6.QtCore import QBuffer, QFile, QFileDevice, QIODeviceBase, QSizeF
 from PySide6.QtGui import QImage
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
-from tagstudio.qt.views.styles.image_effects import replace_transparent_pixels
+from tagstudio.previews.enums import Theme
+from tagstudio.previews.image_effects import replace_transparent_pixels
 
 logger = structlog.get_logger(__name__)
 

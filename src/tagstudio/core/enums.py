@@ -45,11 +45,6 @@ class ThemePalette(enum.StrEnum):
     COLOR_FORBIDDEN_BG = "#65440D12"
 
 
-class Theme(enum.IntEnum):
-    DARK = 0
-    LIGHT = 1
-
-
 class OpenStatus(enum.IntEnum):
     NOT_FOUND = 0
     SUCCESS = 1

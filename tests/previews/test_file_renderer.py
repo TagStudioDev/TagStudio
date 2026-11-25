@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from tagstudio.core.enums import Theme
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.file_renderer import FileRenderer
 from tagstudio.previews.renderers.archive import ArchivePreview
 

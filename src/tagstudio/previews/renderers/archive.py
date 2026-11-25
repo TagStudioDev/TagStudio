@@ -14,10 +14,10 @@ from py7zr import SevenZipFile
 from py7zr.io import BytesIOFactory
 from rarfile import RarFile
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
 logger = structlog.get_logger(__name__)

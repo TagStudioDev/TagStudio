@@ -8,9 +8,9 @@ from typing import override
 import structlog
 from PIL.Image import Image
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.renderers.archive import archive_thumb
 
 logger = structlog.get_logger(__name__)

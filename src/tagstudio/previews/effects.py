@@ -4,7 +4,7 @@
 from PIL.Image import Image
 from PIL.Image import new as new_image
 
-from tagstudio.core.enums import Theme
+from tagstudio.previews.enums import Theme
 from tagstudio.qt.views.styles.palette import ColorType, UiColor, get_ui_color
 
 

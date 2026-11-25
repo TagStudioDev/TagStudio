@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PIL.Image import Image
 
-from tagstudio.core.enums import Theme
+from tagstudio.previews.enums import Theme
 
 RENDER = "RENDER"  # MediaType Context
 

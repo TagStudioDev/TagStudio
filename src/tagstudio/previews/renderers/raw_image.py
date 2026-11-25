@@ -13,9 +13,9 @@ from rawpy import (
     LibRawIOError,  # pyright: ignore[reportPrivateImportUsage]
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 
 logger = structlog.get_logger(__name__)
 

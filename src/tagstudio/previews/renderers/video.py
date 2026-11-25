@@ -12,9 +12,9 @@ from cv2.typing import MatLike
 from PIL import UnidentifiedImageError
 from PIL.Image import DecompressionBombError, Image, fromarray
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.media_probe import has_audio_stream, is_readable_video
 from tagstudio.previews.renderers.audio import AudioPreview
 

@@ -24,9 +24,9 @@ from pygments.token import (
     Whitespace,
 )
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.renderers.text import text_thumb
 
 logger = structlog.get_logger(__name__)

@@ -15,10 +15,10 @@ from PIL.Image import DecompressionBombError, Image, fromarray
 from PIL.Image import open as open_image
 from pillow_heif import register_heif_opener  # pyright: ignore[reportUnknownVariableType]
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 
 logger = structlog.get_logger(__name__)
 

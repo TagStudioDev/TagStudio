@@ -13,7 +13,6 @@ from typing import NamedTuple
 import structlog
 from PIL import Image, ImageFile
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaTypes
@@ -21,6 +20,7 @@ from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
 from tagstudio.core.utils.normalization import exists, path_on_disk
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.qt.app_settings import (
     DEFAULT_CACHED_THUMB_RES,
     MAX_CACHED_THUMB_RES,

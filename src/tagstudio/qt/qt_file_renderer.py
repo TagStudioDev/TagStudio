@@ -9,10 +9,10 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import QObject, QRectF, Signal
 from PySide6.QtGui import QColor, QGuiApplication, QImage, QPainter, QPen, QPixmap, Qt
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import slugify
 from tagstudio.core.utils.normalization import is_file
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.file_renderer import FileRenderer, RenderResult
 from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.cache_manager import CacheManager

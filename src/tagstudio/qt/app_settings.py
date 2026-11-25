@@ -43,6 +43,8 @@ class ShowLabelOption(IntEnum):
 
 
 class ThemeOption(IntEnum):
+    """Values representing the options for the "theme" setting."""
+
     DARK = 0
     LIGHT = 1
     SYSTEM = 2

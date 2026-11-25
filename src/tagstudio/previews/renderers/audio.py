@@ -16,13 +16,13 @@ from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
 from PIL.Image import open as open_image
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus
 from tagstudio.core.utils.silent_subprocess import silent_run
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.effects import apply_overlay_color
+from tagstudio.previews.enums import Theme
 from tagstudio.qt.views.styles.palette import UiColor
 
 logger = structlog.get_logger(__name__)

@@ -12,10 +12,10 @@ from typing import override
 import structlog
 from PIL.Image import Image, frombytes
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 
 logger = structlog.get_logger(__name__)
 

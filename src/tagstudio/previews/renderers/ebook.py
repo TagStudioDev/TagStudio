@@ -12,11 +12,11 @@ import structlog
 from PIL.Image import Image
 from PIL.Image import new as new_image
 
-from tagstudio.core.enums import Theme
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.base_preview import RENDER, BasePreview
+from tagstudio.previews.enums import Theme
 from tagstudio.previews.renderers.archive import Archive, first_image_in_archive, open_archive
 from tagstudio.previews.renderers.raster_image import image_from_bytes
 
