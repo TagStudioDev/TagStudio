@@ -787,3 +787,6 @@ def register_types() -> None:
     MediaTypes.register("video", ".mp4", SEARCH)
     MediaTypes.register("video", ".webm", SEARCH)
     MediaTypes.register("video", ".wmv", SEARCH)
+
+
+register_types()  # Register all filetypes for the SEARCH context.

@@ -4,25 +4,15 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import QSettings
-
 from tagstudio.core.constants import TS_FOLDER_NAME
-from tagstudio.core.driver import DriverMixin
+from tagstudio.core.driver import BaseDriver
 from tagstudio.core.library.alchemy.library import OpenLibraryResult
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import AppSettings
-
-
-# TODO: Remove Qt-specific things from this base driver text
-class TestBaseDriver(DriverMixin):
-    def __init__(self, settings: AppSettings, cache: QSettings):
-        self.settings = settings
-        self.cached_values = cache
 
 
 def test_verify_library_path_missing():
     # Given
-    driver = TestBaseDriver(AppSettings(), QSettings())
+    driver = BaseDriver()
 
     # When
     result = driver.verify_library_path("/0/4/5/1/")
@@ -40,7 +30,7 @@ def test_verify_library_path_missing():
 
 def test_verify_library_path_not_a_library(tmp_path: Path):
     # Given
-    driver = TestBaseDriver(AppSettings(), QSettings())
+    driver = BaseDriver()
 
     # When
     result = driver.verify_library_path(str(tmp_path), allow_creation=False)
@@ -59,7 +49,7 @@ def test_verify_library_path_not_a_library(tmp_path: Path):
 
 def test_verify_library_path_allow_creation(tmp_path: Path):
     # Given
-    driver = TestBaseDriver(AppSettings(), QSettings())
+    driver = BaseDriver()
 
     # When
     result = driver.verify_library_path(str(tmp_path), allow_creation=True)
@@ -70,7 +60,7 @@ def test_verify_library_path_allow_creation(tmp_path: Path):
 
 def test_verify_library_path_existing_library(library_dir: Path):
     # Given
-    driver = TestBaseDriver(AppSettings(), QSettings())
+    driver = BaseDriver()
 
     # When
     result = driver.verify_library_path(library_dir, allow_creation=False)

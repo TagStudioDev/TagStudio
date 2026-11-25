@@ -5,24 +5,16 @@
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import QSettings
 
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import OpenLibraryResult
-from tagstudio.core.query_lang.file_groups import register_types
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import AppSettings
 
 logger = structlog.get_logger(__name__)
 
 
-# TODO: Turn into a BaseDriver class instead of a "Mixin".
-class DriverMixin:
-    cached_values: QSettings
-    # TODO: AppSettings is Qt-specific and should not be in a base driver class.
-    settings: AppSettings
-
-    register_types()  # Register all filetypes for the SEARCH context.
+class BaseDriver:
+    """A base class for TagStudio frontend drivers."""
 
     def verify_library_path(
         self, path: str | Path, allow_creation: bool = True
