@@ -13,7 +13,6 @@ from tagstudio.core.library.alchemy.library import Library, SearchResult
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.utils.numeric import clamp
-from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.browsing_history import BrowsingHistory
 from tagstudio.qt.selection_state import SelectionState
 
@@ -37,13 +36,11 @@ class Navigator(QObject):
         self,
         library: Library,
         library_pool: QThreadPool,
-        settings: AppSettings,
         selection: SelectionState[int],
     ) -> None:
         super().__init__()
         self._lib = library
         self._library_pool = library_pool
-        self._settings = settings
         self._selection = selection
 
         self.frame_content: list[int] = []  # List of Entry IDs for the shown state
@@ -60,7 +57,9 @@ class Navigator(QObject):
     def page_size(self) -> int:
         """The max page size setting, or number of current results with infinite scroll on."""
         return (
-            len(self.frame_content) if self._settings.infinite_scroll else self._settings.page_size
+            len(self.frame_content)
+            if self._lib.settings.infinite_scroll
+            else self._lib.settings.page_size
         )
 
     @property
@@ -200,7 +199,7 @@ class Navigator(QObject):
             entry_id = None
 
         # Update pagination
-        page_size = 0 if self._settings.infinite_scroll else self._settings.page_size
+        page_size = 0 if self._lib.settings.infinite_scroll else self._lib.settings.page_size
         if page_size > 0:
             self.pages_count = math.ceil(len(self.frame_content) / page_size)
         else:

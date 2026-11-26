@@ -15,18 +15,17 @@ from PIL import Image, ImageFile
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.library.library_settings import (
+    DEFAULT_CACHED_THUMB_RES,
+    MAX_CACHED_THUMB_RES,
+    MIN_CACHED_THUMB_RES,
+)
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import decompressed, get_inner_ext, is_compressed
 from tagstudio.core.utils.normalization import exists, path_on_disk
 from tagstudio.previews.base_preview import RENDER, BasePreview
 from tagstudio.previews.enums import Theme
-from tagstudio.qt.app_settings import (
-    DEFAULT_CACHED_THUMB_RES,
-    MAX_CACHED_THUMB_RES,
-    MIN_CACHED_THUMB_RES,
-    AppSettings,
-)
 from tagstudio.qt.cache_manager import CacheManager
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -95,9 +94,8 @@ class FileRenderer:
         renderer.media_type_name: renderer.priority for renderer in _preview_renderers
     }
 
-    def __init__(self, library: Library, settings: AppSettings) -> None:
+    def __init__(self, library: Library) -> None:
         self.lib = library
-        self.settings = settings
 
     @classmethod
     def media_groups(cls, filepath: Path) -> list[str]:
@@ -249,8 +247,8 @@ class FileRenderer:
         image = FileRenderer.cached_thumbnail(
             cache, filepath.relative_to(library_dir), theme, date_modified
         )
-        if not image and self.settings.generate_thumbs:
-            res = self.settings.cached_thumb_resolution
+        if not image and self.lib.settings.generate_thumbs:
+            res = self.lib.settings.cached_thumb_resolution
             if not MIN_CACHED_THUMB_RES <= res <= MAX_CACHED_THUMB_RES:
                 res = DEFAULT_CACHED_THUMB_RES
 

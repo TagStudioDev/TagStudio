@@ -10,7 +10,6 @@ from pathlib import Path
 
 import structlog
 from platformdirs import user_config_path
-from pydantic import field_validator
 
 from tagstudio.core.utils.data_file import BaseDataFile
 
@@ -24,25 +23,6 @@ _LEGACY_SETTINGS_PATH = (
     if platform.system() == "Windows"
     else Path.home() / ".config" / "TagStudio" / "settings.toml"
 )
-
-DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
-MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
-
-# See: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp-saving
-DEFAULT_CACHED_THUMB_QUALITY = 80  # WebP Compression Quality
-MIN_CACHED_THUMB_RES = 32  # Pixels
-MAX_CACHED_THUMB_RES = 1024  # Pixels
-DEFAULT_CACHED_THUMB_RES = 256  # Pixels
-
-PAGE_SIZES = (50, 100, 250, 500, 1000, 2500, 5000)
-
-
-class ShowLabelOption(IntEnum):
-    """Used for common options that can show labels in different states."""
-
-    ALWAYS = 0
-    ON_HOVER = 1
-    NEVER = 2
 
 
 class ThemeOption(IntEnum):
@@ -80,18 +60,8 @@ class AppSettings(BaseDataFile):
 
     language: str = "en"
     open_last_loaded_on_startup: bool = True
-    generate_thumbs: bool = True
-    thumb_cache_size: float = DEFAULT_THUMB_CACHE_SIZE
-    cached_thumb_quality: int = DEFAULT_CACHED_THUMB_QUALITY
-    cached_thumb_resolution: int = DEFAULT_CACHED_THUMB_RES
     autoplay: bool = True
-    scan_files_on_open: bool = True
     loop: bool = True
-    show_filenames_in_grid: bool = True
-    show_extensions_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
-    show_durations_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
-    page_size: int = 100
-    infinite_scroll: bool = True
     show_filepath: ShowFilepathOption = ShowFilepathOption.DEFAULT
     tag_click_action: TagClickActionOption = TagClickActionOption.DEFAULT
     edit_tag_on_create: bool = False
@@ -108,15 +78,6 @@ class AppSettings(BaseDataFile):
     date_format: str = "%x"
     hour_format: bool = True
     zero_padding: bool = True
-
-    @field_validator("page_size")
-    @classmethod
-    def _round_page_size(cls, page_size: int) -> int:
-        """Round page size in settings file to the closest preconfigured internal size.
-
-        NOTE: Implicitly used by pydantic.
-        """
-        return min(PAGE_SIZES, key=lambda size: abs(size - page_size))
 
     @property
     def datetime_format(self) -> str:

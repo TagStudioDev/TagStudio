@@ -33,10 +33,10 @@ from PySide6.QtWidgets import QMainWindow, QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.core.library.alchemy.library import SearchResult
+from tagstudio.core.library.library_settings import ShowLabelOption
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.controllers.browsing_area import BrowsingArea
 from tagstudio.qt.controllers.inspector import Inspector
 from tagstudio.qt.controllers.menu_bar import MenuBar
@@ -488,6 +488,9 @@ class MainWindow(QMainWindow):
 
     def set_sorting_mode(self, mode: SortingModeEnum) -> None:
         self.layout().browsing_controls.set_sorting_mode(mode)
+
+    def set_thumb_size(self, size: int) -> None:
+        self.layout().browsing_controls.set_thumb_size(size)
 
     def set_results_text(self, text: str) -> None:
         self.layout().browsing_controls.set_results_text(text)

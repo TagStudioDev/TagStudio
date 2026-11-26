@@ -16,12 +16,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import (
+from tagstudio.core.library.library_settings import (
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
 )
+from tagstudio.i18n.translations import Translations
 from tagstudio.qt.views.styles.stylesheets import PAD
 
 
@@ -33,7 +33,6 @@ class SettingsModalView(QVBoxLayout):
         self.library_settings_container = QWidget()
         self.appearance_settings_container = QWidget()
         self.localization_settings_container = QWidget()
-        self.media_settings_container = QWidget()
 
         # TODO: Break into multiple tab sections for Application Settings and Library Settings
         # Tabs
@@ -52,11 +51,8 @@ class SettingsModalView(QVBoxLayout):
             self.localization_settings_container, Translations["settings.localization"]
         )
 
-        self._build_media_settings()
-        self.tab_widget.addTab(self.media_settings_container, Translations["settings.media"])
-
-        # self._build_library_settings()
-        # self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
+        self._build_library_settings()
+        self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
 
         self.addWidget(self.tab_widget)
 
@@ -77,12 +73,6 @@ class SettingsModalView(QVBoxLayout):
         self.open_last_lib_checkbox = QCheckBox()
         form_layout.addRow(
             Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
-        )
-
-        # Scan for new files when a library is opened
-        self.scan_files_on_open_checkbox = QCheckBox()
-        form_layout.addRow(
-            Translations["settings.scan_files_on_open"], self.scan_files_on_open_checkbox
         )
 
         # Show Filepath
@@ -133,21 +123,17 @@ class SettingsModalView(QVBoxLayout):
             self.invert_suggest_box_scroll_checkbox,
         )
 
-    # TODO: Implement Library Settings
+        # Autoplay
+        self.autoplay_checkbox = QCheckBox()
+        form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
+
     def _build_library_settings(self):
         form_layout = QFormLayout(self.library_settings_container)
         form_layout.setContentsMargins(PAD, PAD, PAD, PAD)
 
-        todo_label = QLabel("TODO")
-        form_layout.addRow(todo_label)
-
-    def _build_media_settings(self):
-        form_layout = QFormLayout(self.media_settings_container)
-        form_layout.setContentsMargins(PAD, PAD, PAD, PAD)
-
-        # Autoplay
-        self.autoplay_checkbox = QCheckBox()
-        form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
+        # Scan for new files when a library is opened
+        self.sync_on_open_checkbox = QCheckBox()
+        form_layout.addRow(Translations["settings.scan_files_on_open"], self.sync_on_open_checkbox)
 
         # Generate Thumbnails
         self.generate_thumbs = QCheckBox()

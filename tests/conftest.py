@@ -293,9 +293,7 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver.lib = library
         driver.library_pool = mock_thread_pool
         driver.entry_state = EntryState(library, driver.library_pool)
-        driver.navigator = Navigator(
-            library, driver.library_pool, driver.settings, driver.selection
-        )
+        driver.navigator = Navigator(library, driver.library_pool, driver.selection)
 
         driver.app = Mock()
         driver.main_window = Mock()

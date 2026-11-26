@@ -13,9 +13,9 @@ from PySide6.QtWidgets import QApplication, QFrame, QScrollArea, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.library_settings import ShowLabelOption
 from tagstudio.core.utils.types import unwrap
 from tagstudio.previews.media_probe import can_have_duration, get_duration
-from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.controllers.item_thumb import ItemThumb
 from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.qt_file_renderer import QtFileRenderer
@@ -45,7 +45,7 @@ class ThumbGrid(QWidget):
         self.setObjectName("thumb_grid")
         self.setStyleSheet("QWidget#thumb_grid { background: transparent; }")
         self._driver = driver
-        self._renderer = QtFileRenderer(driver.lib, driver.settings)
+        self._renderer = QtFileRenderer(driver.lib)
 
         self._box_scroll_timer = QTimer(self)
         self._box_scroll_timer.setInterval(self._BOX_SCROLL_INTERVAL_MS)
@@ -390,7 +390,7 @@ class ThumbGrid(QWidget):
             self._driver.lib,
             self._driver,
             (size, size),
-            show_filename_label=self._driver.settings.show_filenames_in_grid,
+            show_filename_label=self._driver.lib.settings.show_filenames_in_grid,
         )
 
     def _path(self, entry: Entry) -> Path:
@@ -636,7 +636,7 @@ class ThumbGrid(QWidget):
             thumb.set_image(image, file_path)
 
     def _queue_durations(self) -> None:
-        if self._driver.settings.show_durations_in_grid == ShowLabelOption.NEVER:
+        if self._driver.lib.settings.show_durations_in_grid == ShowLabelOption.NEVER:
             return
         for entry in self._assigned_entries():
             path = self._path(entry)

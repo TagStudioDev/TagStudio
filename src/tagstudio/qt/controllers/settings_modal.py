@@ -7,17 +7,15 @@ from typing import TYPE_CHECKING, Any, override
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialogButtonBox, QLineEdit
 
-from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
-from tagstudio.qt.app_settings import (
+from tagstudio.core.library.library_settings import (
     DEFAULT_CACHED_THUMB_RES,
     DEFAULT_THUMB_CACHE_SIZE,
     MAX_CACHED_THUMB_RES,
     MIN_CACHED_THUMB_RES,
     MIN_THUMB_CACHE_SIZE,
-    ShowFilepathOption,
-    TagClickActionOption,
-    ThemeOption,
 )
+from tagstudio.i18n.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
+from tagstudio.qt.app_settings import ShowFilepathOption, TagClickActionOption, ThemeOption
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
@@ -77,7 +75,6 @@ class SettingsModal(ModalContent):
         view = self.layout()
 
         view.open_last_lib_checkbox.setChecked(driver.settings.open_last_loaded_on_startup)
-        view.scan_files_on_open_checkbox.setChecked(driver.settings.scan_files_on_open)
 
         for k in SettingsModal.filepath_option_map:
             view.filepath_combobox.addItem(Translations[SettingsModal.filepath_option_map[k]], k)
@@ -103,6 +100,7 @@ class SettingsModal(ModalContent):
         view.invert_suggest_box_scroll_checkbox.setChecked(
             driver.settings.invert_suggest_box_scroll
         )
+        view.autoplay_checkbox.setChecked(driver.settings.autoplay)
 
         for k in SettingsModal.theme_map:
             view.theme_combobox.addItem(Translations[SettingsModal.theme_map[k]], k)
@@ -136,12 +134,16 @@ class SettingsModal(ModalContent):
         view.hourformat_checkbox.setChecked(driver.settings.hour_format)
         view.zeropadding_checkbox.setChecked(driver.settings.zero_padding)
 
-        view.autoplay_checkbox.setChecked(driver.settings.autoplay)
-        view.generate_thumbs.setChecked(driver.settings.generate_thumbs)
+        view.sync_on_open_checkbox.setChecked(driver.lib.settings.sync_on_open)
+        view.generate_thumbs.setChecked(driver.lib.settings.generate_thumbs)
         view.thumb_cache_size.setText(
-            str(max(driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
+            str(max(driver.lib.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
         )
-        view.cached_thumb_res.setText(str(driver.settings.cached_thumb_resolution))
+        view.cached_thumb_res.setText(str(driver.lib.settings.cached_thumb_resolution))
+        view.tab_widget.setTabEnabled(
+            view.tab_widget.indexOf(view.library_settings_container),
+            driver.lib.library_dir is not None,
+        )
 
         for checkbox in self.findChildren(QCheckBox):
             checkbox.toggled.connect(self.edited)
@@ -157,28 +159,12 @@ class SettingsModal(ModalContent):
         show_label = view.language_combobox.currentData() != Translations.current_language
         view.restart_label.setHidden(not show_label)
 
-    def get_settings(self) -> dict[str, Any]:
+    def get_app_settings(self) -> dict[str, Any]:
         view = self.layout()
-        thumb_cache_size, is_size_number = view.thumb_cache_size_validator.locale().toDouble(
-            view.thumb_cache_size.text() or str(DEFAULT_THUMB_CACHE_SIZE)
-        )
-        if not is_size_number:
-            thumb_cache_size = self._driver.settings.thumb_cache_size
-        cached_thumb_res, is_res_number = view.cached_thumb_res_validator.locale().toInt(
-            view.cached_thumb_res.text() or str(DEFAULT_CACHED_THUMB_RES)
-        )
-        if not is_res_number:
-            cached_thumb_res = self._driver.settings.cached_thumb_resolution
         return {
             "language": view.language_combobox.currentData(),
             "open_last_loaded_on_startup": view.open_last_lib_checkbox.isChecked(),
-            "generate_thumbs": view.generate_thumbs.isChecked(),
-            "thumb_cache_size": max(thumb_cache_size, MIN_THUMB_CACHE_SIZE),
-            "cached_thumb_resolution": min(
-                max(cached_thumb_res, MIN_CACHED_THUMB_RES), MAX_CACHED_THUMB_RES
-            ),
             "autoplay": view.autoplay_checkbox.isChecked(),
-            "scan_files_on_open": view.scan_files_on_open_checkbox.isChecked(),
             "show_filepath": view.filepath_combobox.currentData(),
             "theme": view.theme_combobox.currentData(),
             "pill_shaped_tags": view.pill_shaped_tags_checkbox.isChecked(),
@@ -195,22 +181,45 @@ class SettingsModal(ModalContent):
             "zero_padding": view.zeropadding_checkbox.isChecked(),
         }
 
+    def get_library_settings(self) -> dict[str, Any]:
+        view = self.layout()
+        thumb_cache_size, is_size_number = view.thumb_cache_size_validator.locale().toDouble(
+            view.thumb_cache_size.text() or str(DEFAULT_THUMB_CACHE_SIZE)
+        )
+        if not is_size_number:
+            thumb_cache_size = self._driver.lib.settings.thumb_cache_size
+        cached_thumb_res, is_res_number = view.cached_thumb_res_validator.locale().toInt(
+            view.cached_thumb_res.text() or str(DEFAULT_CACHED_THUMB_RES)
+        )
+        if not is_res_number:
+            cached_thumb_res = self._driver.lib.settings.cached_thumb_resolution
+        return {
+            "sync_on_open": view.sync_on_open_checkbox.isChecked(),
+            "generate_thumbs": view.generate_thumbs.isChecked(),
+            "thumb_cache_size": max(thumb_cache_size, MIN_THUMB_CACHE_SIZE),
+            "cached_thumb_resolution": min(
+                max(cached_thumb_res, MIN_CACHED_THUMB_RES), MAX_CACHED_THUMB_RES
+            ),
+        }
+
     def has_pending_changes(self) -> bool:
         """Whether any setting here differs from the saved ones."""
-        settings = self.get_settings()
-        return any(value != getattr(self._driver.settings, key) for key, value in settings.items())
+        settings = self.get_app_settings()
+        library_settings = self.get_library_settings()
+        return any(
+            value != getattr(self._driver.settings, key) for key, value in settings.items()
+        ) or any(
+            value != getattr(self._driver.lib.settings, key)
+            for key, value in library_settings.items()
+        )
 
     def update_settings(self):
         driver = self._driver
-        settings = self.get_settings()
+        settings = self.get_app_settings()
 
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
-        driver.settings.scan_files_on_open = settings["scan_files_on_open"]
-        driver.settings.generate_thumbs = settings["generate_thumbs"]
-        driver.settings.thumb_cache_size = settings["thumb_cache_size"]
-        driver.settings.cached_thumb_resolution = settings["cached_thumb_resolution"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
         driver.settings.pill_shaped_tags = settings["pill_shaped_tags"]
@@ -227,6 +236,15 @@ class SettingsModal(ModalContent):
         driver.settings.zero_padding = settings["zero_padding"]
 
         driver.settings.save()
+
+        lib = driver.lib
+        if lib.library_dir is not None:
+            library_settings = self.get_library_settings()
+            lib.settings.sync_on_open = library_settings["sync_on_open"]
+            lib.settings.generate_thumbs = library_settings["generate_thumbs"]
+            lib.settings.thumb_cache_size = library_settings["thumb_cache_size"]
+            lib.settings.cached_thumb_resolution = library_settings["cached_thumb_resolution"]
+            lib.settings.save()
 
         # Apply changes
         if driver.applied_theme != settings["theme"]:
@@ -252,8 +270,11 @@ class SettingsModal(ModalContent):
         )
 
     @classmethod
-    def build_modal(cls, driver: QtDriver) -> Modal:
+    def build_modal(cls, driver: QtDriver, show_library_settings: bool = False) -> Modal:
         settings_modal = cls(driver)
+        if show_library_settings:
+            view = settings_modal.layout()
+            view.tab_widget.setCurrentWidget(view.library_settings_container)
 
         modal = Modal(
             content_widget=settings_modal,

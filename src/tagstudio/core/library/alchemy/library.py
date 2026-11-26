@@ -56,6 +56,7 @@ from tagstudio.core.constants import (
     RESERVED_NAMESPACE_PREFIX,
     RESERVED_TAG_END,
     RESERVED_TAG_START,
+    SETTINGS_NAME,
     TAG_ARCHIVED,
     TAG_FAVORITE,
     TAG_META,
@@ -95,6 +96,7 @@ from tagstudio.core.library.alchemy.models import (
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.library.library_settings import LibrarySettings
 from tagstudio.core.library.tag_cache import CachedTag, TagCache
 from tagstudio.core.utils.filesystem import is_fs_case_sensitive
 from tagstudio.core.utils.normalization import norm_str
@@ -242,6 +244,7 @@ class Library:
         self.tag_edit_callbacks: list[Callable[[set[int]], None]] = []
         self._path_cache_lock = Lock()
         self._tag_cache = TagCache(self.engine)
+        self.settings = LibrarySettings()
 
     def _on_tags_edited(self, tag_ids: set[int]) -> None:
         """Call functions registered to run when one or more tags are edited."""
@@ -271,6 +274,7 @@ class Library:
         self.path_cache = None
         self.duplicate_path_entry_ids = None
         self._tag_cache = TagCache(self.engine)
+        self.settings = LibrarySettings()
 
         self.dupe_entries_count = -1
         self.dupe_files_count = -1
@@ -418,6 +422,7 @@ class Library:
         if open_status.success:
             self._tag_cache = TagCache(self.engine)
             self._tag_cache.load()
+            self.settings = LibrarySettings.load(library_dir / TS_FOLDER_NAME / SETTINGS_NAME)
         return open_status
 
     @staticmethod

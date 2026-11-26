@@ -14,7 +14,6 @@ from tagstudio.core.media_types import slugify
 from tagstudio.core.utils.normalization import is_file
 from tagstudio.previews.enums import Theme
 from tagstudio.previews.file_renderer import FileRenderer, RenderResult
-from tagstudio.qt.app_settings import AppSettings
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.palette import ICON_COLORS, ColorType, UiColor, get_ui_color
@@ -111,9 +110,9 @@ class QtFileRenderer(QObject):
     # Timestamp, image, path, border color, and whether the image is the loading graphic
     updated = Signal(float, QPixmap, Path, object, bool)
 
-    def __init__(self, library: Library, settings: AppSettings) -> None:
+    def __init__(self, library: Library) -> None:
         super().__init__()
-        self.renderer = FileRenderer(library, settings)
+        self.renderer = FileRenderer(library)
         self.refresh_current_theme()
 
     def refresh_current_theme(self) -> None:

@@ -122,6 +122,7 @@ The library data folder (currently only named `.TagStudio`) is internally struct
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ts_library.sqlite` | The library save file. Stores all entries, tags, fields, and other metadata. _(v9.5.0+)_                                                                         |
 | `.ts_ignore`        | An optional ["ignore" file](ignore.md) for excluding files and folders from library scans, similar to a [`.gitignore`](https://git-scm.com/docs/gitignore) file. |
+| `settings.toml`     | Library-specific settings (not application settings)                                                                                                             |
 | `backups/`          | Timestamped backups of the library save file.                                                                                                                    |
 | `thumbs/`           | Thumbnail images for file previews.                                                                                                                              |
 
@@ -132,6 +133,7 @@ My Library/ # (Content Folder)
 ├─ .TagStudio/ # (Data Folder)
 │ ├─ ts_library.sqlite (References outer folder for files)
 │ ├─ .ts_ignore
+│ ├─ settings.toml
 │ ├─ backups/
 │ ├─ thumbs/
 ```

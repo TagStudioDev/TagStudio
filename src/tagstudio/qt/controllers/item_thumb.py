@@ -37,13 +37,13 @@ from PySide6.QtWidgets import QApplication, QMenu, QWidget
 
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.library_settings import ShowLabelOption
 from tagstudio.core.media_types import MediaTypes
 from tagstudio.core.query_lang.file_groups import SEARCH
 from tagstudio.core.utils.decompression import get_display_ext
 from tagstudio.core.utils.normalization import path_on_disk
 from tagstudio.core.utils.str_formatting import format_duration
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
 from tagstudio.qt.views.item_thumb_view import ItemThumbView
 from tagstudio.qt.views.styles.palette import Palette
@@ -195,13 +195,13 @@ class ItemThumb(QWidget):
         if self._mode != ItemType.ENTRY:
             return
         ext_label = self.layout().ext_label
-        is_shown = self._is_label_shown(self._driver.settings.show_extensions_in_grid)
+        is_shown = self._is_label_shown(self._driver.lib.settings.show_extensions_in_grid)
         ext_label.setHidden(not ext_label.text() or not is_shown)
 
     def update_duration_visibility(self) -> None:
         if self._mode != ItemType.ENTRY:
             return
-        is_shown = self._is_label_shown(self._driver.settings.show_durations_in_grid)
+        is_shown = self._is_label_shown(self._driver.lib.settings.show_durations_in_grid)
         self.layout().count_label.setHidden(not self._has_duration or not is_shown)
 
     def _is_label_shown(self, option: ShowLabelOption) -> bool:

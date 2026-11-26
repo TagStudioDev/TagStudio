@@ -20,8 +20,15 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
+from tagstudio.core.library.library_settings import (
+    DEFAULT_THUMB_SIZE,
+    MAX_THUMB_SIZE,
+    MIN_THUMB_SIZE,
+    PAGE_SIZES,
+    THUMB_SIZE_STEP,
+    ShowLabelOption,
+)
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import PAGE_SIZES, ShowLabelOption
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.color_overlay import svg_color_overlay, theme_foreground_color
 from tagstudio.qt.views.styles.stylesheets import MED_HEIGHT, PAD, RADIUS, WIN_PAD
@@ -34,11 +41,6 @@ _THUMB_SIZE_SLIDER_WIDTH = 72
 
 
 class BrowsingControlsView(QHBoxLayout):
-    MIN_THUMB_SIZE = 72
-    MAX_THUMB_SIZE = 240
-    THUMB_SIZE_STEP = 24
-    DEFAULT_THUMB_SIZE = 120
-
     def __init__(self) -> None:
         super().__init__()
         self.setContentsMargins(WIN_PAD, 0, 0, 0)
@@ -53,13 +55,9 @@ class BrowsingControlsView(QHBoxLayout):
         self.thumb_size_slider = QSlider(Qt.Orientation.Horizontal)
         self.thumb_size_slider.setToolTip(Translations["home.thumbnail_size"])
         self.thumb_size_slider.setFixedWidth(_THUMB_SIZE_SLIDER_WIDTH)
-        self.thumb_size_slider.setRange(
-            0, (self.MAX_THUMB_SIZE - self.MIN_THUMB_SIZE) // self.THUMB_SIZE_STEP
-        )
+        self.thumb_size_slider.setRange(0, (MAX_THUMB_SIZE - MIN_THUMB_SIZE) // THUMB_SIZE_STEP)
         self.thumb_size_slider.setPageStep(1)
-        self.thumb_size_slider.setValue(
-            (self.DEFAULT_THUMB_SIZE - self.MIN_THUMB_SIZE) // self.THUMB_SIZE_STEP
-        )
+        self.thumb_size_slider.setValue((DEFAULT_THUMB_SIZE - MIN_THUMB_SIZE) // THUMB_SIZE_STEP)
         self._small_thumb_icon = QLabel()
         self._large_thumb_icon = QLabel()
         thumb_size_controls = QHBoxLayout()

@@ -48,6 +48,7 @@ from tagstudio.core.library.alchemy.enums import BrowsingState, SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library, OpenLibraryResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.library.library_settings import ShowLabelOption
 from tagstudio.core.library.sync import LibrarySyncEngine
 from tagstudio.core.utils.ffmpeg_status import FfmpegStatus, FfprobeStatus
 from tagstudio.core.utils.module_status import ModuleStatus
@@ -59,7 +60,6 @@ from tagstudio.qt.app_settings import (
     DEFAULT_APP_SETTINGS_PATH,
     AppSettings,
     ShowFilepathOption,
-    ShowLabelOption,
     ThemeOption,
     migrate_legacy_settings,
 )
@@ -157,7 +157,6 @@ class QtDriver(BaseDriver, QObject):
         self.thumb_threads: list[Consumer] = []
 
         # Sync Engine
-        self._sync_disabled_notice_shown: bool = False
         self._sync_session_id: int = 0  # Prevent current sync from affecting subsequent libraries.
         self._sync_pool = QThreadPool(self)
         self._sync_pool.setMaxThreadCount(1)
@@ -223,7 +222,7 @@ class QtDriver(BaseDriver, QObject):
                 path=app_state_path,
             )
 
-        self.navigator = Navigator(self.lib, self.library_pool, self.settings, self.selection)
+        self.navigator = Navigator(self.lib, self.library_pool, self.selection)
         Translations.change_language(self.settings.language)
 
     def init_workers(self):
@@ -466,15 +465,9 @@ class QtDriver(BaseDriver, QObject):
         self.main_window.navigation_requested.connect(self.navigator.navigation_callback)
         self.main_window.browsing_area.pagination.index.connect(self.navigator.go_to_page)
         self.main_window.pagination_changed.connect(self.set_pagination)
-        self.main_window.set_pagination_actions_checked(
-            self.settings.infinite_scroll, self.settings.page_size
-        )
         self.main_window.filenames_visible_changed.connect(self.show_grid_filenames)
-        self.main_window.set_show_filenames_action_checked(self.settings.show_filenames_in_grid)
         self.main_window.extension_visibility_changed.connect(self.show_grid_extensions)
-        self.main_window.set_show_extensions_action_checked(self.settings.show_extensions_in_grid)
         self.main_window.duration_visibility_changed.connect(self.show_grid_durations)
-        self.main_window.set_show_durations_action_checked(self.settings.show_durations_in_grid)
         self.main_window.browsing_area.landing_page.open_library_requested.connect(
             self.open_library_from_dialog
         )
@@ -507,20 +500,20 @@ class QtDriver(BaseDriver, QObject):
 
     def show_grid_filenames(self, value: bool):
         """Save and apply whether the grid shows filenames."""
-        self.settings.show_filenames_in_grid = value
-        self.settings.save()
+        self.lib.settings.show_filenames_in_grid = value
+        self.lib.settings.save()
         self.main_window.thumb_grid.set_filenames_visible(value)
 
     def show_grid_extensions(self, option: ShowLabelOption) -> None:
         """Save and apply when the grid shows file extensions."""
-        self.settings.show_extensions_in_grid = option
-        self.settings.save()
+        self.lib.settings.show_extensions_in_grid = option
+        self.lib.settings.save()
         self.main_window.thumb_grid.update_extension_visibility()
 
     def show_grid_durations(self, option: ShowLabelOption) -> None:
         """Save and apply when the grid shows durations."""
-        self.settings.show_durations_in_grid = option
-        self.settings.save()
+        self.lib.settings.show_durations_in_grid = option
+        self.lib.settings.save()
         self.main_window.thumb_grid.update_duration_visibility()
 
     def call_if_library_open(self, func):
@@ -576,6 +569,11 @@ class QtDriver(BaseDriver, QObject):
         scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
         self.navigator.reset()
+
+        library_settings = self.lib.settings
+        if library_settings.thumb_size != self.main_window.thumb_size:
+            library_settings.thumb_size = self.main_window.thumb_size
+            library_settings.save()
 
         self._library_session_id += 1
         self.entry_state.wait_for_writes()
@@ -906,7 +904,7 @@ class QtDriver(BaseDriver, QObject):
     def _on_sync_disabled_open_settings(self):
         if (sync_banner := self._sync_banner) is not None:
             sync_banner.hide_banner(force=True)
-        self.open_settings_modal()
+        SettingsModal.build_modal(self, show_library_settings=True).show()
 
     def open_library_info_modal(self):
         if not self.library_info_modal:
@@ -1044,9 +1042,9 @@ class QtDriver(BaseDriver, QObject):
 
     def set_pagination(self, is_infinite: bool, page_size: int) -> None:
         """Save and apply pagination settings."""
-        self.settings.infinite_scroll = is_infinite
-        self.settings.page_size = page_size
-        self.settings.save()
+        self.lib.settings.infinite_scroll = is_infinite
+        self.lib.settings.page_size = page_size
+        self.lib.settings.save()
         current = self.navigator.browsing_history.current
         self.navigator.update_browsing_state(
             current.with_page_index(0) if current.page_index else None
@@ -1212,10 +1210,10 @@ class QtDriver(BaseDriver, QObject):
             return
         self.cache_manager = CacheManager(
             path,
-            max_size=self.settings.thumb_cache_size,
-            img_quality=self.settings.cached_thumb_quality,
+            max_size=self.lib.settings.thumb_cache_size,
+            img_quality=self.lib.settings.cached_thumb_quality,
         )
-        cache_size = self.settings.thumb_cache_size * self.cache_manager.STAT_MULTIPLIER
+        cache_size = self.lib.settings.thumb_cache_size * self.cache_manager.STAT_MULTIPLIER
         logger.info(
             f"[Config] Thumbnail Cache Size: {format_size(cache_size)}",
         )
@@ -1253,9 +1251,20 @@ class QtDriver(BaseDriver, QObject):
         )
         self.navigator.reset(initial_state)
 
-        if not self.settings.scan_files_on_open and not self._sync_disabled_notice_shown:
-            self._sync_disabled_notice_shown = True
-            # Show that the setting for opening a library on start is turned off,
+        library_settings = self.lib.settings
+        self.main_window.set_thumb_size(library_settings.thumb_size)
+        self.main_window.set_pagination_actions_checked(
+            library_settings.infinite_scroll, library_settings.page_size
+        )
+        self.main_window.set_show_filenames_action_checked(library_settings.show_filenames_in_grid)
+        self.main_window.thumb_grid.set_filenames_visible(library_settings.show_filenames_in_grid)
+        self.main_window.set_show_extensions_action_checked(
+            library_settings.show_extensions_in_grid
+        )
+        self.main_window.set_show_durations_action_checked(library_settings.show_durations_in_grid)
+
+        if not self.lib.settings.sync_on_open:
+            # Show that the setting for syncing a library on open is turned off,
             # with a prompt to open the settings to change that (encouraged but not required).
             self._create_sync_banner().set_disabled_notice()
 
@@ -1290,7 +1299,7 @@ class QtDriver(BaseDriver, QObject):
         # Leave the landing page once the opened library's first results have loaded
         self.main_window.toggle_landing_page(enabled=False)
         self.main_window.thumb_grid.scroll_area.setFocus()
-        if self.settings.scan_files_on_open:
+        if self.lib.settings.sync_on_open:
             self.sync_library_callback()
 
     def log_optional_modules(self) -> None:

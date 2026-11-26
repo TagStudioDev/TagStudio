@@ -69,7 +69,7 @@ class PreviewThumb(QWidget):
     def __init__(self, driver: QtDriver):
         super().__init__()
         self._driver = driver
-        self._file_renderer = QtFileRenderer(driver.lib, driver.settings)
+        self._file_renderer = QtFileRenderer(driver.lib)
         self._render_pool = QThreadPool(self)
         self._render_pool.setMaxThreadCount(1)
 

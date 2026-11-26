@@ -8,8 +8,8 @@ from PySide6.QtCore import QEvent, Signal
 from PySide6.QtWidgets import QWidget
 
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
+from tagstudio.core.library.library_settings import MIN_THUMB_SIZE, THUMB_SIZE_STEP, ShowLabelOption
 from tagstudio.i18n.translations import Translations
-from tagstudio.qt.app_settings import ShowLabelOption
 from tagstudio.qt.views.browsing_controls_view import BrowsingControlsView
 from tagstudio.qt.views.styles.tagstudio_style import set_icon_faded
 
@@ -73,7 +73,7 @@ class BrowsingControls(QWidget):
     @property
     def thumb_size(self) -> int:
         view = self.layout()
-        return view.MIN_THUMB_SIZE + view.thumb_size_slider.value() * view.THUMB_SIZE_STEP
+        return MIN_THUMB_SIZE + view.thumb_size_slider.value() * THUMB_SIZE_STEP
 
     def set_results_text(self, text: str) -> None:
         self.layout().results_label.setText(text)
@@ -101,6 +101,9 @@ class BrowsingControls(QWidget):
     def set_show_durations_action_checked(self, option: ShowLabelOption) -> None:
         for action in self.layout().show_durations_menu.actions():
             action.setChecked(action.data() == option)
+
+    def set_thumb_size(self, size: int) -> None:
+        self.layout().thumb_size_slider.setValue((size - MIN_THUMB_SIZE) // THUMB_SIZE_STEP)
 
     def increase_thumb_size(self) -> None:
         slider = self.layout().thumb_size_slider

@@ -19,6 +19,7 @@ TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
 IGNORE_NAME: str = ".ts_ignore"
+SETTINGS_NAME: str = "settings.toml"
 THUMB_CACHE_NAME: str = "thumbs"
 
 FONT_SAMPLE_TEXT: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?@$%(){}[]"
