@@ -74,6 +74,7 @@ from tagstudio.qt.controllers.ignore_modal import IgnoreModal
 from tagstudio.qt.controllers.library_info_modal import LibraryInfoModal
 from tagstudio.qt.controllers.main_window import MainWindow
 from tagstudio.qt.controllers.modal import Modal
+from tagstudio.qt.controllers.settings_modal import SettingsModal
 from tagstudio.qt.controllers.sync_banner import SyncBanner
 from tagstudio.qt.controllers.tag_search_panel import TagSearchPanel
 from tagstudio.qt.controllers.update_available_message_box import UpdateAvailableMessageBox
@@ -82,7 +83,6 @@ from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
-from tagstudio.qt.mixed.settings_panel import SettingsModal
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.navigator import Navigator
 from tagstudio.qt.resource_manager import ResourceManager

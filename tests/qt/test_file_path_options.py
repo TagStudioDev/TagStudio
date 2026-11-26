@@ -17,7 +17,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.app_settings import ShowFilepathOption
 from tagstudio.qt.controllers.inspector import Inspector
-from tagstudio.qt.mixed.settings_panel import SettingsModal
+from tagstudio.qt.controllers.settings_modal import SettingsModal
 from tagstudio.qt.qt_driver import QtDriver
 
 
