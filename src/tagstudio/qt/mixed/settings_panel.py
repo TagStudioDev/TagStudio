@@ -103,11 +103,12 @@ class SettingsPanel(ModalContent):
         self.localization_settings_container = QWidget()
         self.media_settings_container = QWidget()
 
+        # TODO: Break into multiple tab sections for Application Settings and Library Settings
         # Tabs
         self.tab_widget = QTabWidget()
 
-        self.__build_global_settings()
-        self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
+        self.__build_app_settings()
+        self.tab_widget.addTab(self.app_settings_container, Translations["settings.application"])
 
         self.__build_appearance_settings()
         self.tab_widget.addTab(
@@ -148,9 +149,9 @@ class SettingsPanel(ModalContent):
         show_label = self.language_combobox.currentData() != Translations.current_language
         self.restart_label.setHidden(not show_label)
 
-    def __build_global_settings(self):
-        self.global_settings_container = QWidget()
-        form_layout = QFormLayout(self.global_settings_container)
+    def __build_app_settings(self):
+        self.app_settings_container = QWidget()
+        form_layout = QFormLayout(self.app_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
         # Reopen Library on Start

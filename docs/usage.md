@@ -123,9 +123,9 @@ Creating and adding fields to entries is extremely similar to how [tagging](#tag
 
 There are a handful of launch arguments you can pass to TagStudio via the command line or a desktop shortcut.
 
-| Argument                 | Short | Description                                            |
-| ------------------------ | ----- | ------------------------------------------------------ |
-| `--cache-file <path>`    | `-c`  | Path to a TagStudio .ini or .plist cache file to use.  |
-| `--open <path>`          | `-o`  | Path to a TagStudio Library folder to open on start.   |
-| `--settings-file <path>` | `-s`  | Path to a TagStudio .toml global settings file to use. |
-| `--version`              | `-v`  | Displays TagStudio version information.                |
+| Argument                 | Short | Description                                                 |
+| ------------------------ | ----- | ----------------------------------------------------------- |
+| `--open <path>`          | `-o`  | Path to a TagStudio Library folder to open on start.        |
+| `--settings-file <path>` | `-s`  | Path to a TagStudio .toml application settings file to use. |
+| `--state-file <path>`    |       | Path to a TagStudio .json application state file to use.    |
+| `--version`              | `-v`  | Displays TagStudio version information.                     |

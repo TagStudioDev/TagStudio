@@ -26,7 +26,7 @@ class BaseDriver:
             allow_creation (bool): Whether a folder without an existing library is valid, since a
                 new library can be created there. Not desirable for startup behavior.
         """
-        library_path = Path(path).expanduser()
+        library_path = Path(path).expanduser().absolute()
         library_exists = (library_path / TS_FOLDER_NAME).is_dir()
         if not (library_exists or (allow_creation and library_path.is_dir())):
             logger.error(

@@ -275,7 +275,7 @@ def entry_state(library: Library, mock_thread_pool: Mock) -> EntryState:
 def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
     class Args:
         settings_file = library_dir / "settings.toml"
-        cache_file = library_dir / "tagstudio.ini"
+        state_file = library_dir / "app_state.json"
         open = library_dir
         ci = True
 

@@ -54,6 +54,7 @@ python3Packages.buildPythonApplication {
       opencv-python
       pillow
       pillow-heif
+      platformdirs
       py7zr
       pydantic
       pygments

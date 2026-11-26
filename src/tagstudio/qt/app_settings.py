@@ -3,18 +3,23 @@
 
 
 import platform
+import shutil
 from datetime import datetime
-from enum import Enum, IntEnum, StrEnum
+from enum import IntEnum
 from pathlib import Path
-from typing import override
 
 import structlog
-import toml
-from pydantic import BaseModel, Field, field_validator
+from platformdirs import user_config_path
+from pydantic import field_validator
+
+from tagstudio.core.utils.data_file import BaseDataFile
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_GLOBAL_SETTINGS_PATH = (
+DEFAULT_APP_SETTINGS_PATH = (
+    user_config_path("TagStudio", appauthor=False, roaming=True) / "app_settings.toml"
+)
+_LEGACY_SETTINGS_PATH = (
     Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
     if platform.system() == "Windows"
     else Path.home() / ".config" / "TagStudio" / "settings.toml"
@@ -30,15 +35,6 @@ MAX_CACHED_THUMB_RES = 1024  # Pixels
 DEFAULT_CACHED_THUMB_RES = 256  # Pixels
 
 PAGE_SIZES = (50, 100, 250, 500, 1000, 2500, 5000)
-
-
-class AppCacheItems(StrEnum):
-    """List of setting item names."""
-
-    LAST_LIBRARY = "last_library"
-    LIBS_LIST = "libs_list"
-    DISMISSED_UPDATE = "dismissed_update"
-    LAST_VERSION_OPENED = "last_version_opened"
 
 
 class ShowLabelOption(IntEnum):
@@ -76,50 +72,42 @@ class TagClickActionOption(IntEnum):
     DEFAULT = OPEN_EDIT
 
 
-class TomlEnumEncoder(toml.TomlEncoder):
-    @override
-    def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
-        if isinstance(v, Enum):
-            return super().dump_value(v.value)
-        return super().dump_value(v)
-
-
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
 # properties to be overwritten with environment variables. As TagStudio is not currently using
 # environment variables, this was not based on that, but that may be useful in the future.
-class AppSettings(BaseModel):
-    language: str = Field(default="en")
-    open_last_loaded_on_startup: bool = Field(default=True)
-    generate_thumbs: bool = Field(default=True)
-    thumb_cache_size: float = Field(default=DEFAULT_THUMB_CACHE_SIZE)
-    cached_thumb_quality: int = Field(default=DEFAULT_CACHED_THUMB_QUALITY)
-    cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_THUMB_RES)
-    autoplay: bool = Field(default=True)
-    scan_files_on_open: bool = Field(default=True)
-    loop: bool = Field(default=True)
-    show_filenames_in_grid: bool = Field(default=True)
-    show_extensions_in_grid: ShowLabelOption = Field(default=ShowLabelOption.ALWAYS)
-    show_durations_in_grid: ShowLabelOption = Field(default=ShowLabelOption.ALWAYS)
-    page_size: int = Field(default=100)
-    infinite_scroll: bool = Field(default=True)
-    show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
-    tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
-    edit_tag_on_create: bool = Field(default=False)
-    edit_field_on_add: bool = Field(default=True)
-    keep_suggest_boxes_open: bool = Field(default=True)
-    dont_create_items_on_enter: bool = Field(default=False)
-    sort_added_tags_last: bool = Field(default=True)
-    invert_suggest_box_scroll: bool = Field(default=False)
-    theme: ThemeOption = Field(default=ThemeOption.SYSTEM)
-    pill_shaped_tags: bool = Field(default=True)
-    circular_badges: bool = Field(default=True)
-    windows_start_command: bool = Field(default=False)
+class AppSettings(BaseDataFile):
+    """Application settings file for TagStudio."""
 
-    date_format: str = Field(default="%x")
-    hour_format: bool = Field(default=True)
-    zero_padding: bool = Field(default=True)
+    language: str = "en"
+    open_last_loaded_on_startup: bool = True
+    generate_thumbs: bool = True
+    thumb_cache_size: float = DEFAULT_THUMB_CACHE_SIZE
+    cached_thumb_quality: int = DEFAULT_CACHED_THUMB_QUALITY
+    cached_thumb_resolution: int = DEFAULT_CACHED_THUMB_RES
+    autoplay: bool = True
+    scan_files_on_open: bool = True
+    loop: bool = True
+    show_filenames_in_grid: bool = True
+    show_extensions_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
+    show_durations_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
+    page_size: int = 100
+    infinite_scroll: bool = True
+    show_filepath: ShowFilepathOption = ShowFilepathOption.DEFAULT
+    tag_click_action: TagClickActionOption = TagClickActionOption.DEFAULT
+    edit_tag_on_create: bool = False
+    edit_field_on_add: bool = True
+    keep_suggest_boxes_open: bool = True
+    dont_create_items_on_enter: bool = False
+    sort_added_tags_last: bool = True
+    invert_suggest_box_scroll: bool = False
+    theme: ThemeOption = ThemeOption.SYSTEM
+    pill_shaped_tags: bool = True
+    circular_badges: bool = True
+    windows_start_command: bool = False
 
-    loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
+    date_format: str = "%x"
+    hour_format: bool = True
+    zero_padding: bool = True
 
     @field_validator("page_size")
     @classmethod
@@ -129,28 +117,6 @@ class AppSettings(BaseModel):
         NOTE: Implicitly used by pydantic.
         """
         return min(PAGE_SIZES, key=lambda size: abs(size - page_size))
-
-    @staticmethod
-    def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> AppSettings:
-        if path.exists():
-            with open(path) as file:
-                filecontents = file.read()
-                if len(filecontents.strip()) != 0:
-                    logger.info("[Settings] Reading Global Settings File", path=path)
-                    settings_data = toml.loads(filecontents)
-                    settings = AppSettings(**settings_data, loaded_from=path)
-                    return settings
-
-        return AppSettings(loaded_from=path)
-
-    def save(self, path: Path | None = None) -> None:
-        if path is None:
-            path = self.loaded_from
-        if not path.parent.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(path, "w") as f:
-            toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
 
     @property
     def datetime_format(self) -> str:
@@ -172,3 +138,23 @@ class AppSettings(BaseModel):
 
     def format_datetime(self, dt: datetime) -> str:
         return datetime.strftime(dt, self.datetime_format)
+
+
+def migrate_legacy_settings(
+    legacy_path: Path = _LEGACY_SETTINGS_PATH, path: Path = DEFAULT_APP_SETTINGS_PATH
+) -> None:
+    """Move the legacy settings.toml file to the current app_settings.toml location."""
+    if path.exists() or not legacy_path.exists():
+        return
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(legacy_path, path)
+    except OSError as error:
+        logger.warning(
+            "[Settings] Couldn't move legacy settings file",
+            legacy_path=legacy_path,
+            path=path,
+            error=error,
+        )
+        return
+    logger.info("[Settings] Moved legacy settings file", legacy_path=legacy_path, path=path)

@@ -12,7 +12,6 @@ import ctypes
 import os
 import platform
 import sys
-import time
 from argparse import Namespace
 from collections.abc import Callable, Iterator
 from functools import partial
@@ -27,7 +26,6 @@ from PySide6.QtCore import (
     QDeadlineTimer,
     QEvent,
     QObject,
-    QSettings,
     Qt,
     QThread,
     QThreadPool,
@@ -58,13 +56,14 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.i18n.platform_strings import trash_term
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.app_settings import (
-    DEFAULT_GLOBAL_SETTINGS_PATH,
-    AppCacheItems,
+    DEFAULT_APP_SETTINGS_PATH,
     AppSettings,
     ShowFilepathOption,
     ShowLabelOption,
     ThemeOption,
+    migrate_legacy_settings,
 )
+from tagstudio.qt.app_state import DEFAULT_APP_STATE_PATH, AppState, migrate_legacy_cache
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.about_modal import AboutModal
 from tagstudio.qt.controllers.changelog_modal import ChangelogModal
@@ -185,39 +184,46 @@ class QtDriver(BaseDriver, QObject):
 
         self.SIGTERM.connect(self.handle_sigterm)
 
-        self.global_settings_path = DEFAULT_GLOBAL_SETTINGS_PATH
+        # Load Application Settings File
+        app_settings_path = DEFAULT_APP_SETTINGS_PATH
         if self.args.settings_file:
-            self.global_settings_path = Path(self.args.settings_file)
+            logger.info(
+                "[QtDriver] Using custom application settings path", path=self.args.settings_file
+            )
+            app_settings_path = Path(self.args.settings_file)
         else:
-            logger.info("[Settings] Global Settings File Path not specified, using default")
-        self.settings = AppSettings.read_settings(self.global_settings_path)
-        if not self.global_settings_path.exists():
+            logger.info("[QtDriver] Using default application settings path")
+            migrate_legacy_settings()
+        self.settings = AppSettings.load(app_settings_path)
+        if not app_settings_path.exists():
             logger.warning(
-                "[Settings] Global Settings File does not exist creating",
-                path=self.global_settings_path,
+                "[QtDriver] Application settings file not found, using defaults",
+                path=app_settings_path,
             )
         self.applied_theme = self.settings.theme
 
-        self.navigator = Navigator(self.lib, self.library_pool, self.settings, self.selection)
-
-        if self.args.cache_file:
-            path = Path(self.args.cache_file)
-            if not path.exists():
-                logger.warning("[Cache] Cache File does not exist creating", path=path)
-            logger.info("[Cache] Using Cache File", path=path)
-            self.cached_values = QSettings(str(path), QSettings.Format.IniFormat)
+        # Load Application State File
+        app_state_path = DEFAULT_APP_STATE_PATH
+        if self.args.state_file:
+            logger.info("[QtDriver] Using custom application state path", path=self.args.state_file)
+            app_state_path = Path(self.args.state_file)
+        elif self.args.cache_file:
+            logger.warning("[QtDriver] -c/--cache-file is deprecated, use --state-file instead")
+            legacy_cache_path = Path(self.args.cache_file)
+            app_state_path = legacy_cache_path.with_suffix(".json")
+            migrate_legacy_cache(legacy_cache_path, app_state_path)
         else:
-            self.cached_values = QSettings(
-                QSettings.Format.IniFormat,
-                QSettings.Scope.UserScope,
-                "TagStudio",
-                "TagStudio",
-            )
-            logger.info(
-                "[Cache] Cache File not specified, using default one",
-                filename=self.cached_values.fileName(),
+            logger.info("[QtDriver] Using default application state path")
+            migrate_legacy_cache()
+
+        self.app_state = AppState.load(app_state_path)
+        if not app_state_path.exists():
+            logger.warning(
+                "[QtDriver] Application state file not found, using defaults",
+                path=app_state_path,
             )
 
+        self.navigator = Navigator(self.lib, self.library_pool, self.settings, self.selection)
         Translations.change_language(self.settings.language)
 
     def init_workers(self):
@@ -407,7 +413,7 @@ class QtDriver(BaseDriver, QObject):
 
         startup_path: str | None = self.args.open.strip() if self.args.open else None
         if not startup_path and self.settings.open_last_loaded_on_startup:
-            last_library = self.cached_values.value(AppCacheItems.LAST_LIBRARY)
+            last_library = self.app_state.last_library
             if last_library:
                 startup_path = str(last_library)
         startup_result = None
@@ -559,8 +565,8 @@ class QtDriver(BaseDriver, QObject):
         self.main_window.browsing_area.banners.clear()
 
         if not is_shutdown:
-            self.cached_values.remove(AppCacheItems.LAST_LIBRARY)
-            self.cached_values.sync()
+            self.app_state.last_library = None
+            self.app_state.save()
 
         # Reset library state
         self.main_window.search_bar.set_query("")
@@ -925,7 +931,7 @@ class QtDriver(BaseDriver, QObject):
     def open_about_modal(self):
         if not self.about_modal:
             self.about_modal = Modal(
-                AboutModal(self.global_settings_path),
+                AboutModal(unwrap(self.settings.path)),
                 window_title=Translations["about.title"],
                 inline_title=False,
                 background=ImageBackground(self.rm.aurora_bg),
@@ -1076,70 +1082,19 @@ class QtDriver(BaseDriver, QObject):
         elif len(self.selection.selected) == 1:
             self.main_window.inspector.containers.update_from_entry(self.selection.selected[0])
 
-    def remove_recent_library(self, item_key: str):
-        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
-        self.cached_values.remove(item_key)
-        self.cached_values.endGroup()
-        self.cached_values.sync()
-
-    def update_libs_list(self, path: Path | str):
-        """Add library to list in SettingItems.LIBS_LIST."""
-        item_limit: int = 10
-        path = Path(path)
-
-        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
-
-        all_libs = {str(time.time()): str(path)}
-
-        for item_key in self.cached_values.allKeys():
-            item_path = str(self.cached_values.value(item_key, type=str))
-            if Path(item_path) != path:
-                all_libs[item_key] = item_path
-
-        # sort items, most recent first
-        all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
-
-        # remove previously saved items
-        self.cached_values.remove("")
-
-        for item_key, item_value in all_libs_list[:item_limit]:
-            self.cached_values.setValue(item_key, item_value)
-
-        self.cached_values.endGroup()
-        self.cached_values.sync()
-        self.update_recent_lib_menu()
-
     def update_recent_lib_menu(self):
-        """Updates the recent library menu from the latest values from the settings file."""
-        lib_items: dict[str, tuple[str, str]] = {}
-
-        # get recent libraries sorted by timestamp
-        self.cached_values.beginGroup(AppCacheItems.LIBS_LIST)
-        for item_tstamp in self.cached_values.allKeys():
-            val = str(self.cached_values.value(item_tstamp, type=str))
-            cut_val = val
-            if len(val) > 45:
-                cut_val = f"{val[0:10]} ... {val[-10:]}"
-            lib_items[item_tstamp] = (val, cut_val)
-
-        # Sort lib_items by the key
-        libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
-        self.cached_values.endGroup()
-
+        """Update the recent library menu."""
         self.main_window.menu_bar.rebuild_open_recent_library_menu(
-            [Path(key[1][0]) for key in libs_sorted],
+            self.app_state.recent_libraries,
             self.settings.show_filepath,  # TODO: once QtDriver is a Singleton remove this parameter
             self.open_library,
             self.clear_recent_libs,
         )
 
     def clear_recent_libs(self):
-        """Clear the list of recent libraries from the settings file."""
-        cache = self.cached_values
-        cache.beginGroup(AppCacheItems.LIBS_LIST)
-        self.cached_values.remove("")
-        self.cached_values.endGroup()
-        self.cached_values.sync()
+        """Clear the list of recent libraries."""
+        self.app_state.recent_libraries = []
+        self.app_state.save()
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):
@@ -1157,7 +1112,7 @@ class QtDriver(BaseDriver, QObject):
 
     def _show_available_update(self) -> None:
         latest_version = get_most_recent_release_version()
-        if latest_version == str(self.cached_values.value(AppCacheItems.DISMISSED_UPDATE)):
+        if latest_version == self.app_state.dismissed_update:
             return
 
         if latest_version and is_version_outdated(VERSION, latest_version):
@@ -1168,17 +1123,17 @@ class QtDriver(BaseDriver, QObject):
             update_box.exec()
 
     def _record_program_version(self) -> bool:
-        """Record the version of the program to the cache file.
+        """Record the version of the program to the application state file.
 
         Returns:
             bool: True if the current version is newer than the previously recorded one.
                 Will be False on first time runs of the program, and True if it's not the first run
                 but there's no existing record of the last version used.
         """
-        is_first_run = not self.cached_values.allKeys()  # No cache keys means this is a first run
-        last_version_opened = self.cached_values.value(AppCacheItems.LAST_VERSION_OPENED)
-        self.cached_values.setValue(AppCacheItems.LAST_VERSION_OPENED, VERSION)
-        self.cached_values.sync()
+        is_first_run = self.app_state.model_dump() == AppState().model_dump()
+        last_version_opened = self.app_state.last_version_opened
+        self.app_state.last_version_opened = VERSION
+        self.app_state.save()
 
         if is_first_run:
             return False
@@ -1201,7 +1156,8 @@ class QtDriver(BaseDriver, QObject):
 
     def dismiss_update(self, version: str):
         """Dismiss an update notification for a specific new version of TagStudio."""
-        self.cached_values.setValue(AppCacheItems.DISMISSED_UPDATE, version)
+        self.app_state.dismissed_update = version
+        self.app_state.save()
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
@@ -1308,9 +1264,10 @@ class QtDriver(BaseDriver, QObject):
         else:
             library_dir_display = self.lib.library_dir.name
 
-        self.update_libs_list(path)
-        self.cached_values.setValue(AppCacheItems.LAST_LIBRARY, str(self.lib.library_dir))
-        self.cached_values.sync()
+        self.app_state.add_recent_library(path)
+        self.app_state.last_library = path
+        self.app_state.save()
+        self.update_recent_lib_menu()
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",

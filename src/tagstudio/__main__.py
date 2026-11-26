@@ -32,14 +32,20 @@ def main():
         "--settings-file",
         dest="settings_file",
         type=str,
-        help="Path to a TagStudio .toml global settings file to use.",
+        help="Path to a TagStudio .toml application settings file to use.",
+    )
+    parser.add_argument(
+        "--state-file",
+        dest="state_file",
+        type=str,
+        help="Path to a TagStudio .json application state file to use.",
     )
     parser.add_argument(
         "-c",
         "--cache-file",
         dest="cache_file",
         type=str,
-        help="Path to a TagStudio .ini or .plist cache file to use.",
+        help="Deprecated, use --state-file instead.",
     )
     parser.add_argument(
         "--debug",

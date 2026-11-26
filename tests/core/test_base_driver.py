@@ -4,6 +4,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from tagstudio.core.base_driver import BaseDriver
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import OpenLibraryResult
@@ -67,3 +69,18 @@ def test_verify_library_path_existing_library(library_dir: Path):
 
     # Then
     assert result == OpenLibraryResult(success=True, library_path=library_dir)
+
+
+def test_verify_library_path_makes_relative_path_absolute(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Ensure that a relative path isn't saved into the state file."""
+    # Given
+    driver = BaseDriver()
+    monkeypatch.chdir(tmp_path)
+
+    # When
+    result = driver.verify_library_path(".", allow_creation=True)
+
+    # Then
+    assert result == OpenLibraryResult(success=True, library_path=Path.cwd())
