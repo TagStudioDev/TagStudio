@@ -82,7 +82,7 @@ from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
-from tagstudio.qt.mixed.settings_panel import SettingsPanel
+from tagstudio.qt.mixed.settings_panel import SettingsModal
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.navigator import Navigator
 from tagstudio.qt.resource_manager import ResourceManager
@@ -1098,7 +1098,7 @@ class QtDriver(BaseDriver, QObject):
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):
-        SettingsPanel.build_modal(self).show()
+        SettingsModal.build_modal(self).show()
 
     def check_for_update(self):
         """Check for an update to TagStudio and display a notification if there is one."""

@@ -17,7 +17,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.app_settings import ShowFilepathOption
 from tagstudio.qt.controllers.inspector import Inspector
-from tagstudio.qt.mixed.settings_panel import SettingsPanel
+from tagstudio.qt.mixed.settings_panel import SettingsModal
 from tagstudio.qt.qt_driver import QtDriver
 
 
@@ -31,14 +31,14 @@ from tagstudio.qt.qt_driver import QtDriver
     ],
 )
 def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: ShowFilepathOption):
-    settings_panel = SettingsPanel(qt_driver)
-    qtbot.addWidget(settings_panel)
+    settings_modal = SettingsModal(qt_driver)
+    qtbot.addWidget(settings_modal)
 
     # Mock the update_recent_lib_menu method
     with patch.object(qt_driver, "update_recent_lib_menu", return_value=None):
         # Set the file path option
-        settings_panel.filepath_combobox.setCurrentIndex(filepath_option)
-        settings_panel.update_settings(qt_driver)
+        settings_modal.layout().filepath_combobox.setCurrentIndex(filepath_option)
+        settings_modal.update_settings()
 
         # Assert the setting is applied
         assert qt_driver.settings.show_filepath == filepath_option
