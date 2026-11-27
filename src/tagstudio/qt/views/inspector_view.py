@@ -42,10 +42,10 @@ class InspectorView(QVBoxLayout):
         rm = ResourceManager()
 
         self.field_search_box = FieldSuggestBox(
-            driver.lib, driver.settings, Translations["home.search_or_create_fields"]
+            driver.lib, driver.app_settings, Translations["home.search_or_create_fields"]
         )
         self.tag_search_box = TagSuggestBox(
-            driver.lib, driver.settings, Translations["home.search_or_create_tags"]
+            driver.lib, driver.app_settings, Translations["home.search_or_create_tags"]
         )
 
         self.preview_thumb = PreviewThumb(driver)

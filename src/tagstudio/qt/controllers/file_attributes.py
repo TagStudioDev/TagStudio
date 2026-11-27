@@ -178,7 +178,7 @@ class FileAttributes(QWidget):
 
         added = _NOT_AVAILABLE
         if entry.date_added is not None:
-            added = self._driver.settings.format_datetime(entry.date_added)
+            added = self._driver.app_settings.format_datetime(entry.date_added)
         view.set_property(view.date_added_label, added)
         view.set_property(view.date_created_label, self._format_timestamp(entry.date_created))
         view.set_property(view.date_modified_label, self._format_timestamp(entry.date_modified))
@@ -208,7 +208,7 @@ class FileAttributes(QWidget):
     def _set_folders(self, filepath: Path) -> None:
         """List the file's folders."""
         library_dir = unwrap(self._lib.library_dir)
-        if self._driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+        if self._driver.app_settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
             self._folders = [p for p in reversed(filepath.parents) if p.name or p.drive]
         else:
             relative_parents = filepath.relative_to(library_dir).parents
@@ -242,7 +242,7 @@ class FileAttributes(QWidget):
     def _format_timestamp(self, timestamp: float | None) -> str:
         if timestamp is None:
             return _NOT_AVAILABLE
-        return self._driver.settings.format_datetime(dt.fromtimestamp(timestamp))
+        return self._driver.app_settings.format_datetime(dt.fromtimestamp(timestamp))
 
     def _open_folder(self, index: str) -> None:
         open_file(self._folders[int(index)])

@@ -30,8 +30,10 @@ logger = structlog.get_logger(__name__)
 class TagSuggestBox(SuggestBox[CachedTag]):
     search_for_tag = Signal(int)
 
-    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
-        super().__init__(library, settings, placeholder_text)
+    def __init__(
+        self, library: Library, app_settings: AppSettings, placeholder_text: str = ""
+    ) -> None:
+        super().__init__(library, app_settings, placeholder_text)
 
         # Context Menu Actions
         self._edit_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
@@ -52,18 +54,18 @@ class TagSuggestBox(SuggestBox[CachedTag]):
 
     def _toggle_edit_on_tag_create(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after creating a tag."""
-        self._settings.edit_tag_on_create = checked
-        self._settings.save()
+        self._app_settings.edit_tag_on_create = checked
+        self._app_settings.save()
 
     def _toggle_sort_added_last(self, checked: bool) -> None:
-        self._settings.sort_added_tags_last = checked
-        self._settings.save()
+        self._app_settings.sort_added_tags_last = checked
+        self._app_settings.save()
         self._on_search_query_changed(self.layout().search_field.text())
 
     @override
     def showEvent(self, event: QShowEvent) -> None:
-        self._edit_on_create_action.setChecked(self._settings.edit_tag_on_create)
-        self._sort_added_last_action.setChecked(self._settings.sort_added_tags_last)
+        self._edit_on_create_action.setChecked(self._app_settings.edit_tag_on_create)
+        self._sort_added_last_action.setChecked(self._app_settings.sort_added_tags_last)
         return super().showEvent(event)
 
     @override
@@ -75,7 +77,7 @@ class TagSuggestBox(SuggestBox[CachedTag]):
         """
         query: str = self.layout().search_field.text()
 
-        if self._settings.edit_tag_on_create:
+        if self._app_settings.edit_tag_on_create:
             panel: EditTagPanel = EditTagPanel(self._lib)
             modal: Modal = Modal(
                 panel, Translations["tag.new"], Translations["tag.new"], is_savable=True
@@ -136,7 +138,7 @@ class TagSuggestBox(SuggestBox[CachedTag]):
         if not query:
             return []
         tag_ids = self._lib.search_tags(query)
-        if self._settings.sort_added_tags_last:
+        if self._app_settings.sort_added_tags_last:
             tag_ids.sort(key=lambda tag_id: tag_id in self.added)
         if self._limit > 0:
             tag_ids = tag_ids[: self._limit]

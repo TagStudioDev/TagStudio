@@ -41,7 +41,7 @@ def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: Sh
         settings_modal.update_settings()
 
         # Assert the setting is applied
-        assert qt_driver.settings.show_filepath == filepath_option
+        assert qt_driver.app_settings.show_filepath == filepath_option
 
 
 # Tests to see if the file paths are being displayed correctly
@@ -77,7 +77,7 @@ def test_file_path_display(
     # Select 2
     qt_driver.selection.toggle_item_selection(2, append=False, bridge=False)
 
-    qt_driver.settings.show_filepath = filepath_option
+    qt_driver.app_settings.show_filepath = filepath_option
 
     # Apply the mock value
     entry = qt_driver.lib.get_entry(2)
@@ -126,7 +126,7 @@ def test_title_update(
         error_description="",
     )
     # Set the file path option
-    qt_driver.settings.show_filepath = filepath_option
+    qt_driver.app_settings.show_filepath = filepath_option
     menu_bar = QMenuBar()
 
     qt_driver.main_window.menu_bar.open_recent_library_menu = QMenu(menu_bar)

@@ -115,7 +115,7 @@ class PreviewThumb(QWidget):
         if self._current_file:
             open_file(
                 self._current_file,
-                windows_start_command=self._driver.settings.windows_start_command,
+                windows_start_command=self._driver.app_settings.windows_start_command,
             )
 
     def _open_explorer_action_callback(self) -> None:
@@ -130,7 +130,7 @@ class PreviewThumb(QWidget):
         if self._current_file:
             open_file(
                 self._current_file,
-                windows_start_command=self._driver.settings.windows_start_command,
+                windows_start_command=self._driver.app_settings.windows_start_command,
             )
 
     def _media_player_video_changed_callback(self) -> None:

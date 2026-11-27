@@ -76,7 +76,7 @@ class TagData(TileData):
             capsule.show()
 
     def _on_click(self, tag: CachedTag) -> None:
-        match self._driver.settings.tag_click_action:
+        match self._driver.app_settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
             case TagClickActionOption.SET_SEARCH:

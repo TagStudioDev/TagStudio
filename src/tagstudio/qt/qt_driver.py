@@ -193,13 +193,13 @@ class QtDriver(BaseDriver, QObject):
         else:
             logger.info("[QtDriver] Using default application settings path")
             migrate_legacy_settings()
-        self.settings = AppSettings.load(app_settings_path)
+        self.app_settings = AppSettings.load(app_settings_path)
         if not app_settings_path.exists():
             logger.warning(
                 "[QtDriver] Application settings file not found, using defaults",
                 path=app_settings_path,
             )
-        self.applied_theme = self.settings.theme
+        self.applied_theme = self.app_settings.theme
 
         # Load Application State File
         app_state_path = DEFAULT_APP_STATE_PATH
@@ -223,7 +223,7 @@ class QtDriver(BaseDriver, QObject):
             )
 
         self.navigator = Navigator(self.lib, self.library_pool, self.selection)
-        Translations.change_language(self.settings.language)
+        Translations.change_language(self.app_settings.language)
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -256,9 +256,9 @@ class QtDriver(BaseDriver, QObject):
 
     def apply_theme(self) -> None:
         """Apply the set theme's color scheme and palette to the app."""
-        if self.settings.theme == ThemeOption.DARK:
+        if self.app_settings.theme == ThemeOption.DARK:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        elif self.settings.theme == ThemeOption.LIGHT:
+        elif self.app_settings.theme == ThemeOption.LIGHT:
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Light)
         else:
             self.app.styleHints().unsetColorScheme()
@@ -299,15 +299,15 @@ class QtDriver(BaseDriver, QObject):
         theme_change = QEvent(QEvent.Type.ThemeChange)
         for widget in QApplication.allWidgets():
             QApplication.sendEvent(widget, theme_change)
-        self.applied_theme = self.settings.theme
+        self.applied_theme = self.app_settings.theme
 
     def _on_color_scheme_changed(self) -> None:
-        if self.applied_theme == ThemeOption.SYSTEM == self.settings.theme:
+        if self.applied_theme == ThemeOption.SYSTEM == self.app_settings.theme:
             self.apply_theme()
 
     def start(self) -> None:
         """Launch the main Qt window."""
-        if self.settings.theme == ThemeOption.SYSTEM and platform.system() == "Windows":
+        if self.app_settings.theme == ThemeOption.SYSTEM and platform.system() == "Windows":
             sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
         self.app_style = TagStudioStyle()
@@ -315,8 +315,8 @@ class QtDriver(BaseDriver, QObject):
 
         self.apply_theme()
         self.app.styleHints().colorSchemeChanged.connect(self._on_color_scheme_changed)
-        TagShape.is_pill = self.settings.pill_shaped_tags
-        TagShape.is_circle_badge = self.settings.circular_badges
+        TagShape.is_pill = self.app_settings.pill_shaped_tags
+        TagShape.is_circle_badge = self.app_settings.circular_badges
 
         # Handle OS signals
         self.setup_signals()
@@ -411,7 +411,7 @@ class QtDriver(BaseDriver, QObject):
         show_changelog = self._record_program_version()
 
         startup_path: str | None = self.args.open.strip() if self.args.open else None
-        if not startup_path and self.settings.open_last_loaded_on_startup:
+        if not startup_path and self.app_settings.open_last_loaded_on_startup:
             last_library = self.app_state.last_library
             if last_library:
                 startup_path = str(last_library)
@@ -929,7 +929,7 @@ class QtDriver(BaseDriver, QObject):
     def open_about_modal(self):
         if not self.about_modal:
             self.about_modal = Modal(
-                AboutModal(unwrap(self.settings.path)),
+                AboutModal(unwrap(self.app_settings.path)),
                 window_title=Translations["about.title"],
                 inline_title=False,
                 background=ImageBackground(self.rm.aurora_bg),
@@ -1084,7 +1084,8 @@ class QtDriver(BaseDriver, QObject):
         """Update the recent library menu."""
         self.main_window.menu_bar.rebuild_open_recent_library_menu(
             self.app_state.recent_libraries,
-            self.settings.show_filepath,  # TODO: once QtDriver is a Singleton remove this parameter
+            # TODO: once QtDriver is a Singleton remove this parameter
+            self.app_settings.show_filepath,
             self.open_library,
             self.clear_recent_libs,
         )
@@ -1160,7 +1161,9 @@ class QtDriver(BaseDriver, QObject):
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
         library_dir_display = (
-            path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+            path
+            if self.app_settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS
+            else path.name
         )
         if self.lib.library_dir:
             self.close_library()
@@ -1268,7 +1271,7 @@ class QtDriver(BaseDriver, QObject):
             # with a prompt to open the settings to change that (encouraged but not required).
             self._create_sync_banner().set_disabled_notice()
 
-        if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+        if self.app_settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
             library_dir_display = self.lib.library_dir
         else:
             library_dir_display = self.lib.library_dir.name

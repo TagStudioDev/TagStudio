@@ -293,13 +293,13 @@ class MenuBar(QMenuBar):
 
     def _connect_callbacks(self) -> None:
         driver = self._driver
-        settings = driver.settings
+        app_settings = driver.app_settings
         self.open_library_action.triggered.connect(driver.open_library_from_dialog)
         self.save_library_backup_action.triggered.connect(
             lambda: driver.call_if_library_open(driver.backup_library)
         )
         self.settings_action.triggered.connect(driver.open_settings_modal)
-        self.open_on_start_action.setChecked(settings.open_last_loaded_on_startup)
+        self.open_on_start_action.setChecked(app_settings.open_last_loaded_on_startup)
         self.open_on_start_action.triggered.connect(self._set_open_last_loaded_on_startup)
         self.sync_library_action.triggered.connect(
             lambda: driver.call_if_library_open(driver.sync_library_callback)
@@ -338,8 +338,8 @@ class MenuBar(QMenuBar):
         self.changelog_action.triggered.connect(driver.show_changelog)
 
     def _set_open_last_loaded_on_startup(self, checked: bool) -> None:
-        self._driver.settings.open_last_loaded_on_startup = checked
-        self._driver.settings.save()
+        self._driver.app_settings.open_last_loaded_on_startup = checked
+        self._driver.app_settings.save()
 
     def _on_selection_changed(self) -> None:
         self.update_clipboard_actions()

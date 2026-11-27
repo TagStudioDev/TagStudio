@@ -58,7 +58,7 @@ class DatetimePicker(ModalContent):
         self.datetime_edit.setDateTime(DatetimePicker.dt2qdt(datetime))
         # sketchy way to show seconds without showing the day of the week;
         # while also still having localisation
-        self.datetime_edit.setDisplayFormat(qdtf2dtf(driver.settings.datetime_format))
+        self.datetime_edit.setDisplayFormat(qdtf2dtf(driver.app_settings.datetime_format))
 
         self.initial_value = datetime
         self.root_layout.addWidget(self.name_field)

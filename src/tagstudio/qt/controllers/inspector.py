@@ -55,7 +55,7 @@ class Inspector(QWidget):
         super().__init__()
         self._driver = driver
         self._lib = self._driver.lib
-        self._settings = self._driver.settings
+        self._app_settings = self._driver.app_settings
         self._are_tags_fields_shown = True
 
         self._current_stats: FileAttributeData | None = None
@@ -158,14 +158,14 @@ class Inspector(QWidget):
         self.layout().add_field_button.click()
 
     def _tag_added_callback(self, query: str):
-        if not query or not self._settings.keep_suggest_boxes_open:
+        if not query or not self._app_settings.keep_suggest_boxes_open:
             self._set_item_mode(None)
             self.layout().add_tag_button.setFocus()
         else:
             self.layout().tag_search_box.layout().search_field.setFocus()
 
     def _field_added_callback(self, query: str):
-        if not query or not self._settings.keep_suggest_boxes_open:
+        if not query or not self._app_settings.keep_suggest_boxes_open:
             self._set_item_mode(None)
             self.layout().add_field_button.setFocus()
         else:
@@ -208,7 +208,7 @@ class Inspector(QWidget):
         # TODO: Allow editing of fields across multiple entries at once.
         selected = self._driver.selection.selected
         if len(selected) == 1:
-            if self._driver.settings.edit_field_on_add:
+            if self._driver.app_settings.edit_field_on_add:
                 entry = self._lib.get_entry_full(selected[0])
                 if entry is not None:
                     entry_field = None

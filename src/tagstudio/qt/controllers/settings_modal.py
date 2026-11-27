@@ -74,12 +74,12 @@ class SettingsModal(ModalContent):
         self.setLayout(SettingsModalView())
         view = self.layout()
 
-        view.open_last_lib_checkbox.setChecked(driver.settings.open_last_loaded_on_startup)
+        view.open_last_lib_checkbox.setChecked(driver.app_settings.open_last_loaded_on_startup)
 
         for k in SettingsModal.filepath_option_map:
             view.filepath_combobox.addItem(Translations[SettingsModal.filepath_option_map[k]], k)
         view.filepath_combobox.setCurrentIndex(
-            list(SettingsModal.filepath_option_map.keys()).index(driver.settings.show_filepath)
+            list(SettingsModal.filepath_option_map.keys()).index(driver.app_settings.show_filepath)
         )
 
         for k in SettingsModal.tag_click_action_map:
@@ -87,36 +87,40 @@ class SettingsModal(ModalContent):
                 Translations[SettingsModal.tag_click_action_map[k]], k
             )
         view.tag_click_action_combobox.setCurrentIndex(
-            list(SettingsModal.tag_click_action_map.keys()).index(driver.settings.tag_click_action)
+            list(SettingsModal.tag_click_action_map.keys()).index(
+                driver.app_settings.tag_click_action
+            )
         )
 
-        view.edit_tag_on_create_checkbox.setChecked(driver.settings.edit_tag_on_create)
-        view.edit_field_on_add_checkbox.setChecked(driver.settings.edit_field_on_add)
-        view.keep_suggest_boxes_open_checkbox.setChecked(driver.settings.keep_suggest_boxes_open)
+        view.edit_tag_on_create_checkbox.setChecked(driver.app_settings.edit_tag_on_create)
+        view.edit_field_on_add_checkbox.setChecked(driver.app_settings.edit_field_on_add)
+        view.keep_suggest_boxes_open_checkbox.setChecked(
+            driver.app_settings.keep_suggest_boxes_open
+        )
         view.dont_create_items_on_enter_checkbox.setChecked(
-            driver.settings.dont_create_items_on_enter
+            driver.app_settings.dont_create_items_on_enter
         )
-        view.sort_added_tags_last_checkbox.setChecked(driver.settings.sort_added_tags_last)
+        view.sort_added_tags_last_checkbox.setChecked(driver.app_settings.sort_added_tags_last)
         view.invert_suggest_box_scroll_checkbox.setChecked(
-            driver.settings.invert_suggest_box_scroll
+            driver.app_settings.invert_suggest_box_scroll
         )
-        view.autoplay_checkbox.setChecked(driver.settings.autoplay)
+        view.autoplay_checkbox.setChecked(driver.app_settings.autoplay)
 
         for k in SettingsModal.theme_map:
             view.theme_combobox.addItem(Translations[SettingsModal.theme_map[k]], k)
         view.theme_combobox.setCurrentIndex(
-            list(SettingsModal.theme_map.keys()).index(driver.settings.theme)
+            list(SettingsModal.theme_map.keys()).index(driver.app_settings.theme)
         )
 
-        view.pill_shaped_tags_checkbox.setChecked(driver.settings.pill_shaped_tags)
-        view.circular_badges_checkbox.setChecked(driver.settings.circular_badges)
+        view.pill_shaped_tags_checkbox.setChecked(driver.app_settings.pill_shaped_tags)
+        view.circular_badges_checkbox.setChecked(driver.app_settings.circular_badges)
 
         translated_langs = [(Translations[f"language.{lang}"], lang) for lang in LANGUAGES]
         translated_langs.sort(key=lambda x: x[0])
 
         for lang in translated_langs:
             view.language_combobox.addItem(lang[0], lang[1])
-        current_lang: str = driver.settings.language
+        current_lang: str = driver.app_settings.language
         if current_lang not in LANGUAGES:
             current_lang = DEFAULT_TRANSLATION
         view.language_combobox.setCurrentIndex([x[1] for x in translated_langs].index(current_lang))
@@ -124,15 +128,15 @@ class SettingsModal(ModalContent):
 
         for k in SettingsModal.date_format_map:
             view.dateformat_combobox.addItem(SettingsModal.date_format_map[k], k)
-        dateformat: str = driver.settings.date_format
+        dateformat: str = driver.app_settings.date_format
         if dateformat not in SettingsModal.date_format_map:
             dateformat = "%x"
         view.dateformat_combobox.setCurrentIndex(
             list(SettingsModal.date_format_map.keys()).index(dateformat)
         )
 
-        view.hourformat_checkbox.setChecked(driver.settings.hour_format)
-        view.zeropadding_checkbox.setChecked(driver.settings.zero_padding)
+        view.hourformat_checkbox.setChecked(driver.app_settings.hour_format)
+        view.zeropadding_checkbox.setChecked(driver.app_settings.zero_padding)
 
         view.sync_on_open_checkbox.setChecked(driver.lib.settings.sync_on_open)
         view.generate_thumbs.setChecked(driver.lib.settings.generate_thumbs)
@@ -204,10 +208,10 @@ class SettingsModal(ModalContent):
 
     def has_pending_changes(self) -> bool:
         """Whether any setting here differs from the saved ones."""
-        settings = self.get_app_settings()
+        app_settings = self.get_app_settings()
         library_settings = self.get_library_settings()
         return any(
-            value != getattr(self._driver.settings, key) for key, value in settings.items()
+            value != getattr(self._driver.app_settings, key) for key, value in app_settings.items()
         ) or any(
             value != getattr(self._driver.lib.settings, key)
             for key, value in library_settings.items()
@@ -215,27 +219,29 @@ class SettingsModal(ModalContent):
 
     def update_settings(self):
         driver = self._driver
-        settings = self.get_app_settings()
+        app_settings = self.get_app_settings()
 
-        driver.settings.language = settings["language"]
-        driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
-        driver.settings.autoplay = settings["autoplay"]
-        driver.settings.show_filepath = settings["show_filepath"]
-        driver.settings.theme = settings["theme"]
-        driver.settings.pill_shaped_tags = settings["pill_shaped_tags"]
-        driver.settings.circular_badges = settings["circular_badges"]
-        driver.settings.tag_click_action = settings["tag_click_action"]
-        driver.settings.edit_tag_on_create = settings["edit_tag_on_create"]
-        driver.settings.edit_field_on_add = settings["edit_field_on_add"]
-        driver.settings.keep_suggest_boxes_open = settings["keep_suggest_boxes_open"]
-        driver.settings.dont_create_items_on_enter = settings["dont_create_items_on_enter"]
-        driver.settings.sort_added_tags_last = settings["sort_added_tags_last"]
-        driver.settings.invert_suggest_box_scroll = settings["invert_suggest_box_scroll"]
-        driver.settings.date_format = settings["date_format"]
-        driver.settings.hour_format = settings["hour_format"]
-        driver.settings.zero_padding = settings["zero_padding"]
+        driver.app_settings.language = app_settings["language"]
+        driver.app_settings.open_last_loaded_on_startup = app_settings[
+            "open_last_loaded_on_startup"
+        ]
+        driver.app_settings.autoplay = app_settings["autoplay"]
+        driver.app_settings.show_filepath = app_settings["show_filepath"]
+        driver.app_settings.theme = app_settings["theme"]
+        driver.app_settings.pill_shaped_tags = app_settings["pill_shaped_tags"]
+        driver.app_settings.circular_badges = app_settings["circular_badges"]
+        driver.app_settings.tag_click_action = app_settings["tag_click_action"]
+        driver.app_settings.edit_tag_on_create = app_settings["edit_tag_on_create"]
+        driver.app_settings.edit_field_on_add = app_settings["edit_field_on_add"]
+        driver.app_settings.keep_suggest_boxes_open = app_settings["keep_suggest_boxes_open"]
+        driver.app_settings.dont_create_items_on_enter = app_settings["dont_create_items_on_enter"]
+        driver.app_settings.sort_added_tags_last = app_settings["sort_added_tags_last"]
+        driver.app_settings.invert_suggest_box_scroll = app_settings["invert_suggest_box_scroll"]
+        driver.app_settings.date_format = app_settings["date_format"]
+        driver.app_settings.hour_format = app_settings["hour_format"]
+        driver.app_settings.zero_padding = app_settings["zero_padding"]
 
-        driver.settings.save()
+        driver.app_settings.save()
 
         lib = driver.lib
         if lib.library_dir is not None:
@@ -247,10 +253,10 @@ class SettingsModal(ModalContent):
             lib.settings.save()
 
         # Apply changes
-        if driver.applied_theme != settings["theme"]:
+        if driver.applied_theme != app_settings["theme"]:
             driver.apply_theme()
-        TagShape.is_pill = settings["pill_shaped_tags"]
-        TagShape.is_circle_badge = settings["circular_badges"]
+        TagShape.is_pill = app_settings["pill_shaped_tags"]
+        TagShape.is_circle_badge = app_settings["circular_badges"]
         # Restyle displayed tags and containers so they take the new shape and padding
         for widget in QApplication.allWidgets():
             if isinstance(widget, (Capsule, TagCapsuleBox, TagSearchPanel)):
@@ -261,7 +267,7 @@ class SettingsModal(ModalContent):
         driver.update_recent_lib_menu()
         driver.main_window.inspector.update_from_selection()
         library_directory = driver.lib.library_dir
-        if settings["show_filepath"] == ShowFilepathOption.SHOW_FULL_PATHS:
+        if app_settings["show_filepath"] == ShowFilepathOption.SHOW_FULL_PATHS:
             display_path = library_directory or ""
         else:
             display_path = library_directory.name if library_directory else ""

@@ -25,8 +25,8 @@ logger = structlog.get_logger(__name__)
 
 
 class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
-    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = ""):
-        super().__init__(library, settings, placeholder_text)
+    def __init__(self, library: Library, app_settings: AppSettings, placeholder_text: str = ""):
+        super().__init__(library, app_settings, placeholder_text)
 
         # Context Menu Actions
         self._edit_on_add_action = QAction(Translations["settings.edit_field_on_add"], self)
@@ -39,12 +39,12 @@ class FieldSuggestBox(SuggestBox[BaseFieldTemplate]):
 
     def _toggle_edit_on_field_add(self, checked: bool) -> None:
         """Toggle the setting for opening the edit window after adding a field."""
-        self._settings.edit_field_on_add = checked
-        self._settings.save()
+        self._app_settings.edit_field_on_add = checked
+        self._app_settings.save()
 
     @override
     def showEvent(self, event: QShowEvent) -> None:
-        self._edit_on_add_action.setChecked(self._settings.edit_field_on_add)
+        self._edit_on_add_action.setChecked(self._app_settings.edit_field_on_add)
         return super().showEvent(event)
 
     @override

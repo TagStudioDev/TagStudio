@@ -40,11 +40,13 @@ class SuggestBox[T](QWidget):
     done = Signal(str)  # Query
     _items_found = Signal(int, object)  # (Search ID, Items)
 
-    def __init__(self, library: Library, settings: AppSettings, placeholder_text: str = "") -> None:
+    def __init__(
+        self, library: Library, app_settings: AppSettings, placeholder_text: str = ""
+    ) -> None:
         super().__init__()
         self._lib = library
         self._hint_icon: bytes | None = None
-        self._settings = settings
+        self._app_settings = app_settings
         self._rm = ResourceManager()
         self._limit = 25
         self._is_shift_held = False
@@ -92,17 +94,17 @@ class SuggestBox[T](QWidget):
         )
 
     def _toggle_keep_open(self, checked: bool) -> None:
-        self._settings.keep_suggest_boxes_open = checked
-        self._settings.save()
+        self._app_settings.keep_suggest_boxes_open = checked
+        self._app_settings.save()
 
     def _toggle_dont_create_on_enter(self, checked: bool) -> None:
-        self._settings.dont_create_items_on_enter = checked
-        self._settings.save()
+        self._app_settings.dont_create_items_on_enter = checked
+        self._app_settings.save()
         self._on_search_query_changed(self.layout().search_field.text())
 
     def _toggle_invert_scroll(self, checked: bool) -> None:
-        self._settings.invert_suggest_box_scroll = checked
-        self._settings.save()
+        self._app_settings.invert_suggest_box_scroll = checked
+        self._app_settings.save()
         self.layout().scroll_area.set_inverted(checked)
 
     def set_placeholder_text(self, text: str) -> None:
@@ -226,7 +228,7 @@ class SuggestBox[T](QWidget):
             self._on_item_create()
         elif self._search_results:
             self._on_item_chosen(self._search_results[self._selection_index])
-        elif not self._settings.dont_create_items_on_enter:
+        elif not self._app_settings.dont_create_items_on_enter:
             self._on_item_create()
         else:
             return
@@ -252,7 +254,7 @@ class SuggestBox[T](QWidget):
     def _is_query_invalid(self) -> bool:
         """If the query is invalid, for example if "Item Creation on Enter" is toggled off."""
         return bool(
-            self._settings.dont_create_items_on_enter
+            self._app_settings.dont_create_items_on_enter
             and not self._is_shift_held
             and not self._search_results
             and self.layout().search_field.text()
@@ -350,10 +352,10 @@ class SuggestBox[T](QWidget):
         self._on_shift_held(held=False)
         self.layout().search_field.setDisabled(False)
         self._clear_search_query()
-        self._keep_box_open_action.setChecked(self._settings.keep_suggest_boxes_open)
-        self._dont_create_on_enter_action.setChecked(self._settings.dont_create_items_on_enter)
-        self._invert_scroll_action.setChecked(self._settings.invert_suggest_box_scroll)
-        self.layout().scroll_area.set_inverted(self._settings.invert_suggest_box_scroll)
+        self._keep_box_open_action.setChecked(self._app_settings.keep_suggest_boxes_open)
+        self._dont_create_on_enter_action.setChecked(self._app_settings.dont_create_items_on_enter)
+        self._invert_scroll_action.setChecked(self._app_settings.invert_suggest_box_scroll)
+        self.layout().scroll_area.set_inverted(self._app_settings.invert_suggest_box_scroll)
         return super().showEvent(event)
 
     @override

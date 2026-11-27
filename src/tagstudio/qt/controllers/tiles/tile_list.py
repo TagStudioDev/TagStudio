@@ -368,7 +368,7 @@ class TileList(InsetFrame):
             if not is_mixed:
                 try:
                     assert field.value is not None
-                    text = self.driver.settings.format_datetime(
+                    text = self.driver.app_settings.format_datetime(
                         DatetimePicker.string2dt(field.value)
                     )
                 except ValueError, AssertionError:

@@ -230,14 +230,14 @@ class MediaPlayer(QGraphicsView):
         autoplay_action = QAction(Translations["media_player.autoplay"], self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
-        autoplay_action.setChecked(self.driver.settings.autoplay)
+        autoplay_action.setChecked(self.driver.app_settings.autoplay)
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
         loop_action = QAction(Translations["media_player.loop"], self)
         loop_action.setCheckable(True)
         self.addAction(loop_action)
-        loop_action.setChecked(self.driver.settings.loop)
+        loop_action.setChecked(self.driver.app_settings.loop)
         loop_action.triggered.connect(lambda: self.toggle_loop())
         self.loop = loop_action
         self.toggle_loop()
@@ -249,13 +249,13 @@ class MediaPlayer(QGraphicsView):
 
     def toggle_autoplay(self) -> None:
         """Toggle the autoplay state of the video."""
-        self.driver.settings.autoplay = self.autoplay.isChecked()
-        self.driver.settings.save()
+        self.driver.app_settings.autoplay = self.autoplay.isChecked()
+        self.driver.app_settings.save()
 
     def toggle_loop(self) -> None:
-        self.driver.settings.loop = self.loop.isChecked()
-        self.driver.settings.save()
-        self.player.setLoops(-1 if self.driver.settings.loop else 1)
+        self.driver.app_settings.loop = self.loop.isChecked()
+        self.driver.app_settings.save()
+        self.player.setLoops(-1 if self.driver.app_settings.loop else 1)
 
     def set_tint_opacity(self, opacity: int) -> None:
         """Set the opacity of the video player's tint.
