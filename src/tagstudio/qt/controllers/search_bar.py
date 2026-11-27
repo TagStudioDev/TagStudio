@@ -5,7 +5,7 @@
 import re
 from typing import override
 
-from PySide6.QtCore import QEvent, QObject, QPoint, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, QSignalBlocker, Signal
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
@@ -53,6 +53,13 @@ class SearchBar(QWidget):
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with "is_hidden" tags."""
         return self.layout().show_hidden_entries_action.isChecked()
+
+    def set_show_hidden_entries(self, shown: bool) -> None:
+        """Set whether to show entries tagged with "is_hidden" tags."""
+        view = self.layout()
+        with QSignalBlocker(view.show_hidden_entries_action):
+            view.show_hidden_entries_action.setChecked(shown)
+        view.update_options_icon()
 
     def set_nav_buttons_enabled(self, enabled: bool) -> None:
         """Enable the back and forward navigation buttons."""

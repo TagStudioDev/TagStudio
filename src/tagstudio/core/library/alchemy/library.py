@@ -422,7 +422,10 @@ class Library:
         if open_status.success:
             self._tag_cache = TagCache(self.engine)
             self._tag_cache.load()
-            self.settings = LibrarySettings.load(library_dir / TS_FOLDER_NAME / SETTINGS_NAME)
+            settings_path = library_dir / TS_FOLDER_NAME / SETTINGS_NAME
+            self.settings = LibrarySettings.load(settings_path)
+            if not in_memory and not settings_path.exists():
+                self.settings.save()
         return open_status
 
     @staticmethod

@@ -23,6 +23,7 @@ CWD = Path(__file__).parent
 sys.path.insert(0, str(CWD.parent))
 
 from tagstudio.core.constants import BACKUP_FOLDER_NAME, THUMB_CACHE_NAME, TS_FOLDER_NAME
+from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import GLOBAL_IGNORE, Ignore, IgnoreMatcher
@@ -298,6 +299,9 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver.app = Mock()
         driver.main_window = Mock()
         driver.main_window.thumb_size = 128
+        driver.main_window.sorting_mode = SortingModeEnum.DATE_ADDED
+        driver.main_window.sorting_direction = False
+        driver.main_window.show_hidden_entries = False
         driver.main_window.thumb_grid = ThumbGrid(driver, Pagination())
         driver.main_window.menu_bar.autofill_action = Mock()
 

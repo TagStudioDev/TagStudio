@@ -6,6 +6,7 @@ from enum import IntEnum
 
 from pydantic import field_validator
 
+from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.core.utils.data_file import BaseDataFile
 
 DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
@@ -47,6 +48,9 @@ class LibrarySettings(BaseDataFile):
     show_durations_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
     page_size: int = 100
     infinite_scroll: bool = True
+    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
+    ascending: bool = False
+    show_hidden_entries: bool = False
 
     @field_validator("page_size")
     @classmethod

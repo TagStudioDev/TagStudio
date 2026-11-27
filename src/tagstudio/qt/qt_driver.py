@@ -571,8 +571,12 @@ class QtDriver(BaseDriver, QObject):
         self.navigator.reset()
 
         library_settings = self.lib.settings
-        if library_settings.thumb_size != self.main_window.thumb_size:
-            library_settings.thumb_size = self.main_window.thumb_size
+        saved_values = library_settings.model_dump()
+        library_settings.thumb_size = self.main_window.thumb_size
+        library_settings.sorting_mode = self.main_window.sorting_mode
+        library_settings.ascending = self.main_window.sorting_direction
+        library_settings.show_hidden_entries = self.main_window.show_hidden_entries
+        if library_settings.model_dump() != saved_values:
             library_settings.save()
 
         self._library_session_id += 1
@@ -1246,15 +1250,19 @@ class QtDriver(BaseDriver, QObject):
         assert self.lib.library_dir
         self.init_workers()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
+        library_settings = self.lib.settings
+        self.main_window.set_sorting_mode(library_settings.sorting_mode)
+        self.main_window.set_sorting_direction(library_settings.ascending)
+        self.main_window.set_show_hidden_entries(library_settings.show_hidden_entries)
         # Start the history at the current sort, so back doesn't lead to the default one
         initial_state = BrowsingState(
             page_index=0,
             sorting_mode=self.main_window.sorting_mode,
             ascending=self.main_window.sorting_direction,
+            show_hidden_entries=self.main_window.show_hidden_entries,
         )
         self.navigator.reset(initial_state)
 
-        library_settings = self.lib.settings
         self.main_window.set_thumb_size(library_settings.thumb_size)
         self.main_window.set_pagination_actions_checked(
             library_settings.infinite_scroll, library_settings.page_size

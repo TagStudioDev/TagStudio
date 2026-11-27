@@ -83,6 +83,10 @@ class BrowsingControls(QWidget):
         combobox.setCurrentIndex(combobox.findData(mode))
         self._set_sort_direction_button()
 
+    def set_sorting_direction(self, ascending: bool) -> None:
+        self._is_ascending = ascending
+        self._set_sort_direction_button()
+
     def set_pagination_actions_checked(self, is_infinite: bool, page_size: int) -> None:
         """Set which pagination actions in the view options menu are checked."""
         view = self.layout()

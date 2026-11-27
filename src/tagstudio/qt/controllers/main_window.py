@@ -489,6 +489,12 @@ class MainWindow(QMainWindow):
     def set_sorting_mode(self, mode: SortingModeEnum) -> None:
         self.layout().browsing_controls.set_sorting_mode(mode)
 
+    def set_sorting_direction(self, ascending: bool) -> None:
+        self.layout().browsing_controls.set_sorting_direction(ascending)
+
+    def set_show_hidden_entries(self, shown: bool) -> None:
+        self.layout().search_bar.set_show_hidden_entries(shown)
+
     def set_thumb_size(self, size: int) -> None:
         self.layout().browsing_controls.set_thumb_size(size)
 
