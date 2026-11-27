@@ -324,9 +324,9 @@ class EditTagPanel(ModalContent):
 
         # Add Disambiguation Tag Button
         disam_button = Badge(
-            ResourceManager().card_text,
+            ResourceManager().disambiguation_on,
             is_circular=True,
-            unchecked_icon=ResourceManager().card_text_outline,
+            unchecked_icon=ResourceManager().disambiguation_off,
         )
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])

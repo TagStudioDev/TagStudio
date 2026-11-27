@@ -1,8 +1,4 @@
 {
-    "aurora_bg": {
-        "mode": "qpixmap",
-        "path": "qt/images/aurora_bg.png"
-    },
     "adobe_illustrator": {
         "mode": "pil",
         "path": "qt/images/file_icons/adobe_illustrator.png"
@@ -39,6 +35,10 @@
         "mode": "pil",
         "path": "qt/images/file_icons/audio.png"
     },
+    "aurora_bg": {
+        "mode": "qpixmap",
+        "path": "qt/images/aurora_bg.png"
+    },
     "broken_link_icon": {
         "mode": "pil",
         "path": "qt/images/broken_link_icon.png"
@@ -50,14 +50,6 @@
     "bxs_right_arrow": {
         "mode": "rb",
         "path": "qt/images/search/bxs-right-arrow.svg"
-    },
-    "card_text": {
-        "mode": "rb",
-        "path": "qt/images/card-text.svg"
-    },
-    "card_text_outline": {
-        "mode": "rb",
-        "path": "qt/images/card-text-outline.svg"
     },
     "chevron_down": {
         "mode": "rb",
@@ -78,6 +70,14 @@
     "database": {
         "mode": "pil",
         "path": "qt/images/file_icons/database.png"
+    },
+    "disambiguation_off": {
+        "mode": "rb",
+        "path": "qt/images/disambiguation-off.svg"
+    },
+    "disambiguation_on": {
+        "mode": "rb",
+        "path": "qt/images/disambiguation-on.svg"
     },
     "document": {
         "mode": "pil",

@@ -31,8 +31,8 @@ class ResourceManager:
     broken_link_icon: Image.Image
     bxs_left_arrow: bytes
     bxs_right_arrow: bytes
-    card_text: bytes
-    card_text_outline: bytes
+    disambiguation_on: bytes
+    disambiguation_off: bytes
     chevron_down: bytes
     colors_icon: bytes
     colors_icon_solid: bytes

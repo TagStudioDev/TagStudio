@@ -81,7 +81,7 @@ class ParentTagsInfoView(InfoPopoverView):
         self.addWidget(self._example(*disambiguation_rows))
 
     def _example_badge(self) -> Badge:
-        badge = Badge(ResourceManager().card_text, is_circular=True)
+        badge = Badge(ResourceManager().disambiguation_on, is_circular=True)
         badge.setChecked(True)
         badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         return badge
