@@ -390,7 +390,7 @@ class ThumbGrid(QWidget):
             self._driver.lib,
             self._driver,
             (size, size),
-            show_filename_label=self._driver.lib.settings.show_filenames_in_grid,
+            show_filename_label=self._driver.lib.settings.show_filenames,
         )
 
     def _path(self, entry: Entry) -> Path:
@@ -636,7 +636,7 @@ class ThumbGrid(QWidget):
             thumb.set_image(image, file_path)
 
     def _queue_durations(self) -> None:
-        if self._driver.lib.settings.show_durations_in_grid == ShowLabelOption.NEVER:
+        if self._driver.lib.settings.show_durations == ShowLabelOption.NEVER:
             return
         for entry in self._assigned_entries():
             path = self._path(entry)

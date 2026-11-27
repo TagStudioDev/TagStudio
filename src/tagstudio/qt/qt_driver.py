@@ -500,19 +500,19 @@ class QtDriver(BaseDriver, QObject):
 
     def show_grid_filenames(self, value: bool):
         """Save and apply whether the grid shows filenames."""
-        self.lib.settings.show_filenames_in_grid = value
+        self.lib.settings.show_filenames = value
         self.lib.settings.save()
         self.main_window.thumb_grid.set_filenames_visible(value)
 
     def show_grid_extensions(self, option: ShowLabelOption) -> None:
         """Save and apply when the grid shows file extensions."""
-        self.lib.settings.show_extensions_in_grid = option
+        self.lib.settings.show_extensions = option
         self.lib.settings.save()
         self.main_window.thumb_grid.update_extension_visibility()
 
     def show_grid_durations(self, option: ShowLabelOption) -> None:
         """Save and apply when the grid shows durations."""
-        self.lib.settings.show_durations_in_grid = option
+        self.lib.settings.show_durations = option
         self.lib.settings.save()
         self.main_window.thumb_grid.update_duration_visibility()
 
@@ -574,7 +574,7 @@ class QtDriver(BaseDriver, QObject):
         saved_values = library_settings.model_dump()
         library_settings.thumb_size = self.main_window.thumb_size
         library_settings.sorting_mode = self.main_window.sorting_mode
-        library_settings.ascending = self.main_window.sorting_direction
+        library_settings.sort_ascending = self.main_window.sorting_direction
         library_settings.show_hidden_entries = self.main_window.show_hidden_entries
         if library_settings.model_dump() != saved_values:
             library_settings.save()
@@ -1252,7 +1252,7 @@ class QtDriver(BaseDriver, QObject):
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
         library_settings = self.lib.settings
         self.main_window.set_sorting_mode(library_settings.sorting_mode)
-        self.main_window.set_sorting_direction(library_settings.ascending)
+        self.main_window.set_sorting_direction(library_settings.sort_ascending)
         self.main_window.set_show_hidden_entries(library_settings.show_hidden_entries)
         # Start the history at the current sort, so back doesn't lead to the default one
         initial_state = BrowsingState(
@@ -1267,12 +1267,10 @@ class QtDriver(BaseDriver, QObject):
         self.main_window.set_pagination_actions_checked(
             library_settings.infinite_scroll, library_settings.page_size
         )
-        self.main_window.set_show_filenames_action_checked(library_settings.show_filenames_in_grid)
-        self.main_window.thumb_grid.set_filenames_visible(library_settings.show_filenames_in_grid)
-        self.main_window.set_show_extensions_action_checked(
-            library_settings.show_extensions_in_grid
-        )
-        self.main_window.set_show_durations_action_checked(library_settings.show_durations_in_grid)
+        self.main_window.set_show_filenames_action_checked(library_settings.show_filenames)
+        self.main_window.thumb_grid.set_filenames_visible(library_settings.show_filenames)
+        self.main_window.set_show_extensions_action_checked(library_settings.show_extensions)
+        self.main_window.set_show_durations_action_checked(library_settings.show_durations)
 
         if not self.lib.settings.sync_on_open:
             # Show that the setting for syncing a library on open is turned off,

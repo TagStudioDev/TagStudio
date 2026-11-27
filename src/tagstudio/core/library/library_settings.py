@@ -43,13 +43,13 @@ class LibrarySettings(BaseDataFile):
     cached_thumb_resolution: int = DEFAULT_CACHED_THUMB_RES
     sync_on_open: bool = True
     thumb_size: int = DEFAULT_THUMB_SIZE
-    show_filenames_in_grid: bool = True
-    show_extensions_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
-    show_durations_in_grid: ShowLabelOption = ShowLabelOption.ALWAYS
+    show_filenames: bool = True
+    show_extensions: ShowLabelOption = ShowLabelOption.ALWAYS
+    show_durations: ShowLabelOption = ShowLabelOption.ALWAYS
     page_size: int = 100
     infinite_scroll: bool = True
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
-    ascending: bool = False
+    sort_ascending: bool = False
     show_hidden_entries: bool = False
 
     @field_validator("page_size")

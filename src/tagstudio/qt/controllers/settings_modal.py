@@ -5,7 +5,14 @@
 from typing import TYPE_CHECKING, Any, override
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDialogButtonBox, QLineEdit
+from PySide6.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QDialogButtonBox,
+    QLineEdit,
+)
 
 from tagstudio.core.library.library_settings import (
     DEFAULT_CACHED_THUMB_RES,
@@ -70,7 +77,7 @@ class SettingsModal(ModalContent):
     def __init__(self, driver: QtDriver):
         super().__init__()
         self._driver = driver
-        self.setMinimumSize(400, 500)
+        self.setMinimumSize(540, 480)
         self.setLayout(SettingsModalView())
         view = self.layout()
 
@@ -114,6 +121,10 @@ class SettingsModal(ModalContent):
 
         view.pill_shaped_tags_checkbox.setChecked(driver.app_settings.pill_shaped_tags)
         view.circular_badges_checkbox.setChecked(driver.app_settings.circular_badges)
+        view.example_tag.set_is_pill(driver.app_settings.pill_shaped_tags)
+        view.example_badge.set_is_circular(driver.app_settings.circular_badges)
+        view.pill_shaped_tags_checkbox.toggled.connect(view.example_tag.set_is_pill)
+        view.circular_badges_checkbox.toggled.connect(view.example_badge.set_is_circular)
 
         translated_langs = [(Translations[f"language.{lang}"], lang) for lang in LANGUAGES]
         translated_langs.sort(key=lambda x: x[0])
@@ -144,10 +155,12 @@ class SettingsModal(ModalContent):
             str(max(driver.lib.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
         )
         view.cached_thumb_res.setText(str(driver.lib.settings.cached_thumb_resolution))
-        view.tab_widget.setTabEnabled(
-            view.tab_widget.indexOf(view.library_settings_container),
-            driver.lib.library_dir is not None,
-        )
+        view.library_mode_button.setEnabled(driver.lib.library_dir is not None)
+
+        self._mode_buttons = QButtonGroup(self)
+        self._mode_buttons.addButton(view.app_mode_button)
+        self._mode_buttons.addButton(view.library_mode_button)
+        view.library_mode_button.toggled.connect(self._on_library_mode_toggled)
 
         for checkbox in self.findChildren(QCheckBox):
             checkbox.toggled.connect(self.edited)
@@ -157,6 +170,11 @@ class SettingsModal(ModalContent):
             line_edit.textChanged.connect(self.edited)
 
         self._update_restart_label()
+
+    def _on_library_mode_toggled(self, checked: bool) -> None:
+        view = self.layout()
+        tab_widget = view.library_tab_widget if checked else view.app_tab_widget
+        view.mode_stack.setCurrentWidget(tab_widget)
 
     def _update_restart_label(self):
         view = self.layout()
@@ -279,8 +297,7 @@ class SettingsModal(ModalContent):
     def build_modal(cls, driver: QtDriver, show_library_settings: bool = False) -> Modal:
         settings_modal = cls(driver)
         if show_library_settings:
-            view = settings_modal.layout()
-            view.tab_widget.setCurrentWidget(view.library_settings_container)
+            settings_modal.layout().library_mode_button.setChecked(True)
 
         modal = Modal(
             content_widget=settings_modal,
@@ -299,7 +316,6 @@ class SettingsModal(ModalContent):
         apply_button.clicked.connect(update_apply_button)
         settings_modal.edited.connect(update_apply_button)
         update_apply_button()
-        modal.layout().title_label.setVisible(False)
 
         return modal
 

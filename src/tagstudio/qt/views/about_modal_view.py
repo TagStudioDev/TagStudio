@@ -32,7 +32,7 @@ _LOGO_WIDTH = 384
 class AboutModalView(QVBoxLayout):
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(6, 0, 6, 0)
+        self.setContentsMargins(0, 0, 0, 0)
         self.setSpacing(12)
 
         # TagStudio Logo -------------------------------------------------------

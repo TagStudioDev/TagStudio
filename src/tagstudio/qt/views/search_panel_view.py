@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
 
 from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.inset_scroll_box import InsetScrollBox
-from tagstudio.qt.views.styles.stylesheets import PAD
 
 
 class SearchPanelView(QVBoxLayout):
@@ -25,7 +24,7 @@ class SearchPanelView(QVBoxLayout):
     ) -> None:
         self.is_chooser: bool = is_chooser
         super().__init__()
-        self.setContentsMargins(PAD, 0, PAD, 0)
+        self.setContentsMargins(0, 0, 0, 0)
 
         # Search field
         self.search_field = QLineEdit()

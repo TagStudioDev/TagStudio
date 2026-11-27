@@ -23,7 +23,7 @@ _LOGO_WIDTH = 384
 class ChangelogModalView(QVBoxLayout):
     def __init__(self) -> None:
         super().__init__()
-        self.setContentsMargins(PAD, 0, PAD, 0)
+        self.setContentsMargins(0, 0, 0, 0)
 
         self.logo_label = QLabel()
         logo = QPixmap.fromImage(ImageQt.ImageQt(ResourceManager().ts_logo_text_color))

@@ -81,6 +81,10 @@ class Badge(QCheckBox):
         self._color_group = color_group
         self.update()
 
+    def set_is_circular(self, is_circular: bool) -> None:
+        self._is_circular = is_circular
+        self.update()
+
     def set_underlay(self, brush: QBrush | None, underlay_widget: QWidget) -> None:
         """Set what the badge is drawn on top of."""
         self._underlay_brush = brush

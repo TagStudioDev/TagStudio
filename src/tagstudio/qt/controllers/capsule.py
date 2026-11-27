@@ -50,7 +50,7 @@ class Capsule(QWidget):
         self._is_clickable = True
         self._is_colorless = True
         self._is_dashed = is_dashed
-        self._is_pill = False
+        self._is_pill: bool | None = None
         self._is_stretched = is_stretched
         self._is_tag = is_tag
         self.has_remove = has_remove
@@ -111,6 +111,10 @@ class Capsule(QWidget):
         self._is_tag = is_tag
         self.restyle()
 
+    def set_is_pill(self, is_pill: bool) -> None:
+        self._is_pill = is_pill
+        self.restyle()
+
     def set_edit_enabled(self, enabled: bool) -> None:
         if self._edit_action is not None:
             self._edit_action.setEnabled(enabled)
@@ -133,21 +137,24 @@ class Capsule(QWidget):
 
     def restyle(self) -> None:
         """Style the capsule with its colors, icon, and shape."""
-        # NOTE: Only tag capsules follow the pill-shaped tag setting
-        self._is_pill = self._is_tag and TagShape.is_pill
         shrink = None
         if self._icon is not None:
             shrink = icon_shrink(self._icon, CapsuleView.HEIGHT, self._radius())
         self.layout().set_colors(
             *self._colors,
-            is_pill=self._is_pill,
+            is_pill=self._is_pill_shaped(),
             icon_shrink=shrink,
             is_stretched=self._is_stretched,
         )
         self.update()
 
+    def _is_pill_shaped(self) -> bool:
+        # NOTE: Only tag capsules follow the pill-shaped tag setting
+        is_pill = TagShape.is_pill if self._is_pill is None else self._is_pill
+        return self._is_tag and is_pill
+
     def _radius(self) -> float:
-        return CapsuleView.HEIGHT // 2 if self._is_pill else RADIUS
+        return CapsuleView.HEIGHT // 2 if self._is_pill_shaped() else RADIUS
 
     @override
     def paintEvent(self, event: QPaintEvent) -> None:

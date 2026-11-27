@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QDialogButtonBox, QLabel, QVBoxLayout
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.modal_content import ModalContent
-from tagstudio.qt.views.styles.stylesheets import PAD, header
+from tagstudio.qt.views.styles.stylesheets import PAD, WIN_PAD, header
 
 logger = structlog.get_logger(__name__)
 
@@ -26,10 +26,10 @@ class ModalView(QVBoxLayout):
     ):
         super().__init__()
         self.content_widget = content_widget
-        self.setContentsMargins(PAD, PAD if inline_title else PAD * 2, PAD, PAD)
+        self.setContentsMargins(WIN_PAD, PAD if inline_title else PAD * 2, WIN_PAD, WIN_PAD)
 
         self.button_box = QDialogButtonBox()
-        self.button_box.setContentsMargins(PAD, PAD, PAD, PAD)
+        self.button_box.setContentsMargins(0, PAD, 0, 0)
 
         if not is_savable:
             done_button = self.button_box.addButton(
@@ -56,6 +56,9 @@ class ModalView(QVBoxLayout):
             self.title_label.setText(header(title, inline_title_level))
             self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.addWidget(self.title_label)
+
+            if not title:
+                self.title_label.setVisible(False)
 
         self.addWidget(content_widget)
         self.setStretch(1, 2)
