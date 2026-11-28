@@ -37,7 +37,6 @@ elif system == "Darwin":
 
 datafiles = [
     (f"{project_root}/qt/*.json", "tagstudio/qt"),
-    (f"{project_root}/qt/*.qrc", "tagstudio/qt"),
     (f"{project_root}/resources", "tagstudio/resources"),
     ("../docs/changelog.md", "tagstudio/resources/changelog"),
 ]
