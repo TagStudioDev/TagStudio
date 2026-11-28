@@ -22,10 +22,10 @@ def test_verify_library_path_missing():
     # Then
     assert result == OpenLibraryResult(
         success=False,
-        library_path=Path("/0/4/5/1/"),
+        library_path=Path("/0/4/5/1/").absolute(),
         error_title=Translations["menu.file.missing_library.title"],
         error_description=Translations.format(
-            "menu.file.missing_library.message", library=Path("/0/4/5/1/")
+            "menu.file.missing_library.message", library=Path("/0/4/5/1/").absolute()
         ),
     )
 
