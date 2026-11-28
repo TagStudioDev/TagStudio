@@ -85,6 +85,7 @@ from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.navigator import Navigator
+from tagstudio.qt.pinned_tags_state import PinnedTagsState
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.selection_state import SelectionState
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
@@ -223,6 +224,7 @@ class QtDriver(BaseDriver, QObject):
             )
 
         self.navigator = Navigator(self.lib, self.library_pool, self.selection)
+        self.pinned_tags_state = PinnedTagsState(self.lib)
         Translations.change_language(self.app_settings.language)
 
     def init_workers(self):
@@ -354,7 +356,12 @@ class QtDriver(BaseDriver, QObject):
             create_text=Translations["tag.create"],
             is_chooser=False,
         )
-        tsp = TagSearchPanel(self.lib, is_chooser=False, view=tsp_view)
+        tsp = TagSearchPanel(
+            self.lib,
+            is_chooser=False,
+            view=tsp_view,
+            pinned_tags_state=self.pinned_tags_state,
+        )
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         tsp.remove_tag_requested.connect(
             lambda tag_id: self.library_pool.start(partial(self.lib.remove_tag, tag_id))
@@ -390,6 +397,13 @@ class QtDriver(BaseDriver, QObject):
             lambda chosen_tag: self.add_tags_to_selected_callback([chosen_tag])
         )
         self.main_window.inspector.can_add_tags_changed.connect(tag_search.set_capsules_clickable)
+
+        pinned_tags = self.main_window.tagging_panel.pinned_tags
+        pinned_tags.search_for_tag.connect(self.search_for_tag_callback)
+        pinned_tags.tag_chosen.connect(
+            lambda chosen_tag: self.add_tags_to_selected_callback([chosen_tag])
+        )
+        self.main_window.inspector.can_add_tags_changed.connect(pinned_tags.set_capsules_clickable)
 
         recent_tags = self.main_window.tagging_panel.recent_tags
         recent_tags.search_for_tag.connect(self.search_for_tag_callback)
@@ -565,6 +579,7 @@ class QtDriver(BaseDriver, QObject):
         self.main_window.search_bar.set_query("")
         self.main_window.tagging_panel.tag_search.set_search_query("")
         self.main_window.tagging_panel.recent_tags.set_tag_ids([])
+        self.pinned_tags_state.clear()
         self.main_window.set_results_text("")
         scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -1262,6 +1277,7 @@ class QtDriver(BaseDriver, QObject):
             show_hidden_entries=self.main_window.show_hidden_entries,
         )
         self.navigator.reset(initial_state)
+        self.pinned_tags_state.load()
 
         self.main_window.set_thumb_size(library_settings.thumb_size)
         self.main_window.set_pagination_actions_checked(

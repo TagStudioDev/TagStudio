@@ -19,6 +19,7 @@ from tagstudio.qt.controllers.capsule import Capsule
 from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.search_panel import SearchPanel
+from tagstudio.qt.pinned_tags_state import PinnedTagsState
 from tagstudio.qt.views.search_panel_view import SearchPanelView
 from tagstudio.qt.views.styles.stylesheets import PAD, TagShape
 from tagstudio.qt.views.styles.tag_icons import tag_icon
@@ -37,6 +38,7 @@ class TagSearchPanel(SearchPanel[int]):
         exclude: list[int] | None = None,
         is_chooser: bool = True,
         view: SearchPanelView | None = None,
+        pinned_tags_state: PinnedTagsState | None = None,
     ):
         super().__init__(
             view=view or SearchPanelView(Translations["home.search_tags"], is_chooser=is_chooser),
@@ -44,6 +46,7 @@ class TagSearchPanel(SearchPanel[int]):
             is_chooser=is_chooser,
         )
         self._lib = library
+        self._pinned_tags_state = pinned_tags_state
         self.layout().create_from_query_button.set_is_tag(True)
         self._tags_edited.connect(self._on_tags_edited)
         self.restyle()
@@ -160,11 +163,20 @@ class TagSearchPanel(SearchPanel[int]):
         # Disconnect previous callbacks
         with catch_warnings(record=True):
             capsule.on_click.disconnect()
+            capsule.on_context_menu.disconnect()
             capsule.on_edit.disconnect()
+            capsule.on_pin.disconnect()
             capsule.on_remove.disconnect()
             capsule.on_search.disconnect()
 
         # Connect callbacks
+        if (pinned_tags_state := self._pinned_tags_state) is not None:
+            capsule.on_context_menu.connect(
+                lambda tag_id=item: capsule.set_pinned(pinned_tags_state.is_pinned(tag_id))
+            )
+            capsule.on_pin.connect(
+                lambda is_pinned, tag_id=item: pinned_tags_state.set_pinned(tag_id, is_pinned)
+            )
         capsule.on_edit.connect(lambda tag_id=item: self.on_item_edit(tag_id))
         capsule.on_remove.connect(lambda tag_id=item: self._on_item_remove(tag_id))
         if self._is_chooser:
@@ -203,6 +215,7 @@ class TagSearchPanel(SearchPanel[int]):
         return Capsule(
             has_edit=True,
             has_remove=True,
+            has_pin=self._pinned_tags_state is not None,
             search_label=Translations["tag.search_for_tag"],
             is_tag=True,
             is_stretched=True,

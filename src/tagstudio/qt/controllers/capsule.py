@@ -29,7 +29,9 @@ class Capsule(QWidget):
     """A generic tag-like widget used for tags, colors, field templates, etc."""
 
     on_click = Signal()
+    on_context_menu = Signal()
     on_edit = Signal()
+    on_pin = Signal(bool)
     on_remove = Signal()
     on_search = Signal()
 
@@ -37,6 +39,7 @@ class Capsule(QWidget):
         self,
         has_edit: bool = False,
         has_remove: bool = False,
+        has_pin: bool = False,
         search_label: str | None = None,
         is_tag: bool = False,
         is_stretched: bool = False,
@@ -51,6 +54,7 @@ class Capsule(QWidget):
         self._is_colorless = True
         self._is_dashed = is_dashed
         self._is_pill: bool | None = None
+        self._is_pinned = False
         self._is_stretched = is_stretched
         self._is_tag = is_tag
         self.has_remove = has_remove
@@ -70,6 +74,11 @@ class Capsule(QWidget):
             self._edit_action = self._add_action(Translations["generic.edit"], self.on_edit)
         if search_label:
             self._add_action(search_label, self.on_search)
+        self._pin_action: QAction | None = None
+        if has_pin:
+            self._pin_action = QAction(Translations["generic.pin"], self)
+            self._pin_action.triggered.connect(lambda: self.on_pin.emit(not self._is_pinned))
+            self.layout().button.addAction(self._pin_action)
 
         self._connect_callbacks()
         self.set_color_group(None)
@@ -92,6 +101,8 @@ class Capsule(QWidget):
 
     @override
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.ContextMenu:
+            self.on_context_menu.emit()
         if (
             not self._is_clickable
             and isinstance(event, QMouseEvent)
@@ -106,6 +117,12 @@ class Capsule(QWidget):
         self.setCursor(
             Qt.CursorShape.PointingHandCursor if clickable else Qt.CursorShape.ArrowCursor
         )
+
+    def set_pinned(self, is_pinned: bool) -> None:
+        """Show whether the capsule item is pinned in the Pin/Unpin action."""
+        self._is_pinned = is_pinned
+        if self._pin_action is not None:
+            self._pin_action.setText(Translations["generic.unpin" if is_pinned else "generic.pin"])
 
     def set_is_tag(self, is_tag: bool) -> None:
         self._is_tag = is_tag

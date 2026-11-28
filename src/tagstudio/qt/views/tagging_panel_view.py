@@ -6,7 +6,6 @@ from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from tagstudio.i18n.translations import Translations
 from tagstudio.qt.controllers.collapsible_section import CollapsibleSection
-from tagstudio.qt.controllers.inset_frame import InsetFrame
 from tagstudio.qt.controllers.section_splitter import SectionSplitter
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.styles.stylesheets import WIN_PAD
@@ -14,7 +13,11 @@ from tagstudio.qt.views.styles.stylesheets import WIN_PAD
 
 class TaggingPanelView(QVBoxLayout):
     def __init__(
-        self, tag_search: QWidget, tag_search_row: QHBoxLayout, recent_tags: QWidget
+        self,
+        tag_search: QWidget,
+        tag_search_row: QHBoxLayout,
+        pinned_tags: QWidget,
+        recent_tags: QWidget,
     ) -> None:
         super().__init__()
         self.setContentsMargins(0, 0, 0, WIN_PAD)
@@ -28,8 +31,10 @@ class TaggingPanelView(QVBoxLayout):
                     tag_search,
                     caret_row=tag_search_row,
                 ),
-                self._placeholder_section(
-                    rm.pinned_tags_icon_solid, Translations["panel.tagging.pinned_tags"]
+                self._tag_list_section(
+                    rm.pinned_tags_icon_solid,
+                    Translations["panel.tagging.pinned_tags"],
+                    pinned_tags,
                 ),
                 self._tag_list_section(
                     rm.recent_tags_icon_solid,
@@ -40,9 +45,6 @@ class TaggingPanelView(QVBoxLayout):
         )
         self.addWidget(self.section_splitter, stretch=1)
         self.addStretch()
-
-    def _placeholder_section(self, svg: bytes, title: str) -> CollapsibleSection:
-        return self._tag_list_section(svg, title, InsetFrame())
 
     def _tag_list_section(self, svg: bytes, title: str, tag_list: QWidget) -> CollapsibleSection:
         tag_list.setMinimumHeight(72)

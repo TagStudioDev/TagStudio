@@ -22,6 +22,7 @@ from tagstudio.qt.controllers.modal import Modal
 from tagstudio.qt.controllers.modal_content import ModalContent
 from tagstudio.qt.controllers.suggest_box import SuggestBox
 from tagstudio.qt.controllers.underlined_widget import UnderlinedWidget
+from tagstudio.qt.pinned_tags_state import PinnedTagsState
 from tagstudio.qt.views.styles.tag_icons import tag_icon
 
 logger = structlog.get_logger(__name__)
@@ -31,9 +32,14 @@ class TagSuggestBox(SuggestBox[CachedTag]):
     search_for_tag = Signal(int)
 
     def __init__(
-        self, library: Library, app_settings: AppSettings, placeholder_text: str = ""
+        self,
+        library: Library,
+        app_settings: AppSettings,
+        pinned_tags_state: PinnedTagsState,
+        placeholder_text: str = "",
     ) -> None:
         super().__init__(library, app_settings, placeholder_text)
+        self._pinned_tags_state = pinned_tags_state
 
         # Context Menu Actions
         self._edit_on_create_action = QAction(Translations["settings.edit_tag_on_create"], self)
@@ -173,10 +179,18 @@ class TagSuggestBox(SuggestBox[CachedTag]):
         # Disconnect previous callbacks
         with catch_warnings(record=True):
             capsule.on_click.disconnect()
+            capsule.on_context_menu.disconnect()
             capsule.on_edit.disconnect()
+            capsule.on_pin.disconnect()
             capsule.on_search.disconnect()
 
         # Connect callbacks
+        capsule.on_context_menu.connect(
+            lambda tag_id=item.id: capsule.set_pinned(self._pinned_tags_state.is_pinned(tag_id))
+        )
+        capsule.on_pin.connect(
+            lambda is_pinned, tag_id=item.id: self._pinned_tags_state.set_pinned(tag_id, is_pinned)
+        )
         capsule.on_edit.connect(lambda edit_tag=item: self._on_item_edit(edit_tag))
         capsule.on_click.connect(lambda tag=item: self._on_item_chosen(tag))
         capsule.on_search.connect(lambda tag_id=item.id: self.search_for_tag.emit(tag_id))
@@ -218,6 +232,7 @@ class TagSuggestBox(SuggestBox[CachedTag]):
                 capsule = Capsule(
                     has_edit=True,
                     has_remove=True,
+                    has_pin=True,
                     search_label=Translations["tag.search_for_tag"],
                     is_tag=True,
                 )

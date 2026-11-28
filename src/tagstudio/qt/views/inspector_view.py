@@ -45,7 +45,10 @@ class InspectorView(QVBoxLayout):
             driver.lib, driver.app_settings, Translations["home.search_or_create_fields"]
         )
         self.tag_search_box = TagSuggestBox(
-            driver.lib, driver.app_settings, Translations["home.search_or_create_tags"]
+            driver.lib,
+            driver.app_settings,
+            driver.pinned_tags_state,
+            Translations["home.search_or_create_tags"],
         )
 
         self.preview_thumb = PreviewThumb(driver)
