@@ -13,3 +13,4 @@ class LibraryState(BaseDataFile):
     """Library state file for TagStudio."""
 
     pinned_tag_ids: list[int] = Field(default_factory=list)
+    recent_tag_ids: list[int] = Field(default_factory=list)

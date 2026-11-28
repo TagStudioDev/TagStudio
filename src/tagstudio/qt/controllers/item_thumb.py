@@ -361,7 +361,7 @@ class ItemThumb(QWidget):
         is_checked = self.layout().badges[tag_id].isChecked()
         self._driver.entry_state.set_tag(entry_ids, tag_id, is_checked)
         if is_checked:
-            self._driver.main_window.tagging_panel.add_recent_tags([tag_id])
+            self._driver.tag_lists_state.add_recent_tags([tag_id])
 
     def _start_drag(self) -> None:
         drag = QDrag(self._driver)

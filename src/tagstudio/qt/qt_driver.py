@@ -85,9 +85,9 @@ from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.navigator import Navigator
-from tagstudio.qt.pinned_tags_state import PinnedTagsState
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.selection_state import SelectionState
+from tagstudio.qt.tag_lists_state import TagListsState
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
@@ -224,7 +224,7 @@ class QtDriver(BaseDriver, QObject):
             )
 
         self.navigator = Navigator(self.lib, self.library_pool, self.selection)
-        self.pinned_tags_state = PinnedTagsState(self.lib)
+        self.tag_lists_state = TagListsState(self.lib)
         Translations.change_language(self.app_settings.language)
 
     def init_workers(self):
@@ -360,7 +360,7 @@ class QtDriver(BaseDriver, QObject):
             self.lib,
             is_chooser=False,
             view=tsp_view,
-            pinned_tags_state=self.pinned_tags_state,
+            tag_lists_state=self.tag_lists_state,
         )
         tsp.search_for_tag.connect(self.search_for_tag_callback)
         tsp.remove_tag_requested.connect(
@@ -578,8 +578,7 @@ class QtDriver(BaseDriver, QObject):
         # Reset library state
         self.main_window.search_bar.set_query("")
         self.main_window.tagging_panel.tag_search.set_search_query("")
-        self.main_window.tagging_panel.recent_tags.set_tag_ids([])
-        self.pinned_tags_state.clear()
+        self.tag_lists_state.close()
         self.main_window.set_results_text("")
         scrollbar: QScrollArea = self.main_window.thumb_grid.scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -653,7 +652,7 @@ class QtDriver(BaseDriver, QObject):
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         self.entry_state.add_tags(self.selection.selected, tag_ids)
-        self.main_window.tagging_panel.add_recent_tags(tag_ids)
+        self.tag_lists_state.add_recent_tags(tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -1277,7 +1276,7 @@ class QtDriver(BaseDriver, QObject):
             show_hidden_entries=self.main_window.show_hidden_entries,
         )
         self.navigator.reset(initial_state)
-        self.pinned_tags_state.load()
+        self.tag_lists_state.load()
 
         self.main_window.set_thumb_size(library_settings.thumb_size)
         self.main_window.set_pagination_actions_checked(

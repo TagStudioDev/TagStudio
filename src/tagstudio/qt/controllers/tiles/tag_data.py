@@ -72,11 +72,11 @@ class TagData(TileData):
             capsule.on_click.connect(lambda t=tag: self._on_click(t))
             capsule.on_context_menu.connect(
                 lambda capsule=capsule, t=tag: capsule.set_pinned(
-                    self._driver.pinned_tags_state.is_pinned(t.id)
+                    self._driver.tag_lists_state.is_pinned(t.id)
                 )
             )
             capsule.on_pin.connect(
-                lambda is_pinned, t=tag: self._driver.pinned_tags_state.set_pinned(t.id, is_pinned)
+                lambda is_pinned, t=tag: self._driver.tag_lists_state.set_pinned(t.id, is_pinned)
             )
             capsule.on_remove.connect(lambda t=tag: self._on_remove(t))
             capsule.on_edit.connect(lambda t=tag: self._on_edit(t))

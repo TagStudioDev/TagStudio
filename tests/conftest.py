@@ -32,8 +32,8 @@ from tagstudio.qt.controllers.pagination import Pagination
 from tagstudio.qt.controllers.thumb_grid import ThumbGrid
 from tagstudio.qt.entry_state import EntryState
 from tagstudio.qt.navigator import Navigator
-from tagstudio.qt.pinned_tags_state import PinnedTagsState
 from tagstudio.qt.qt_driver import QtDriver
+from tagstudio.qt.tag_lists_state import TagListsState
 
 
 @pytest.fixture
@@ -274,8 +274,8 @@ def entry_state(library: Library, mock_thread_pool: Mock) -> EntryState:
 
 
 @pytest.fixture
-def pinned_tags_state(library: Library) -> PinnedTagsState:
-    state = PinnedTagsState(library)
+def tag_lists_state(library: Library) -> TagListsState:
+    state = TagListsState(library)
     state.load()
     return state
 
@@ -303,7 +303,7 @@ def qt_driver(library: Library, library_dir: Path, mock_thread_pool: Mock):
         driver.library_pool = mock_thread_pool
         driver.entry_state = EntryState(library, driver.library_pool)
         driver.navigator = Navigator(library, driver.library_pool, driver.selection)
-        driver.pinned_tags_state = PinnedTagsState(library)
+        driver.tag_lists_state = TagListsState(library)
 
         driver.app = Mock()
         driver.main_window = Mock()

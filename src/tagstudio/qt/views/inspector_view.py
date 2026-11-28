@@ -47,7 +47,7 @@ class InspectorView(QVBoxLayout):
         self.tag_search_box = TagSuggestBox(
             driver.lib,
             driver.app_settings,
-            driver.pinned_tags_state,
+            driver.tag_lists_state,
             Translations["home.search_or_create_tags"],
         )
 
